@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package chief_of_state;
+
+option java_package = "com.namely.protobuf.chief_of_state";
+
+import "google/protobuf/any.proto";
+
+service HandlerService {
+    rpc HandleCommand (HandleCommandRequest) returns (HandleCommandResponse);
+    rpc HandleEvent (HandleEventRequest) returns (HandleEventResponse);
+}
+
+message HandleCommandRequest {
+    google.protobuf.Any command = 1;
+    google.protobuf.Any current_state = 2;
+    google.protobuf.Any meta = 3;
+}
+
+message HandleCommandResponse {
+    oneof response_type {
+        PersistAndReply persist_and_reply = 1;
+        Reply reply = 2;
+    };
+}
+
+message Reply{}
+
+message PersistAndReply {
+    google.protobuf.Any event = 1;
+}
+
+message HandleEventRequest {
+    google.protobuf.Any event = 1;
+    google.protobuf.Any current_state = 2;
+    google.protobuf.Any meta = 3;
+}
+
+message HandleEventResponse {
+    google.protobuf.Any resulting_state = 1;
+}
