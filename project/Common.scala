@@ -54,7 +54,6 @@ object Common extends AutoPlugin {
         passwd = sys.env.getOrElse("JFROG_PASSWORD", "")
       )
     ),
-    isSnapshot := !version.value.matches("^\\d+\\.\\d+\\.\\d+$"),
     resolvers ++= Seq(
       "Artifactory Realm".at("https://jfrog.namely.land/artifactory/data-sbt-release/"),
       "Artima Maven Repository".at("https://repo.artima.com/releases"),
