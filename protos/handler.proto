@@ -35,5 +35,5 @@ message HandleEventRequest {
 }
 
 message HandleEventResponse {
-    google.protobuf.Any resulting_state = 2;
+    google.protobuf.Any resulting_state = 1;
 }
