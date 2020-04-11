@@ -11,5 +11,6 @@ lazy val root = project
         javaConversions = false,
         grpc = false
       ) -> (sourceManaged in Compile).value
-    ),
+    )
   )
+  .enablePlugins(Common)
