@@ -1,6 +1,7 @@
 package com.namely.chiefofstate
 
 import sbt._
+import scalapb.compiler.Version.scalapbVersion
 
 object Dependencies {
   // Package versions
@@ -23,6 +24,7 @@ object Dependencies {
 
   object Runtime {
     val lagomCommonRuntime = "com.namely" %% "lagom-common-runtime" % Versions.lagomCommonVersion % "protobuf"
+    val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf"
   }
 
   object Test {
