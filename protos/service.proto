@@ -1,6 +1,8 @@
 syntax = "proto3";
 
-package com.namely.chief_of_state;
+package chief_of_state;
+
+option java_package = "com.namely.protobuf.chief_of_state";
 
 import "google/protobuf/any.proto";
 
