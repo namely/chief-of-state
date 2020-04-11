@@ -35,7 +35,7 @@ object Common extends AutoPlugin {
       "",
       url("https://github.com/namely/chief-of-state/graphs/contributors")
     ),
-    description := "Report Builder Application.\n",
+    description := "Chief of State",
     coverageMinimum := 90,
     coverageFailOnMinimum := true
   )
