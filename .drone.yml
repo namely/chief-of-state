@@ -27,7 +27,6 @@ steps:
     pull: always
     settings:
       mode: magic
-      primary_tag_file: .primary_docker_tag
 
   - name: style checker
     image: registry.namely.land/namely/sbt:1.3.6-2.13.1
@@ -54,7 +53,6 @@ steps:
   # - name: build
   #   image: registry.namely.land/namely/sbt:1.3.6-2.13.1
   #   commands:
-  #     - export VERSION=`cat .primary_docker_tag`
   #     - sbt docker:stage
   #   environment:
   #     JFROG_USERNAME:
