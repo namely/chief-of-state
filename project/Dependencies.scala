@@ -1,7 +1,6 @@
 package com.namely.chiefofstate
 
 import sbt._
-import scalapb.compiler.Version.scalapbVersion
 
 object Dependencies {
   // Package versions
@@ -12,6 +11,7 @@ object Dependencies {
     val swaggerAnnotationsVersion = "2.1.1"
     val kanelaAgentVersion = "1.0.3"
     val akkaVersion = "2.6.4"
+    val silencerVersion = "1.6.0"
   }
 
   object Compile {
