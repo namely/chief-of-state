@@ -1,7 +1,7 @@
 package com.namely.chiefofstate
 
 import com.google.protobuf.any.Any
-import com.namely.lagom.NamelyEventHandler
+import com.namely.lagom.{NamelyEventHandler, NamelyException}
 import com.namely.protobuf.chief_of_state.handler.HandleEventRequest
 import com.namely.protobuf.lagom.common.StateMeta
 import scalapb.GeneratedMessage
@@ -22,7 +22,7 @@ class SidecarEventHandler extends NamelyEventHandler[Any] {
       case Failure(e) => throw new NotImplementedError(e.getMessage)
       case Success(value) => value.value match {
         case Some(value) => Any.pack(value.get)
-        case None => ???
+        case None => throw new NamelyException(s"unable to handle event ${event.companion.getClass.getCanonicalName}")
       }
     }
   }
