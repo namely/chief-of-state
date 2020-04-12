@@ -56,8 +56,8 @@ lazy val protogen = project
     ),
     // Using Scala
     akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Scala),
-    akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server),
     akkaGrpcExtraGenerators in Compile += PlayScalaServerCodeGenerator,
+    akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server, AkkaGrpc.Client),
     akkaGrpcCodeGeneratorSettings += "server_power_apis",
     akkaGrpcCodeGeneratorSettings := akkaGrpcCodeGeneratorSettings.value.filterNot(
       _ == "flat_package"
