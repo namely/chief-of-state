@@ -1,13 +1,12 @@
 package com.namely.chiefofstate
 
 import sbt._
-import scalapb.compiler.Version.scalapbVersion
 
 object Dependencies {
   // Package versions
   object Versions {
     val scala213 = "2.13.1"
-    val lagomCommonVersion = "0.0.17"
+    val lagomCommonVersion = "pr-81-413"
     val lagomOpenApiVersion = "1.1.0"
     val swaggerAnnotationsVersion = "2.1.1"
     val kanelaAgentVersion = "1.0.3"
