@@ -22,6 +22,8 @@ class SidecarCommandHandler extends NamelyCommandHandler[Any]{
 
     Try(
       HandlerClient.client.handleCommand(handleRequest)
+      // NOTE: Do we need to close the client during failure to avoid leaking?
+      // https://doc.akka.io/docs/akka-grpc/current/client/details.html#client-lifecycle
     ) match {
 
       case Failure(exception: Throwable) =>

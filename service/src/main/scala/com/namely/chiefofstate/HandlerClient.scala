@@ -3,11 +3,11 @@ package com.namely.chiefofstate
 import akka.actor.ActorSystem
 import akka.grpc.GrpcClientSettings
 import akka.grpc.scaladsl.AkkaGrpcClient
-import com.namely.protobuf.chief_of_state.handler.{HandlerService, HandlerServiceClient}
+import com.namely.protobuf.chief_of_state.handler.HandlerServiceClient
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContextExecutor
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 object HandlerClient {
 
@@ -16,7 +16,13 @@ object HandlerClient {
 
   private lazy val logger = LoggerFactory.getLogger(getClass)
 
-  private val clientSettings = GrpcClientSettings.fromConfig(HandlerService.name)
+  // FIXME: Might be better to pass this through a .conf file
+  val host: String = System.getenv("HANDLER_SERVICE_HOSTNAME")
+  val port: Int = Try(System.getenv("HANDLER_SERVICE_PORT").toInt).getOrElse(8080) // what is the default for akka grpc??
+  val useTLS: Boolean = Try(System.getenv("USE_TLS").toBoolean).getOrElse(false)
+
+  private val clientSettings = GrpcClientSettings.connectToServiceAt(host = host, port = port).withTls(useTLS)
+
   val client: HandlerServiceClient = HandlerServiceClient(clientSettings)
 
 
@@ -25,7 +31,7 @@ object HandlerClient {
       .flatMap(_ => actorSys.terminate())
       .onComplete {
         case Success(_) => logger.info("stopped")
-        case Failure(ex) => ex.printStackTrace()
+        case Failure(ex) => logger.debug(ex.getMessage)
       }
   }
 }

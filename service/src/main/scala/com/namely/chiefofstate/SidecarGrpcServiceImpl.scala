@@ -15,6 +15,7 @@ class SidecarGrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding)
   extends AbstractChiefOfStateServicePowerApiRouter(sys) with NamelyGrpcServiceImpl {
 
   override def processCommand(in: ProcessCommandRequest, metadata: Metadata): Future[ProcessCommandResponse] = {
+
     sendCommand[Any, Any](clusterSharding, in.entityUuid, in.command.get).map(
       state => ProcessCommandResponse().withState(state)
     )
