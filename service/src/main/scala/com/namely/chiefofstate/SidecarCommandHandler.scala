@@ -1,10 +1,10 @@
 package com.namely.chiefofstate
 
+import akka.actor.ActorSystem
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
 import com.namely.lagom._
-import com.namely.protobuf.chief_of_state.handler.HandleCommandRequest
-import com.namely.protobuf.chief_of_state.handler.HandleCommandResponse
+import com.namely.protobuf.chief_of_state.handler.{HandleCommandRequest, HandleCommandResponse, HandlerService, HandlerServiceClient}
 import com.namely.protobuf.chief_of_state.handler.HandleCommandResponse.ResponseType
 import com.namely.protobuf.lagom.common.NamelyRejectionCause
 import com.namely.protobuf.lagom.common.StateMeta
@@ -15,7 +15,9 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-class SidecarCommandHandler extends NamelyCommandHandler[Any] {
+class SidecarCommandHandler(actorSystem: ActorSystem, akkaGrpcClient: HandlerServiceClient) extends NamelyCommandHandler[Any](actorSystem) {
+
+  val handlerServiceClient: HandlerServiceClient = akkaGrpcClient
 
   override def handle(command: NamelyCommand, state: Any, stateMeta: StateMeta): Try[NamelyHandlerResponse] = {
 
@@ -25,7 +27,7 @@ class SidecarCommandHandler extends NamelyCommandHandler[Any] {
       .withMeta(Any.pack(stateMeta))
 
     Try(
-      HandlerClient.client.handleCommand(handleRequest)
+      handlerServiceClient.handleCommand(handleRequest)
       // NOTE: Do we need to close the client during failure to avoid leaking?
       // https://doc.akka.io/docs/akka-grpc/current/client/details.html#client-lifecycle
     ) match {

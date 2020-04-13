@@ -6,7 +6,7 @@ object Dependencies {
   // Package versions
   object Versions {
     val scala213 = "2.13.1"
-    val lagomCommonVersion = "pr-81-418"
+    val lagomCommonVersion = "pr-81-420"
     val lagomOpenApiVersion = "1.1.0"
     val swaggerAnnotationsVersion = "2.1.1"
     val kanelaAgentVersion = "1.0.3"
@@ -24,12 +24,15 @@ object Dependencies {
 
   object Runtime {
     val lagomCommonRuntime = "com.namely" %% "lagom-common-runtime" % Versions.lagomCommonVersion % "protobuf"
+    val grpcNetty = "io.grpc" % "grpc-netty" % scalapb.compiler.Version.grpcJavaVersion
+    val scalapbGrpcRuntime = "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % scalapb.compiler.Version.scalapbVersion
     val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf"
   }
 
   object Test {
     final val Test = sbt.Test
     val lagomCommonTestkit = "com.namely" %% "lagom-common-testkit" % Versions.lagomCommonVersion % Test
+    val akkaGrpcTestkit = "com.lightbend.play" %% "lagom-scaladsl-grpc-testkit" % "0.8.2"
   }
 
 }

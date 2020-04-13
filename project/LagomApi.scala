@@ -25,7 +25,8 @@ object LagomApi extends AutoPlugin {
       Compile.lagomOpenApi,
       Compile.lagomCommonUtil,
       Test.lagomCommonTestkit,
-      Runtime.lagomCommonRuntime
+      Runtime.lagomCommonRuntime,
+      Test.akkaGrpcTestkit
     )
   )
 }

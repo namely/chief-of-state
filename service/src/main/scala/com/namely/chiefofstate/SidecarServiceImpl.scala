@@ -1,6 +1,7 @@
 package com.namely.chiefofstate
 
 import akka.NotUsed
+import akka.actor.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import com.google.protobuf.any.Any
 import com.lightbend.lagom.scaladsl.api.ServiceCall
@@ -13,7 +14,7 @@ import scalapb.GeneratedMessageCompanion
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class SidecarServiceImpl(clusterSharding: ClusterSharding, persistentEntityRegistry: PersistentEntityRegistry)(
+class SidecarServiceImpl(actorSystem: ActorSystem, clusterSharding: ClusterSharding, persistentEntityRegistry: PersistentEntityRegistry)(
     implicit ec: ExecutionContext
 ) extends NamelyServiceImpl(clusterSharding, persistentEntityRegistry)
     with ChiefOfStateService {
@@ -22,7 +23,7 @@ class SidecarServiceImpl(clusterSharding: ClusterSharding, persistentEntityRegis
     Future.successful("")
   }
 
-  override def aggregateRoot: NamelyAggregate[_] = SidecarAggregate
+  override def aggregateRoot: NamelyAggregate[_] = new SidecarAggregate(actorSystem)
 
   override def aggregateStateCompanion: GeneratedMessageCompanion[_ <: GeneratedMessage] = Any
 }

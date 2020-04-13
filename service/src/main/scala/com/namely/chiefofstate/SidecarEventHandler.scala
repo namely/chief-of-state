@@ -2,11 +2,12 @@ package com.namely.chiefofstate
 
 import java.time.Instant
 
+import akka.actor.ActorSystem
 import com.google.protobuf.any.Any
 import com.namely.lagom.NamelyEventHandler
 import com.namely.lagom.NamelyException
 import com.namely.lagom.util.NamelyTimestamps
-import com.namely.protobuf.chief_of_state.handler.HandleEventRequest
+import com.namely.protobuf.chief_of_state.handler.{HandleEventRequest, HandlerServiceClient}
 import com.namely.protobuf.lagom.common.StateMeta
 import scalapb.GeneratedMessage
 
@@ -14,7 +15,10 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-class SidecarEventHandler extends NamelyEventHandler[Any] {
+class SidecarEventHandler(actorSystem: ActorSystem, akkaGrpcClient: HandlerServiceClient) extends NamelyEventHandler[Any](actorSystem) {
+
+  lazy val handlerServiceClient: HandlerServiceClient = akkaGrpcClient
+
   override def handle(event: GeneratedMessage, state: Any): Any = {
 
     // FIXME: Revision Number
@@ -30,7 +34,7 @@ class SidecarEventHandler extends NamelyEventHandler[Any] {
       .withMeta(meta)
 
     Try(
-      HandlerClient.client.handleEvent(handleEventRequest)
+      handlerServiceClient.handleEvent(handleEventRequest)
     ) match {
 
       case Failure(e) =>
