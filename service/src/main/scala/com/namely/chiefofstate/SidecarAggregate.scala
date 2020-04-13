@@ -1,8 +1,10 @@
 package com.namely.chiefofstate
 
-import com.namely.lagom.{NamelyAggregate, NamelyCommandHandler, NamelyEventHandler}
-import scalapb.GeneratedMessageCompanion
 import com.google.protobuf.any.Any
+import com.namely.lagom.NamelyAggregate
+import com.namely.lagom.NamelyCommandHandler
+import com.namely.lagom.NamelyEventHandler
+import scalapb.GeneratedMessageCompanion
 
 object SidecarAggregate extends NamelyAggregate[Any] {
 

@@ -2,6 +2,7 @@ import com.namely.chiefofstate.Dependencies
 import com.namely.chiefofstate.LagomAkka
 import com.namely.chiefofstate.LagomApi
 import com.namely.chiefofstate.LagomImpl
+import play.grpc.gen.scaladsl.PlayScalaClientCodeGenerator
 import play.grpc.gen.scaladsl.PlayScalaServerCodeGenerator
 
 lazy val root = project
@@ -30,10 +31,10 @@ lazy val service = project
   .settings(
     name := "service",
     coverageExcludedPackages := "<empty>;com.namely.chiefofstate.SidecarAggregate;" +
-    "com.namely.chiefofstate.SidecarApplicationLoader;" +
-    "com.namely.chiefofstate.SidecarServiceImpl;" +
-    "com.namely.chiefofstate.SidecarGrpcServiceImpl;" +
-    "com.namely.chiefofstate.HandlerClient;"
+      "com.namely.chiefofstate.SidecarApplicationLoader;" +
+      "com.namely.chiefofstate.SidecarServiceImpl;" +
+      "com.namely.chiefofstate.SidecarGrpcServiceImpl;" +
+      "com.namely.chiefofstate.HandlerClient;"
   )
   .dependsOn(
     protogen,
@@ -63,7 +64,7 @@ lazy val protogen = project
     // Using Scala
     akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Scala),
     akkaGrpcExtraGenerators in Compile += PlayScalaServerCodeGenerator,
-    akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server, AkkaGrpc.Client),
+    akkaGrpcExtraGenerators in Compile += PlayScalaClientCodeGenerator,
     akkaGrpcCodeGeneratorSettings += "server_power_apis",
     akkaGrpcCodeGeneratorSettings := akkaGrpcCodeGeneratorSettings.value.filterNot(
       _ == "flat_package"

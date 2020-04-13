@@ -3,13 +3,16 @@ package com.namely.chiefofstate
 import java.time.Instant
 
 import com.google.protobuf.any.Any
+import com.namely.lagom.NamelyEventHandler
+import com.namely.lagom.NamelyException
 import com.namely.lagom.util.NamelyTimestamps
-import com.namely.lagom.{NamelyEventHandler, NamelyException}
 import com.namely.protobuf.chief_of_state.handler.HandleEventRequest
 import com.namely.protobuf.lagom.common.StateMeta
 import scalapb.GeneratedMessage
 
-import scala.util.{Failure, Success, Try}
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 class SidecarEventHandler extends NamelyEventHandler[Any] {
   override def handle(event: GeneratedMessage, state: Any): Any = {
@@ -22,25 +25,25 @@ class SidecarEventHandler extends NamelyEventHandler[Any] {
     )
 
     val handleEventRequest = HandleEventRequest()
-        .withEvent(Any.pack(event))
-        .withCurrentState(state)
-        .withMeta(meta)
+      .withEvent(Any.pack(event))
+      .withCurrentState(state)
+      .withMeta(meta)
 
     Try(
       HandlerClient.client.handleEvent(handleEventRequest)
-    )
-    match {
+    ) match {
 
       case Failure(e) =>
         // NOTE: close the grpc client to avoid leaking???
         throw new NotImplementedError(e.getMessage)
 
-      case Success(value) => value.value match {
-        case Some(value) => Any.pack(value.get)
-        case None =>
-          // NOTE: close the grpc client to avoid leaking???
-          throw new NamelyException(s"unable to handle event ${event.companion.getClass.getCanonicalName}")
-      }
+      case Success(value) =>
+        value.value match {
+          case Some(value) => Any.pack(value.get)
+          case None =>
+            // NOTE: close the grpc client to avoid leaking???
+            throw new NamelyException(s"unable to handle event ${event.companion.getClass.getCanonicalName}")
+        }
     }
   }
 }

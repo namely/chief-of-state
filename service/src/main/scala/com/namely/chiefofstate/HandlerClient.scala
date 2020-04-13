@@ -7,7 +7,9 @@ import com.namely.protobuf.chief_of_state.handler.HandlerServiceClient
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContextExecutor
-import scala.util.{Failure, Success, Try}
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 object HandlerClient {
 
@@ -25,9 +27,9 @@ object HandlerClient {
 
   val client: HandlerServiceClient = HandlerServiceClient(clientSettings)
 
-
   def stop(implicit client: AkkaGrpcClient): Unit = {
-    client.close()
+    client
+      .close()
       .flatMap(_ => actorSys.terminate())
       .onComplete {
         case Success(_) => logger.info("stopped")
