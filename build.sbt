@@ -18,6 +18,7 @@ lazy val api = project
   .enablePlugins(LagomAkka)
   .settings(
     name := "api",
+    coverageExcludedPackages := "<empty>;com.namely.chiefofstate.ChiefOfStateService;"
   )
 
 lazy val service = project
@@ -28,6 +29,11 @@ lazy val service = project
   .enablePlugins(LagomAkka)
   .settings(
     name := "service",
+    coverageExcludedPackages := "<empty>;com.namely.chiefofstate.SidecarAggregate;" +
+    "com.namely.chiefofstate.SidecarApplicationLoader;" +
+    "com.namely.chiefofstate.SidecarServiceImpl;" +
+    "com.namely.chiefofstate.SidecarGrpcServiceImpl;" +
+    "com.namely.chiefofstate.HandlerClient;"
   )
   .dependsOn(
     protogen,

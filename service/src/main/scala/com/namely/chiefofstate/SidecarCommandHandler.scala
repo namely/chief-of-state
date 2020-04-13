@@ -31,14 +31,17 @@ class SidecarCommandHandler extends NamelyCommandHandler[Any]{
         exception match {
           case e: GrpcServiceException => Try(
             FailedResponse(
-              e.status.getDescription,
+              e.status.toString,
               NamelyRejectionCause.InternalError
             )
           )
 
           case _ => Try(
             FailedResponse(
-              Status.INTERNAL.withDescription(s"unable to handle command ${command.command.getClass.getCanonicalName}").toString,
+              new GrpcServiceException(
+                Status.INTERNAL.withDescription(
+                  s"Error occured.unable to handle command ${command.command.getClass.getCanonicalName}"
+                )).toString,
               NamelyRejectionCause.InternalError
             )
           )
@@ -56,7 +59,10 @@ class SidecarCommandHandler extends NamelyCommandHandler[Any]{
 
           case None => Try(
             FailedResponse(
-              Status.INTERNAL.withDescription(s"unable to handle command ${command.command.getClass.getCanonicalName}").toString,
+              new GrpcServiceException(
+                Status.INTERNAL.withDescription(
+                  s"unable to handle command ${command.command.getClass.getCanonicalName}"
+                )).toString,
               NamelyRejectionCause.InternalError
             )
           )

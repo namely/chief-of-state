@@ -17,9 +17,9 @@ object HandlerClient {
   private lazy val logger = LoggerFactory.getLogger(getClass)
 
   // FIXME: Might be better to pass this through a .conf file
-  val host: String = System.getenv("HANDLER_SERVICE_HOSTNAME")
-  val port: Int = Try(System.getenv("HANDLER_SERVICE_PORT").toInt).getOrElse(8080) // what is the default for akka grpc??
-  val useTLS: Boolean = Try(System.getenv("USE_TLS").toBoolean).getOrElse(false)
+  val host: String = Try(sys.env("HANDLER_SERVICE_HOSTNAME")).getOrElse("localhost")
+  val port: Int = Try(sys.env("HANDLER_SERVICE_PORT").toInt).getOrElse(8080) // what is the default for akka grpc??
+  val useTLS: Boolean = Try(sys.env("USE_TLS").toBoolean).getOrElse(false)
 
   private val clientSettings = GrpcClientSettings.connectToServiceAt(host = host, port = port).withTls(useTLS)
 

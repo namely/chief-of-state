@@ -6,7 +6,7 @@ object Dependencies {
   // Package versions
   object Versions {
     val scala213 = "2.13.1"
-    val lagomCommonVersion = "pr-81-413"
+    val lagomCommonVersion = "pr-81-418"
     val lagomOpenApiVersion = "1.1.0"
     val swaggerAnnotationsVersion = "2.1.1"
     val kanelaAgentVersion = "1.0.3"
