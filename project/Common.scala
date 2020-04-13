@@ -44,7 +44,7 @@ object Common extends AutoPlugin {
       "-Xfatal-warnings",
       "-deprecation",
       "-Xlint",
-      "-P:silencer:globalFilters=Unused import"
+      "-P:silencer:globalFilters=Unused import;deprecated"
     ),
     credentials ++= Seq(
       Credentials(
