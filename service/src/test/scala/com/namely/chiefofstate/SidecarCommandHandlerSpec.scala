@@ -6,12 +6,16 @@ import com.lightbend.lagom.scaladsl.server.LocalServiceLocator
 import com.lightbend.lagom.scaladsl.testkit.ServiceTest
 import com.lightbend.lagom.scaladsl.testkit.grpc.AkkaGrpcClientHelpers
 import com.namely.lagom.testkit.NamelyTestSpec
-import com.namely.lagom.{NamelyCommand, PersistAndReplyResponse}
+import com.namely.lagom.NamelyCommand
+import com.namely.lagom.NamelyHandlerResponse
+import com.namely.lagom.PersistAndReplyResponse
 import com.namely.protobuf.chief_of_state.handler.HandlerServiceClient
-import com.namely.protobuf.chief_of_state.tests.{CreateUser, UserState}
+import com.namely.protobuf.chief_of_state.tests.CreateUser
+import com.namely.protobuf.chief_of_state.tests.UserState
 import com.namely.protobuf.lagom.common.StateMeta
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.Try
 
 class SidecarCommandHandlerSpec extends NamelyTestSpec {
 
@@ -22,7 +26,6 @@ class SidecarCommandHandlerSpec extends NamelyTestSpec {
   }
 
   implicit val mat: Materializer = server.materializer
-
 
   val grpcClient: HandlerServiceClient = AkkaGrpcClientHelpers.grpcClient(
     server,
@@ -35,10 +38,10 @@ class SidecarCommandHandlerSpec extends NamelyTestSpec {
 
     "handle process command" in {
       val cmd = CreateUser()
-      val state = Any.pack(UserState())
+      val state: Any = Any.pack(UserState())
       val meta = StateMeta().withRevisionNumber(1)
 
-      val res = handler.handle(NamelyCommand(cmd, null), state, meta)
+      val res: Try[NamelyHandlerResponse] = handler.handle(NamelyCommand(cmd, null), state, meta)
       // FIXME: Always gets a NONE
       res.success.value shouldBe PersistAndReplyResponse(Any())
     }
