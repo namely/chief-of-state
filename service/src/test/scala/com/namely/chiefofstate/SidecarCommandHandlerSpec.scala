@@ -23,11 +23,7 @@ class SidecarCommandHandlerSpec extends NamelyTestSpec {
     // command handler
     val handler = new SidecarCommandHandler
 
-    // server
-    val conf = ConfigFactory
-      .parseString("akka.http.server.preview.enable-http2 = on")
-      .withFallback(ConfigFactory.defaultApplication()).resolve()
-    val system = ActorSystem("HandlerService", conf)
+    // create server
     new HandlerServer().run()
 
     SECONDS.sleep(5)
