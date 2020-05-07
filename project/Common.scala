@@ -16,8 +16,6 @@ import sbt.plugins
 import sbt.url
 import sbt._
 import scoverage.ScoverageKeys.coverageExcludedPackages
-import scoverage.ScoverageKeys.coverageFailOnMinimum
-import scoverage.ScoverageKeys.coverageMinimum
 
 object Common extends AutoPlugin {
   override def requires: Plugins = plugins.JvmPlugin
@@ -34,9 +32,7 @@ object Common extends AutoPlugin {
       "",
       url("https://github.com/namely/chief-of-state/graphs/contributors")
     ),
-    description := "Chief of State",
-    coverageMinimum := 90,
-    coverageFailOnMinimum := true
+    description := "Chief of State"
   )
 
   override def projectSettings = Seq(
