@@ -1,16 +1,17 @@
 package com.namely.chiefofstate
 
 import sbt._
+import com.lightbend.lagom.core.LagomVersion
 
 object Dependencies {
   // Package versions
   object Versions {
     val scala213 = "2.13.1"
-    val lagomCommonVersion = "pr-81-420"
+    val lagomCommonVersion = "0.0.21"
     val lagomOpenApiVersion = "1.1.0"
     val swaggerAnnotationsVersion = "2.1.1"
     val kanelaAgentVersion = "1.0.3"
-    val akkaVersion = "2.6.4"
+    val akkaVersion: String = LagomVersion.akka
     val silencerVersion = "1.6.0"
   }
 

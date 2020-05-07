@@ -14,16 +14,19 @@ import scalapb.GeneratedMessageCompanion
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class SidecarServiceImpl(actorSystem: ActorSystem, clusterSharding: ClusterSharding, persistentEntityRegistry: PersistentEntityRegistry)(
+class ChiefOfStateServiceImpl(
+    actorSystem: ActorSystem,
+    clusterSharding: ClusterSharding,
+    persistentEntityRegistry: PersistentEntityRegistry,
+    aggregate: NamelyAggregate[Any]
+)(
     implicit ec: ExecutionContext
-) extends NamelyServiceImpl(clusterSharding, persistentEntityRegistry)
+) extends NamelyServiceImpl(clusterSharding, persistentEntityRegistry, aggregate)
     with ChiefOfStateService {
 
   override def handleCommand(): ServiceCall[NotUsed, String] = ServiceCall { _ =>
     Future.successful("")
   }
-
-  override def aggregateRoot: NamelyAggregate[_] = new SidecarAggregate(actorSystem)
 
   override def aggregateStateCompanion: GeneratedMessageCompanion[_ <: GeneratedMessage] = Any
 }

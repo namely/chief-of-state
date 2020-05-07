@@ -6,14 +6,16 @@ import akka.grpc.scaladsl.Metadata
 import com.google.protobuf.any.Any
 import com.namely.lagom.NamelyAggregate
 import com.namely.lagom.NamelyGrpcServiceImpl
-import com.namely.protobuf.chief_of_state.service.{AbstractChiefOfStateServicePowerApiRouter, ProcessCommandRequest, ProcessCommandResponse}
+import com.namely.protobuf.chief_of_state.service.AbstractChiefOfStateServicePowerApiRouter
+import com.namely.protobuf.chief_of_state.service.ProcessCommandRequest
+import com.namely.protobuf.chief_of_state.service.ProcessCommandResponse
 import scalapb.GeneratedMessage
 import scalapb.GeneratedMessageCompanion
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class SidecarGrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding)(implicit ec: ExecutionContext)
+class ChiefOfStateGrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding)(implicit ec: ExecutionContext)
     extends AbstractChiefOfStateServicePowerApiRouter(sys)
     with NamelyGrpcServiceImpl {
 
@@ -24,7 +26,7 @@ class SidecarGrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding)
     )
   }
 
-  override def aggregateRoot: NamelyAggregate[_] = new SidecarAggregate(sys)
+  override def aggregateRoot: NamelyAggregate[_] = new ChiefOfStateAggregate(sys)
 
   override def aggregateStateCompanion: GeneratedMessageCompanion[_ <: GeneratedMessage] = Any
 }

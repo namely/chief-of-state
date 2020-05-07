@@ -1,5 +1,4 @@
 import com.namely.chiefofstate.Dependencies
-import com.namely.chiefofstate.LagomAkka
 import com.namely.chiefofstate.LagomApi
 import com.namely.chiefofstate.LagomImpl
 import play.grpc.gen.scaladsl.PlayScalaClientCodeGenerator
@@ -16,7 +15,6 @@ lazy val root = project
 lazy val api = project
   .in(file("api"))
   .enablePlugins(LagomApi)
-  .enablePlugins(LagomAkka)
   .settings(
     name := "api",
     coverageExcludedPackages := "<empty>;com.namely.chiefofstate.ChiefOfStateService;"
@@ -27,7 +25,6 @@ lazy val service = project
   .enablePlugins(LagomScala)
   .enablePlugins(JavaAppPackaging, JavaAgent)
   .enablePlugins(LagomImpl)
-  .enablePlugins(LagomAkka)
   .settings(
     name := "service",
     coverageExcludedPackages := "<empty>;com.namely.chiefofstate.SidecarAggregate;" +
