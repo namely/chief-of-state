@@ -1,24 +1,21 @@
-package com.namely.reportbuilder
+package com.namely.chiefofstate
 
 import com.namely.chiefofstate.Dependencies.Versions
-
 import sbt.Keys.credentials
 import sbt.Keys.isSnapshot
 import sbt.Keys.resolvers
-import sbt.Keys.version
 import sbt.Keys._
 import sbt.AutoPlugin
 import sbt.Credentials
+import sbt.CrossVersion
 import sbt.Developer
 import sbt.Plugins
 import sbt.Resolver
+import sbt.compilerPlugin
 import sbt.plugins
 import sbt.url
 import sbt._
-
 import scoverage.ScoverageKeys.coverageExcludedPackages
-import scoverage.ScoverageKeys.coverageFailOnMinimum
-import scoverage.ScoverageKeys.coverageMinimum
 
 object Common extends AutoPlugin {
   override def requires: Plugins = plugins.JvmPlugin
@@ -35,16 +32,15 @@ object Common extends AutoPlugin {
       "",
       url("https://github.com/namely/chief-of-state/graphs/contributors")
     ),
-    description := "Chief of State",
-    coverageMinimum := 90,
-    coverageFailOnMinimum := true
+    description := "Chief of State"
   )
 
   override def projectSettings = Seq(
     scalacOptions ++= Seq(
       "-Xfatal-warnings",
       "-deprecation",
-      "-Xlint"
+      "-Xlint",
+      "-P:silencer:globalFilters=Unused import;deprecated"
     ),
     credentials ++= Seq(
       Credentials(
@@ -55,16 +51,31 @@ object Common extends AutoPlugin {
       )
     ),
     resolvers ++= Seq(
-      "Artifactory Realm".at("https://jfrog.namely.land/artifactory/data-sbt-release/"),
+      "Artifactory Realm".at(
+        "https://jfrog.namely.land/artifactory/data-sbt-release/"
+      ),
       "Artima Maven Repository".at("https://repo.artima.com/releases"),
       Resolver.jcenterRepo,
-      "Sonatype OSS Snapshots".at("https://oss.sonatype.org/content/repositories/snapshots")
+      "Sonatype OSS Snapshots".at(
+        "https://oss.sonatype.org/content/repositories/snapshots"
+      )
     ) ++ (
       if (isSnapshot.value) {
-        Seq("Artifactory Realm Snapshot".at("https://jfrog.namely.land/artifactory/data-sbt-snapshot/"))
+        Seq(
+          "Artifactory Realm Snapshot"
+            .at("https://jfrog.namely.land/artifactory/data-sbt-snapshot/")
+        )
       } else {
         Seq()
       }
+    ),
+    libraryDependencies ++= Seq(
+      compilerPlugin(
+        ("com.github.ghik" % "silencer-plugin" % Versions.silencerVersion)
+          .cross(CrossVersion.full)
+      ),
+      ("com.github.ghik" % "silencer-lib" % Versions.silencerVersion % Provided)
+        .cross(CrossVersion.full)
     ),
     coverageExcludedPackages := "<empty>;com.namely.protobuf.*"
   )

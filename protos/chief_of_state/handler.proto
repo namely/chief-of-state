@@ -7,8 +7,8 @@ option java_package = "com.namely.protobuf.chief_of_state";
 import "google/protobuf/any.proto";
 
 service HandlerService {
-    rpc HandleCommand (HandleCommandRequest) returns (HandleCommandResponse);
-    rpc HandleEvent (HandleEventRequest) returns (HandleEventResponse);
+    rpc HandleCommand (HandleCommandRequest) returns (HandleCommandResponse) {}
+    rpc HandleEvent (HandleEventRequest) returns (HandleEventResponse) {}
 }
 
 message HandleCommandRequest {

@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package chief_of_state;
+
+option java_package = "com.namely.protobuf.chief_of_state";
+
+import "google/protobuf/timestamp.proto";
+
+message UserState {
+    string company_uuid = 1;
+    string user_id= 2;
+    string name = 3;
+}
+
+message CreateUser {
+    string company_uuid = 1;
+    string user_id= 2;
+    string name = 3;
+}
+
+message UserCreated {
+    string company_uuid = 1;
+    string user_id= 2;
+    string name = 3;
+}
