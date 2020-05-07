@@ -23,6 +23,14 @@ class ChiefOfStateCommandHandler(actorSystem: ActorSystem, gRpcClient: HandlerSe
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
+  /**
+   * Handle command
+   *
+   * @param command
+   * @param priorState
+   * @param priorEventMeta
+   * @return
+   */
   override def handle(command: NamelyCommand, priorState: Any, priorEventMeta: EventMeta): Try[CommandHandlerResult] = {
     Try(
       gRpcClient.handleCommand(
