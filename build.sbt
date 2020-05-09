@@ -5,7 +5,7 @@ import play.grpc.gen.scaladsl.PlayScalaClientCodeGenerator
 import play.grpc.gen.scaladsl.PlayScalaServerCodeGenerator
 
 enablePlugins(DockerComposePlugin)
-dockerImageCreationTask := (publishLocal in Docker).value
+dockerImageCreationTask := (Docker / publishLocal in `chiefofstate`).value
 
 lazy val root = project
   .in(file("."))
@@ -32,7 +32,8 @@ lazy val `chiefofstate` = project
   .enablePlugins(JavaAppPackaging, JavaAgent)
   .enablePlugins(LagomImpl)
   .settings(
-    name := "chiefofstate"
+    name := "chiefofstate",
+    javaAgents += Dependencies.Compile.kanelaAgent,
   )
   .dependsOn(
     protogen,
