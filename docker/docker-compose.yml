@@ -55,6 +55,8 @@ services:
       - 9102:9102
       - 9095:9095
     environment:
+      HANDLER_SERVICE_HOST: 0.0.0.0
+      HANDLER_SERVICE_PORT: 8080
       TRACE_HOST: tracer
       TRACE_PORT: 14268
       SERVICE_NAME: "chiefofstate"
