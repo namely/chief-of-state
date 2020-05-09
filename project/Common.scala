@@ -1,5 +1,9 @@
 package com.namely.chiefofstate
 
+import com.lightbend.lagom.sbt.LagomPlugin.autoImport.lagomCassandraEnabled
+import com.lightbend.lagom.sbt.LagomPlugin.autoImport.lagomKafkaEnabled
+import com.lightbend.lagom.sbt.LagomPlugin.autoImport.lagomServiceGatewayAddress
+import com.lightbend.lagom.sbt.LagomPlugin.autoImport.lagomServiceLocatorAddress
 import com.namely.chiefofstate.Dependencies.Versions
 import sbt.Keys.credentials
 import sbt.Keys.isSnapshot
@@ -36,11 +40,19 @@ object Common extends AutoPlugin {
   )
 
   override def projectSettings = Seq(
+    lagomCassandraEnabled in ThisBuild := false,
+    lagomKafkaEnabled in ThisBuild := false,
+    lagomServiceLocatorAddress in ThisBuild := "0.0.0.0",
+    lagomServiceGatewayAddress in ThisBuild := "0.0.0.0",
+    javaOptions ++= Seq(
+      "-Dpidfile.path=/dev/null"
+    ),
     scalacOptions ++= Seq(
       "-Xfatal-warnings",
       "-deprecation",
       "-Xlint",
-      "-P:silencer:globalFilters=Unused import;deprecated"
+      "-P:silencer:globalFilters=Unused import;deprecated",
+      "-P:silencer:globalFilters=Marked as deprecated in proto file;The Materializer now has all methods the ActorMaterializer used to have;Could not find any member to link;unbalanced or unclosed heading"
     ),
     credentials ++= Seq(
       Credentials(
@@ -50,6 +62,8 @@ object Common extends AutoPlugin {
         passwd = sys.env.getOrElse("JFROG_PASSWORD", "")
       )
     ),
+    version := sys.env.getOrElse("VERSION", "development"),
+    isSnapshot := !version.value.matches("^\\d+\\.\\d+\\.\\d+$"),
     resolvers ++= Seq(
       "Artifactory Realm".at(
         "https://jfrog.namely.land/artifactory/data-sbt-release/"

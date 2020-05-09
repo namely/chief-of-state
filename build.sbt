@@ -4,34 +4,35 @@ import com.namely.chiefofstate.LagomImpl
 import play.grpc.gen.scaladsl.PlayScalaClientCodeGenerator
 import play.grpc.gen.scaladsl.PlayScalaServerCodeGenerator
 
+enablePlugins(DockerComposePlugin)
+dockerImageCreationTask := (publishLocal in Docker).value
+
 lazy val root = project
   .in(file("."))
   .aggregate(
     api,
     protogen,
-    service
+    `chiefofstate`
+  )
+  .settings(
+    publishArtifact := false,
+    skip in publish := true
   )
 
 lazy val api = project
   .in(file("api"))
   .enablePlugins(LagomApi)
   .settings(
-    name := "api",
-    coverageExcludedPackages := "<empty>;com.namely.chiefofstate.ChiefOfStateService;"
+    name := "api"
   )
 
-lazy val service = project
+lazy val `chiefofstate` = project
   .in(file("service"))
   .enablePlugins(LagomScala)
   .enablePlugins(JavaAppPackaging, JavaAgent)
   .enablePlugins(LagomImpl)
   .settings(
-    name := "service",
-    coverageExcludedPackages := "<empty>;com.namely.chiefofstate.SidecarAggregate;" +
-      "com.namely.chiefofstate.SidecarApplicationLoader;" +
-      "com.namely.chiefofstate.SidecarServiceImpl;" +
-      "com.namely.chiefofstate.SidecarGrpcServiceImpl;" +
-      "com.namely.chiefofstate.HandlerClient;"
+    name := "chiefofstate"
   )
   .dependsOn(
     protogen,

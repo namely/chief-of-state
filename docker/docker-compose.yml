@@ -1,0 +1,56 @@
+version: '3.5'
+
+services:
+  postgres:
+    image: postgres
+    volumes:
+      - ../db:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "admin@namely.com"
+      PGADMIN_DEFAULT_PASSWORD: "admin"
+    ports:
+      - 5050:80
+
+  tracer:
+    image: jaegertracing/all-in-one:1.17
+    environment:
+      COLLECTOR_ZIPKIN_HTTP_PORT: 9411
+      LOG_LEVEL: DEBUG
+    ports:
+      - 16686:16686
+
+  prometheus:
+    image: prom/prometheus:v2.1.0
+    volumes:
+      - ../prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    ports:
+      - "9090:9090"
+
+  chiefofstate:
+    image: chiefofstate:0.4<localBuild>
+    hostname: "chiefofstate"
+    depends_on:
+      - postgres
+      - prometheus
+    ports:
+      - 9000:9000
+      - 9102:9102
+      - 9095:9095
+    environment:
+      TRACE_HOST: tracer
+      TRACE_PORT: 14268
+      SERVICE_NAME: "chiefofstate"
+      NAMELY_ENV: "dev"
+      TEAM_NAME: "data"
+      JAVA_OPTS: "-Ddb.default.url=jdbc:postgresql://postgres:5432/postgres -Ddb.default.username=postgres -Ddb.default.password=changeme"

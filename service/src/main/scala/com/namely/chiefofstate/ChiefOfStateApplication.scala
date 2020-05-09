@@ -1,8 +1,8 @@
 package com.namely.chiefofstate
 
-import akka.actor.ActorSystem
 import akka.actor.CoordinatedShutdown
 import akka.grpc.GrpcClientSettings
+import com.google.protobuf.any.Any
 import com.lightbend.lagom.scaladsl.akka.discovery.AkkaDiscoveryComponents
 import com.lightbend.lagom.scaladsl.api.Descriptor
 import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
@@ -14,19 +14,12 @@ import com.namely.lagom.NamelyAggregate
 import com.namely.lagom.NamelyCommandHandler
 import com.namely.lagom.NamelyEventHandler
 import com.namely.lagom.NamelyLagomApplication
-import com.softwaremill.macwire.wire
-import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.handler.HandlerService
 import com.namely.protobuf.chief_of_state.handler.HandlerServiceClient
-
-import scala.concurrent.ExecutionContextExecutor
+import com.softwaremill.macwire.wire
 
 abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends NamelyLagomApplication(context) {
-  // let us wire up the grpc client
-  private implicit val sys: ActorSystem = actorSystem
-  private implicit val dispatcher: ExecutionContextExecutor = actorSystem.dispatcher
 
-  private lazy val settings = GrpcClientSettings.usingServiceDiscovery(HandlerService.name)
+  private lazy val settings = GrpcClientSettings.fromConfig("chief_of_state.HandlerService")(actorSystem)
   lazy val handlerServiceClient: HandlerServiceClient = HandlerServiceClient(settings)
 
   //  Register a shutdown task to release resources of the client
