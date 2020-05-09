@@ -7,10 +7,10 @@ object Dependencies {
   // Package versions
   object Versions {
     val scala213 = "2.13.1"
-    val lagomCommonVersion = "0.0.21"
+    val lagomCommonVersion = "0.0.22"
     val lagomOpenApiVersion = "1.1.0"
     val swaggerAnnotationsVersion = "2.1.1"
-    val kanelaAgentVersion = "1.0.3"
+    val kanelaAgentVersion = "1.0.5"
     val akkaVersion: String = LagomVersion.akka
     val silencerVersion = "1.6.0"
   }
