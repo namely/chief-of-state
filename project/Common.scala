@@ -1,24 +1,21 @@
 package com.namely.chiefofstate
 
 import com.namely.chiefofstate.Dependencies.Versions
-import sbt.Keys.{credentials, isSnapshot, resolvers, _}
-import sbt.{
-  AutoPlugin,
-  Credentials,
-  CrossVersion,
-  Developer,
-  Plugins,
-  Resolver,
-  compilerPlugin,
-  plugins,
-  url,
-  _
-}
-import scoverage.ScoverageKeys.{
-  coverageExcludedPackages,
-  coverageFailOnMinimum,
-  coverageMinimum
-}
+import sbt.Keys.credentials
+import sbt.Keys.isSnapshot
+import sbt.Keys.resolvers
+import sbt.Keys._
+import sbt.AutoPlugin
+import sbt.Credentials
+import sbt.CrossVersion
+import sbt.Developer
+import sbt.Plugins
+import sbt.Resolver
+import sbt.compilerPlugin
+import sbt.plugins
+import sbt.url
+import sbt._
+import scoverage.ScoverageKeys.coverageExcludedPackages
 
 object Common extends AutoPlugin {
   override def requires: Plugins = plugins.JvmPlugin
@@ -35,13 +32,16 @@ object Common extends AutoPlugin {
       "",
       url("https://github.com/namely/chief-of-state/graphs/contributors")
     ),
-    description := "Chief of State",
-    coverageMinimum := 90,
-    coverageFailOnMinimum := true
+    description := "Chief of State"
   )
 
   override def projectSettings = Seq(
-    scalacOptions ++= Seq("-Xfatal-warnings", "-deprecation", "-Xlint"),
+    scalacOptions ++= Seq(
+      "-Xfatal-warnings",
+      "-deprecation",
+      "-Xlint",
+      "-P:silencer:globalFilters=Unused import;deprecated"
+    ),
     credentials ++= Seq(
       Credentials(
         realm = "Artifactory Realm",
