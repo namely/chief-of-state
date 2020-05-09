@@ -15,7 +15,7 @@
     <appender name="ASYNCJSON" class="net.logstash.logback.appender.LoggingEventAsyncDisruptorAppender">
         <appender class="ch.qos.logback.core.ConsoleAppender">
             <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-                <customFields>{"team": "${TEAM_NAME}", "service": "${SERVICE_NAME}"}</customFields>
+                <customFields>{"team": "${TEAM_NAME}", "service": "${SERVICE_NAME}", "powered_by": "chiefofstate"}</customFields>
                 <fieldNames>
                     <timestamp>timestamp</timestamp>
                 </fieldNames>
