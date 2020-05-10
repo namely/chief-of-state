@@ -2,7 +2,6 @@ package com.namely.chiefofstate
 
 import akka.actor.CoordinatedShutdown
 import akka.grpc.GrpcClientSettings
-import com.google.protobuf.any.Any
 import com.lightbend.lagom.scaladsl.akka.discovery.AkkaDiscoveryComponents
 import com.lightbend.lagom.scaladsl.api.Descriptor
 import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
@@ -15,6 +14,7 @@ import com.namely.lagom.NamelyCommandHandler
 import com.namely.lagom.NamelyEventHandler
 import com.namely.lagom.NamelyLagomApplication
 import com.namely.protobuf.chief_of_state.handler.HandlerServiceClient
+import com.namely.protobuf.chief_of_state.persistence.State
 import com.softwaremill.macwire.wire
 
 abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends NamelyLagomApplication(context) {
@@ -32,9 +32,9 @@ abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends
     }
 
   // wire up the various event and command handler
-  lazy val eventHandler: NamelyEventHandler[Any] = wire[ChiefOfStateEventHandler]
-  lazy val commandHandler: NamelyCommandHandler[Any] = wire[ChiefOfStateCommandHandler]
-  lazy val aggregate: NamelyAggregate[Any] = wire[ChiefOfStateAggregate]
+  lazy val eventHandler: NamelyEventHandler[State] = wire[ChiefOfStateEventHandler]
+  lazy val commandHandler: NamelyCommandHandler[State] = wire[ChiefOfStateCommandHandler]
+  lazy val aggregate: NamelyAggregate[State] = wire[ChiefOfStateAggregate]
 
   override def aggregateRoot: NamelyAggregate[_] = aggregate
 
