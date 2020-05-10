@@ -42,12 +42,12 @@
     <variable name="NAMELY_ENV" value="${NAMELY_ENV:-dev}"/>
     <if condition='p("NAMELY_ENV").equals("dev")'>
         <then>
-            <root level="DEBUG">
+            <root level="INFO">
                 <appender-ref ref="STDOUT"/>
             </root>
         </then>
         <else>
-            <root level="DEBUG">
+            <root level="INFO">
                 <appender-ref ref="ASYNCJSON"/>
             </root>
         </else>
