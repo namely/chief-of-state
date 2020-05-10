@@ -24,6 +24,7 @@ class ChiefOfStateGrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterShar
 
   override def processCommand(in: ProcessCommandRequest, metadata: Metadata): Future[ProcessCommandResponse] = {
 
+    //
     sendCommand[Any, State](clusterSharding, in.entityUuid, in.command.get, Map.empty[String, String]).map(
       (namelyState: NamelyState[State]) => {
         ProcessCommandResponse()
