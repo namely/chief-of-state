@@ -4,7 +4,7 @@ services:
   postgres:
     image: postgres
     volumes:
-      - ../db:/docker-entrypoint-initdb.d
+      - ./db:/docker-entrypoint-initdb.d
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
@@ -31,14 +31,14 @@ services:
   grafana:
     image: grafana/grafana
     volumes:
-    - ./grafana-prometheus.yml:/etc/grafana/provisioning/datasources/prometheus.yml
+      - ./docker/grafana-prometheus.yml:/etc/grafana/provisioning/datasources/prometheus.yml
     ports:
       - "3000:3000"
 
   prometheus:
     image: prom/prometheus:v2.1.0
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
     ports:
@@ -55,7 +55,7 @@ services:
       - 9102:9102
       - 9095:9095
     environment:
-      HANDLER_SERVICE_HOST: 0.0.0.0
+      HANDLER_SERVICE_HOST: host.docker.internal
       HANDLER_SERVICE_PORT: 8080
       TRACE_HOST: tracer
       TRACE_PORT: 14268

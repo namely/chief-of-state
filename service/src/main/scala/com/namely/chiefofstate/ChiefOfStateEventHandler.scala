@@ -10,10 +10,12 @@ import com.namely.protobuf.chief_of_state.handler.HandlerServiceClient
 import com.namely.protobuf.lagom.common.EventMeta
 import scalapb.GeneratedMessage
 
+import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+import scala.concurrent.duration._
 
 class ChiefOfStateEventHandler(actorSystem: ActorSystem, gRpcClient: HandlerServiceClient)
     extends NamelyEventHandler[Any](actorSystem) {
@@ -32,16 +34,13 @@ class ChiefOfStateEventHandler(actorSystem: ActorSystem, gRpcClient: HandlerServ
         throw new NamelyException(e.getMessage)
 
       case Success(eventualEventResponse: Future[HandleEventResponse]) =>
-        eventualEventResponse.value match {
-
-          case Some(triedResponse: Try[HandleEventResponse]) =>
-            triedResponse match {
-              case Failure(exception) => throw new NamelyException(exception.getMessage)
-              case Success(handleEventResponse: HandleEventResponse) => handleEventResponse.getResultingState
-            }
-
-          case None =>
-            throw new NamelyException(s"unable to handle event ${event.companion.getClass.getCanonicalName}")
+        Try {
+          // this is a hack for the meantime
+          //FIXME this is very bad
+          Await.result(eventualEventResponse, 5.seconds)
+        } match {
+          case Failure(exception) => throw new NamelyException(exception.getMessage)
+          case Success(handleEventResponse: HandleEventResponse) => handleEventResponse.getResultingState
         }
     }
   }
