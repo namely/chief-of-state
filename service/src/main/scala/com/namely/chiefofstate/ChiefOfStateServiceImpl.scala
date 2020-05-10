@@ -8,6 +8,7 @@ import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
 import com.namely.lagom.NamelyAggregate
 import com.namely.lagom.NamelyServiceImpl
+import com.namely.protobuf.chief_of_state.persistence.State
 import scalapb.GeneratedMessage
 import scalapb.GeneratedMessageCompanion
 
@@ -18,7 +19,7 @@ class ChiefOfStateServiceImpl(
     actorSystem: ActorSystem,
     clusterSharding: ClusterSharding,
     persistentEntityRegistry: PersistentEntityRegistry,
-    aggregate: NamelyAggregate[Any]
+    aggregate: NamelyAggregate[State]
 )(
     implicit ec: ExecutionContext
 ) extends NamelyServiceImpl(clusterSharding, persistentEntityRegistry, aggregate)
@@ -28,5 +29,5 @@ class ChiefOfStateServiceImpl(
     Future.successful("Welcome Chief Of State...")
   }
 
-  override def aggregateStateCompanion: GeneratedMessageCompanion[_ <: GeneratedMessage] = Any
+  override def aggregateStateCompanion: GeneratedMessageCompanion[_ <: GeneratedMessage] = State
 }
