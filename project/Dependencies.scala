@@ -13,6 +13,7 @@ object Dependencies {
     val kanelaAgentVersion = "1.0.5"
     val akkaVersion: String = LagomVersion.akka
     val silencerVersion = "1.6.0"
+    val kamonAkkaGrpcVersion = "0.0.9"
   }
 
   object Compile {
@@ -21,6 +22,7 @@ object Dependencies {
     val lagomOpenApi = "org.taymyr.lagom" %% "lagom-openapi-scala-api" % Versions.lagomOpenApiVersion
     val swaggerAnnotations = "io.swagger.core.v3" % "swagger-annotations" % Versions.swaggerAnnotationsVersion
     val kanelaAgent = "io.kamon" % "kanela-agent" % Versions.kanelaAgentVersion
+    val kamonAkkaGrpc = "com.github.nezasa" %% "kamon-akka-grpc" % Versions.kamonAkkaGrpcVersion intransitive()
   }
 
   object Runtime {

@@ -4,7 +4,7 @@ services:
   postgres:
     image: postgres
     volumes:
-      - ../db:/docker-entrypoint-initdb.d
+      - ./db:/docker-entrypoint-initdb.d
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
@@ -28,17 +28,24 @@ services:
     ports:
       - 16686:16686
 
+  grafana:
+    image: grafana/grafana
+    volumes:
+      - ./docker/grafana-prometheus.yml:/etc/grafana/provisioning/datasources/prometheus.yml
+    ports:
+      - "3000:3000"
+
   prometheus:
     image: prom/prometheus:v2.1.0
     volumes:
-      - ../prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
     ports:
       - "9090:9090"
 
   chiefofstate:
-    image: chiefofstate:0.4<localBuild>
+    image: chiefofstate:development<localBuild>
     hostname: "chiefofstate"
     depends_on:
       - postgres
@@ -48,9 +55,11 @@ services:
       - 9102:9102
       - 9095:9095
     environment:
+      HANDLER_SERVICE_HOST: host.docker.internal
+      HANDLER_SERVICE_PORT: 8080
       TRACE_HOST: tracer
       TRACE_PORT: 14268
       SERVICE_NAME: "chiefofstate"
       NAMELY_ENV: "dev"
       TEAM_NAME: "data"
-      JAVA_OPTS: "-Ddb.default.url=jdbc:postgresql://postgres:5432/postgres -Ddb.default.username=postgres -Ddb.default.password=changeme"
+      JAVA_OPTS: "-Ddb.default.url=jdbc:postgresql://postgres:5432/postgres -Ddb.default.username=postgres -Ddb.default.password=changeme -Dconfig.resource=docker.conf"

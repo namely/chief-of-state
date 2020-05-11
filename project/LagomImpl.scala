@@ -37,7 +37,8 @@ object LagomImpl extends AutoPlugin {
       Compile.lagomCommonUtil,
       Test.lagomCommonTestkit,
       Runtime.lagomCommonRuntime,
-      Test.akkaGrpcTestkit
+      Test.akkaGrpcTestkit,
+      Compile.kamonAkkaGrpc
     )
   )
 }
