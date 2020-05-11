@@ -11,7 +11,7 @@ todo:
 
 ## General variables
 
-| key | descr | default |
+| key | description | default |
 --- | --- | ---
 COS_ADDRESS | container host | 0.0.0.0
 COS_PORT | container port | 9000
@@ -26,19 +26,19 @@ HANDLER_SERVICE_HOST | address of the gRPC handler service | <none>
 HANDLER_SERVICE_PORT | port for the gRPC handler service | <none>
 COS_SERVICE_NAME | chief of state name in tracing | chiefofstate
 TEAM_NAME | |
-TRACE_HOST | Jager collector/agent host | localhost
+TRACE_HOST | Jaeger collector/agent host | localhost
 TRACE_PORT | Jaeger colletor/agent port | 14268
 
 ## Local dev options
 
-| key | descr | default |
+| key | description | default |
 --- | --- | ---
 COS_DOCKER_SERVICE_NAME | name of chief of state in your docker compose | chiefofstate
 COS_DOCKER_REPLICA_COUNT | wait for this many replicas before starting (not recommended to change) | 1
 
 ## Production k8s options
 
-| key | descr | default |
+| key | description | default |
 --- | --- | ---
 POD_IP | IP of the pod running chief of state (see note below) | <none>
 COS_KUBERNETES_APP_LABEL | k8s metadata app label (must match exactly) that lagom uses when bootstrapping the cluster to discover its peers | <none>
