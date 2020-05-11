@@ -2,6 +2,8 @@
 
 [![Build Status](https://drone.namely.land/api/badges/namely/chief-of-state/status.svg)](https://drone.namely.land/namely/chief-of-state)
 
+gRPC distributed event sourcing
+
 ## Notes
 
 todo:
@@ -12,37 +14,37 @@ todo:
 ## General variables
 
 | key | description | default |
---- | --- | ---
-COS_ADDRESS | container host | 0.0.0.0
-COS_PORT | container port | 9000
-COS_POSTGRES_USER | journal, snapshot and read side offsets store username | postgres
-COS_POSTGRES_PASSWORD | journal, snapshot and read side offsets store password | changeme
-COS_POSTGRES_HOST | journal, snapshot and read side offsets store host | localhost
-COS_POSTGRES_PORT | journal, snapshot and read side offsets store port | 5432
-COS_POSTGRES_DB | journal, snapshot and read side offsets store db name | postgres
-COS_POSTGRES_SCHEMA | journal, snapshot and read side offsets store db schema | public
-COS_KAFKA_BROKER | kafka broker | localhost:9092
-HANDLER_SERVICE_HOST | address of the gRPC handler service | <none>
-HANDLER_SERVICE_PORT | port for the gRPC handler service | <none>
-COS_SERVICE_NAME | chief of state name in tracing | chiefofstate
-TEAM_NAME | |
-TRACE_HOST | Jaeger collector/agent host | localhost
-TRACE_PORT | Jaeger colletor/agent port | 14268
+|--- | --- | --- |
+| COS_ADDRESS | container host | 0.0.0.0 |
+| COS_PORT | container port | 9000 |
+| COS_POSTGRES_USER | journal, snapshot and read side offsets store username | postgres |
+| COS_POSTGRES_PASSWORD | journal, snapshot and read side offsets store password | changeme |
+| COS_POSTGRES_HOST | journal, snapshot and read side offsets store host | localhost |
+| COS_POSTGRES_PORT | journal, snapshot and read side offsets store port | 5432 |
+| COS_POSTGRES_DB | journal, snapshot and read side offsets store db name | postgres |
+| COS_POSTGRES_SCHEMA | journal, snapshot and read side offsets store db schema | public |
+| COS_KAFKA_BROKER | kafka broker | localhost:9092 |
+| HANDLER_SERVICE_HOST | address of the gRPC handler service | <none> |
+| HANDLER_SERVICE_PORT | port for the gRPC handler service | <none> |
+| COS_SERVICE_NAME | chief of state name in tracing | chiefofstate |
+| TEAM_NAME | |
+| TRACE_HOST | Jaeger collector/agent host | localhost |
+| TRACE_PORT | Jaeger colletor/agent port | 14268 |
 
 ## Local dev options
 
 | key | description | default |
---- | --- | ---
-COS_DOCKER_SERVICE_NAME | name of chief of state in your docker compose | chiefofstate
-COS_DOCKER_REPLICA_COUNT | wait for this many replicas before starting (not recommended to change) | 1
+| --- | --- | --- |
+| COS_DOCKER_SERVICE_NAME | name of chief of state in your docker compose | chiefofstate |
+| COS_DOCKER_REPLICA_COUNT | wait for this many replicas before starting (not recommended to change) | 1 |
 
 ## Production k8s options
 
 | key | description | default |
---- | --- | ---
-POD_IP | IP of the pod running chief of state (see note below) | <none>
-COS_KUBERNETES_APP_LABEL | k8s metadata app label (must match exactly) that lagom uses when bootstrapping the cluster to discover its peers | <none>
-COS_KUBERNETES_REPLICA_COUNT | must match the replica count on your deployment | 1
+| --- | --- | --- |
+| POD_IP | IP of the pod running chief of state (see note below) | <none> |
+| COS_KUBERNETES_APP_LABEL | k8s metadata app label (must match exactly) that lagom uses when bootstrapping the cluster to discover its peers | <none> |
+| COS_KUBERNETES_REPLICA_COUNT | must match the replica count on your deployment | 1 |
 
 ### Kubernetes deployment
 
