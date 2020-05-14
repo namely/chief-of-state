@@ -5,7 +5,7 @@ import com.typesafe.config.ConfigException
 
 /**
  * hold the chief of state handler service setting set in  the configuration.
- * This class need to be kick started ob boot. When the configuration variables are not
+ * This class need to be kick started on boot. When the configuration variables are not set
  * an exception should be thrown forcing the implementor to set the appropriate value
  */
 case class ChiefOfStateHandlerSetting(stateProtoFQN: String, eventProtosFQNs: Seq[String])
