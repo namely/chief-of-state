@@ -22,8 +22,11 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-class ChiefOfStateCommandHandler(actorSystem: ActorSystem, gRpcClient: HandlerServiceClient)
-    extends NamelyCommandHandler[State](actorSystem) {
+class ChiefOfStateCommandHandler(
+    actorSystem: ActorSystem,
+    gRpcClient: HandlerServiceClient,
+    handlerSetting: ChiefOfStateHandlerSetting
+) extends NamelyCommandHandler[State](actorSystem) {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -80,8 +83,6 @@ class ChiefOfStateCommandHandler(actorSystem: ActorSystem, gRpcClient: HandlerSe
 
       case Success(future: Future[HandleCommandResponse]) =>
         Try {
-          // this is a hack for the meantime
-          //FIXME this is very bad.
           Await.result(future, Duration.Inf)
         } match {
           case Failure(exception) =>
@@ -102,13 +103,36 @@ class ChiefOfStateCommandHandler(actorSystem: ActorSystem, gRpcClient: HandlerSe
               case PersistAndReply(persistAndReply) =>
                 log.debug("[ChiefOfState]: command handler return successfully. An event will be persisted...")
 
-                Try(
-                  CommandHandlerResult()
-                    .withSuccessResult(
-                      SuccessResult()
-                        .withEvent(Any.pack(Event().withEvent(persistAndReply.getEvent)))
-                    )
-                )
+                val eventFQN: String = ChiefOfStateHelper.getProtoFullyQualifiedName(persistAndReply.getEvent)
+
+                log.debug(s"[ChiefOfState]: command handler event to persist $eventFQN")
+
+                if (handlerSetting.eventProtosFQNs.contains(eventFQN)) {
+                  log.debug(
+                    s"[ChiefOfState]: command handler event to perist $eventFQN is valid."
+                  )
+
+                  Try(
+                    CommandHandlerResult()
+                      .withSuccessResult(
+                        SuccessResult()
+                          .withEvent(Any.pack(Event().withEvent(persistAndReply.getEvent)))
+                      )
+                  )
+                } else {
+                  log.debug(
+                    s"[ChiefOfState]: command handler event to perist $eventFQN is not configured. Failing request"
+                  )
+
+                  Try(
+                    CommandHandlerResult()
+                      .withFailedResult(
+                        FailedResult()
+                          .withReason(new GrpcServiceException(Status.INVALID_ARGUMENT).toString)
+                          .withCause(FailureCause.ValidationError)
+                      )
+                  )
+                }
               case Reply(_) =>
                 log.debug("[ChiefOfState]: command handler return successfully. No event will be persisted...")
 
