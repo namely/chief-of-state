@@ -57,8 +57,8 @@ services:
     environment:
       HANDLER_SERVICE_HOST: host.docker.internal
       HANDLER_SERVICE_PORT: 8080
-      HANDLER_SERVICE_STATE_PROTO: "com.namely.protobuf.account.BankAccount"
-      HANDLER_SERVICE_EVENTS_PROTOS: "com.namely.protobuf.account.AccountOpened,com.namely.protobuf.account.MoneyTransferred"
+      HANDLER_SERVICE_STATE_PROTO: ""
+      HANDLER_SERVICE_EVENTS_PROTOS: ""
       TRACE_HOST: tracer
       TRACE_PORT: 14268
       SERVICE_NAME: "chiefofstate"
