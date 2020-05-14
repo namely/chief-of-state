@@ -1,17 +1,17 @@
-# Chief of State
+## Chief of State
 
 [![Build Status](https://drone.namely.land/api/badges/namely/chief-of-state/status.svg)](https://drone.namely.land/namely/chief-of-state)
 
 gRPC distributed event sourcing
 
-## Notes
+### Notes
 
 todo:
 
 - think about scaling out replicas in k8s (don't want to break the k8s replica)
 - kafka configs
 
-## General variables
+### General environment variable Settings
 
 | key | description | default |
 |--- | --- | --- |
@@ -26,19 +26,21 @@ todo:
 | COS_KAFKA_BROKER | kafka broker | localhost:9092 |
 | HANDLER_SERVICE_HOST | address of the gRPC handler service | <none> |
 | HANDLER_SERVICE_PORT | port for the gRPC handler service | <none> |
+| HANDLER_SERVICE_STATE_PROTO | handler service state proto message FQN (fully qualified name) `packagename.messagename` | <none> |
+| HANDLER_SERVICE_EVENTS_PROTOS | handler service events proto message FQN (fully qualified name) `packagename.messagename`. This will be a comma separated list of values | <none> |
 | COS_SERVICE_NAME | chief of state name in tracing | chiefofstate |
 | TEAM_NAME | |
 | TRACE_HOST | Jaeger collector/agent host | localhost |
 | TRACE_PORT | Jaeger colletor/agent port | 14268 |
 
-## Local dev options
+### Local dev options
 
 | key | description | default |
 | --- | --- | --- |
 | COS_DOCKER_SERVICE_NAME | name of chief of state in your docker compose | chiefofstate |
 | COS_DOCKER_REPLICA_COUNT | wait for this many replicas before starting (not recommended to change) | 1 |
 
-## Production k8s options
+### Production k8s options
 
 | key | description | default |
 | --- | --- | --- |
@@ -46,7 +48,7 @@ todo:
 | COS_KUBERNETES_APP_LABEL | k8s metadata app label (must match exactly) that lagom uses when bootstrapping the cluster to discover its peers | <none> |
 | COS_KUBERNETES_REPLICA_COUNT | must match the replica count on your deployment | 1 |
 
-### Kubernetes deployment
+#### Kubernetes deployment
 
 - Pod IP should be dynamic with a k8s enviornment setting, such as:
 
