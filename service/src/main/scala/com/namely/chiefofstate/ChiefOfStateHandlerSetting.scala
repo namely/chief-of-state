@@ -33,6 +33,7 @@ object ChiefOfStateHandlerSetting {
       .split(",")
       .toSeq
       .map(_.trim)
+      .filter(_.nonEmpty)
 
     if (stateProto.isEmpty || eventProtos.isEmpty)
       throw new RuntimeException("[ChiefOfState] handler service settings not properly set.")
