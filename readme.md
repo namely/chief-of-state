@@ -4,7 +4,7 @@
 
 gRPC distributed event sourcing
 
-###Notes
+### Notes
 
 todo:
 
