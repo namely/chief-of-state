@@ -26,7 +26,7 @@ class ChiefOfStateServiceImpl(
     with ChiefOfStateService {
 
   override def handleCommand(): ServiceCall[NotUsed, String] = ServiceCall { _ =>
-    Future.successful("Welcome Chief Of State...")
+    Future.successful("Welcome to Chief Of State. The gRPC distributed event sourcing application!!!")
   }
 
   override def aggregateStateCompanion: GeneratedMessageCompanion[_ <: GeneratedMessage] = State

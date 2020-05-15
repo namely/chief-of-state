@@ -14,6 +14,6 @@ trait ChiefOfStateService extends NamelyService {
   def handleCommand(): ServiceCall[NotUsed, String]
 
   override val routes: Seq[Descriptor.Call[_, _]] = Seq(
-    restCall(Method.GET, "/api/v1/sidecar", handleCommand _)
+    restCall(Method.GET, "/", handleCommand _)
   )
 }
