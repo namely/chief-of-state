@@ -2,7 +2,17 @@
 
 [![Build Status](https://drone.namely.land/api/badges/namely/chief-of-state/status.svg)](https://drone.namely.land/namely/chief-of-state)
 
-gRPC distributed event sourcing
+Chief-Of-State is a **_gRPC distributed event sourcing_** application that provides scalable, configurable, events and state management strategies to relieve this responsibility from the developers. Chief-Of-State is language agnostic, which means that services can be written in any language that supports gRPC. Chief-Of-State can be bundled as a sidecar to the application it is providing events and state management or run it on its own k8 pod. 
+
+Chief-Of-State heavily relies on the robustness of [lagom-common](https://github.com/namely/lagom-common). 
+
+## Features
+
+- Journal, Snapshot are serialized using google protocol buffer message format
+- All events, state and commands are defined using google protocol buffer message format
+- Additional meta data are provided to your events via the `EventMeta`.
+- Out of the box observability.
+- Out of the box configurable k8 deployment
 
 ### Notes
 
@@ -13,7 +23,7 @@ todo:
 
 ### Global environment variables
 
-| key | description | default |
+| environment variable | description | default |
 |--- | --- | --- |
 | COS_ADDRESS | container host | 0.0.0.0 |
 | COS_PORT | container port | 9000 |
@@ -35,14 +45,14 @@ todo:
 
 ### Local dev options
 
-| key | description | default |
+| environment variable | description | default |
 | --- | --- | --- |
 | COS_DOCKER_SERVICE_NAME | name of chief of state in your docker compose | chiefofstate |
 | COS_DOCKER_REPLICA_COUNT | wait for this many replicas before starting (not recommended to change) | 1 |
 
 ### Production k8s options
 
-| key | description | default |
+| environment variable | description | default |
 | --- | --- | --- |
 | POD_IP | IP of the pod running chief of state (see note below) | <none> |
 | COS_KUBERNETES_APP_LABEL | k8s metadata app label (must match exactly) that lagom uses when bootstrapping the cluster to discover its peers | <none> |
