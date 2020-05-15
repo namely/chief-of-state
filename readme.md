@@ -2,7 +2,11 @@
 
 [![Build Status](https://drone.namely.land/api/badges/namely/chief-of-state/status.svg)](https://drone.namely.land/namely/chief-of-state)
 
-Chief-Of-State is a **_gRPC distributed event sourcing_** application that provides scalable, configurable, events and state management strategies to relieve this responsibility from the developers. Chief-Of-State is language agnostic, which means that services can be written in any language that supports gRPC. Chief-Of-State can be bundled as a sidecar to the application it is providing events and state management or run it on its own k8 pod. 
+Chief-Of-State is a **_gRPC distributed event sourcing_** application that provides scalable, configurable, events and state management strategies to relieve this responsibility from the developers. 
+
+Chief-Of-State is language agnostic, which means that services can be written in any language that supports gRPC. 
+
+Chief-Of-State can be bundled as a sidecar to the application it is providing events and state management or run it on its own k8 pod. 
 
 Chief-Of-State heavily relies on the robustness of [lagom-common](https://github.com/namely/lagom-common). 
 
