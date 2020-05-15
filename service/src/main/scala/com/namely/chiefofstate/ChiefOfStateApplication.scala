@@ -9,6 +9,7 @@ import com.lightbend.lagom.scaladsl.server.LagomApplication
 import com.lightbend.lagom.scaladsl.server.LagomApplicationContext
 import com.lightbend.lagom.scaladsl.server.LagomApplicationLoader
 import com.lightbend.lagom.scaladsl.server.LagomServer
+import com.namely.chiefofstate.api.ChiefOfStateService
 import com.namely.lagom.NamelyAggregate
 import com.namely.lagom.NamelyCommandHandler
 import com.namely.lagom.NamelyEventHandler

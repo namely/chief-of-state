@@ -3,9 +3,9 @@ package com.namely.chiefofstate
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
-import com.google.protobuf.any.Any
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
+import com.namely.chiefofstate.api.ChiefOfStateService
 import com.namely.lagom.NamelyAggregate
 import com.namely.lagom.NamelyServiceImpl
 import com.namely.protobuf.chief_of_state.persistence.State

@@ -20,9 +20,12 @@ import sbt.plugins
 import sbt.url
 import sbt._
 import scoverage.ScoverageKeys.coverageExcludedPackages
+import scoverage.ScoverageKeys.coverageFailOnMinimum
+import scoverage.ScoverageKeys.coverageMinimum
 
 object Common extends AutoPlugin {
   override def requires: Plugins = plugins.JvmPlugin
+
   override def trigger = allRequirements
 
   override def globalSettings = Seq(
@@ -36,7 +39,9 @@ object Common extends AutoPlugin {
       "",
       url("https://github.com/namely/chief-of-state/graphs/contributors")
     ),
-    description := "Chief of State"
+    description := "Chief of State",
+    coverageMinimum := 80,
+    coverageFailOnMinimum := true
   )
 
   override def projectSettings = Seq(
@@ -91,6 +96,9 @@ object Common extends AutoPlugin {
       ("com.github.ghik" % "silencer-lib" % Versions.silencerVersion % Provided)
         .cross(CrossVersion.full)
     ),
-    coverageExcludedPackages := "<empty>;com.namely.protobuf.*"
+    coverageExcludedPackages := "<empty>;com.namely.protobuf.*;" +
+      "com.namely.protobuf.chief_of_state.*;" +
+      "com.namely.chiefofstate.ChiefOfStateServiceImpl;" +
+      "com.namely.chiefofstate.api.*"
   )
 }

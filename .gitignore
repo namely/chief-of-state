@@ -19,3 +19,4 @@ logs
 project/metals.sbt
 .protogen/
 .DS_Store
+protos/chief_of_state/target
