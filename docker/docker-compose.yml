@@ -24,7 +24,7 @@ services:
     image: jaegertracing/all-in-one:1.17
     environment:
       COLLECTOR_ZIPKIN_HTTP_PORT: 9411
-      LOG_LEVEL: DEBUG
+      LOG_LEVEL: INFO
     ports:
       - 16686:16686
 
@@ -55,6 +55,8 @@ services:
       - 9102:9102
       - 9095:9095
     environment:
+      COS_ADDRESS: "0.0.0.0"
+      COS_PORT: 9000
       HANDLER_SERVICE_HOST: host.docker.internal
       HANDLER_SERVICE_PORT: 8080
       TRACE_HOST: tracer
@@ -62,4 +64,10 @@ services:
       SERVICE_NAME: "chiefofstate"
       NAMELY_ENV: "dev"
       TEAM_NAME: "data"
-      JAVA_OPTS: "-Ddb.default.url=jdbc:postgresql://postgres:5432/postgres -Ddb.default.username=postgres -Ddb.default.password=changeme -Dconfig.resource=docker.conf"
+      COS_POSTGRES_USER: "postgres"
+      COS_POSTGRES_PASSWORD: "changeme"
+      COS_POSTGRES_HOST: "postgres"
+      COS_POSTGRES_PORT: 5432
+      COS_POSTGRES_DB: "postgres"
+      COS_POSTGRES_SCHEMA: "public"
+      JAVA_OPTS: "-Dconfig.resource=docker.conf"
