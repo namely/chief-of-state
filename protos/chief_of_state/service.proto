@@ -11,15 +11,15 @@ option csharp_namespace = "Namely.ChiefOfStateService.Grpc";
 import "google/protobuf/any.proto";
 
 service ChiefOfStateService {
-  rpc ProcessCommand(ProcessCommandRequest) returns (ProcessCommandResponse) {}
+    rpc ProcessCommand (ProcessCommandRequest) returns (ProcessCommandResponse);
 }
 
 message ProcessCommandRequest {
-  string entity_uuid = 1;
-  google.protobuf.Any command = 2;
+    string entity_uuid = 1;
+    google.protobuf.Any command = 2;
 }
 
 message ProcessCommandResponse {
-  google.protobuf.Any state = 1;
-  google.protobuf.Any meta = 2;
+    google.protobuf.Any state = 1;
+    google.protobuf.Any meta = 2;
 }
