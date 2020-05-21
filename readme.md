@@ -90,3 +90,8 @@ env:
 - name: TRACE_PORT
   value: "9080"
 ```
+
+### Sample Projects
+
+- [.NET Core](https://github.com/namely/cos-banking)
+- [Golang](https://github.com/namely/cos-go-sample)
