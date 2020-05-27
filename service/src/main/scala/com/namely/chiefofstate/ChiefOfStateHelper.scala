@@ -2,6 +2,9 @@ package com.namely.chiefofstate
 
 import com.google.protobuf.any.Any
 
+/**
+ * Utility methods
+ */
 object ChiefOfStateHelper {
 
   /**

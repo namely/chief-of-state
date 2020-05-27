@@ -1,7 +1,6 @@
 package com.namely.chiefofstate
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigException
+import com.typesafe.config.{Config, ConfigException}
 
 /**
  * hold the chief of state handler service setting set in  the configuration.

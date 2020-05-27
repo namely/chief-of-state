@@ -6,13 +6,9 @@ import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
 import com.namely.lagom.NamelyException
 import com.namely.lagom.testkit.NamelyTestSpec
-import com.namely.protobuf.chief_of_state.handler.HandleEventRequest
-import com.namely.protobuf.chief_of_state.handler.HandleEventResponse
-import com.namely.protobuf.chief_of_state.handler.HandlerServiceClient
-import com.namely.protobuf.chief_of_state.persistence.Event
-import com.namely.protobuf.chief_of_state.persistence.State
-import com.namely.protobuf.chief_of_state.tests.Account
-import com.namely.protobuf.chief_of_state.tests.AccountOpened
+import com.namely.protobuf.chief_of_state.handler.{HandleEventRequest, HandleEventResponse, HandlerServiceClient}
+import com.namely.protobuf.chief_of_state.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened}
 import com.namely.protobuf.lagom.common.EventMeta
 import io.grpc.Status
 import org.scalamock.scalatest.MockFactory
@@ -30,9 +26,8 @@ class ChiefOfStateEventHandlerSpec extends NamelyTestSpec with MockFactory {
       val accountNumber: String = "123445"
 
       val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
-      val eventsProtos: Seq[String] = Seq(
-        ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance))
-      )
+      val eventsProtos: Seq[String] =
+        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
@@ -76,9 +71,8 @@ class ChiefOfStateEventHandlerSpec extends NamelyTestSpec with MockFactory {
       val accountNumber: String = "123445"
 
       val stateProto: String = "namely.rogue.state"
-      val eventsProtos: Seq[String] = Seq(
-        ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance))
-      )
+      val eventsProtos: Seq[String] =
+        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
@@ -122,9 +116,8 @@ class ChiefOfStateEventHandlerSpec extends NamelyTestSpec with MockFactory {
       val accountNumber: String = "123445"
 
       val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
-      val eventsProtos: Seq[String] = Seq(
-        ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance))
-      )
+      val eventsProtos: Seq[String] =
+        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
@@ -143,9 +136,7 @@ class ChiefOfStateEventHandlerSpec extends NamelyTestSpec with MockFactory {
             .withCurrentState(priorState.getCurrentState)
             .withMeta(Any.pack(eventMeta))
         )
-        .returning(
-          Future.failed(new GrpcServiceException(Status.INTERNAL))
-        )
+        .returning(Future.failed(new GrpcServiceException(Status.INTERNAL)))
 
       val eventHandler: ChiefOfStateEventHandler = new ChiefOfStateEventHandler(null, mockGrpcClient, handlerSetting)
       a[NamelyException] shouldBe thrownBy(
@@ -160,9 +151,8 @@ class ChiefOfStateEventHandlerSpec extends NamelyTestSpec with MockFactory {
       val accountNumber: String = "123445"
 
       val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
-      val eventsProtos: Seq[String] = Seq(
-        ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance))
-      )
+      val eventsProtos: Seq[String] =
+        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
@@ -181,9 +171,7 @@ class ChiefOfStateEventHandlerSpec extends NamelyTestSpec with MockFactory {
             .withCurrentState(priorState.getCurrentState)
             .withMeta(Any.pack(eventMeta))
         )
-        .throws(
-          new RuntimeException("broken")
-        )
+        .throws(new RuntimeException("broken"))
 
       val eventHandler: ChiefOfStateEventHandler = new ChiefOfStateEventHandler(null, mockGrpcClient, handlerSetting)
       a[NamelyException] shouldBe thrownBy(
