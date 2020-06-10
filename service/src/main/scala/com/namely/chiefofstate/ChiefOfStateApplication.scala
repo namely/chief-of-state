@@ -25,6 +25,9 @@ import com.softwaremill.macwire.wire
 abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends NamelyLagomApplication(context) {
   // $COVERAGE-OFF$
 
+  // wiring up the grpc client
+  private lazy val settings = GrpcClientSettings.fromConfig("chief_of_state.HandlerService")(actorSystem)
+
   lazy val handlerServiceClient: HandlerServiceClient = HandlerServiceClient(settings)
   // let us wire up the handler settings
   // this will break the application bootstrapping if the handler settings env variables are not set
@@ -39,9 +42,6 @@ abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends
   lazy val eventHandler: NamelyEventHandler[State] = wire[ChiefOfStateEventHandler]
   lazy val commandHandler: NamelyCommandHandler[State] = wire[ChiefOfStateCommandHandler]
   lazy val aggregate: NamelyAggregate[State] = wire[ChiefOfStateAggregate]
-
-  // wiring up the grpc client
-  private lazy val settings = GrpcClientSettings.fromConfig("chief_of_state.HandlerService")(actorSystem)
 
   override def aggregateRoot: NamelyAggregate[_] = aggregate
 
