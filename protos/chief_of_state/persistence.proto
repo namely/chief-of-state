@@ -7,7 +7,13 @@ option java_package = "com.namely.protobuf.chief_of_state";
 import "google/protobuf/any.proto";
 
 // Event wrapper
-message Event { google.protobuf.Any event = 1; }
+// Internal use
+message Event {
+    google.protobuf.Any event = 1;
+}
 
 // State wrapper
-message State { google.protobuf.Any current_state = 1; }
+// Internal use
+message State {
+    google.protobuf.Any current_state = 1;
+}

@@ -8,18 +8,14 @@ import com.namely.lagom.NamelyCommand
 import com.namely.lagom.testkit.NamelyTestSpec
 import com.namely.protobuf.chief_of_state.handler.HandleCommandResponse.ResponseType
 import com.namely.protobuf.chief_of_state.handler._
-import com.namely.protobuf.chief_of_state.persistence.Event
-import com.namely.protobuf.chief_of_state.persistence.State
-import com.namely.protobuf.chief_of_state.tests.Account
-import com.namely.protobuf.chief_of_state.tests.AccountOpened
-import com.namely.protobuf.chief_of_state.tests.OpenAccount
+import com.namely.protobuf.chief_of_state.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened, OpenAccount}
 import com.namely.protobuf.lagom.common._
 import io.grpc.Status
 import org.scalamock.scalatest.MockFactory
 
 import scala.concurrent.Future
-import scala.util.Success
-import scala.util.Try
+import scala.util.{Success, Try}
 
 class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
@@ -32,9 +28,8 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
       val accountNumber: String = "123445"
 
       val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
-      val eventsProtos: Seq[String] = Seq(
-        ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance))
-      )
+      val eventsProtos: Seq[String] =
+        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
@@ -78,9 +73,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
       val result: Try[CommandHandlerResult] = cmdhandler.handle(cmd, priorState, priorEventMeta)
       result shouldBe (Success(
         CommandHandlerResult()
-          .withSuccessResult(
-            SuccessResult().withEvent(Any.pack(Event().withEvent(Any.pack(event))))
-          )
+          .withSuccessResult(SuccessResult().withEvent(Any.pack(Event().withEvent(Any.pack(event)))))
       ))
     }
 
@@ -91,9 +84,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
       val accountNumber: String = "123445"
 
       val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
-      val eventsProtos: Seq[String] = Seq(
-        "namely.com.SomeEvent"
-      )
+      val eventsProtos: Seq[String] = Seq("namely.com.SomeEvent")
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
@@ -153,9 +144,8 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
       val accountNumber: String = "123445"
 
       val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
-      val eventsProtos: Seq[String] = Seq(
-        ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance))
-      )
+      val eventsProtos: Seq[String] =
+        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
@@ -183,9 +173,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
         .returning(
           Future.successful(
             HandleCommandResponse()
-              .withReply(
-                Reply.defaultInstance
-              )
+              .withReply(Reply.defaultInstance)
           )
         )
 
@@ -208,9 +196,8 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
       val accountNumber: String = "123445"
 
       val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
-      val eventsProtos: Seq[String] = Seq(
-        ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance))
-      )
+      val eventsProtos: Seq[String] =
+        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
@@ -262,9 +249,8 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
       val accountNumber: String = "123445"
 
       val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
-      val eventsProtos: Seq[String] = Seq(
-        ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance))
-      )
+      val eventsProtos: Seq[String] =
+        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
@@ -289,9 +275,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
             .withCurrentState(priorState.getCurrentState)
             .withMeta(Any.pack(priorEventMeta))
         )
-        .returning(
-          Future.failed(new GrpcServiceException(Status.NOT_FOUND))
-        )
+        .returning(Future.failed(new GrpcServiceException(Status.NOT_FOUND)))
 
       // let us execute the request
       val cmdhandler = new ChiefOfStateCommandHandler(null, mockGrpcClient, handlerSetting)
@@ -313,9 +297,8 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
       val accountNumber: String = "123445"
 
       val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
-      val eventsProtos: Seq[String] = Seq(
-        ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance))
-      )
+      val eventsProtos: Seq[String] =
+        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
@@ -340,9 +323,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
             .withCurrentState(priorState.getCurrentState)
             .withMeta(Any.pack(priorEventMeta))
         )
-        .throws(
-          new GrpcServiceException(Status.INVALID_ARGUMENT)
-        )
+        .throws(new GrpcServiceException(Status.INVALID_ARGUMENT))
 
       // let us execute the request
       val cmdhandler = new ChiefOfStateCommandHandler(null, mockGrpcClient, handlerSetting)
@@ -364,9 +345,8 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
       val accountNumber: String = "123445"
 
       val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
-      val eventsProtos: Seq[String] = Seq(
-        ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance))
-      )
+      val eventsProtos: Seq[String] =
+        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
@@ -391,9 +371,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
             .withCurrentState(priorState.getCurrentState)
             .withMeta(Any.pack(priorEventMeta))
         )
-        .throws(
-          new RuntimeException("broken")
-        )
+        .throws(new RuntimeException("broken"))
 
       // let us execute the request
       val cmdhandler = new ChiefOfStateCommandHandler(null, mockGrpcClient, handlerSetting)

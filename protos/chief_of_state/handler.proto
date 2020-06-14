@@ -10,32 +10,85 @@ option csharp_namespace = "Namely.ChiefOfStateService.Handler.Grpc";
 
 import "google/protobuf/any.proto";
 
+// Defines the interface that will be implemented by any application that
+// wants to keeps its events and state with ChiefOfState. So an application will
+// implement the gRPC server while ChiefOfState will make use the client side to interact.
 service HandlerService {
-  rpc HandleCommand(HandleCommandRequest) returns (HandleCommandResponse) {}
-  rpc HandleEvent(HandleEventRequest) returns (HandleEventResponse) {}
+    // Processes every command sent by ChiefOfState and return either a response
+    // containing an event to persist or a simple reply.
+    rpc HandleCommand (HandleCommandRequest) returns (HandleCommandResponse);
+    // Processes every event sent by ChiefOfState by applying the event to the
+    // current state to return a new state.
+    rpc HandleEvent (HandleEventRequest) returns (HandleEventResponse);
+    // Helps build a read model from persisted events and snpahots
+    rpc HandleReadSide (HandleReadSideRequest) returns (HandleReadSideResponse);
 }
 
+// HandleCommandRequest
 message HandleCommandRequest {
-  google.protobuf.Any command = 1;
-  google.protobuf.Any current_state = 2;
-  google.protobuf.Any meta = 3;
+    // the command to handle
+    google.protobuf.Any command = 1;
+    // the aggregate state at the moment of handling the command. This is the state
+    // before the command being handled.
+    google.protobuf.Any current_state = 2;
+    // additional meta data.
+    google.protobuf.Any meta = 3;
 }
 
+// HandleCommandResponse
 message HandleCommandResponse {
-  oneof response_type {
-    PersistAndReply persist_and_reply = 1;
-    Reply reply = 2;
-  };
+    oneof response_type {
+        // With this response type an event is persisted before
+        // a reply is sent back to the caller. The reply message that is sent after
+        // the event is persisted contains the resulting state after the event is handled
+        PersistAndReply persist_and_reply = 1;
+        // With this response the current state is sent back to the caller.
+        // This type of response is very useful to read-only requests that do not need
+        // a read side query.
+        Reply reply = 2;
+    };
+}
+// Reply results in current state to be returned
+message Reply {
 }
 
-message Reply {}
+// PersistAndReply contains the event to persist
+message PersistAndReply {
+    // event to persist
+    google.protobuf.Any event = 1;
+}
 
-message PersistAndReply { google.protobuf.Any event = 1; }
-
+// HandleEventRequest
 message HandleEventRequest {
-  google.protobuf.Any event = 1;
-  google.protobuf.Any current_state = 2;
-  google.protobuf.Any meta = 3;
+    // the event to handle
+    google.protobuf.Any event = 1;
+    // the state before the event is being handled.
+    google.protobuf.Any current_state = 2;
+    // additional meta data
+    google.protobuf.Any meta = 3;
 }
 
-message HandleEventResponse { google.protobuf.Any resulting_state = 1; }
+// HandleEventResponse contains the resulting state
+// after the event has been handled
+message HandleEventResponse {
+    // resulting state after the event has been handled
+    google.protobuf.Any resulting_state = 1;
+}
+
+// ReadSideRequest is used to push the ReadSideHandler
+// events and state persisted in the journal and the snapshot
+message HandleReadSideRequest {
+    // the persisted event
+    google.protobuf.Any event = 1;
+    // the resulting state associated to the persisted event
+    google.protobuf.Any state = 2;
+    // additional meta data
+    google.protobuf.Any meta = 3;
+}
+
+// ReadSideResponse is used by ChiefOfState to either
+// commit events read offset or not.
+message HandleReadSideResponse {
+    // states whether the read side rpc operation was successful or not
+    bool successful = 1;
+}
