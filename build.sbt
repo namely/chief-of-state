@@ -1,8 +1,5 @@
-import com.namely.chiefofstate.Dependencies
-import com.namely.chiefofstate.LagomApi
-import com.namely.chiefofstate.LagomImpl
-import play.grpc.gen.scaladsl.PlayScalaClientCodeGenerator
-import play.grpc.gen.scaladsl.PlayScalaServerCodeGenerator
+import com.namely.chiefofstate.{Dependencies, LagomAkka, LagomApi, LagomImpl, ProtocRuntime}
+import play.grpc.gen.scaladsl.{PlayScalaClientCodeGenerator, PlayScalaServerCodeGenerator}
 
 enablePlugins(DockerComposePlugin)
 dockerImageCreationTask := (Docker / publishLocal in `chiefofstate`).value
@@ -22,6 +19,7 @@ lazy val root = project
 lazy val api = project
   .in(file("api"))
   .enablePlugins(LagomApi)
+  .enablePlugins(LagomAkka)
   .settings(
     name := "api"
   )
@@ -31,6 +29,7 @@ lazy val `chiefofstate` = project
   .enablePlugins(LagomScala)
   .enablePlugins(JavaAppPackaging, JavaAgent)
   .enablePlugins(LagomImpl)
+  .enablePlugins(LagomAkka)
   .settings(
     name := "chiefofstate",
     javaAgents += Dependencies.Compile.kanelaAgent,
@@ -43,11 +42,8 @@ lazy val `chiefofstate` = project
 lazy val protogen = project
   .in(file(".protogen"))
   .enablePlugins(AkkaGrpcPlugin)
+  .enablePlugins(ProtocRuntime)
   .settings(
-    libraryDependencies ++= Seq(
-      Dependencies.Compile.lagomCommon,
-      Dependencies.Runtime.lagomCommonRuntime
-    ),
     name := "protogen",
   )
   .settings(

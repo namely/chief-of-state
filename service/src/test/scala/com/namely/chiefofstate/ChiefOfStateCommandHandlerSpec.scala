@@ -4,26 +4,26 @@ import java.util.UUID
 
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.lagom.NamelyCommand
-import com.namely.lagom.testkit.NamelyTestSpec
-import com.namely.protobuf.chief_of_state.handler.HandleCommandResponse.ResponseType
 import com.namely.protobuf.chief_of_state.handler._
+import com.namely.protobuf.chief_of_state.handler.HandleCommandResponse.ResponseType
 import com.namely.protobuf.chief_of_state.persistence.{Event, State}
 import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened, OpenAccount}
-import com.namely.protobuf.lagom.common._
 import io.grpc.Status
+import lagompb.core._
+import lagompb.testkit.LagompbSpec
+import lagompb.LagompbCommand
 import org.scalamock.scalatest.MockFactory
 
 import scala.concurrent.Future
 import scala.util.{Success, Try}
 
-class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
+class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
 
   "Chief-Of-State Command Handler" should {
 
     "handle command successfully as expected with an event to persist" in {
       val priorState: State = State.defaultInstance
-      val priorEventMeta: EventMeta = EventMeta.defaultInstance
+      val priorEventMeta: MetaData = MetaData.defaultInstance
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
@@ -33,7 +33,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
-      val cmd = NamelyCommand(
+      val cmd = LagompbCommand(
         Any.pack(
           OpenAccount()
             .withAccountNumber(accountNumber)
@@ -70,16 +70,16 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
       // let us execute the request
       val cmdhandler = new ChiefOfStateCommandHandler(null, mockGrpcClient, handlerSetting)
-      val result: Try[CommandHandlerResult] = cmdhandler.handle(cmd, priorState, priorEventMeta)
+      val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
       result shouldBe (Success(
-        CommandHandlerResult()
-          .withSuccessResult(SuccessResult().withEvent(Any.pack(Event().withEvent(Any.pack(event)))))
+        CommandHandlerResponse()
+          .withSuccessResponse(SuccessCommandHandlerResponse().withEvent(Any.pack(Event().withEvent(Any.pack(event)))))
       ))
     }
 
     "handle command when event type is not specified in handler settings as expected" in {
       val priorState: State = State.defaultInstance
-      val priorEventMeta: EventMeta = EventMeta.defaultInstance
+      val priorEventMeta: MetaData = MetaData.defaultInstance
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
@@ -88,7 +88,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
-      val cmd = NamelyCommand(
+      val cmd = LagompbCommand(
         Any.pack(
           OpenAccount()
             .withAccountNumber(accountNumber)
@@ -125,11 +125,11 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
       // let us execute the request
       val cmdhandler = new ChiefOfStateCommandHandler(null, mockGrpcClient, handlerSetting)
-      val result: Try[CommandHandlerResult] = cmdhandler.handle(cmd, priorState, priorEventMeta)
+      val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
       result shouldBe (Success(
-        CommandHandlerResult()
-          .withFailedResult(
-            FailedResult()
+        CommandHandlerResponse()
+          .withFailedResponse(
+            FailedCommandHandlerResponse()
               .withReason(new GrpcServiceException(Status.INVALID_ARGUMENT).toString)
               .withCause(FailureCause.ValidationError)
           )
@@ -139,7 +139,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
     "handle command successfully as expected with no event to persist" in {
       val priorState: State = State.defaultInstance
-      val priorEventMeta: EventMeta = EventMeta.defaultInstance
+      val priorEventMeta: MetaData = MetaData.defaultInstance
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
@@ -149,7 +149,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
-      val cmd = NamelyCommand(
+      val cmd = LagompbCommand(
         Any.pack(
           OpenAccount()
             .withAccountNumber(accountNumber)
@@ -179,11 +179,11 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
       // let us execute the request
       val cmdhandler = new ChiefOfStateCommandHandler(null, mockGrpcClient, handlerSetting)
-      val result: Try[CommandHandlerResult] = cmdhandler.handle(cmd, priorState, priorEventMeta)
+      val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
       result shouldBe (Success(
-        CommandHandlerResult()
-          .withSuccessResult(
-            SuccessResult()
+        CommandHandlerResponse()
+          .withSuccessResponse(
+            SuccessCommandHandlerResponse()
               .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
           )
       ))
@@ -191,7 +191,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
     "handle wrong successful response as expected" in {
       val priorState: State = State.defaultInstance
-      val priorEventMeta: EventMeta = EventMeta.defaultInstance
+      val priorEventMeta: MetaData = MetaData.defaultInstance
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
@@ -201,7 +201,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
-      val cmd = NamelyCommand(
+      val cmd = LagompbCommand(
         Any.pack(
           OpenAccount()
             .withAccountNumber(accountNumber)
@@ -231,11 +231,11 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
       // let us execute the request
       val cmdhandler = new ChiefOfStateCommandHandler(null, mockGrpcClient, handlerSetting)
-      val result: Try[CommandHandlerResult] = cmdhandler.handle(cmd, priorState, priorEventMeta)
+      val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
       result shouldBe (Success(
-        CommandHandlerResult()
-          .withFailedResult(
-            FailedResult()
+        CommandHandlerResponse()
+          .withFailedResponse(
+            FailedCommandHandlerResponse()
               .withReason(new GrpcServiceException(Status.INTERNAL).toString)
               .withCause(FailureCause.InternalError)
           )
@@ -244,7 +244,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
     "handle failed response as expected" in {
       val priorState: State = State.defaultInstance
-      val priorEventMeta: EventMeta = EventMeta.defaultInstance
+      val priorEventMeta: MetaData = MetaData.defaultInstance
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
@@ -254,7 +254,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
-      val cmd = NamelyCommand(
+      val cmd = LagompbCommand(
         Any.pack(
           OpenAccount()
             .withAccountNumber(accountNumber)
@@ -279,11 +279,11 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
       // let us execute the request
       val cmdhandler = new ChiefOfStateCommandHandler(null, mockGrpcClient, handlerSetting)
-      val result: Try[CommandHandlerResult] = cmdhandler.handle(cmd, priorState, priorEventMeta)
+      val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
       result shouldBe (Success(
-        CommandHandlerResult()
-          .withFailedResult(
-            FailedResult()
+        CommandHandlerResponse()
+          .withFailedResponse(
+            FailedCommandHandlerResponse()
               .withReason(new GrpcServiceException(Status.UNAVAILABLE).toString)
               .withCause(FailureCause.InternalError)
           )
@@ -292,7 +292,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
     "handle grpc exception sent by command handler as expected" in {
       val priorState: State = State.defaultInstance
-      val priorEventMeta: EventMeta = EventMeta.defaultInstance
+      val priorEventMeta: MetaData = MetaData.defaultInstance
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
@@ -302,7 +302,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
-      val cmd = NamelyCommand(
+      val cmd = LagompbCommand(
         Any.pack(
           OpenAccount()
             .withAccountNumber(accountNumber)
@@ -327,11 +327,11 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
       // let us execute the request
       val cmdhandler = new ChiefOfStateCommandHandler(null, mockGrpcClient, handlerSetting)
-      val result: Try[CommandHandlerResult] = cmdhandler.handle(cmd, priorState, priorEventMeta)
+      val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
       result shouldBe (Success(
-        CommandHandlerResult()
-          .withFailedResult(
-            FailedResult()
+        CommandHandlerResponse()
+          .withFailedResponse(
+            FailedCommandHandlerResponse()
               .withReason(Status.INVALID_ARGUMENT.toString)
               .withCause(FailureCause.InternalError)
           )
@@ -340,7 +340,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
     "handle broken command handler as expected" in {
       val priorState: State = State.defaultInstance
-      val priorEventMeta: EventMeta = EventMeta.defaultInstance
+      val priorEventMeta: MetaData = MetaData.defaultInstance
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
@@ -350,7 +350,7 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
-      val cmd = NamelyCommand(
+      val cmd = LagompbCommand(
         Any.pack(
           OpenAccount()
             .withAccountNumber(accountNumber)
@@ -375,11 +375,11 @@ class ChiefOfStateCommandHandlerSpec extends NamelyTestSpec with MockFactory {
 
       // let us execute the request
       val cmdhandler = new ChiefOfStateCommandHandler(null, mockGrpcClient, handlerSetting)
-      val result: Try[CommandHandlerResult] = cmdhandler.handle(cmd, priorState, priorEventMeta)
+      val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
       result shouldBe (Success(
-        CommandHandlerResult()
-          .withFailedResult(
-            FailedResult()
+        CommandHandlerResponse()
+          .withFailedResponse(
+            FailedCommandHandlerResponse()
               .withReason(
                 new GrpcServiceException(
                   Status.INTERNAL.withDescription(

@@ -3,16 +3,16 @@ package com.namely.chiefofstate
 import akka.actor.ActorSystem
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.lagom._
-import com.namely.protobuf.chief_of_state.handler.HandleCommandResponse.ResponseType._
 import com.namely.protobuf.chief_of_state.handler.{HandleCommandRequest, HandleCommandResponse, HandlerServiceClient}
+import com.namely.protobuf.chief_of_state.handler.HandleCommandResponse.ResponseType._
 import com.namely.protobuf.chief_of_state.persistence.{Event, State}
-import com.namely.protobuf.lagom.common._
 import io.grpc.Status
+import lagompb.{LagompbCommand, LagompbCommandHandler}
+import lagompb.core._
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -26,7 +26,7 @@ class ChiefOfStateCommandHandler(
     actorSystem: ActorSystem,
     gRpcClient: HandlerServiceClient,
     handlerSetting: ChiefOfStateHandlerSetting
-) extends NamelyCommandHandler[State](actorSystem) {
+) extends LagompbCommandHandler[State](actorSystem) {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -39,10 +39,10 @@ class ChiefOfStateCommandHandler(
    * @return
    */
   override def handle(
-      command: NamelyCommand,
+      command: LagompbCommand,
       priorState: State,
-      priorEventMeta: EventMeta
-  ): Try[CommandHandlerResult] = {
+      priorEventMeta: MetaData
+  ): Try[CommandHandlerResponse] = {
     Try(
       gRpcClient.handleCommand(
         HandleCommandRequest()
@@ -56,9 +56,9 @@ class ChiefOfStateCommandHandler(
         exception match {
           case e: GrpcServiceException =>
             Try(
-              CommandHandlerResult()
-                .withFailedResult(
-                  FailedResult()
+              CommandHandlerResponse()
+                .withFailedResponse(
+                  FailedCommandHandlerResponse()
                     .withReason(e.status.toString)
                     .withCause(FailureCause.InternalError)
                 )
@@ -66,9 +66,9 @@ class ChiefOfStateCommandHandler(
 
           case _ =>
             Try(
-              CommandHandlerResult()
-                .withFailedResult(
-                  FailedResult()
+              CommandHandlerResponse()
+                .withFailedResponse(
+                  FailedCommandHandlerResponse()
                     .withReason(
                       new GrpcServiceException(
                         Status.INTERNAL.withDescription(
@@ -89,9 +89,9 @@ class ChiefOfStateCommandHandler(
             // this situation will never occur but for the sake of syntax
             log.error(s"[ChiefOfState]: unable to retrieve command handler response due to ${exception.getMessage}")
             Try(
-              CommandHandlerResult()
-                .withFailedResult(
-                  FailedResult()
+              CommandHandlerResponse()
+                .withFailedResponse(
+                  FailedCommandHandlerResponse()
                     .withReason(new GrpcServiceException(Status.UNAVAILABLE).toString)
                     .withCause(FailureCause.InternalError)
                 )
@@ -109,9 +109,9 @@ class ChiefOfStateCommandHandler(
                   log.debug(s"[ChiefOfState]: command handler event to perist $eventFQN is valid.")
 
                   Try(
-                    CommandHandlerResult()
-                      .withSuccessResult(
-                        SuccessResult()
+                    CommandHandlerResponse()
+                      .withSuccessResponse(
+                        SuccessCommandHandlerResponse()
                           .withEvent(Any.pack(Event().withEvent(persistAndReply.getEvent)))
                       )
                   )
@@ -121,9 +121,9 @@ class ChiefOfStateCommandHandler(
                   )
 
                   Try(
-                    CommandHandlerResult()
-                      .withFailedResult(
-                        FailedResult()
+                    CommandHandlerResponse()
+                      .withFailedResponse(
+                        FailedCommandHandlerResponse()
                           .withReason(new GrpcServiceException(Status.INVALID_ARGUMENT).toString)
                           .withCause(FailureCause.ValidationError)
                       )
@@ -133,9 +133,9 @@ class ChiefOfStateCommandHandler(
                 log.debug("[ChiefOfState]: command handler return successfully. No event will be persisted...")
 
                 Try(
-                  CommandHandlerResult()
-                    .withSuccessResult(
-                      SuccessResult()
+                  CommandHandlerResponse()
+                    .withSuccessResponse(
+                      SuccessCommandHandlerResponse()
                         .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
                     )
                 )
@@ -144,9 +144,9 @@ class ChiefOfStateCommandHandler(
                 log.debug("[ChiefOfState]: command handler return weird successful response...")
 
                 Try(
-                  CommandHandlerResult()
-                    .withFailedResult(
-                      FailedResult()
+                  CommandHandlerResponse()
+                    .withFailedResponse(
+                      FailedCommandHandlerResponse()
                         .withReason(new GrpcServiceException(Status.INTERNAL).toString)
                         .withCause(FailureCause.InternalError)
                     )

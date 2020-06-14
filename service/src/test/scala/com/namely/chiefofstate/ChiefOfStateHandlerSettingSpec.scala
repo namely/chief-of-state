@@ -1,19 +1,11 @@
 package com.namely.chiefofstate
 
-import com.namely.lagom.testkit.NamelyTestSpec
-import com.typesafe.config.{Config, ConfigException, ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import lagompb.testkit.LagompbSpec
 
-class ChiefOfStateHandlerSettingSpec extends NamelyTestSpec {
+class ChiefOfStateHandlerSettingSpec extends LagompbSpec {
 
   "Chief-Of-State handler settings" should {
-
-    "fail to load settings because env variable are not set" in {
-
-      an[ConfigException.UnresolvedSubstitution] shouldBe thrownBy {
-        val config: Config = ConfigFactory.load()
-        ChiefOfStateHandlerSetting(config)
-      }
-    }
 
     "fail to load settings because env variables not set properly" in {
       val config: Config = ConfigFactory.parseResources("handler-settings.conf").resolve()
