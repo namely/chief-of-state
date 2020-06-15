@@ -1,55 +1,34 @@
-import com.namely.chiefofstate.Dependencies
-import com.namely.chiefofstate.LagomApi
-import com.namely.chiefofstate.LagomImpl
-import play.grpc.gen.scaladsl.PlayScalaClientCodeGenerator
-import play.grpc.gen.scaladsl.PlayScalaServerCodeGenerator
+import com.namely.chiefofstate.{Dependencies, LagomAkka, LagomApi, LagomImpl, ProtocRuntime}
+import play.grpc.gen.scaladsl.{PlayScalaClientCodeGenerator, PlayScalaServerCodeGenerator}
 
 enablePlugins(DockerComposePlugin)
 dockerImageCreationTask := (Docker / publishLocal in `chiefofstate`).value
 
 lazy val root = project
   .in(file("."))
-  .aggregate(
-    api,
-    protogen,
-    `chiefofstate`
-  )
-  .settings(
-    publishArtifact := false,
-    skip in publish := true
-  )
+  .aggregate(api, protogen, `chiefofstate`)
+  .settings(publishArtifact := false, skip in publish := true)
 
 lazy val api = project
   .in(file("api"))
   .enablePlugins(LagomApi)
-  .settings(
-    name := "api"
-  )
+  .enablePlugins(LagomAkka)
+  .settings(name := "api")
 
 lazy val `chiefofstate` = project
   .in(file("service"))
   .enablePlugins(LagomScala)
   .enablePlugins(JavaAppPackaging, JavaAgent)
   .enablePlugins(LagomImpl)
-  .settings(
-    name := "chiefofstate",
-    javaAgents += Dependencies.Compile.kanelaAgent,
-  )
-  .dependsOn(
-    protogen,
-    api
-  )
+  .enablePlugins(LagomAkka)
+  .settings(name := "chiefofstate", javaAgents += Dependencies.Compile.kanelaAgent)
+  .dependsOn(protogen, api)
 
 lazy val protogen = project
   .in(file(".protogen"))
   .enablePlugins(AkkaGrpcPlugin)
-  .settings(
-    libraryDependencies ++= Seq(
-      Dependencies.Compile.lagomCommon,
-      Dependencies.Runtime.lagomCommonRuntime
-    ),
-    name := "protogen",
-  )
+  .enablePlugins(ProtocRuntime)
+  .settings(name := "protogen")
   .settings(
     inConfig(Compile)(
       Seq(
@@ -57,7 +36,7 @@ lazy val protogen = project
         PB.includePaths ++= Seq(file("protos/chief_of_state")),
         excludeFilter in PB.generate := new SimpleFileFilter(
           (f: File) => f.getAbsolutePath.contains("google/protobuf/")
-        ),
+        )
       )
     ),
     // Using Scala
@@ -65,7 +44,5 @@ lazy val protogen = project
     akkaGrpcExtraGenerators in Compile += PlayScalaServerCodeGenerator,
     akkaGrpcExtraGenerators in Compile += PlayScalaClientCodeGenerator,
     akkaGrpcCodeGeneratorSettings += "server_power_apis",
-    akkaGrpcCodeGeneratorSettings := akkaGrpcCodeGeneratorSettings.value.filterNot(
-      _ == "flat_package"
-    )
+    akkaGrpcCodeGeneratorSettings := akkaGrpcCodeGeneratorSettings.value.filterNot(_ == "flat_package")
   )

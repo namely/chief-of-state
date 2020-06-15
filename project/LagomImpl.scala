@@ -2,16 +2,10 @@ package com.namely.chiefofstate
 
 import com.lightbend.lagom.sbt.LagomImport._
 import com.lightbend.sbt.javaagent.JavaAgent.JavaAgentKeys.javaAgents
-import com.namely.chiefofstate.Dependencies.Compile
-import com.namely.chiefofstate.Dependencies.Runtime
-import com.namely.chiefofstate.Dependencies.Test
-import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerBaseImage
-import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerRepository
-import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
+import com.namely.chiefofstate.Dependencies.{Compile, Runtime, Test}
+import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.{dockerBaseImage, dockerRepository, dockerUsername}
 import sbt.Keys.libraryDependencies
-import sbt.AutoPlugin
-import sbt.Plugins
-import sbt.plugins
+import sbt.{plugins, AutoPlugin, Plugins}
 
 object LagomImpl extends AutoPlugin {
   override def requires: Plugins = plugins.JvmPlugin
@@ -28,10 +22,11 @@ object LagomImpl extends AutoPlugin {
       lagomScaladslAkkaDiscovery,
       lagomScaladslPersistenceJdbc,
       lagomScaladslCluster,
-      Compile.lagomCommon,
-      Compile.lagomCommonUtil,
-      Test.lagomCommonTestkit,
-      Runtime.lagomCommonRuntime,
+      Compile.lagompb,
+      Compile.lagompbReadSide,
+      Compile.scalapbCommon,
+      Runtime.lagompbRuntime,
+      Runtime.scalapbCommonProtos,
       Runtime.scalapbRuntime,
       Test.akkaGrpcTestkit,
       Compile.kamonAkkaGrpc

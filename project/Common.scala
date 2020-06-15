@@ -1,27 +1,15 @@
 package com.namely.chiefofstate
 
-import com.lightbend.lagom.sbt.LagomPlugin.autoImport.lagomCassandraEnabled
-import com.lightbend.lagom.sbt.LagomPlugin.autoImport.lagomKafkaEnabled
-import com.lightbend.lagom.sbt.LagomPlugin.autoImport.lagomServiceGatewayAddress
-import com.lightbend.lagom.sbt.LagomPlugin.autoImport.lagomServiceLocatorAddress
+import com.lightbend.lagom.sbt.LagomPlugin.autoImport.{
+  lagomCassandraEnabled,
+  lagomKafkaEnabled,
+  lagomServiceGatewayAddress,
+  lagomServiceLocatorAddress
+}
 import com.namely.chiefofstate.Dependencies.Versions
-import sbt.Keys.credentials
-import sbt.Keys.isSnapshot
-import sbt.Keys.resolvers
-import sbt.Keys._
-import sbt.AutoPlugin
-import sbt.Credentials
-import sbt.CrossVersion
-import sbt.Developer
-import sbt.Plugins
-import sbt.Resolver
-import sbt.compilerPlugin
-import sbt.plugins
-import sbt.url
-import sbt._
-import scoverage.ScoverageKeys.coverageExcludedPackages
-import scoverage.ScoverageKeys.coverageFailOnMinimum
-import scoverage.ScoverageKeys.coverageMinimum
+import sbt.Keys.{credentials, isSnapshot, resolvers, _}
+import sbt.{compilerPlugin, plugins, url, AutoPlugin, Credentials, CrossVersion, Developer, Plugins, Resolver, _}
+import scoverage.ScoverageKeys.{coverageExcludedPackages, coverageFailOnMinimum, coverageMinimum}
 
 object Common extends AutoPlugin {
   override def requires: Plugins = plugins.JvmPlugin
@@ -49,9 +37,7 @@ object Common extends AutoPlugin {
     lagomKafkaEnabled in ThisBuild := false,
     lagomServiceLocatorAddress in ThisBuild := "0.0.0.0",
     lagomServiceGatewayAddress in ThisBuild := "0.0.0.0",
-    javaOptions ++= Seq(
-      "-Dpidfile.path=/dev/null"
-    ),
+    javaOptions ++= Seq("-Dpidfile.path=/dev/null"),
     scalacOptions ++= Seq(
       "-Xfatal-warnings",
       "-deprecation",
@@ -70,14 +56,12 @@ object Common extends AutoPlugin {
     version := sys.env.getOrElse("VERSION", "development"),
     isSnapshot := !version.value.matches("^\\d+\\.\\d+\\.\\d+$"),
     resolvers ++= Seq(
-      "Artifactory Realm".at(
-        "https://jfrog.namely.land/artifactory/data-sbt-release/"
-      ),
+      "Artifactory Realm".at("https://jfrog.namely.land/artifactory/data-sbt-release/"),
       "Artima Maven Repository".at("https://repo.artima.com/releases"),
       Resolver.jcenterRepo,
-      "Sonatype OSS Snapshots".at(
-        "https://oss.sonatype.org/content/repositories/snapshots"
-      )
+      Resolver.sonatypeRepo("public"),
+      Resolver.sonatypeRepo("snapshots"),
+      "Sonatype OSS Snapshots".at("https://oss.sonatype.org/content/repositories/snapshots")
     ) ++ (
       if (isSnapshot.value) {
         Seq(

@@ -1,9 +1,9 @@
 package com.namely.chiefofstate
 
 import akka.actor.ActorSystem
-import com.namely.lagom.{NamelyAggregate, NamelyCommandHandler, NamelyEventHandler}
 import com.namely.protobuf.chief_of_state.persistence.State
 import com.typesafe.config.Config
+import lagompb.{LagompbAggregate, LagompbCommandHandler, LagompbEventHandler}
 import scalapb.GeneratedMessageCompanion
 
 /**
@@ -17,9 +17,9 @@ import scalapb.GeneratedMessageCompanion
 class ChiefOfStateAggregate(
     actorSystem: ActorSystem,
     config: Config,
-    commandHandler: NamelyCommandHandler[State],
-    eventHandler: NamelyEventHandler[State]
-) extends NamelyAggregate[State](actorSystem, config, commandHandler, eventHandler) {
+    commandHandler: LagompbCommandHandler[State],
+    eventHandler: LagompbEventHandler[State]
+) extends LagompbAggregate[State](actorSystem, commandHandler, eventHandler) {
   // $COVERAGE-OFF$
   override def aggregateName: String = "chiefOfState"
 

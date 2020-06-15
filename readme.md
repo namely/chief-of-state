@@ -11,7 +11,7 @@ Chief-Of-State is language agnostic, which means that services can be written in
 
 Chief-Of-State can be bundled as a sidecar to the application it is providing events and state management or run it on its own k8 pod. 
 
-Chief-Of-State heavily relies on the robustness of [lagom-common](https://github.com/namely/lagom-common). 
+Chief-Of-State heavily relies on the robustness of [lagom-PB](https://github.com/super-flat/lagom-pb). 
 
 ## Features
 
@@ -41,6 +41,15 @@ todo:
 | COS_POSTGRES_DB | journal, snapshot and read side offsets store db name | postgres |
 | COS_POSTGRES_SCHEMA | journal, snapshot and read side offsets store db schema | public |
 | COS_KAFKA_BROKER | kafka broker | localhost:9092 |
+| COS_EVENTS_BATCH_THRESHOLD | Number of Events to batch persist | 100 |
+| COS_NUM_SNAPSHOTS_TO_RETAIN | Number of Aggregate Snaphsot to persist to disk for swift recovery | 2 |
+| COS_ENABLE_READSIDE | turn on readside or not | false |
+| COS_READ_SIDE_OFFSET_DB_HOST | readside offset storage host | localhost |
+| COS_READ_SIDE_OFFSET_DB_PORT | readside offset storage port | 5432 |
+| COS_READ_SIDE_OFFSET_DB_USER | readside offset storage username | postgres |
+| COS_READ_SIDE_OFFSET_DB_PASSWORD | readside offset storage password | changeme |
+| COS_READ_SIDE_OFFSET_DB_SCHEMA | readside offset storage db scheme ? postgres |
+| COS_READ_SIDE_OFFSET_DB | readside offset storage db name | postgres |
 | HANDLER_SERVICE_HOST | address of the gRPC handler service | <none> |
 | HANDLER_SERVICE_PORT | port for the gRPC handler service | <none> |
 | HANDLER_SERVICE_STATE_PROTO | handler service state proto message FQN (fully qualified typeUrl). Format: `packagename.messagename` | <none> |
