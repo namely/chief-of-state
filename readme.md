@@ -48,7 +48,7 @@ todo:
 | COS_READ_SIDE_OFFSET_DB_PORT | readside offset storage port | 5432 |
 | COS_READ_SIDE_OFFSET_DB_USER | readside offset storage username | postgres |
 | COS_READ_SIDE_OFFSET_DB_PASSWORD | readside offset storage password | changeme |
-| COS_READ_SIDE_OFFSET_DB_SCHEMA | readside offset storage db scheme ? postgres |
+| COS_READ_SIDE_OFFSET_DB_SCHEMA | readside offset storage db scheme | postgres |
 | COS_READ_SIDE_OFFSET_DB | readside offset storage db name | postgres |
 | HANDLER_SERVICE_HOST | address of the gRPC handler service | <none> |
 | HANDLER_SERVICE_PORT | port for the gRPC handler service | <none> |
