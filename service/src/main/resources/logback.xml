@@ -25,11 +25,11 @@
     </appender>
 
     <!-- Set logging for all Play library classes to INFO -->
-    <logger name="play" level="ERROR"/>
+    <logger name="play" level="INFO"/>
     <!-- Set logging for all Akka library classes to INFO -->
     <logger name="akka" level="ERROR"/>
     <!-- Set logging for all Lagom library classes to INFO -->
-    <logger name="com.lightbend.lagom" level="ERROR"/>
+    <logger name="com.lightbend.lagom" level="INFO"/>
 
     <!-- Cassandra and the datastax driver are used by the Lagom event sourcing modules -->
     <logger name="org.apache.cassandra" level="ERROR"/>
