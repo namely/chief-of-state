@@ -27,8 +27,9 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 
 - Commands and Events handlers via gRPC
 
-- Read Side processor via gRPC (every persisted event is made available when the read side is trun on) with a powerful
-offset management residing in the Chief-Of-State readSide store (postgresql)
+- Read Side processor via gRPC (every persisted event is made available when the read side is turn on) 
+
+- Out of the box Read Side offset management residing in the Chief-Of-State readSide store (postgresql)
 
 - Out of the box observability.
 
