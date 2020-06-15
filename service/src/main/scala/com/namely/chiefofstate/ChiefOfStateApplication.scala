@@ -54,8 +54,10 @@ abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends
     serverFor[ChiefOfStateService](wire[ChiefOfStateServiceImpl])
       .additionalRouter(wire[ChiefOfStateGrpcServiceImpl])
 
-  lazy val chiefOfStateReadProcessor: ChiefOfStateReadProcessor = wire[ChiefOfStateReadProcessor]
-  chiefOfStateReadProcessor.init()
+  if (config.getBoolean("chief-of-state.read-model.enabled")) {
+    lazy val chiefOfStateReadProcessor: ChiefOfStateReadProcessor = wire[ChiefOfStateReadProcessor]
+    chiefOfStateReadProcessor.init()
+  }
 
   // $COVERAGE-ON$
 }

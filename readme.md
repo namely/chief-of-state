@@ -43,6 +43,7 @@ todo:
 | COS_KAFKA_BROKER | kafka broker | localhost:9092 |
 | COS_EVENTS_BATCH_THRESHOLD | Number of Events to batch persist | 100 |
 | COS_NUM_SNAPSHOTS_TO_RETAIN | Number of Aggregate Snaphsot to persist to disk for swift recovery | 2 |
+| COS_ENABLE_READSIDE | turn on readside or not | false |
 | COS_READ_SIDE_OFFSET_DB_HOST | readside offset storage host | localhost |
 | COS_READ_SIDE_OFFSET_DB_PORT | readside offset storage port | 5432 |
 | COS_READ_SIDE_OFFSET_DB_USER | readside offset storage username | postgres |
