@@ -11,22 +11,28 @@ Chief-Of-State is language agnostic, which means that services can be written in
 
 Chief-Of-State can be bundled as a sidecar to the application it is providing events and state management or run it on its own k8 pod. 
 
-Chief-Of-State heavily relies on the robustness of [lagom-PB](https://github.com/super-flat/lagom-pb). 
+Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com/super-flat/lagom-pb). 
 
 ## Features
 
 - Journal, Snapshot are serialized using google protocol buffer message format
-- All events, state and commands are defined using google protocol buffer message format
+
+- Out of the box clustering and powerful events and domain entities sharding with split-brain-resolver algorithm
+
+- Out of the box entities passivation mechanism to free resources whenever necessary.
+
+- All events, state and commands are defined using google protocol buffer message format and persisted to postgres
+
 - Additional meta data are provided to your events via the `EventMeta`.
+
+- Commands and Events handlers via gRPC
+
+- Read Side processor via gRPC (every persisted event is made available when the read side is trun on) with a powerful
+offset management residing in the Chief-Of-State readSide store (postgresql)
+
 - Out of the box observability.
+
 - Out of the box configurable k8 deployment
-
-### Notes
-
-todo:
-
-- think about scaling out replicas in k8s (don't want to break the k8s replica)
-- kafka configs
 
 ### Global environment variables
 
@@ -104,3 +110,9 @@ env:
 
 - [.NET Core](https://github.com/namely/cos-banking)
 - [Golang](https://github.com/namely/cos-go-sample)
+
+### Notes
+
+todo:
+
+- think about scaling out replicas in k8s (don't want to break the k8s replica)
