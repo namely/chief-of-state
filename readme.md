@@ -17,23 +17,23 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 
 - Journal, Snapshot are serialized using google protocol buffer message format.
 
-- Out of the box clustering and powerful events and domain entities sharding with split-brain-resolver algorithm
+- Out of the box clustering and powerful events and domain entities sharding with split-brain-resolver algorithm.
 
 - Out of the box entities passivation mechanism to free resources whenever necessary.
 
-- All events, state are defined using google protocol buffer message format and persisted to postgres
+- All events, state are defined using google protocol buffer message format and persisted to postgres.
 
 - Additional meta data are provided to your events via the `MetaData`.
 
-- Commands and Events handlers via gRPC
+- Commands and Events handlers via gRPC.
 
-- Read Side processor via gRPC (every persisted event is made available when the read side is turn on) 
+- Read Side processor via gRPC (every persisted event is made available when the read side is turn on). 
 
-- Out of the box Read Side offset management residing in the Chief-Of-State readSide store (postgresql)
+- Out of the box Read Side offset management residing in the Chief-Of-State readSide store (postgresql).
 
 - Out of the box observability.
 
-- Out of the box configurable k8 deployment
+- Out of the box configurable k8 deployment.
 
 ### Global environment variables
 

@@ -59,11 +59,11 @@ services:
       COS_PORT: 9000
       HANDLER_SERVICE_HOST: host.docker.internal
       HANDLER_SERVICE_PORT: 50052
-      HANDLER_SERVICE_STATE_PROTO: ""
-      HANDLER_SERVICE_EVENTS_PROTOS: ""
+      HANDLER_SERVICE_STATE_PROTO: "chief_of_state.BankAccount"
+      HANDLER_SERVICE_EVENTS_PROTOS: "chief_of_state.AccountOpened,chief_of_state.MoneyTransferred,chief_of_state.MoneyReceived"
       TRACE_HOST: tracer
       TRACE_PORT: 14268
-      SERVICE_NAME: "chiefofstate"
+      COS_SERVICE_NAME: "chiefofstate"
       NAMELY_ENV: "dev"
       TEAM_NAME: "data"
       COS_POSTGRES_USER: "postgres"

@@ -1,6 +1,6 @@
 package com.namely.chiefofstate
 
-import akka.actor.{ActorSystem, CoordinatedShutdown}
+import akka.actor.CoordinatedShutdown
 import akka.grpc.GrpcClientSettings
 import com.lightbend.lagom.scaladsl.akka.discovery.AkkaDiscoveryComponents
 import com.lightbend.lagom.scaladsl.api.Descriptor
@@ -12,12 +12,10 @@ import com.lightbend.lagom.scaladsl.server.{
   LagomServer
 }
 import com.namely.chiefofstate.api.ChiefOfStateService
-import com.namely.protobuf.chief_of_state.handler.{HandlerService, HandlerServiceClient}
+import com.namely.protobuf.chief_of_state.handler.HandlerServiceClient
 import com.namely.protobuf.chief_of_state.persistence.State
 import com.softwaremill.macwire.wire
 import lagompb.{LagompbAggregate, LagompbApplication, LagompbCommandHandler, LagompbEventHandler}
-
-import scala.concurrent.ExecutionContextExecutor
 
 /**
  * ChiefOfState application
@@ -27,12 +25,9 @@ import scala.concurrent.ExecutionContextExecutor
 abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends LagompbApplication(context) {
   // $COVERAGE-OFF$
 
-  implicit val sys: ActorSystem = actorSystem
-  implicit val ec: ExecutionContextExecutor = sys.dispatcher
-
   // wiring up the grpc client
   lazy val handlerServiceClient: HandlerServiceClient = HandlerServiceClient(
-    GrpcClientSettings.fromConfig(HandlerService.name)
+    GrpcClientSettings.fromConfig("chief_of_state.HandlerService")(actorSystem)
   )
   // let us wire up the handler settings
   // this will break the application bootstrapping if the handler settings env variables are not set
