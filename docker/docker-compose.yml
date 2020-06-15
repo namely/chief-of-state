@@ -27,6 +27,7 @@ services:
       LOG_LEVEL: INFO
     ports:
       - 16686:16686
+      - 14268:14268
 
   grafana:
     image: grafana/grafana
@@ -54,6 +55,7 @@ services:
       - 9000:9000
       - 9102:9102
       - 9095:9095
+      - 5266:5266
     environment:
       COS_ADDRESS: "0.0.0.0"
       COS_PORT: 9000
@@ -74,7 +76,7 @@ services:
       COS_POSTGRES_SCHEMA: "public"
       COS_EVENTS_BATCH_THRESHOLD: 100
       COS_NUM_SNAPSHOTS_TO_RETAIN: 2
-      COS_READ_SIDE_ENABLED: "true"
+      COS_READ_SIDE_ENABLED: "false"
       COS_READ_SIDE_OFFSET_DB_HOST: "postgres"
       COS_READ_SIDE_OFFSET_DB_PORT: 5432
       COS_READ_SIDE_OFFSET_DB_USER: "postgres"
