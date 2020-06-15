@@ -19,6 +19,7 @@ lazy val `chiefofstate` = project
   .in(file("service"))
   .enablePlugins(LagomScala)
   .enablePlugins(JavaAppPackaging, JavaAgent)
+  .enablePlugins(PlayAkkaHttp2Support)
   .enablePlugins(LagomImpl)
   .enablePlugins(LagomAkka)
   .settings(name := "chiefofstate", javaAgents += Dependencies.Compile.kanelaAgent)
