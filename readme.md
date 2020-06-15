@@ -15,15 +15,15 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 
 ## Features
 
-- Journal, Snapshot are serialized using google protocol buffer message format
+- Journal, Snapshot are serialized using google protocol buffer message format.
 
 - Out of the box clustering and powerful events and domain entities sharding with split-brain-resolver algorithm
 
 - Out of the box entities passivation mechanism to free resources whenever necessary.
 
-- All events, state and commands are defined using google protocol buffer message format and persisted to postgres
+- All events, state are defined using google protocol buffer message format and persisted to postgres
 
-- Additional meta data are provided to your events via the `EventMeta`.
+- Additional meta data are provided to your events via the `MetaData`.
 
 - Commands and Events handlers via gRPC
 
