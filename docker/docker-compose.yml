@@ -74,7 +74,7 @@ services:
       COS_POSTGRES_PORT: 5432
       COS_POSTGRES_DB: "postgres"
       COS_POSTGRES_SCHEMA: "public"
-      COS_EVENTS_BATCH_THRESHOLD: 100
+      COS_EVENTS_BATCH_THRESHOLD: 2
       COS_NUM_SNAPSHOTS_TO_RETAIN: 2
       COS_READ_SIDE_ENABLED: "true"
       COS_READ_SIDE_OFFSET_DB_HOST: "postgres"
@@ -84,5 +84,5 @@ services:
       COS_READ_SIDE_OFFSET_DB: "postgres"
       COS_READ_SIDE_OFFSET_DB_SCHEMA: "public"
       READ_SIDE_HANDLER_SERVICE_HOST: host.docker.internal
-      READ_SIDE_HANDLER_SERVICE_PORT: 50052
+      READ_SIDE_HANDLER_SERVICE_PORT: 50053
       JAVA_OPTS: "-Dconfig.resource=docker.conf"
