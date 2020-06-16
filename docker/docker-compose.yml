@@ -59,8 +59,8 @@ services:
     environment:
       COS_ADDRESS: "0.0.0.0"
       COS_PORT: 9000
-      HANDLER_SERVICE_HOST: host.docker.internal
-      HANDLER_SERVICE_PORT: 50052
+      WRITE_SIDE_HANDLER_SERVICE_HOST: host.docker.internal
+      WRITE_SIDE_HANDLER_SERVICE_PORT: 50052
       HANDLER_SERVICE_STATE_PROTO: ""
       HANDLER_SERVICE_EVENTS_PROTOS: ""
       TRACE_HOST: tracer
@@ -83,4 +83,6 @@ services:
       COS_READ_SIDE_OFFSET_DB_PASSWORD: "changeme"
       COS_READ_SIDE_OFFSET_DB: "postgres"
       COS_READ_SIDE_OFFSET_DB_SCHEMA: "public"
+      READ_SIDE_HANDLER_SERVICE_HOST: host.docker.internal
+      READ_SIDE_HANDLER_SERVICE_PORT: 50052
       JAVA_OPTS: "-Dconfig.resource=docker.conf"

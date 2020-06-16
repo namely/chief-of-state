@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package chief_of_state;
+
+option java_package = "com.namely.protobuf.chief_of_state";
+option java_multiple_files = true;
+option java_outer_classname = "ReadSideHandlerProto";
+option go_package = "chief_of_state";
+option csharp_namespace = "Namely.ChiefOfStateService.Grpc";
+
+import "google/protobuf/any.proto";
+import "common.proto";
+
+// Defines the readSide handler service interface that will be implemented by
+// any application that needs to build a readSide from the events persisted.
+// ChiefOfState will connect to this service when the readSide is enabled and push events to it.
+service ReadSideHandlerService {
+    // Helps build a read model from persisted events and snpahots
+    rpc HandleReadSide (HandleReadSideRequest) returns (HandleReadSideResponse);
+}
+
+// ReadSideRequest is used to push the ReadSideHandler
+// events and state persisted in the journal and the snapshot
+message HandleReadSideRequest {
+    // the persisted event
+    google.protobuf.Any event = 1;
+    // the resulting state associated to the persisted event
+    google.protobuf.Any state = 2;
+    // additional meta data
+    MetaData meta = 3;
+}
+
+// ReadSideResponse is used by ChiefOfState to either
+// commit events read offset or not.
+message HandleReadSideResponse {
+    // states whether the read side rpc operation was successful or not
+    bool successful = 1;
+}

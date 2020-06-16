@@ -3,9 +3,17 @@ package com.namely.chiefofstate
 import akka.actor.ActorSystem
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.handler.{HandleCommandRequest, HandleCommandResponse, HandlerServiceClient}
-import com.namely.protobuf.chief_of_state.handler.HandleCommandResponse.ResponseType._
 import com.namely.protobuf.chief_of_state.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.writeside_handler.{
+  HandleCommandRequest,
+  HandleCommandResponse,
+  WriteSideHandlerServiceClient
+}
+import com.namely.protobuf.chief_of_state.writeside_handler.HandleCommandResponse.ResponseType.{
+  Empty,
+  PersistAndReply,
+  Reply
+}
 import io.grpc.Status
 import lagompb.{LagompbCommand, LagompbCommandHandler}
 import lagompb.core._
@@ -18,13 +26,13 @@ import scala.util.{Failure, Success, Try}
 /**
  * ChiefOfStateCommandHandler
  *
- * @param actorSystem    the actor system
- * @param gRpcClient     the gRpcClient used to connect to the actual command handler
- * @param handlerSetting the command handler setting
+ * @param actorSystem                   the actor system
+ * @param writeSideHandlerServiceClient the gRpcClient used to connect to the actual command handler
+ * @param handlerSetting                the command handler setting
  */
 class ChiefOfStateCommandHandler(
     actorSystem: ActorSystem,
-    gRpcClient: HandlerServiceClient,
+    writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
     handlerSetting: ChiefOfStateHandlerSetting
 ) extends LagompbCommandHandler[State](actorSystem) {
 
@@ -44,11 +52,17 @@ class ChiefOfStateCommandHandler(
       priorEventMeta: MetaData
   ): Try[CommandHandlerResponse] = {
     Try(
-      gRpcClient.handleCommand(
+      writeSideHandlerServiceClient.handleCommand(
         HandleCommandRequest()
           .withCommand(command.command.asInstanceOf[Any])
           .withCurrentState(priorState.getCurrentState)
-          .withMeta(Any.pack(priorEventMeta))
+          .withMeta(
+            com.namely.protobuf.chief_of_state.common
+              .MetaData()
+              .withData(priorEventMeta.data)
+              .withRevisionDate(priorEventMeta.getRevisionDate)
+              .withRevisionNumber(priorEventMeta.revisionNumber)
+          )
       )
     ) match {
 

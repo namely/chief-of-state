@@ -4,10 +4,15 @@ import java.util.UUID
 
 import akka.Done
 import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.ActorSystem
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.handler.{HandleReadSideRequest, HandleReadSideResponse, HandlerServiceClient}
 import com.namely.protobuf.chief_of_state.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.readside_handler.{
+  HandleReadSideRequest,
+  HandleReadSideResponse,
+  ReadSideHandlerServiceClient
+}
 import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened}
 import io.grpc.Status
 import lagompb.core.MetaData
@@ -35,7 +40,7 @@ class ChiefOfStateReadProcessorSpec extends LagompbActorTestKit(s"""
     }
     """) with MockFactory {
 
-  val sys = testKit.system
+  val sys: ActorSystem[Nothing] = testKit.system
 
   "Chief-Of-State ReadSide Processor" should {
 
@@ -56,7 +61,7 @@ class ChiefOfStateReadProcessorSpec extends LagompbActorTestKit(s"""
         .withAccountUuid(accouuntId)
 
       // let us create a mock instance of the handler service client
-      val mockGrpcClient = mock[HandlerServiceClient]
+      val mockGrpcClient = mock[ReadSideHandlerServiceClient]
 
       (mockGrpcClient
         .handleReadSide(_: HandleReadSideRequest))
@@ -64,7 +69,13 @@ class ChiefOfStateReadProcessorSpec extends LagompbActorTestKit(s"""
           HandleReadSideRequest()
             .withEvent(Any.pack(event))
             .withState(state.getCurrentState)
-            .withMeta(Any.pack(eventMeta))
+            .withMeta(
+              com.namely.protobuf.chief_of_state.common
+                .MetaData()
+                .withData(eventMeta.data)
+                .withRevisionDate(eventMeta.getRevisionDate)
+                .withRevisionNumber(eventMeta.revisionNumber)
+            )
         )
         .returning(
           Future.successful(
@@ -96,7 +107,7 @@ class ChiefOfStateReadProcessorSpec extends LagompbActorTestKit(s"""
         .withAccountUuid(accouuntId)
 
       // let us create a mock instance of the handler service client
-      val mockGrpcClient = mock[HandlerServiceClient]
+      val mockGrpcClient = mock[ReadSideHandlerServiceClient]
 
       (mockGrpcClient
         .handleReadSide(_: HandleReadSideRequest))
@@ -104,7 +115,13 @@ class ChiefOfStateReadProcessorSpec extends LagompbActorTestKit(s"""
           HandleReadSideRequest()
             .withEvent(Any.pack(event))
             .withState(state.getCurrentState)
-            .withMeta(Any.pack(eventMeta))
+            .withMeta(
+              com.namely.protobuf.chief_of_state.common
+                .MetaData()
+                .withData(eventMeta.data)
+                .withRevisionDate(eventMeta.getRevisionDate)
+                .withRevisionNumber(eventMeta.revisionNumber)
+            )
         )
         .returning(
           Future.successful(
@@ -136,7 +153,7 @@ class ChiefOfStateReadProcessorSpec extends LagompbActorTestKit(s"""
         .withAccountUuid(accouuntId)
 
       // let us create a mock instance of the handler service client
-      val mockGrpcClient = mock[HandlerServiceClient]
+      val mockGrpcClient = mock[ReadSideHandlerServiceClient]
 
       (mockGrpcClient
         .handleReadSide(_: HandleReadSideRequest))
@@ -144,7 +161,13 @@ class ChiefOfStateReadProcessorSpec extends LagompbActorTestKit(s"""
           HandleReadSideRequest()
             .withEvent(Any.pack(event))
             .withState(state.getCurrentState)
-            .withMeta(Any.pack(eventMeta))
+            .withMeta(
+              com.namely.protobuf.chief_of_state.common
+                .MetaData()
+                .withData(eventMeta.data)
+                .withRevisionDate(eventMeta.getRevisionDate)
+                .withRevisionNumber(eventMeta.revisionNumber)
+            )
         )
         .throws(new RuntimeException("broken"))
 
@@ -171,7 +194,7 @@ class ChiefOfStateReadProcessorSpec extends LagompbActorTestKit(s"""
         .withAccountUuid(accouuntId)
 
       // let us create a mock instance of the handler service client
-      val mockGrpcClient = mock[HandlerServiceClient]
+      val mockGrpcClient = mock[ReadSideHandlerServiceClient]
 
       (mockGrpcClient
         .handleReadSide(_: HandleReadSideRequest))
@@ -179,7 +202,13 @@ class ChiefOfStateReadProcessorSpec extends LagompbActorTestKit(s"""
           HandleReadSideRequest()
             .withEvent(Any.pack(event))
             .withState(state.getCurrentState)
-            .withMeta(Any.pack(eventMeta))
+            .withMeta(
+              com.namely.protobuf.chief_of_state.common
+                .MetaData()
+                .withData(eventMeta.data)
+                .withRevisionDate(eventMeta.getRevisionDate)
+                .withRevisionNumber(eventMeta.revisionNumber)
+            )
         )
         .returning(Future.failed(new GrpcServiceException(Status.NOT_FOUND)))
 
@@ -206,7 +235,7 @@ class ChiefOfStateReadProcessorSpec extends LagompbActorTestKit(s"""
         .withAccountUuid(accouuntId)
 
       // let us create a mock instance of the handler service client
-      val mockGrpcClient = mock[HandlerServiceClient]
+      val mockGrpcClient = mock[ReadSideHandlerServiceClient]
 
       (mockGrpcClient
         .handleReadSide(_: HandleReadSideRequest))
@@ -214,7 +243,13 @@ class ChiefOfStateReadProcessorSpec extends LagompbActorTestKit(s"""
           HandleReadSideRequest()
             .withEvent(Any.pack(event))
             .withState(state.getCurrentState)
-            .withMeta(Any.pack(eventMeta))
+            .withMeta(
+              com.namely.protobuf.chief_of_state.common
+                .MetaData()
+                .withData(eventMeta.data)
+                .withRevisionDate(eventMeta.getRevisionDate)
+                .withRevisionNumber(eventMeta.revisionNumber)
+            )
         )
         .throws(new GrpcServiceException(Status.INVALID_ARGUMENT))
 

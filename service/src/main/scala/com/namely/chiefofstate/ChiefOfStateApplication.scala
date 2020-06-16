@@ -12,8 +12,9 @@ import com.lightbend.lagom.scaladsl.server.{
   LagomServer
 }
 import com.namely.chiefofstate.api.ChiefOfStateService
-import com.namely.protobuf.chief_of_state.handler.HandlerServiceClient
 import com.namely.protobuf.chief_of_state.persistence.State
+import com.namely.protobuf.chief_of_state.readside_handler.ReadSideHandlerServiceClient
+import com.namely.protobuf.chief_of_state.writeside_handler.WriteSideHandlerServiceClient
 import com.softwaremill.macwire.wire
 import lagompb.{LagompbAggregate, LagompbApplication, LagompbCommandHandler, LagompbEventHandler}
 
@@ -25,19 +26,21 @@ import lagompb.{LagompbAggregate, LagompbApplication, LagompbCommandHandler, Lag
 abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends LagompbApplication(context) {
   // $COVERAGE-OFF$
 
-  // wiring up the grpc client
-  lazy val handlerServiceClient: HandlerServiceClient = HandlerServiceClient(
-    GrpcClientSettings.fromConfig("chief_of_state.HandlerService")(actorSystem)
+  // wiring up the grpc for the writeSide client
+  lazy val writeSideHandlerServiceClient: WriteSideHandlerServiceClient = WriteSideHandlerServiceClient(
+    GrpcClientSettings.fromConfig("chief_of_state.WriteSideHandlerService")(actorSystem)
   )
+
   // let us wire up the handler settings
   // this will break the application bootstrapping if the handler settings env variables are not set
   lazy val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(config)
 
   //  Register a shutdown task to release resources of the client
   coordinatedShutdown
-    .addTask(CoordinatedShutdown.PhaseServiceUnbind, "shutdown-handler-service-client") { () =>
-      handlerServiceClient.close()
+    .addTask(CoordinatedShutdown.PhaseServiceUnbind, "shutdown-writeSidehandler-service-client") { () =>
+      writeSideHandlerServiceClient.close()
     }
+
   // wire up the various event and command handler
   lazy val eventHandler: LagompbEventHandler[State] = wire[ChiefOfStateEventHandler]
   lazy val commandHandler: LagompbCommandHandler[State] = wire[ChiefOfStateCommandHandler]
@@ -50,6 +53,18 @@ abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends
       .additionalRouter(wire[ChiefOfStateGrpcServiceImpl])
 
   if (config.getBoolean("chief-of-state.read-model.enabled")) {
+
+    // wiring up the grpc for the readSide client
+    lazy val readSideHandlerServiceClient: ReadSideHandlerServiceClient = ReadSideHandlerServiceClient(
+      GrpcClientSettings.fromConfig("chief_of_state.ReadSideHandlerService")(actorSystem)
+    )
+
+    //  Register a shutdown task to release resources of the client
+    coordinatedShutdown
+      .addTask(CoordinatedShutdown.PhaseServiceUnbind, "shutdown-readSidehandler-service-client") { () =>
+        readSideHandlerServiceClient.close()
+      }
+
     lazy val chiefOfStateReadProcessor: ChiefOfStateReadProcessor = wire[ChiefOfStateReadProcessor]
     chiefOfStateReadProcessor.init()
   }
