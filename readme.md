@@ -57,8 +57,10 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 | COS_READ_SIDE_OFFSET_DB_PASSWORD | readside offset storage password | changeme |
 | COS_READ_SIDE_OFFSET_DB_SCHEMA | readside offset storage db scheme | postgres |
 | COS_READ_SIDE_OFFSET_DB | readside offset storage db name | postgres |
-| HANDLER_SERVICE_HOST | address of the gRPC handler service | <none> |
-| HANDLER_SERVICE_PORT | port for the gRPC handler service | <none> |
+| WRITE_SIDE_HANDLER_SERVICE_HOST | address of the gRPC writeSide handler service | <none> |
+| WRITE_SIDE_HANDLER_SERVICE_PORT | port for the gRPC writeSide handler service | <none> |
+| READ_SIDE_HANDLER_SERVICE_HOST | address of the gRPC readSide handler service. This must be set when readSide is turned on | <none> |
+| READ_SIDE_HANDLER_SERVICE_PORT | port for the gRPC readSide handler service. This must be set when readSide is turned on | <none> |
 | HANDLER_SERVICE_STATE_PROTO | handler service state proto message FQN (fully qualified typeUrl). Format: `packagename.messagename` | <none> |
 | HANDLER_SERVICE_EVENTS_PROTOS | handler service events proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`. This will be a comma separated list of values | <none> |
 | COS_SERVICE_NAME | chief of state name in tracing | chiefofstate |

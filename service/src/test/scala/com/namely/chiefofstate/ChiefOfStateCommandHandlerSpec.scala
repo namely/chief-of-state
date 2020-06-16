@@ -4,9 +4,11 @@ import java.util.UUID
 
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.handler._
-import com.namely.protobuf.chief_of_state.handler.HandleCommandResponse.ResponseType
-import com.namely.protobuf.chief_of_state.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.cos_common.{MetaData => _}
+import com.namely.protobuf.chief_of_state.cos_common
+import com.namely.protobuf.chief_of_state.cos_persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.cos_writeside_handler._
+import com.namely.protobuf.chief_of_state.cos_writeside_handler.HandleCommandResponse.ResponseType
 import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened, OpenAccount}
 import io.grpc.Status
 import lagompb.core._
@@ -48,7 +50,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
         .withAccountUuid(accouuntId)
 
       // let us create a mock instance of the handler service client
-      val mockGrpcClient = mock[HandlerServiceClient]
+      val mockGrpcClient = mock[WriteSideHandlerServiceClient]
 
       (mockGrpcClient
         .handleCommand(_: HandleCommandRequest))
@@ -56,7 +58,13 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
           HandleCommandRequest()
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
-            .withMeta(Any.pack(priorEventMeta))
+            .withMeta(
+              cos_common
+                .MetaData()
+                .withData(priorEventMeta.data)
+                .withRevisionDate(priorEventMeta.getRevisionDate)
+                .withRevisionNumber(priorEventMeta.revisionNumber)
+            )
         )
         .returning(
           Future.successful(
@@ -103,7 +111,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
         .withAccountUuid(accouuntId)
 
       // let us create a mock instance of the handler service client
-      val mockGrpcClient = mock[HandlerServiceClient]
+      val mockGrpcClient = mock[WriteSideHandlerServiceClient]
 
       (mockGrpcClient
         .handleCommand(_: HandleCommandRequest))
@@ -111,7 +119,13 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
           HandleCommandRequest()
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
-            .withMeta(Any.pack(priorEventMeta))
+            .withMeta(
+              cos_common
+                .MetaData()
+                .withData(priorEventMeta.data)
+                .withRevisionDate(priorEventMeta.getRevisionDate)
+                .withRevisionNumber(priorEventMeta.revisionNumber)
+            )
         )
         .returning(
           Future.successful(
@@ -160,7 +174,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
       )
 
       // let us create a mock instance of the handler service client
-      val mockGrpcClient = mock[HandlerServiceClient]
+      val mockGrpcClient = mock[WriteSideHandlerServiceClient]
 
       (mockGrpcClient
         .handleCommand(_: HandleCommandRequest))
@@ -168,7 +182,13 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
           HandleCommandRequest()
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
-            .withMeta(Any.pack(priorEventMeta))
+            .withMeta(
+              cos_common
+                .MetaData()
+                .withData(priorEventMeta.data)
+                .withRevisionDate(priorEventMeta.getRevisionDate)
+                .withRevisionNumber(priorEventMeta.revisionNumber)
+            )
         )
         .returning(
           Future.successful(
@@ -212,7 +232,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
       )
 
       // let us create a mock instance of the handler service client
-      val mockGrpcClient = mock[HandlerServiceClient]
+      val mockGrpcClient = mock[WriteSideHandlerServiceClient]
 
       (mockGrpcClient
         .handleCommand(_: HandleCommandRequest))
@@ -220,7 +240,13 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
           HandleCommandRequest()
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
-            .withMeta(Any.pack(priorEventMeta))
+            .withMeta(
+              cos_common
+                .MetaData()
+                .withData(priorEventMeta.data)
+                .withRevisionDate(priorEventMeta.getRevisionDate)
+                .withRevisionNumber(priorEventMeta.revisionNumber)
+            )
         )
         .returning(
           Future.successful(
@@ -265,7 +291,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
       )
 
       // let us create a mock instance of the handler service client
-      val mockGrpcClient = mock[HandlerServiceClient]
+      val mockGrpcClient = mock[WriteSideHandlerServiceClient]
 
       (mockGrpcClient
         .handleCommand(_: HandleCommandRequest))
@@ -273,7 +299,13 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
           HandleCommandRequest()
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
-            .withMeta(Any.pack(priorEventMeta))
+            .withMeta(
+              cos_common
+                .MetaData()
+                .withData(priorEventMeta.data)
+                .withRevisionDate(priorEventMeta.getRevisionDate)
+                .withRevisionNumber(priorEventMeta.revisionNumber)
+            )
         )
         .returning(Future.failed(new GrpcServiceException(Status.NOT_FOUND)))
 
@@ -313,7 +345,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
       )
 
       // let us create a mock instance of the handler service client
-      val mockGrpcClient = mock[HandlerServiceClient]
+      val mockGrpcClient = mock[WriteSideHandlerServiceClient]
 
       (mockGrpcClient
         .handleCommand(_: HandleCommandRequest))
@@ -321,7 +353,13 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
           HandleCommandRequest()
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
-            .withMeta(Any.pack(priorEventMeta))
+            .withMeta(
+              cos_common
+                .MetaData()
+                .withData(priorEventMeta.data)
+                .withRevisionDate(priorEventMeta.getRevisionDate)
+                .withRevisionNumber(priorEventMeta.revisionNumber)
+            )
         )
         .throws(new GrpcServiceException(Status.INVALID_ARGUMENT))
 
@@ -361,7 +399,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
       )
 
       // let us create a mock instance of the handler service client
-      val mockGrpcClient = mock[HandlerServiceClient]
+      val mockGrpcClient = mock[WriteSideHandlerServiceClient]
 
       (mockGrpcClient
         .handleCommand(_: HandleCommandRequest))
@@ -369,7 +407,13 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
           HandleCommandRequest()
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
-            .withMeta(Any.pack(priorEventMeta))
+            .withMeta(
+              cos_common
+                .MetaData()
+                .withData(priorEventMeta.data)
+                .withRevisionDate(priorEventMeta.getRevisionDate)
+                .withRevisionNumber(priorEventMeta.revisionNumber)
+            )
         )
         .throws(new RuntimeException("broken"))
 

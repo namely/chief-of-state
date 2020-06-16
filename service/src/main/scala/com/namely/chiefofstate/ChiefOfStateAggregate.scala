@@ -1,7 +1,7 @@
 package com.namely.chiefofstate
 
 import akka.actor.ActorSystem
-import com.namely.protobuf.chief_of_state.persistence.State
+import com.namely.protobuf.chief_of_state.cos_persistence.State
 import com.typesafe.config.Config
 import lagompb.{LagompbAggregate, LagompbCommandHandler, LagompbEventHandler}
 import scalapb.GeneratedMessageCompanion

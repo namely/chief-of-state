@@ -4,8 +4,9 @@ import akka.actor.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.scaladsl.Metadata
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.persistence.State
-import com.namely.protobuf.chief_of_state.service.{
+import com.namely.protobuf.chief_of_state.cos_common
+import com.namely.protobuf.chief_of_state.cos_persistence.State
+import com.namely.protobuf.chief_of_state.cos_service.{
   AbstractChiefOfStateServicePowerApiRouter,
   ProcessCommandRequest,
   ProcessCommandResponse
@@ -34,8 +35,11 @@ class ChiefOfStateGrpcServiceImpl(
         ProcessCommandResponse()
           .withState(namelyState.state.getCurrentState)
           .withMeta(
-            Any
-              .pack(namelyState.metaData)
+            cos_common
+              .MetaData()
+              .withData(namelyState.metaData.data)
+              .withRevisionDate(namelyState.metaData.getRevisionDate)
+              .withRevisionNumber(namelyState.metaData.revisionNumber)
           )
       })
   }

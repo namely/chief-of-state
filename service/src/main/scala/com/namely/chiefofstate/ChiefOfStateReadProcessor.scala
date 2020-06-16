@@ -2,9 +2,13 @@ package com.namely.chiefofstate
 
 import akka.Done
 import akka.actor.ActorSystem
-import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.handler.{HandleReadSideRequest, HandleReadSideResponse, HandlerServiceClient}
-import com.namely.protobuf.chief_of_state.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.cos_common
+import com.namely.protobuf.chief_of_state.cos_persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.cos_readside_handler.{
+  HandleReadSideRequest,
+  HandleReadSideResponse,
+  ReadSideHandlerServiceClient
+}
 import lagompb.{LagompbConfig, LagompbException}
 import lagompb.core.MetaData
 import lagompb.readside.LagompbSlickProjection
@@ -18,13 +22,13 @@ import scala.util.{Failure, Success, Try}
 /**
  * ChiefOfStateReadProcessor
  *
- * @param actorSystem    the actor system
- * @param gRpcClient     the gRpcClient used to connect to the actual readSide handler
- * @param handlerSetting the readSide handler settingthe lagom readSide object that helps feed from events emitted in the journal
+ * @param actorSystem                  the actor system
+ * @param readSideHandlerServiceClient the gRpcClient used to connect to the actual readSide handler
+ * @param handlerSetting               the readSide handler settingthe lagom readSide object that helps feed from events emitted in the journal
  */
 class ChiefOfStateReadProcessor(
     actorSystem: ActorSystem,
-    gRpcClient: HandlerServiceClient,
+    readSideHandlerServiceClient: ReadSideHandlerServiceClient,
     handlerSetting: ChiefOfStateHandlerSetting
 )(implicit ec: ExecutionContext)
     extends LagompbSlickProjection[State](actorSystem) {
@@ -40,11 +44,17 @@ class ChiefOfStateReadProcessor(
     event match {
       case e: Event =>
         Try(
-          gRpcClient.handleReadSide(
+          readSideHandlerServiceClient.handleReadSide(
             HandleReadSideRequest()
               .withEvent(e.getEvent)
               .withState(state.getCurrentState)
-              .withMeta(Any.pack(metaData))
+              .withMeta(
+                cos_common
+                  .MetaData()
+                  .withData(metaData.data)
+                  .withRevisionDate(metaData.getRevisionDate)
+                  .withRevisionNumber(metaData.revisionNumber)
+              )
           )
         ) match {
           case Failure(exception) =>

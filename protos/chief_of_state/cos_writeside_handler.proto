@@ -4,24 +4,23 @@ package chief_of_state;
 
 option java_package = "com.namely.protobuf.chief_of_state";
 option java_multiple_files = true;
-option java_outer_classname = "HandlerProto";
+option java_outer_classname = "CosWriteSideHandlerProto";
 option go_package = "chief_of_state";
-option csharp_namespace = "Namely.ChiefOfStateService.Handler.Grpc";
+option csharp_namespace = "Namely.ChiefOfStateService.Grpc";
 
 import "google/protobuf/any.proto";
+import "cos_common.proto";
 
 // Defines the interface that will be implemented by any application that
 // wants to keeps its events and state with ChiefOfState. So an application will
 // implement the gRPC server while ChiefOfState will make use the client side to interact.
-service HandlerService {
+service WriteSideHandlerService {
     // Processes every command sent by ChiefOfState and return either a response
     // containing an event to persist or a simple reply.
     rpc HandleCommand (HandleCommandRequest) returns (HandleCommandResponse);
     // Processes every event sent by ChiefOfState by applying the event to the
     // current state to return a new state.
     rpc HandleEvent (HandleEventRequest) returns (HandleEventResponse);
-    // Helps build a read model from persisted events and snpahots
-    rpc HandleReadSide (HandleReadSideRequest) returns (HandleReadSideResponse);
 }
 
 // HandleCommandRequest
@@ -32,7 +31,7 @@ message HandleCommandRequest {
     // before the command being handled.
     google.protobuf.Any current_state = 2;
     // additional meta data.
-    google.protobuf.Any meta = 3;
+    MetaData meta = 3;
 }
 
 // HandleCommandResponse
@@ -65,7 +64,7 @@ message HandleEventRequest {
     // the state before the event is being handled.
     google.protobuf.Any current_state = 2;
     // additional meta data
-    google.protobuf.Any meta = 3;
+    MetaData meta = 3;
 }
 
 // HandleEventResponse contains the resulting state
@@ -73,22 +72,4 @@ message HandleEventRequest {
 message HandleEventResponse {
     // resulting state after the event has been handled
     google.protobuf.Any resulting_state = 1;
-}
-
-// ReadSideRequest is used to push the ReadSideHandler
-// events and state persisted in the journal and the snapshot
-message HandleReadSideRequest {
-    // the persisted event
-    google.protobuf.Any event = 1;
-    // the resulting state associated to the persisted event
-    google.protobuf.Any state = 2;
-    // additional meta data
-    google.protobuf.Any meta = 3;
-}
-
-// ReadSideResponse is used by ChiefOfState to either
-// commit events read offset or not.
-message HandleReadSideResponse {
-    // states whether the read side rpc operation was successful or not
-    bool successful = 1;
 }

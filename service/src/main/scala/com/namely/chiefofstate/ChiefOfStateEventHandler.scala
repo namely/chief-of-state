@@ -1,9 +1,13 @@
 package com.namely.chiefofstate
 
 import akka.actor.ActorSystem
-import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.handler.{HandleEventRequest, HandleEventResponse, HandlerServiceClient}
-import com.namely.protobuf.chief_of_state.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.cos_common
+import com.namely.protobuf.chief_of_state.cos_persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.cos_writeside_handler.{
+  HandleEventRequest,
+  HandleEventResponse,
+  WriteSideHandlerServiceClient
+}
 import lagompb.{LagompbEventHandler, LagompbException}
 import lagompb.core.MetaData
 import org.slf4j.{Logger, LoggerFactory}
@@ -16,13 +20,13 @@ import scala.util.{Failure, Success, Try}
 /**
  * ChiefOfStateEventHandler
  *
- * @param actorSystem    the actor system
- * @param gRpcClient     the gRpcClient used to connect to the actual event handler
- * @param handlerSetting the event handler setting
+ * @param actorSystem                   the actor system
+ * @param writeSideHandlerServiceClient the gRpcClient used to connect to the actual event handler
+ * @param handlerSetting                the event handler setting
  */
 class ChiefOfStateEventHandler(
     actorSystem: ActorSystem,
-    gRpcClient: HandlerServiceClient,
+    writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
     handlerSetting: ChiefOfStateHandlerSetting
 ) extends LagompbEventHandler[State](actorSystem) {
 
@@ -30,11 +34,17 @@ class ChiefOfStateEventHandler(
 
   override def handle(event: GeneratedMessage, priorState: State, eventMeta: MetaData): State = {
     Try(
-      gRpcClient.handleEvent(
+      writeSideHandlerServiceClient.handleEvent(
         HandleEventRequest()
           .withEvent(event.asInstanceOf[Event].getEvent)
           .withCurrentState(priorState.getCurrentState)
-          .withMeta(Any.pack(eventMeta))
+          .withMeta(
+            cos_common
+              .MetaData()
+              .withData(eventMeta.data)
+              .withRevisionDate(eventMeta.getRevisionDate)
+              .withRevisionNumber(eventMeta.revisionNumber)
+          )
       )
     ) match {
 
