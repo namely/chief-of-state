@@ -2,6 +2,7 @@ package com.namely.chiefofstate
 
 import akka.Done
 import akka.actor.ActorSystem
+import com.namely.protobuf.chief_of_state.cos_common
 import com.namely.protobuf.chief_of_state.cos_persistence.{Event, State}
 import com.namely.protobuf.chief_of_state.cos_readside_handler.{
   HandleReadSideRequest,
@@ -48,7 +49,7 @@ class ChiefOfStateReadProcessor(
               .withEvent(e.getEvent)
               .withState(state.getCurrentState)
               .withMeta(
-                com.namely.protobuf.chief_of_state.cos_common
+                cos_common
                   .MetaData()
                   .withData(metaData.data)
                   .withRevisionDate(metaData.getRevisionDate)
