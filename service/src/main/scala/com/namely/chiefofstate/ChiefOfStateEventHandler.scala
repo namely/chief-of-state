@@ -1,8 +1,9 @@
 package com.namely.chiefofstate
 
 import akka.actor.ActorSystem
-import com.namely.protobuf.chief_of_state.persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.writeside_handler.{
+import com.namely.protobuf.chief_of_state.cos_common
+import com.namely.protobuf.chief_of_state.cos_persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.cos_writeside_handler.{
   HandleEventRequest,
   HandleEventResponse,
   WriteSideHandlerServiceClient
@@ -38,7 +39,7 @@ class ChiefOfStateEventHandler(
           .withEvent(event.asInstanceOf[Event].getEvent)
           .withCurrentState(priorState.getCurrentState)
           .withMeta(
-            com.namely.protobuf.chief_of_state.common
+            cos_common
               .MetaData()
               .withData(eventMeta.data)
               .withRevisionDate(eventMeta.getRevisionDate)

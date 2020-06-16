@@ -4,13 +4,14 @@ import java.util.UUID
 
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened}
-import com.namely.protobuf.chief_of_state.writeside_handler.{
+import com.namely.protobuf.chief_of_state.cos_common
+import com.namely.protobuf.chief_of_state.cos_persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.cos_writeside_handler.{
   HandleEventRequest,
   HandleEventResponse,
   WriteSideHandlerServiceClient
 }
+import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened}
 import io.grpc.Status
 import lagompb.core.MetaData
 import lagompb.testkit.LagompbSpec
@@ -54,7 +55,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
             .withEvent(Any.pack(event))
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              com.namely.protobuf.chief_of_state.common
+              cos_common
                 .MetaData()
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
@@ -105,7 +106,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
             .withEvent(Any.pack(event))
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              com.namely.protobuf.chief_of_state.common
+              cos_common
                 .MetaData()
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
@@ -151,7 +152,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
             .withEvent(Any.pack(event))
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              com.namely.protobuf.chief_of_state.common
+              cos_common
                 .MetaData()
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
@@ -192,7 +193,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
             .withEvent(Any.pack(event))
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              com.namely.protobuf.chief_of_state.common
+              cos_common
                 .MetaData()
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)

@@ -4,8 +4,8 @@ import akka.actor.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.scaladsl.Metadata
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.persistence.State
-import com.namely.protobuf.chief_of_state.service.{
+import com.namely.protobuf.chief_of_state.cos_persistence.State
+import com.namely.protobuf.chief_of_state.cos_service.{
   AbstractChiefOfStateServicePowerApiRouter,
   ProcessCommandRequest,
   ProcessCommandResponse

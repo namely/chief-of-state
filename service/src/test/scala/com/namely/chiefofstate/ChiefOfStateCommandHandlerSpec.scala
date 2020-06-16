@@ -4,10 +4,12 @@ import java.util.UUID
 
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.cos_common.{MetaData => _}
+import com.namely.protobuf.chief_of_state.cos_common
+import com.namely.protobuf.chief_of_state.cos_persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.cos_writeside_handler._
+import com.namely.protobuf.chief_of_state.cos_writeside_handler.HandleCommandResponse.ResponseType
 import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened, OpenAccount}
-import com.namely.protobuf.chief_of_state.writeside_handler._
-import com.namely.protobuf.chief_of_state.writeside_handler.HandleCommandResponse.ResponseType
 import io.grpc.Status
 import lagompb.core._
 import lagompb.testkit.LagompbSpec
@@ -57,7 +59,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              com.namely.protobuf.chief_of_state.common
+              cos_common
                 .MetaData()
                 .withData(priorEventMeta.data)
                 .withRevisionDate(priorEventMeta.getRevisionDate)
@@ -118,7 +120,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              com.namely.protobuf.chief_of_state.common
+              cos_common
                 .MetaData()
                 .withData(priorEventMeta.data)
                 .withRevisionDate(priorEventMeta.getRevisionDate)
@@ -181,7 +183,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              com.namely.protobuf.chief_of_state.common
+              cos_common
                 .MetaData()
                 .withData(priorEventMeta.data)
                 .withRevisionDate(priorEventMeta.getRevisionDate)
@@ -239,7 +241,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              com.namely.protobuf.chief_of_state.common
+              cos_common
                 .MetaData()
                 .withData(priorEventMeta.data)
                 .withRevisionDate(priorEventMeta.getRevisionDate)
@@ -298,7 +300,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              com.namely.protobuf.chief_of_state.common
+              cos_common
                 .MetaData()
                 .withData(priorEventMeta.data)
                 .withRevisionDate(priorEventMeta.getRevisionDate)
@@ -352,7 +354,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              com.namely.protobuf.chief_of_state.common
+              cos_common
                 .MetaData()
                 .withData(priorEventMeta.data)
                 .withRevisionDate(priorEventMeta.getRevisionDate)
@@ -406,7 +408,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              com.namely.protobuf.chief_of_state.common
+              cos_common
                 .MetaData()
                 .withData(priorEventMeta.data)
                 .withRevisionDate(priorEventMeta.getRevisionDate)

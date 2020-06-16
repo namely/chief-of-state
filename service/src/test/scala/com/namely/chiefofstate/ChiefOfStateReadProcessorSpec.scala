@@ -7,8 +7,9 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.ActorSystem
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.readside_handler.{
+import com.namely.protobuf.chief_of_state.cos_common
+import com.namely.protobuf.chief_of_state.cos_persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.cos_readside_handler.{
   HandleReadSideRequest,
   HandleReadSideResponse,
   ReadSideHandlerServiceClient
@@ -70,7 +71,7 @@ class ChiefOfStateReadProcessorSpec extends LagompbActorTestKit(s"""
             .withEvent(Any.pack(event))
             .withState(state.getCurrentState)
             .withMeta(
-              com.namely.protobuf.chief_of_state.common
+              cos_common
                 .MetaData()
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
@@ -116,7 +117,7 @@ class ChiefOfStateReadProcessorSpec extends LagompbActorTestKit(s"""
             .withEvent(Any.pack(event))
             .withState(state.getCurrentState)
             .withMeta(
-              com.namely.protobuf.chief_of_state.common
+              cos_common
                 .MetaData()
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
@@ -162,7 +163,7 @@ class ChiefOfStateReadProcessorSpec extends LagompbActorTestKit(s"""
             .withEvent(Any.pack(event))
             .withState(state.getCurrentState)
             .withMeta(
-              com.namely.protobuf.chief_of_state.common
+              cos_common
                 .MetaData()
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
@@ -203,7 +204,7 @@ class ChiefOfStateReadProcessorSpec extends LagompbActorTestKit(s"""
             .withEvent(Any.pack(event))
             .withState(state.getCurrentState)
             .withMeta(
-              com.namely.protobuf.chief_of_state.common
+              cos_common
                 .MetaData()
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
@@ -244,7 +245,7 @@ class ChiefOfStateReadProcessorSpec extends LagompbActorTestKit(s"""
             .withEvent(Any.pack(event))
             .withState(state.getCurrentState)
             .withMeta(
-              com.namely.protobuf.chief_of_state.common
+              cos_common
                 .MetaData()
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
