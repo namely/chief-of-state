@@ -63,7 +63,7 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 | READ_SIDE_HANDLER_SERVICE_PORT | port for the gRPC readSide handler service. This must be set when readSide is turned on | <none> |
 | HANDLER_SERVICE_STATE_PROTO | handler service state proto message FQN (fully qualified typeUrl). Format: `packagename.messagename` | <none> |
 | HANDLER_SERVICE_EVENTS_PROTOS | handler service events proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`. This will be a comma separated list of values | <none> |
-| COS_SERVICE_NAME | chief of state name in tracing | chiefofstate |
+| COS_SERVICE_NAME | service name | chiefofstate |
 | TEAM_NAME | |
 | TRACE_HOST | Jaeger collector/agent host | localhost |
 | TRACE_PORT | Jaeger colletor/agent port | 14268 |
