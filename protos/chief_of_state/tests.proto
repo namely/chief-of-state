@@ -5,6 +5,7 @@ option java_package = "com.namely.protobuf.chief_of_state";
 option java_multiple_files = true;
 option java_outer_classname = "TestsProto";
 
+// TODO: move these to another folder to only be compiled during test
 message OpenAccount {
     string account_uuid = 1;
     string account_number = 2;

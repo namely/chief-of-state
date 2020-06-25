@@ -53,9 +53,11 @@ class ChiefOfStateCommandHandler(
       priorState: State,
       priorEventMeta: MetaData
   ): Try[CommandHandlerResponse] = {
+    // Try to make a CommandRequest and send it to the handler service
     Try(
       writeSideHandlerServiceClient.handleCommand(
         HandleCommandRequest()
+          // TODO: Pack this into an ANY... this will only work if the command happens to be an ANY
           .withCommand(command.command.asInstanceOf[Any])
           .withCurrentState(priorState.getCurrentState)
           .withMeta(
@@ -66,8 +68,9 @@ class ChiefOfStateCommandHandler(
               .withRevisionNumber(priorEventMeta.revisionNumber)
           )
       )
+    // handle the response from the handler service
     ) match {
-
+      // handle immediate failure
       case Failure(exception: Throwable) =>
         exception match {
           case e: GrpcServiceException =>
@@ -96,11 +99,13 @@ class ChiefOfStateCommandHandler(
                 )
             )
         }
-
+      // handle eventual response
       case Success(future: Future[HandleCommandResponse]) =>
         Try {
           Await.result(future, Duration.Inf)
         } match {
+          // handle eventual failure
+          // TODO: @arsene why will this never happen?
           case Failure(exception) =>
             // this situation will never occur but for the sake of syntax
             log.error(s"[ChiefOfState]: unable to retrieve command handler response due to ${exception.getMessage}")
@@ -112,8 +117,11 @@ class ChiefOfStateCommandHandler(
                     .withCause(FailureCause.InternalError)
                 )
             )
+          // handle eventual success
           case Success(handleCommandResponse: HandleCommandResponse) =>
             handleCommandResponse.responseType match {
+
+              // TODO: shouldn't this be ```case persistAndReply: PersistAndReply``` ?
               case PersistAndReply(persistAndReply) =>
                 log.debug("[ChiefOfState]: command handler return successfully. An event will be persisted...")
 
@@ -124,6 +132,9 @@ class ChiefOfStateCommandHandler(
                 if (handlerSetting.eventProtosFQNs.contains(eventFQN)) {
                   log.debug(s"[ChiefOfState]: command handler event to perist $eventFQN is valid.")
 
+                  // TODO: This is where we encrypt, but if I encrypt state in the eventHandler, how would
+                  //       lagom-pb manage to return state to the caller? Does encryption need to be
+                  //       in lagom-pb?
                   Try(
                     CommandHandlerResponse()
                       .withSuccessResponse(

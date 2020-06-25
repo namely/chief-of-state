@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package chief_of_state;
+
+option java_package = "com.namely.protobuf.chief_of_state";
+
+import "google/protobuf/any.proto";
+
+// Event wrapper
+// Internal use
+message EncryptedProto {
+    // information for the plugin
+    // NOTE: maybe this is overkill and can just be a key ID
+    EncryptedProtoMeta plugin_meta = 1;
+
+    // encrypted message
+    google.protobuf.Any encrypted_proto = 2;
+}
+
+message EncryptedProtoMeta {
+    // unique ID for the plugin used to encrypt the message
+    // likely the full scala class name
+    string plugin_id = 1;
+
+    // any data required by the plugin, like a uuid for the
+    // key management service to return the key used
+    // NOTE: maybe just make this a key id
+    map<string, string> data = 3;
+}
