@@ -4,9 +4,9 @@ import akka.NotUsed
 import com.lightbend.lagom.scaladsl.api.{Descriptor, ServiceCall}
 import com.lightbend.lagom.scaladsl.api.Service.restCall
 import com.lightbend.lagom.scaladsl.api.transport.Method
-import lagompb.LagompbService
+import io.superflat.lagompb.BaseService
 
-trait ChiefOfStateService extends LagompbService {
+trait ChiefOfStateService extends BaseService {
 
   def handleCommand(): ServiceCall[NotUsed, String]
 

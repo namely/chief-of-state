@@ -11,9 +11,9 @@ import com.namely.protobuf.chief_of_state.cos_writeside_handler._
 import com.namely.protobuf.chief_of_state.cos_writeside_handler.HandleCommandResponse.ResponseType
 import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened, OpenAccount}
 import io.grpc.Status
-import lagompb.core._
-import lagompb.testkit.LagompbSpec
-import lagompb.LagompbCommand
+import io.superflat.lagompb.protobuf.core._
+import io.superflat.lagompb.testkit.LagompbSpec
+import io.superflat.lagompb.Command
 import org.scalamock.scalatest.MockFactory
 
 import scala.concurrent.Future
@@ -35,7 +35,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
-      val cmd = LagompbCommand(
+      val cmd = Command(
         Any.pack(
           OpenAccount()
             .withAccountNumber(accountNumber)
@@ -96,7 +96,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
-      val cmd = LagompbCommand(
+      val cmd = Command(
         Any.pack(
           OpenAccount()
             .withAccountNumber(accountNumber)
@@ -163,7 +163,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
-      val cmd = LagompbCommand(
+      val cmd = Command(
         Any.pack(
           OpenAccount()
             .withAccountNumber(accountNumber)
@@ -221,7 +221,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
-      val cmd = LagompbCommand(
+      val cmd = Command(
         Any.pack(
           OpenAccount()
             .withAccountNumber(accountNumber)
@@ -280,7 +280,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
-      val cmd = LagompbCommand(
+      val cmd = Command(
         Any.pack(
           OpenAccount()
             .withAccountNumber(accountNumber)
@@ -334,7 +334,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
-      val cmd = LagompbCommand(
+      val cmd = Command(
         Any.pack(
           OpenAccount()
             .withAccountNumber(accountNumber)
@@ -388,7 +388,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
 
       val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
 
-      val cmd = LagompbCommand(
+      val cmd = Command(
         Any.pack(
           OpenAccount()
             .withAccountNumber(accountNumber)

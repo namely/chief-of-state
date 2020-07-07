@@ -11,27 +11,24 @@ import com.namely.protobuf.chief_of_state.cos_service.{
   ProcessCommandRequest,
   ProcessCommandResponse
 }
-import lagompb.{LagompbAggregate, LagompbGrpcServiceImpl, LagompbState}
+import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl, StateAndMeta}
 import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ChiefOfStateGrpcServiceImpl(
-    sys: ActorSystem,
-    clusterSharding: ClusterSharding,
-    aggregate: LagompbAggregate[State]
-)(implicit ec: ExecutionContext)
-    extends AbstractChiefOfStateServicePowerApiRouter(sys)
-    with LagompbGrpcServiceImpl {
+class ChiefOfStateGrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding, aggregate: AggregateRoot[State])(
+    implicit ec: ExecutionContext
+) extends AbstractChiefOfStateServicePowerApiRouter(sys)
+    with BaseGrpcServiceImpl {
 
-  override def aggregateRoot: LagompbAggregate[_] = aggregate
+  override def aggregateRoot: AggregateRoot[_] = aggregate
 
   override def aggregateStateCompanion: GeneratedMessageCompanion[_ <: GeneratedMessage] = State
 
   override def processCommand(in: ProcessCommandRequest, metadata: Metadata): Future[ProcessCommandResponse] = {
 
     sendCommand[Any, State](clusterSharding, in.entityUuid, in.command.get, Map.empty[String, String])
-      .map((namelyState: LagompbState[State]) => {
+      .map((namelyState: StateAndMeta[State]) => {
         ProcessCommandResponse()
           .withState(namelyState.state.getCurrentState)
           .withMeta(

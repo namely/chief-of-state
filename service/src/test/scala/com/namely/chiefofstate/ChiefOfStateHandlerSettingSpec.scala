@@ -1,7 +1,7 @@
 package com.namely.chiefofstate
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import lagompb.testkit.LagompbSpec
+import io.superflat.lagompb.testkit.LagompbSpec
 
 class ChiefOfStateHandlerSettingSpec extends LagompbSpec {
 

@@ -3,7 +3,7 @@ package com.namely.chiefofstate
 import akka.actor.ActorSystem
 import com.namely.protobuf.chief_of_state.cos_persistence.State
 import com.typesafe.config.Config
-import lagompb.{LagompbAggregate, LagompbCommandHandler, LagompbEventHandler}
+import io.superflat.lagompb.{AggregateRoot, CommandHandler, EventHandler}
 import scalapb.GeneratedMessageCompanion
 
 /**
@@ -17,9 +17,9 @@ import scalapb.GeneratedMessageCompanion
 class ChiefOfStateAggregate(
     actorSystem: ActorSystem,
     config: Config,
-    commandHandler: LagompbCommandHandler[State],
-    eventHandler: LagompbEventHandler[State]
-) extends LagompbAggregate[State](actorSystem, commandHandler, eventHandler) {
+    commandHandler: CommandHandler[State],
+    eventHandler: EventHandler[State]
+) extends AggregateRoot[State](actorSystem, commandHandler, eventHandler) {
   // $COVERAGE-OFF$
   override def aggregateName: String = "chiefOfState"
 

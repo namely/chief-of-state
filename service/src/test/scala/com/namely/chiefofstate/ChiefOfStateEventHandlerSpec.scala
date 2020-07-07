@@ -13,9 +13,9 @@ import com.namely.protobuf.chief_of_state.cos_writeside_handler.{
 }
 import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened}
 import io.grpc.Status
-import lagompb.core.MetaData
-import lagompb.testkit.LagompbSpec
-import lagompb.LagompbException
+import io.superflat.lagompb.protobuf.core.MetaData
+import io.superflat.lagompb.testkit.LagompbSpec
+import io.superflat.lagompb.GlobalException
 import org.scalamock.scalatest.MockFactory
 
 import scala.concurrent.Future
@@ -121,7 +121,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
         )
 
       val eventHandler: ChiefOfStateEventHandler = new ChiefOfStateEventHandler(null, mockGrpcClient, handlerSetting)
-      a[LagompbException] shouldBe thrownBy(
+      a[GlobalException] shouldBe thrownBy(
         eventHandler.handle(Event().withEvent(Any.pack(event)), priorState, eventMeta)
       )
     }
@@ -162,7 +162,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
         .returning(Future.failed(new GrpcServiceException(Status.INTERNAL)))
 
       val eventHandler: ChiefOfStateEventHandler = new ChiefOfStateEventHandler(null, mockGrpcClient, handlerSetting)
-      a[LagompbException] shouldBe thrownBy(
+      a[GlobalException] shouldBe thrownBy(
         eventHandler.handle(Event().withEvent(Any.pack(event)), priorState, eventMeta)
       )
     }
@@ -203,7 +203,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
         .throws(new RuntimeException("broken"))
 
       val eventHandler: ChiefOfStateEventHandler = new ChiefOfStateEventHandler(null, mockGrpcClient, handlerSetting)
-      a[LagompbException] shouldBe thrownBy(
+      a[GlobalException] shouldBe thrownBy(
         eventHandler.handle(Event().withEvent(Any.pack(event)), priorState, eventMeta)
       )
     }

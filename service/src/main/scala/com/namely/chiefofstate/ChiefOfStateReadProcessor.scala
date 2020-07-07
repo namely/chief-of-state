@@ -2,6 +2,7 @@ package com.namely.chiefofstate
 
 import akka.Done
 import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.adapter._
 import com.namely.protobuf.chief_of_state.cos_common
 import com.namely.protobuf.chief_of_state.cos_persistence.{Event, State}
 import com.namely.protobuf.chief_of_state.cos_readside_handler.{
@@ -9,9 +10,10 @@ import com.namely.protobuf.chief_of_state.cos_readside_handler.{
   HandleReadSideResponse,
   ReadSideHandlerServiceClient
 }
-import lagompb.{LagompbConfig, LagompbException}
-import lagompb.core.MetaData
-import lagompb.readside.LagompbSlickProjection
+import io.superflat.lagompb.{ConfigReader, GlobalException}
+import io.superflat.lagompb.encryption.ProtoEncryption
+import io.superflat.lagompb.protobuf.core.MetaData
+import io.superflat.lagompb.readside.ReadSideProcessor
 import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
 import slick.dbio.{DBIO, DBIOAction}
 
@@ -27,16 +29,17 @@ import scala.util.{Failure, Success, Try}
  * @param handlerSetting               the readSide handler settingthe lagom readSide object that helps feed from events emitted in the journal
  */
 class ChiefOfStateReadProcessor(
+    encryption: ProtoEncryption,
     actorSystem: ActorSystem,
     readSideHandlerServiceClient: ReadSideHandlerServiceClient,
     handlerSetting: ChiefOfStateHandlerSetting
 )(implicit ec: ExecutionContext)
-    extends LagompbSlickProjection[State](actorSystem) {
+    extends ReadSideProcessor[State](encryption)(ec, actorSystem.toTyped) {
   // $COVERAGE-OFF$
 
   override def aggregateStateCompanion: GeneratedMessageCompanion[State] = State
 
-  override def projectionName: String = s"${LagompbConfig.serviceName}-readside-projection"
+  override def projectionName: String = s"${ConfigReader.serviceName}-readside-projection"
 
   // $COVERAGE-ON$
 
@@ -59,21 +62,21 @@ class ChiefOfStateReadProcessor(
         ) match {
           case Failure(exception) =>
             log.error(s"[ChiefOfState]: unable to retrieve command handler response due to ${exception.getMessage}")
-            DBIOAction.failed(throw new LagompbException(exception.getMessage))
+            DBIOAction.failed(throw new GlobalException(exception.getMessage))
           case Success(eventualReadSideResponse: Future[HandleReadSideResponse]) =>
             Try {
               Await.result(eventualReadSideResponse, Duration.Inf)
             } match {
               case Failure(exception) =>
-                DBIOAction.failed(throw new LagompbException(s"[ChiefOfState]: ${exception.getMessage}"))
+                DBIOAction.failed(throw new GlobalException(s"[ChiefOfState]: ${exception.getMessage}"))
               case Success(value) =>
                 if (value.successful) DBIOAction.successful(Done)
-                else DBIOAction.failed(throw new LagompbException("[ChiefOfState]: unable to handle readSide"))
+                else DBIOAction.failed(throw new GlobalException("[ChiefOfState]: unable to handle readSide"))
             }
         }
       case _ =>
         DBIOAction.failed(
-          throw new LagompbException(s"[ChiefOfState]: event ${event.companion.scalaDescriptor.fullName} not handled")
+          throw new GlobalException(s"[ChiefOfState]: event ${event.companion.scalaDescriptor.fullName} not handled")
         )
     }
   }
