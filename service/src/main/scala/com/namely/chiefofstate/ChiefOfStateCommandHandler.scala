@@ -17,8 +17,8 @@ import com.namely.protobuf.chief_of_state.cos_writeside_handler.HandleCommandRes
   Reply
 }
 import io.grpc.Status
-import lagompb.{LagompbCommand, LagompbCommandHandler}
-import lagompb.core._
+import io.superflat.lagompb.{Command, CommandHandler}
+import io.superflat.lagompb.protobuf.core._
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.{Await, Future}
@@ -36,7 +36,7 @@ class ChiefOfStateCommandHandler(
     actorSystem: ActorSystem,
     writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
     handlerSetting: ChiefOfStateHandlerSetting
-) extends LagompbCommandHandler[State](actorSystem) {
+) extends CommandHandler[State](actorSystem) {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -48,11 +48,7 @@ class ChiefOfStateCommandHandler(
    * @param priorEventMeta
    * @return
    */
-  override def handle(
-      command: LagompbCommand,
-      priorState: State,
-      priorEventMeta: MetaData
-  ): Try[CommandHandlerResponse] = {
+  override def handle(command: Command, priorState: State, priorEventMeta: MetaData): Try[CommandHandlerResponse] = {
     Try(
       writeSideHandlerServiceClient.handleCommand(
         HandleCommandRequest()

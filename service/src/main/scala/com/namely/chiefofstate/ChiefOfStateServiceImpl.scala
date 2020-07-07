@@ -7,7 +7,7 @@ import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
 import com.namely.chiefofstate.api.ChiefOfStateService
 import com.namely.protobuf.chief_of_state.cos_persistence.State
-import lagompb.{LagompbAggregate, LagompbServiceImpl}
+import io.superflat.lagompb.{AggregateRoot, BaseServiceImpl}
 import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -16,14 +16,15 @@ class ChiefOfStateServiceImpl(
     actorSystem: ActorSystem,
     clusterSharding: ClusterSharding,
     persistentEntityRegistry: PersistentEntityRegistry,
-    aggregate: LagompbAggregate[State]
+    aggregate: AggregateRoot[State]
 )(implicit ec: ExecutionContext)
-    extends LagompbServiceImpl(clusterSharding, persistentEntityRegistry, aggregate)
+    extends BaseServiceImpl(clusterSharding, persistentEntityRegistry, aggregate)
     with ChiefOfStateService {
 
-  override def handleCommand(): ServiceCall[NotUsed, String] = ServiceCall { _ =>
-    Future.successful("Welcome to Chief Of State. The gRPC distributed event sourcing application!!!")
-  }
+  override def handleCommand(): ServiceCall[NotUsed, String] =
+    ServiceCall { _ =>
+      Future.successful("Welcome to Chief Of State. The gRPC distributed event sourcing application!!!")
+    }
 
   override def aggregateStateCompanion: GeneratedMessageCompanion[_ <: GeneratedMessage] = State
 }
