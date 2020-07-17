@@ -89,7 +89,7 @@ class ChiefOfStateReadProcessorSpec
         )
 
       val readSideProcessor =
-        new ChiefOfStateReadProcessor(NoEncryption, testKit.system.toClassic, mockGrpcClient, handlerSetting)
+        new ChiefOfStateReadProcessor("test", NoEncryption, testKit.system.toClassic, mockGrpcClient, handlerSetting)
       val result: DBIO[Done] =
         readSideProcessor.handle(Event().withEvent(Any.pack(event)), state, eventMeta)
       result.map(r => r shouldBe (Done))
@@ -136,7 +136,7 @@ class ChiefOfStateReadProcessorSpec
         )
 
       val readSideProcessor =
-        new ChiefOfStateReadProcessor(NoEncryption, testKit.system.toClassic, mockGrpcClient, handlerSetting)
+        new ChiefOfStateReadProcessor("test", NoEncryption, testKit.system.toClassic, mockGrpcClient, handlerSetting)
       an[GlobalException] shouldBe thrownBy(
         readSideProcessor.handle(Event().withEvent(Any.pack(event)), state, eventMeta)
       )
@@ -178,7 +178,7 @@ class ChiefOfStateReadProcessorSpec
         .throws(new RuntimeException("broken"))
 
       val readSideProcessor =
-        new ChiefOfStateReadProcessor(NoEncryption, testKit.system.toClassic, mockGrpcClient, handlerSetting)
+        new ChiefOfStateReadProcessor("test", NoEncryption, testKit.system.toClassic, mockGrpcClient, handlerSetting)
       an[GlobalException] shouldBe thrownBy(
         readSideProcessor.handle(Event().withEvent(Any.pack(event)), state, eventMeta)
       )
@@ -220,7 +220,7 @@ class ChiefOfStateReadProcessorSpec
         .returning(Future.failed(new GrpcServiceException(Status.NOT_FOUND)))
 
       val readSideProcessor =
-        new ChiefOfStateReadProcessor(NoEncryption, testKit.system.toClassic, mockGrpcClient, handlerSetting)
+        new ChiefOfStateReadProcessor("test", NoEncryption, testKit.system.toClassic, mockGrpcClient, handlerSetting)
       an[GlobalException] shouldBe thrownBy(
         readSideProcessor.handle(Event().withEvent(Any.pack(event)), state, eventMeta)
       )
@@ -262,7 +262,7 @@ class ChiefOfStateReadProcessorSpec
         .throws(new GrpcServiceException(Status.INVALID_ARGUMENT))
 
       val readSideProcessor =
-        new ChiefOfStateReadProcessor(NoEncryption, testKit.system.toClassic, mockGrpcClient, handlerSetting)
+        new ChiefOfStateReadProcessor("test", NoEncryption, testKit.system.toClassic, mockGrpcClient, handlerSetting)
       an[GlobalException] shouldBe thrownBy(
         readSideProcessor.handle(Event().withEvent(Any.pack(event)), state, eventMeta)
       )
@@ -285,7 +285,7 @@ class ChiefOfStateReadProcessorSpec
         .withAccountUuid(accouuntId)
 
       val readSideProcessor =
-        new ChiefOfStateReadProcessor(NoEncryption, testKit.system.toClassic, null, handlerSetting)
+        new ChiefOfStateReadProcessor("test", NoEncryption, testKit.system.toClassic, null, handlerSetting)
       an[GlobalException] shouldBe thrownBy(readSideProcessor.handle(Any.pack(event), state, eventMeta))
     }
   }
