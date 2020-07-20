@@ -2,8 +2,6 @@ package com.namely.chiefofstate
 
 import com.google.protobuf.any.Any
 
-import scala.util.{Failure, Success, Try}
-
 /**
  * Utility methods
  */
@@ -45,9 +43,9 @@ object ChiefOfStateHelper {
       var grpcReadSideConfig: GrpcReadSideConfig = GrpcReadSideConfig(processorId)
 
       settings.foreach({case (key, value) =>
-        if(key == "HOST") {
+        if(key == ChiefOfStateConstants.READ_SIDE_HOST_KEY) {
           grpcReadSideConfig = grpcReadSideConfig.copy(host = Some(value))
-        } else if(key == "PORT") {
+        } else if(key == ChiefOfStateConstants.READ_SIDE_PORT_KEY) {
           grpcReadSideConfig = grpcReadSideConfig.copy(port = Some(value).map(_.toInt))
         } else {
           grpcReadSideConfig.addSetting(key, value)
