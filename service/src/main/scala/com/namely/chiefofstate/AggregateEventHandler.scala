@@ -1,9 +1,9 @@
 package com.namely.chiefofstate
 
 import akka.actor.ActorSystem
-import com.namely.protobuf.chief_of_state.cos_common
-import com.namely.protobuf.chief_of_state.cos_persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.cos_writeside_handler.{
+import com.namely.protobuf.chief_of_state.common
+import com.namely.protobuf.chief_of_state.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.writeside.{
   HandleEventRequest,
   HandleEventResponse,
   WriteSideHandlerServiceClient
@@ -24,10 +24,10 @@ import scala.util.{Failure, Success, Try}
  * @param writeSideHandlerServiceClient the gRpcClient used to connect to the actual event handler
  * @param handlerSetting                the event handler setting
  */
-class ChiefOfStateEventHandler(
+class AggregateEventHandler(
     actorSystem: ActorSystem,
     writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
-    handlerSetting: ChiefOfStateHandlerSetting
+    handlerSetting: HandlerSetting
 ) extends EventHandler[State](actorSystem) {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -39,7 +39,7 @@ class ChiefOfStateEventHandler(
           .withEvent(event.asInstanceOf[Event].getEvent)
           .withCurrentState(priorState.getCurrentState)
           .withMeta(
-            cos_common
+            common
               .MetaData()
               .withData(eventMeta.data)
               .withRevisionDate(eventMeta.getRevisionDate)
@@ -57,7 +57,7 @@ class ChiefOfStateEventHandler(
         } match {
           case Failure(exception) => throw new GlobalException(exception.getMessage)
           case Success(handleEventResponse: HandleEventResponse) =>
-            val stateFQN: String = ChiefOfStateHelper.getProtoFullyQualifiedName(handleEventResponse.getResultingState)
+            val stateFQN: String = Util.getProtoFullyQualifiedName(handleEventResponse.getResultingState)
 
             log.debug(s"[ChiefOfState]: event handler state $stateFQN")
 

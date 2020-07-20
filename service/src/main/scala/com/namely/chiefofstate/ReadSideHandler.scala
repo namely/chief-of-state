@@ -3,9 +3,9 @@ package com.namely.chiefofstate
 import akka.Done
 import akka.actor.ActorSystem
 import akka.actor.typed.scaladsl.adapter._
-import com.namely.protobuf.chief_of_state.cos_common
-import com.namely.protobuf.chief_of_state.cos_persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.cos_readside_handler.{
+import com.namely.protobuf.chief_of_state.common
+import com.namely.protobuf.chief_of_state.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.readside.{
   HandleReadSideRequest,
   HandleReadSideResponse,
   ReadSideHandlerServiceClient
@@ -28,11 +28,11 @@ import scala.util.{Failure, Success, Try}
  * @param readSideHandlerServiceClient the gRpcClient used to connect to the actual readSide handler
  * @param handlerSetting               the readSide handler settingthe lagom readSide object that helps feed from events emitted in the journal
  */
-class ChiefOfStateReadProcessor(
+class ReadSideHandler(
     encryption: ProtoEncryption,
     actorSystem: ActorSystem,
     readSideHandlerServiceClient: ReadSideHandlerServiceClient,
-    handlerSetting: ChiefOfStateHandlerSetting
+    handlerSetting: HandlerSetting
 )(implicit ec: ExecutionContext)
     extends ReadSideProcessor[State](encryption)(ec, actorSystem.toTyped) {
   // $COVERAGE-OFF$
@@ -52,7 +52,7 @@ class ChiefOfStateReadProcessor(
               .withEvent(e.getEvent)
               .withState(state.getCurrentState)
               .withMeta(
-                cos_common
+                common
                   .MetaData()
                   .withData(metaData.data)
                   .withRevisionDate(metaData.getRevisionDate)

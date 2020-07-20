@@ -5,7 +5,7 @@ import com.google.protobuf.any.Any
 /**
  * Utility methods
  */
-object ChiefOfStateHelper {
+object Util {
 
   /**
    * Extracts the proto message package name

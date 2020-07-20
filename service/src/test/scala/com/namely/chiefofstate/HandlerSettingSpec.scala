@@ -3,13 +3,13 @@ package com.namely.chiefofstate
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import io.superflat.lagompb.testkit.LagompbSpec
 
-class ChiefOfStateHandlerSettingSpec extends LagompbSpec {
+class HandlerSettingSpec extends LagompbSpec {
 
   "Chief-Of-State handler settings" should {
 
     "fail to load settings because env variables not set properly" in {
       val config: Config = ConfigFactory.parseResources("handler-settings.conf").resolve()
-      an[RuntimeException] shouldBe thrownBy(ChiefOfStateHandlerSetting(config))
+      an[RuntimeException] shouldBe thrownBy(HandlerSetting(config))
     }
 
     "fail to load settings because env variables for events-protos not set" in {
@@ -20,7 +20,7 @@ class ChiefOfStateHandlerSettingSpec extends LagompbSpec {
           ConfigValueFactory.fromAnyRef("namely.org_units.OrgUnit")
         )
         .resolve()
-      an[RuntimeException] shouldBe thrownBy(ChiefOfStateHandlerSetting(config))
+      an[RuntimeException] shouldBe thrownBy(HandlerSetting(config))
     }
 
     "succeed to load settings because env variables for events-protos not set" in {
@@ -35,7 +35,7 @@ class ChiefOfStateHandlerSettingSpec extends LagompbSpec {
           ConfigValueFactory.fromAnyRef("namely.org_units.OrgUnitTypeCreated", "namely.org_units.OrgUnitTypeUpdated")
         )
         .resolve()
-      noException shouldBe thrownBy(ChiefOfStateHandlerSetting(config))
+      noException shouldBe thrownBy(HandlerSetting(config))
     }
   }
 }

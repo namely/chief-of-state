@@ -4,14 +4,14 @@ import java.util.UUID
 
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.cos_common
-import com.namely.protobuf.chief_of_state.cos_persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.cos_writeside_handler.{
+import com.namely.protobuf.chief_of_state.common
+import com.namely.protobuf.chief_of_state.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened}
+import com.namely.protobuf.chief_of_state.writeside.{
   HandleEventRequest,
   HandleEventResponse,
   WriteSideHandlerServiceClient
 }
-import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened}
 import io.grpc.Status
 import io.superflat.lagompb.protobuf.core.MetaData
 import io.superflat.lagompb.testkit.LagompbSpec
@@ -20,7 +20,7 @@ import org.scalamock.scalatest.MockFactory
 
 import scala.concurrent.Future
 
-class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
+class AggregateEventHandlerSpec extends LagompbSpec with MockFactory {
 
   "Chief-Of-State Event Handler" should {
 
@@ -30,11 +30,11 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
       val eventsProtos: Seq[String] =
-        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -55,7 +55,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
             .withEvent(Any.pack(event))
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              cos_common
+              common
                 .MetaData()
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
@@ -69,7 +69,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
           )
         )
 
-      val eventHandler: ChiefOfStateEventHandler = new ChiefOfStateEventHandler(null, mockGrpcClient, handlerSetting)
+      val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
       val result: State = eventHandler.handle(Event().withEvent(Any.pack(event)), priorState, eventMeta)
       result shouldBe (State().withCurrentState(Any.pack(resultingState)))
       result.getCurrentState.unpack[Account] shouldBe (resultingState)
@@ -83,9 +83,9 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
 
       val stateProto: String = "namely.rogue.state"
       val eventsProtos: Seq[String] =
-        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -106,7 +106,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
             .withEvent(Any.pack(event))
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              cos_common
+              common
                 .MetaData()
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
@@ -120,7 +120,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
           )
         )
 
-      val eventHandler: ChiefOfStateEventHandler = new ChiefOfStateEventHandler(null, mockGrpcClient, handlerSetting)
+      val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
       a[GlobalException] shouldBe thrownBy(
         eventHandler.handle(Event().withEvent(Any.pack(event)), priorState, eventMeta)
       )
@@ -132,11 +132,11 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
       val eventsProtos: Seq[String] =
-        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -152,7 +152,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
             .withEvent(Any.pack(event))
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              cos_common
+              common
                 .MetaData()
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
@@ -161,7 +161,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
         )
         .returning(Future.failed(new GrpcServiceException(Status.INTERNAL)))
 
-      val eventHandler: ChiefOfStateEventHandler = new ChiefOfStateEventHandler(null, mockGrpcClient, handlerSetting)
+      val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
       a[GlobalException] shouldBe thrownBy(
         eventHandler.handle(Event().withEvent(Any.pack(event)), priorState, eventMeta)
       )
@@ -173,11 +173,11 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
       val eventsProtos: Seq[String] =
-        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -193,7 +193,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
             .withEvent(Any.pack(event))
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              cos_common
+              common
                 .MetaData()
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
@@ -202,7 +202,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
         )
         .throws(new RuntimeException("broken"))
 
-      val eventHandler: ChiefOfStateEventHandler = new ChiefOfStateEventHandler(null, mockGrpcClient, handlerSetting)
+      val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
       a[GlobalException] shouldBe thrownBy(
         eventHandler.handle(Event().withEvent(Any.pack(event)), priorState, eventMeta)
       )

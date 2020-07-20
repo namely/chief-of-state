@@ -4,12 +4,12 @@ import java.util.UUID
 
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.cos_common.{MetaData => _}
-import com.namely.protobuf.chief_of_state.cos_common
-import com.namely.protobuf.chief_of_state.cos_persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.cos_writeside_handler._
-import com.namely.protobuf.chief_of_state.cos_writeside_handler.HandleCommandResponse.ResponseType
+import com.namely.protobuf.chief_of_state.common.{MetaData => _}
+import com.namely.protobuf.chief_of_state.common
+import com.namely.protobuf.chief_of_state.persistence.{Event, State}
 import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened, OpenAccount}
+import com.namely.protobuf.chief_of_state.writeside._
+import com.namely.protobuf.chief_of_state.writeside.HandleCommandResponse.ResponseType
 import io.grpc.Status
 import io.superflat.lagompb.protobuf.core._
 import io.superflat.lagompb.testkit.LagompbSpec
@@ -19,7 +19,7 @@ import org.scalamock.scalatest.MockFactory
 import scala.concurrent.Future
 import scala.util.{Success, Try}
 
-class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
+class AggregateCommandHandlerSpec extends LagompbSpec with MockFactory {
 
   "Chief-Of-State Command Handler" should {
 
@@ -29,11 +29,11 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
       val eventsProtos: Seq[String] =
-        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val cmd = Command(
         Any.pack(
@@ -59,7 +59,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              cos_common
+              common
                 .MetaData()
                 .withData(priorEventMeta.data)
                 .withRevisionDate(priorEventMeta.getRevisionDate)
@@ -77,7 +77,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
         )
 
       // let us execute the request
-      val cmdhandler = new ChiefOfStateCommandHandler(null, mockGrpcClient, handlerSetting)
+      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
       val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
       result shouldBe (Success(
         CommandHandlerResponse()
@@ -91,10 +91,10 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
       val eventsProtos: Seq[String] = Seq("namely.com.SomeEvent")
 
-      val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val cmd = Command(
         Any.pack(
@@ -120,7 +120,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              cos_common
+              common
                 .MetaData()
                 .withData(priorEventMeta.data)
                 .withRevisionDate(priorEventMeta.getRevisionDate)
@@ -138,7 +138,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
         )
 
       // let us execute the request
-      val cmdhandler = new ChiefOfStateCommandHandler(null, mockGrpcClient, handlerSetting)
+      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
       val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
       result shouldBe (Success(
         CommandHandlerResponse()
@@ -157,11 +157,11 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
       val eventsProtos: Seq[String] =
-        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val cmd = Command(
         Any.pack(
@@ -183,7 +183,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              cos_common
+              common
                 .MetaData()
                 .withData(priorEventMeta.data)
                 .withRevisionDate(priorEventMeta.getRevisionDate)
@@ -198,7 +198,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
         )
 
       // let us execute the request
-      val cmdhandler = new ChiefOfStateCommandHandler(null, mockGrpcClient, handlerSetting)
+      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
       val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
       result shouldBe (Success(
         CommandHandlerResponse()
@@ -215,11 +215,11 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
       val eventsProtos: Seq[String] =
-        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val cmd = Command(
         Any.pack(
@@ -241,7 +241,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              cos_common
+              common
                 .MetaData()
                 .withData(priorEventMeta.data)
                 .withRevisionDate(priorEventMeta.getRevisionDate)
@@ -256,7 +256,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
         )
 
       // let us execute the request
-      val cmdhandler = new ChiefOfStateCommandHandler(null, mockGrpcClient, handlerSetting)
+      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
       val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
       result shouldBe (Success(
         CommandHandlerResponse()
@@ -274,11 +274,11 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
       val eventsProtos: Seq[String] =
-        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val cmd = Command(
         Any.pack(
@@ -300,7 +300,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              cos_common
+              common
                 .MetaData()
                 .withData(priorEventMeta.data)
                 .withRevisionDate(priorEventMeta.getRevisionDate)
@@ -310,7 +310,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
         .returning(Future.failed(new GrpcServiceException(Status.NOT_FOUND)))
 
       // let us execute the request
-      val cmdhandler = new ChiefOfStateCommandHandler(null, mockGrpcClient, handlerSetting)
+      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
       val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
       result shouldBe (Success(
         CommandHandlerResponse()
@@ -328,11 +328,11 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
       val eventsProtos: Seq[String] =
-        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val cmd = Command(
         Any.pack(
@@ -354,7 +354,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              cos_common
+              common
                 .MetaData()
                 .withData(priorEventMeta.data)
                 .withRevisionDate(priorEventMeta.getRevisionDate)
@@ -364,7 +364,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
         .throws(new GrpcServiceException(Status.INVALID_ARGUMENT))
 
       // let us execute the request
-      val cmdhandler = new ChiefOfStateCommandHandler(null, mockGrpcClient, handlerSetting)
+      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
       val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
       result shouldBe (Success(
         CommandHandlerResponse()
@@ -382,11 +382,11 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
       val eventsProtos: Seq[String] =
-        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val cmd = Command(
         Any.pack(
@@ -408,7 +408,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
             .withCommand(cmd.command.asInstanceOf[Any])
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              cos_common
+              common
                 .MetaData()
                 .withData(priorEventMeta.data)
                 .withRevisionDate(priorEventMeta.getRevisionDate)
@@ -418,7 +418,7 @@ class ChiefOfStateCommandHandlerSpec extends LagompbSpec with MockFactory {
         .throws(new RuntimeException("broken"))
 
       // let us execute the request
-      val cmdhandler = new ChiefOfStateCommandHandler(null, mockGrpcClient, handlerSetting)
+      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
       val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
       result shouldBe (Success(
         CommandHandlerResponse()
