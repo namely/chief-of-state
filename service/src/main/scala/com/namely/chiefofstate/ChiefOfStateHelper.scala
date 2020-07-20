@@ -19,34 +19,47 @@ object ChiefOfStateHelper {
     proto.typeUrl.split('/').lastOption.getOrElse("")
   }
 
+  // TODO: Add tests
   /**
    * Extracts read side configurations from environment variables
    *
-   * @return `Map[String, Map[String, String]]`
+   * @return Seq[GrpcReadSideConfig]
    */
-  def getReadSideConfigs: Map[String, Map[String, String]] = {
+  def getReadSideConfigs: Seq[GrpcReadSideConfig] = {
 
-    val configurations: Map[String, Map[String, String]] = sys.env
+    val envVars: Map[String, String] = sys.env
       .filter(_._1.startsWith("COS_READSIDE_CONFIG__"))
-      .groupMap(_._1.split("__").last)({ case(k, v) =>
-        val settingNameAttempt: Try[String] = Try(k.split("__").tail.head)
 
-        val settingName = settingNameAttempt match {
-          case Success(name) => name
-          case Failure(_) => throw new Exception(s"Invalid setting name for $k")
-        }
+    if(envVars.exists(_._1.split("__").length != 3)) {
+      throw new Exception("One or more of the read side configurations is invalid")
+    }
+
+    val configurations: Map[String, Iterable[(String, String)]] = envVars
+      .groupMap(_._1.split("__").last)({ case(k, v) =>
+        val settingName: String = k.split("__").tail.head
+        require(settingName != "", s"Setting must be defined in $k")
 
         settingName -> v
       })
-      .view
-      .mapValues(_.toMap)
-      .toMap
 
-    configurations.foreach(x => {
-      val settings: Set[String] = x._2.keySet
-      require(settings.contains("HOST") && settings.contains("PORT"))
-    })
+    configurations.map({case (processorId, settings) =>
+      var grpcReadSideConfig: GrpcReadSideConfig = GrpcReadSideConfig(processorId)
 
-    configurations
+      settings.foreach({case (key, value) =>
+        if(key == "HOST") {
+          grpcReadSideConfig = grpcReadSideConfig.copy(host = Some(value))
+        } else if(key == "PORT") {
+          grpcReadSideConfig = grpcReadSideConfig.copy(port = Some(value).map(_.toInt))
+        } else {
+          grpcReadSideConfig.addSetting(key, value)
+        }
+      })
+
+      // Requires Host and Port to be defined per GrpcReadSideConfig
+      require(grpcReadSideConfig.host.isDefined, s"ProcessorId $processorId is missing a HOST")
+      require(grpcReadSideConfig.port.isDefined, s"ProcessorId $processorId is missing a PORT")
+
+      grpcReadSideConfig
+    }).toSeq
   }
 }

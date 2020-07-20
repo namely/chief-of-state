@@ -29,7 +29,7 @@ import scala.util.{Failure, Success, Try}
  * @param handlerSetting               the readSide handler settingthe lagom readSide object that helps feed from events emitted in the journal
  */
 class ChiefOfStateReadProcessor(
-    processorId: String,
+    grpcReadSideConfig: GrpcReadSideConfig,
     encryption: ProtoEncryption,
     actorSystem: ActorSystem,
     readSideHandlerServiceClient: ReadSideHandlerServiceClient,
@@ -40,7 +40,7 @@ class ChiefOfStateReadProcessor(
 
   override def aggregateStateCompanion: GeneratedMessageCompanion[State] = State
 
-  override def projectionName: String = s"$processorId-${ConfigReader.serviceName}-readside-projection"
+  override def projectionName: String = s"${grpcReadSideConfig.processorId}-${ConfigReader.serviceName}-readside-projection"
 
   // $COVERAGE-ON$
 
@@ -62,22 +62,22 @@ class ChiefOfStateReadProcessor(
           )
         ) match {
           case Failure(exception) =>
-            log.error(s"[ChiefOfState]: $processorId - unable to retrieve command handler response due to ${exception.getMessage}")
+            log.error(s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - unable to retrieve command handler response due to ${exception.getMessage}")
             DBIOAction.failed(throw new GlobalException(exception.getMessage))
           case Success(eventualReadSideResponse: Future[HandleReadSideResponse]) =>
             Try {
               Await.result(eventualReadSideResponse, Duration.Inf)
             } match {
               case Failure(exception) =>
-                DBIOAction.failed(throw new GlobalException(s"[ChiefOfState]: $processorId - ${exception.getMessage}"))
+                DBIOAction.failed(throw new GlobalException(s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - ${exception.getMessage}"))
               case Success(value) =>
                 if (value.successful) DBIOAction.successful(Done)
-                else DBIOAction.failed(throw new GlobalException(s"[ChiefOfState]: $processorId - unable to handle readSide"))
+                else DBIOAction.failed(throw new GlobalException(s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - unable to handle readSide"))
             }
         }
       case _ =>
         DBIOAction.failed(
-          throw new GlobalException(s"[ChiefOfState]: $processorId - event ${event.companion.scalaDescriptor.fullName} not handled")
+          throw new GlobalException(s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - event ${event.companion.scalaDescriptor.fullName} not handled")
         )
     }
   }
