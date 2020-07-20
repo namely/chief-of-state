@@ -113,6 +113,7 @@ env:
 
 - [.NET Core](https://github.com/namely/cos-banking)
 - [Golang](https://github.com/namely/cos-go-sample)
+- [Python](https://github.com/namely/cos-python-sample)
 
 ### Notes
 
