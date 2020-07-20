@@ -3,8 +3,6 @@ package com.namely.chiefofstate
 import akka.actor.ActorSystem
 import akka.grpc.GrpcClientSettings
 
-import scala.collection.mutable
-
 /**
  * GRPC Read Side Configurations
  *
@@ -12,9 +10,8 @@ import scala.collection.mutable
  * @param host Host
  * @param port Port
  */
-final case class GrpcReadSideConfig(processorId: String, host: Option[String] = None, port: Option[Int] = None) {
-
-  private val settings: mutable.Map[String, String] = mutable.Map()
+final case class GrpcReadSideConfig(processorId: String, host: Option[String] = None, port: Option[Int] = None,
+  settings: Map[String, String] = Map()) {
 
   /**
    * Adds a setting to the config
@@ -22,7 +19,7 @@ final case class GrpcReadSideConfig(processorId: String, host: Option[String] = 
    * @param key Setting key
    * @param value Setting value
    */
-  def addSetting(key: String, value: String): Unit = settings += (key -> value)
+  def addSetting(key: String, value: String): GrpcReadSideConfig = copy(settings = settings + (key -> value))
 
   /**
    * Gets the setting from the config
@@ -38,14 +35,14 @@ final case class GrpcReadSideConfig(processorId: String, host: Option[String] = 
    * @param key Setting key
    * @return
    */
-  def removeSetting(key: String): Boolean = settings.remove(key).isDefined
+  def removeSetting(key: String): GrpcReadSideConfig = copy(settings = settings.removed(key))
 
   /**
    * Lists the settings from the config
    *
    * @return Map[String, String]
    */
-  def listSettings: Map[String, String] = settings.toMap
+  def listSettings: Map[String, String] = settings
 
   // TODO: Add handlers for misc GRPC settings
   // TODO: Add spec w/ a fake ActorSystem

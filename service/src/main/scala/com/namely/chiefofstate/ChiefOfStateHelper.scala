@@ -31,7 +31,7 @@ object ChiefOfStateHelper {
       throw new Exception("One or more of the read side configurations is invalid")
     }
 
-    val configurations: Map[String, Iterable[(String, String)]] = envVars
+    val groupedEnvVars: Map[String, Iterable[(String, String)]] = envVars
       .groupMap(_._1.split("__").last)({ case(k, v) =>
         val settingName: String = k.split("__").tail.head
         require(settingName != "", s"Setting must be defined in $k")
@@ -39,24 +39,22 @@ object ChiefOfStateHelper {
         settingName -> v
       })
 
-    configurations.map({case (processorId, settings) =>
-      var grpcReadSideConfig: GrpcReadSideConfig = GrpcReadSideConfig(processorId)
-
-      settings.foreach({case (key, value) =>
+    groupedEnvVars.map({case (processorId, settings) =>
+      val grpcConfig: GrpcReadSideConfig = settings.foldLeft(GrpcReadSideConfig(processorId))({case (config, (key, value)) =>
         if(key == ChiefOfStateConstants.READ_SIDE_HOST_KEY) {
-          grpcReadSideConfig = grpcReadSideConfig.copy(host = Some(value))
+          config.copy(host = Some(value))
         } else if(key == ChiefOfStateConstants.READ_SIDE_PORT_KEY) {
-          grpcReadSideConfig = grpcReadSideConfig.copy(port = Some(value).map(_.toInt))
+          config.copy(port = Some(value).map(_.toInt))
         } else {
-          grpcReadSideConfig.addSetting(key, value)
+          config.addSetting(key, value)
         }
       })
 
       // Requires Host and Port to be defined per GrpcReadSideConfig
-      require(grpcReadSideConfig.host.isDefined, s"ProcessorId $processorId is missing a HOST")
-      require(grpcReadSideConfig.port.isDefined, s"ProcessorId $processorId is missing a PORT")
+      require(grpcConfig.host.isDefined, s"ProcessorId $processorId is missing a HOST")
+      require(grpcConfig.port.isDefined, s"ProcessorId $processorId is missing a PORT")
 
-      grpcReadSideConfig
+      grpcConfig
     }).toSeq
   }
 }

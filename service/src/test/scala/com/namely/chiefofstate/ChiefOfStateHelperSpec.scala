@@ -25,9 +25,10 @@ class ChiefOfStateHelperSpec extends LagompbSpec{
         EnvironmentHelper.setEnv("COS_READSIDE_CONFIG__GRPC_SOME_SETTING__RS2", "setting2")
 
         val grpcReadSideConfig1: GrpcReadSideConfig = GrpcReadSideConfig("RS1", Some("host1"), Some(1))
-        grpcReadSideConfig1.addSetting("COS_READSIDE_CONFIG__GRPC_SOME_SETTING__RS1", "setting1")
+          .addSetting("GRPC_SOME_SETTING", "setting1")
 
         val grpcReadSideConfig2: GrpcReadSideConfig = GrpcReadSideConfig("RS2", Some("host2"), Some(2))
+          .addSetting("GRPC_SOME_SETTING", "setting2")
 
         val actual: Seq[GrpcReadSideConfig] = ChiefOfStateHelper.getReadSideConfigs
         val expected: Seq[GrpcReadSideConfig] = Seq(grpcReadSideConfig1, grpcReadSideConfig2)

@@ -30,27 +30,23 @@ class GrpcReadSideConfigSpec extends LagompbActorTestKit(s"""
       config.getSetting(settingName) shouldBe(None)
 
       // Adds key
-      config.addSetting(settingName, value)
+      val addition: GrpcReadSideConfig = config.addSetting(settingName, value)
 
       // Gets new key value
-      config.getSetting(settingName) shouldBe(Some(value))
+      addition.getSetting(settingName) shouldBe(Some(value))
 
       // Removes key
-      config.removeSetting(settingName) shouldBe(true)
+      val removed: GrpcReadSideConfig = addition.removeSetting(settingName)
 
       // Gets removed key
-      config.getSetting(settingName) shouldBe(None)
-
-      // Removes non-existent key
-      config.removeSetting("not-a-key") shouldBe(false)
+      removed.getSetting(settingName) shouldBe(None)
     }
 
     "return all settings" in {
       val config: GrpcReadSideConfig = GrpcReadSideConfig("test")
-
-      config.addSetting("foo", "foo")
-      config.addSetting("bar", "bar")
-      config.addSetting("baz", "baz")
+        .addSetting("foo", "foo")
+        .addSetting("bar", "bar")
+        .addSetting("baz", "baz")
 
       config.listSettings should contain theSameElementsAs Map(
         "foo" -> "foo",
