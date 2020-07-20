@@ -59,20 +59,22 @@ abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends
   if (config.getBoolean("chief-of-state.read-model.enabled")) {
 
     // wiring up the grpc for the readSide client
-    lazy val readSideHandlerServiceClient: ReadSideHandlerServiceClient = ReadSideHandlerServiceClient(
-      GrpcClientSettings.fromConfig("chief_of_state.ReadSideHandlerService")(actorSystem)
-    )
+    ChiefOfStateHelper.getReadSideConfigs.foreach({ config =>
 
-    //  Register a shutdown task to release resources of the client
-    coordinatedShutdown
-      .addTask(CoordinatedShutdown.PhaseServiceUnbind, "shutdown-readSidehandler-service-client") { () =>
+      lazy val readSideHandlerServiceClient: ReadSideHandlerServiceClient =
+        ReadSideHandlerServiceClient(config.getGrpcClientSettings(actorSystem))
+
+      coordinatedShutdown.addTask(
+        CoordinatedShutdown.PhaseServiceUnbind,
+        s"shutdown-readSidehandler-service-client-${config.processorId}"
+      ) { () =>
         readSideHandlerServiceClient.close()
       }
 
-    lazy val chiefOfStateReadProcessor: ChiefOfStateReadProcessor = wire[ChiefOfStateReadProcessor]
-    chiefOfStateReadProcessor.init()
+      lazy val chiefOfStateReadProcessor: ChiefOfStateReadProcessor = wire[ChiefOfStateReadProcessor]
+      chiefOfStateReadProcessor.init()
+    })
   }
-
   // $COVERAGE-ON$
 }
 
