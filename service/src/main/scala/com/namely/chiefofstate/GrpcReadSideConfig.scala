@@ -14,9 +14,6 @@ import scala.collection.mutable
  */
 final case class GrpcReadSideConfig(processorId: String, host: Option[String] = None, port: Option[Int] = None) {
 
-  val descriptor: com.google.protobuf.Descriptors.FileDescriptor =
-    com.namely.protobuf.chief_of_state.cos_readside_handler.CosReadsideHandlerProto.javaDescriptor;
-
   private val settings: mutable.Map[String, String] = mutable.Map()
 
   /**

@@ -1,7 +1,6 @@
 package com.namely.chiefofstate
 
-import akka.actor.typed.ActorSystem
-import io.superflat.lagompb.testkit.{LagompbActorTestKit, LagompbSpec}
+import io.superflat.lagompb.testkit.LagompbActorTestKit
 
 class GrpcReadSideConfigSpec extends LagompbActorTestKit(s"""
     akka {
