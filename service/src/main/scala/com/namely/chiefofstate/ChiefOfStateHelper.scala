@@ -19,7 +19,6 @@ object ChiefOfStateHelper {
     proto.typeUrl.split('/').lastOption.getOrElse("")
   }
 
-  // TODO: Add tests
   /**
    * Extracts read side configurations from environment variables
    *
