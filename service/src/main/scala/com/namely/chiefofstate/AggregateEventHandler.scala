@@ -24,10 +24,10 @@ import scala.util.{Failure, Success, Try}
  * @param writeSideHandlerServiceClient the gRpcClient used to connect to the actual event handler
  * @param handlerSetting                the event handler setting
  */
-class ChiefOfStateEventHandler(
+class AggregateEventHandler(
     actorSystem: ActorSystem,
     writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
-    handlerSetting: ChiefOfStateHandlerSetting
+    handlerSetting: HandlerSetting
 ) extends EventHandler[State](actorSystem) {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -57,7 +57,7 @@ class ChiefOfStateEventHandler(
         } match {
           case Failure(exception) => throw new GlobalException(exception.getMessage)
           case Success(handleEventResponse: HandleEventResponse) =>
-            val stateFQN: String = ChiefOfStateHelper.getProtoFullyQualifiedName(handleEventResponse.getResultingState)
+            val stateFQN: String = Util.getProtoFullyQualifiedName(handleEventResponse.getResultingState)
 
             log.debug(s"[ChiefOfState]: event handler state $stateFQN")
 

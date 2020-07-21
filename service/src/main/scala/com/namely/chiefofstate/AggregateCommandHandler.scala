@@ -28,10 +28,10 @@ import scala.util.{Failure, Success, Try}
  * @param writeSideHandlerServiceClient the gRpcClient used to connect to the actual command handler
  * @param handlerSetting                the command handler setting
  */
-class ChiefOfStateCommandHandler(
+class AggregateCommandHandler(
     actorSystem: ActorSystem,
     writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
-    handlerSetting: ChiefOfStateHandlerSetting
+    handlerSetting: HandlerSetting
 ) extends CommandHandler[State](actorSystem) {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -109,7 +109,7 @@ class ChiefOfStateCommandHandler(
               case PersistAndReply(persistAndReply) =>
                 log.debug("[ChiefOfState]: command handler return successfully. An event will be persisted...")
 
-                val eventFQN: String = ChiefOfStateHelper.getProtoFullyQualifiedName(persistAndReply.getEvent)
+                val eventFQN: String = Util.getProtoFullyQualifiedName(persistAndReply.getEvent)
 
                 log.debug(s"[ChiefOfState]: command handler event to persist $eventFQN")
 

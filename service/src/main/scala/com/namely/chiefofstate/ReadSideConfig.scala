@@ -10,7 +10,7 @@ import akka.grpc.GrpcClientSettings
  * @param host Host
  * @param port Port
  */
-final case class GrpcReadSideConfig(
+final case class ReadSideConfig(
     processorId: String,
     host: Option[String] = None,
     port: Option[Int] = None,
@@ -23,7 +23,7 @@ final case class GrpcReadSideConfig(
    * @param key Setting key
    * @param value Setting value
    */
-  def addSetting(key: String, value: String): GrpcReadSideConfig = copy(settings = settings + (key -> value))
+  def addSetting(key: String, value: String): ReadSideConfig = copy(settings = settings + (key -> value))
 
   /**
    * Gets the setting from the config
@@ -39,7 +39,7 @@ final case class GrpcReadSideConfig(
    * @param key Setting key
    * @return
    */
-  def removeSetting(key: String): GrpcReadSideConfig = copy(settings = settings.removed(key))
+  def removeSetting(key: String): ReadSideConfig = copy(settings = settings.removed(key))
 
   /**
    * Lists the settings from the config

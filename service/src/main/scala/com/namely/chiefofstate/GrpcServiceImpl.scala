@@ -16,8 +16,8 @@ import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ChiefOfStateGrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding, aggregate: AggregateRoot[State])(
-    implicit ec: ExecutionContext
+class GrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding, aggregate: AggregateRoot[State])(implicit
+    ec: ExecutionContext
 ) extends AbstractChiefOfStateServicePowerApiRouter(sys)
     with BaseGrpcServiceImpl {
 

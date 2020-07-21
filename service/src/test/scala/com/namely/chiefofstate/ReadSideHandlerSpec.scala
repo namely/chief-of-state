@@ -26,7 +26,7 @@ import slick.dbio.DBIO
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ChiefOfStateReadProcessorSpec
+class ReadSideHandlerSpec
     extends LagompbActorTestKit(s"""
     akka {
       actor {
@@ -45,7 +45,7 @@ class ChiefOfStateReadProcessorSpec
     with MockFactory {
 
   val sys: ActorSystem[Nothing] = testKit.system
-  val defaultGrpcReadSideConfig: GrpcReadSideConfig = GrpcReadSideConfig("test")
+  val defaultGrpcReadSideConfig: ReadSideConfig = ReadSideConfig("test")
 
   "Chief-Of-State ReadSide Processor" should {
 
@@ -55,11 +55,11 @@ class ChiefOfStateReadProcessorSpec
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
       val eventsProtos: Seq[String] =
-        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -90,7 +90,7 @@ class ChiefOfStateReadProcessorSpec
         )
 
       val readSideProcessor =
-        new ChiefOfStateReadProcessor(
+        new ReadSideHandler(
           defaultGrpcReadSideConfig,
           NoEncryption,
           testKit.system.toClassic,
@@ -108,11 +108,11 @@ class ChiefOfStateReadProcessorSpec
       val accountId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
       val eventsProtos: Seq[String] =
-        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -143,7 +143,7 @@ class ChiefOfStateReadProcessorSpec
         )
 
       val readSideProcessor =
-        new ChiefOfStateReadProcessor(
+        new ReadSideHandler(
           defaultGrpcReadSideConfig,
           NoEncryption,
           testKit.system.toClassic,
@@ -161,11 +161,11 @@ class ChiefOfStateReadProcessorSpec
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
       val eventsProtos: Seq[String] =
-        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -191,7 +191,7 @@ class ChiefOfStateReadProcessorSpec
         .throws(new RuntimeException("broken"))
 
       val readSideProcessor =
-        new ChiefOfStateReadProcessor(
+        new ReadSideHandler(
           defaultGrpcReadSideConfig,
           NoEncryption,
           testKit.system.toClassic,
@@ -209,11 +209,11 @@ class ChiefOfStateReadProcessorSpec
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
       val eventsProtos: Seq[String] =
-        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -239,7 +239,7 @@ class ChiefOfStateReadProcessorSpec
         .returning(Future.failed(new GrpcServiceException(Status.NOT_FOUND)))
 
       val readSideProcessor =
-        new ChiefOfStateReadProcessor(
+        new ReadSideHandler(
           defaultGrpcReadSideConfig,
           NoEncryption,
           testKit.system.toClassic,
@@ -257,11 +257,11 @@ class ChiefOfStateReadProcessorSpec
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
       val eventsProtos: Seq[String] =
-        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -287,7 +287,7 @@ class ChiefOfStateReadProcessorSpec
         .throws(new GrpcServiceException(Status.INVALID_ARGUMENT))
 
       val readSideProcessor =
-        new ChiefOfStateReadProcessor(
+        new ReadSideHandler(
           defaultGrpcReadSideConfig,
           NoEncryption,
           testKit.system.toClassic,
@@ -305,24 +305,18 @@ class ChiefOfStateReadProcessorSpec
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
       val eventsProtos: Seq[String] =
-        Seq(ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
         .withAccountUuid(accouuntId)
 
       val readSideProcessor =
-        new ChiefOfStateReadProcessor(
-          defaultGrpcReadSideConfig,
-          NoEncryption,
-          testKit.system.toClassic,
-          null,
-          handlerSetting
-        )
+        new ReadSideHandler(defaultGrpcReadSideConfig, NoEncryption, testKit.system.toClassic, null, handlerSetting)
       an[GlobalException] shouldBe thrownBy(readSideProcessor.handle(Any.pack(event), state, eventMeta))
     }
   }

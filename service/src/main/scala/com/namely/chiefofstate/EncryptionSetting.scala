@@ -9,11 +9,11 @@ import scala.util.{Failure, Success, Try}
 /**
  * Contains the configurations for COS encryption
  *
- * @param encryption
+ * @param encryption encryptor
  */
-case class ChiefOfStateEncryptionSetting(encryption: ProtoEncryption)
+case class EncryptionSetting(encryption: ProtoEncryption)
 
-object ChiefOfStateEncryptionSetting {
+object EncryptionSetting {
 
   /**
    * constant key for the encryptor setting
@@ -21,16 +21,15 @@ object ChiefOfStateEncryptionSetting {
   val SETTING_KEY: String = "chief-of-state.encryption.encryption-class"
 
   /**
-   * Companion for [[com.namely.chiefofstate.ChiefOfStateEncryptionSetting]]
+   * Companion for [[com.namely.chiefofstate.EncryptionSetting]]
    * class which reads the relevant `chief-of-state.encryption` configurations
    * and or halts the application bootstrap on failure.
    *
    * @param config application configuration
-   * @throws com.typesafe.config.ConfigException
    * @return
    */
   @throws(classOf[ConfigException])
-  def apply(config: Config): ChiefOfStateEncryptionSetting = {
+  def apply(config: Config): EncryptionSetting = {
 
     // read the preferred encryptor class from config
     val encryptionClassName: String = config
@@ -51,7 +50,7 @@ object ChiefOfStateEncryptionSetting {
 
     output match {
       case Success(protoEncryption) =>
-        ChiefOfStateEncryptionSetting(protoEncryption)
+        EncryptionSetting(protoEncryption)
 
       case Failure(e) =>
         throw new RuntimeException(s"[ChiefOfState] could not load ProtoEncryption '$encryptionClassName'.")

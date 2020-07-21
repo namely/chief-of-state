@@ -28,12 +28,12 @@ import scala.util.{Failure, Success, Try}
  * @param readSideHandlerServiceClient the gRpcClient used to connect to the actual readSide handler
  * @param handlerSetting               the readSide handler settingthe lagom readSide object that helps feed from events emitted in the journal
  */
-class ChiefOfStateReadProcessor(
-    grpcReadSideConfig: GrpcReadSideConfig,
+class ReadSideHandler(
+    grpcReadSideConfig: ReadSideConfig,
     encryption: ProtoEncryption,
     actorSystem: ActorSystem,
     readSideHandlerServiceClient: ReadSideHandlerServiceClient,
-    handlerSetting: ChiefOfStateHandlerSetting
+    handlerSetting: HandlerSetting
 )(implicit ec: ExecutionContext)
     extends ReadSideProcessor[State](encryption)(ec, actorSystem.toTyped) {
   // $COVERAGE-OFF$

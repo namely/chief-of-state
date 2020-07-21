@@ -15,7 +15,7 @@ import scalapb.GeneratedMessageCompanion
  * @param commandHandler the commands handler
  * @param eventHandler   the events handler
  */
-class ChiefOfStateAggregate(
+class Aggregate(
     actorSystem: ActorSystem,
     config: Config,
     commandHandler: CommandHandler[State],

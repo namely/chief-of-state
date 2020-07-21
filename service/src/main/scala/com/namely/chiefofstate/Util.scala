@@ -5,7 +5,7 @@ import com.google.protobuf.any.Any
 /**
  * Utility methods
  */
-object ChiefOfStateHelper {
+object Util {
 
   /**
    * Extracts the proto message package name
@@ -22,7 +22,7 @@ object ChiefOfStateHelper {
    *
    * @return Seq[GrpcReadSideConfig]
    */
-  def getReadSideConfigs: Seq[GrpcReadSideConfig] = {
+  def getReadSideConfigs: Seq[ReadSideConfig] = {
 
     val envVars: Map[String, String] = sys.env
       .filter(_._1.startsWith("COS_READSIDE_CONFIG__"))
@@ -43,11 +43,11 @@ object ChiefOfStateHelper {
     groupedEnvVars
       .map({
         case (processorId, settings) =>
-          val grpcConfig: GrpcReadSideConfig = settings.foldLeft(GrpcReadSideConfig(processorId))({
+          val grpcConfig: ReadSideConfig = settings.foldLeft(ReadSideConfig(processorId))({
             case (config, (key, value)) =>
-              if (key == ChiefOfStateConstants.READ_SIDE_HOST_KEY) {
+              if (key == Constants.READ_SIDE_HOST_KEY) {
                 config.copy(host = Some(value))
-              } else if (key == ChiefOfStateConstants.READ_SIDE_PORT_KEY) {
+              } else if (key == Constants.READ_SIDE_PORT_KEY) {
                 config.copy(port = Some(value).map(_.toInt))
               } else {
                 config.addSetting(key, value)
