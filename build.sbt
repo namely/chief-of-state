@@ -23,7 +23,6 @@ lazy val `chiefofstate` = project
   .enablePlugins(LagomImpl)
   .enablePlugins(LagomAkka)
   .settings(name := "chiefofstate", javaAgents += Dependencies.Compile.kanelaAgent)
-  .settings(scalacOptions --= Seq("-Xfatal-warnings", "-Ywarn-unused:imports", "-Xlint:unused", "-Wunused:imports"))
   .dependsOn(protogen, api)
 
 lazy val protogen = project
