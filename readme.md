@@ -5,13 +5,13 @@
 
 ## Overview
 
-Chief-Of-State is a **_gRPC distributed event sourcing_** application that provides scalable, configurable, events and state management strategies to relieve this responsibility from the developers. 
+Chief-Of-State is a **_gRPC distributed event sourcing_** application that provides scalable, configurable, events and state management strategies to relieve this responsibility from the developers.
 
-Chief-Of-State is language agnostic, which means that services can be written in any language that supports gRPC. 
+Chief-Of-State is language agnostic, which means that services can be written in any language that supports gRPC.
 
-Chief-Of-State can be bundled as a sidecar to the application it is providing events and state management or run it on its own k8 pod. 
+Chief-Of-State can be bundled as a sidecar to the application it is providing events and state management or run it on its own k8 pod.
 
-Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com/super-flat/lagom-pb). 
+Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com/super-flat/lagom-pb).
 
 ## Features
 
@@ -27,7 +27,7 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 
 - Commands and Events handlers via gRPC.
 
-- Read Side processor via gRPC (every persisted event is made available when the read side is turn on). 
+- Read Side processor via gRPC (every persisted event is made available when the read side is turn on).
 
 - Out of the box Read Side offset management residing in the Chief-Of-State readSide store (postgresql).
 
