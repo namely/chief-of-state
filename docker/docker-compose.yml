@@ -57,6 +57,7 @@ services:
       - 9095:9095
       - 5266:5266
     environment:
+      LOG_LEVEL: DEBUG
       COS_ADDRESS: "0.0.0.0"
       COS_PORT: 9000
       WRITE_SIDE_HANDLER_SERVICE_HOST: host.docker.internal
