@@ -42,8 +42,8 @@ abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends
       writeSideHandlerServiceClient.close()
     }
 
-  // let us wire up for now the default encryption
-  lazy val encryption: ProtoEncryption = NoEncryption
+  // reflect encryption from config
+  lazy val encryption: ProtoEncryption = ChiefOfStateEncryptionSetting(config).encryption
 
   // wire up the various event and command handler
   lazy val eventHandler: EventHandler[State] = wire[ChiefOfStateEventHandler]
