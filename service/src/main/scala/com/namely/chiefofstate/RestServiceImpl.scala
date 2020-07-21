@@ -6,13 +6,13 @@ import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
 import com.namely.chiefofstate.api.ChiefOfStateService
-import com.namely.protobuf.chief_of_state.cos_persistence.State
+import com.namely.protobuf.chief_of_state.persistence.State
 import io.superflat.lagompb.{AggregateRoot, BaseServiceImpl}
 import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ChiefOfStateServiceImpl(
+class RestServiceImpl(
     actorSystem: ActorSystem,
     clusterSharding: ClusterSharding,
     persistentEntityRegistry: PersistentEntityRegistry,

@@ -12,19 +12,19 @@ import com.lightbend.lagom.scaladsl.server.{
   LagomServer
 }
 import com.namely.chiefofstate.api.ChiefOfStateService
-import com.namely.protobuf.chief_of_state.cos_persistence.State
-import com.namely.protobuf.chief_of_state.cos_readside_handler.ReadSideHandlerServiceClient
-import com.namely.protobuf.chief_of_state.cos_writeside_handler.WriteSideHandlerServiceClient
+import com.namely.protobuf.chief_of_state.persistence.State
+import com.namely.protobuf.chief_of_state.readside.ReadSideHandlerServiceClient
+import com.namely.protobuf.chief_of_state.writeside.WriteSideHandlerServiceClient
 import com.softwaremill.macwire.wire
 import io.superflat.lagompb.{AggregateRoot, BaseApplication, CommandHandler, EventHandler}
-import io.superflat.lagompb.encryption.{NoEncryption, ProtoEncryption}
+import io.superflat.lagompb.encryption.ProtoEncryption
 
 /**
  * ChiefOfState application
  *
- * @param context
+ * @param context the application context
  */
-abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends BaseApplication(context) {
+abstract class Application(context: LagomApplicationContext) extends BaseApplication(context) {
   // $COVERAGE-OFF$
 
   // wiring up the grpc for the writeSide client
@@ -34,7 +34,7 @@ abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends
 
   // let us wire up the handler settings
   // this will break the application bootstrapping if the handler settings env variables are not set
-  lazy val handlerSetting: ChiefOfStateHandlerSetting = ChiefOfStateHandlerSetting(config)
+  lazy val handlerSetting: HandlerSetting = HandlerSetting(config)
 
   //  Register a shutdown task to release resources of the client
   coordinatedShutdown
@@ -43,24 +43,23 @@ abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends
     }
 
   // reflect encryption from config
-  lazy val encryption: ProtoEncryption = ChiefOfStateEncryptionSetting(config).encryption
+  lazy val encryption: ProtoEncryption = EncryptionSetting(config).encryption
 
   // wire up the various event and command handler
-  lazy val eventHandler: EventHandler[State] = wire[ChiefOfStateEventHandler]
-  lazy val commandHandler: CommandHandler[State] = wire[ChiefOfStateCommandHandler]
-  lazy val aggregate: AggregateRoot[State] = wire[ChiefOfStateAggregate]
+  lazy val eventHandler: EventHandler[State] = wire[AggregateEventHandler]
+  lazy val commandHandler: CommandHandler[State] = wire[AggregateCommandHandler]
+  lazy val aggregate: AggregateRoot[State] = wire[Aggregate]
 
   override def aggregateRoot: AggregateRoot[_] = aggregate
 
   override def server: LagomServer =
-    serverFor[ChiefOfStateService](wire[ChiefOfStateServiceImpl])
-      .additionalRouter(wire[ChiefOfStateGrpcServiceImpl])
+    serverFor[ChiefOfStateService](wire[RestServiceImpl])
+      .additionalRouter(wire[GrpcServiceImpl])
 
   if (config.getBoolean("chief-of-state.read-model.enabled")) {
 
     // wiring up the grpc for the readSide client
-    ChiefOfStateHelper.getReadSideConfigs.foreach({ config =>
-
+    Util.getReadSideConfigs.foreach({ config =>
       lazy val readSideHandlerServiceClient: ReadSideHandlerServiceClient =
         ReadSideHandlerServiceClient(config.getGrpcClientSettings(actorSystem))
 
@@ -71,7 +70,7 @@ abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends
         readSideHandlerServiceClient.close()
       }
 
-      lazy val chiefOfStateReadProcessor: ChiefOfStateReadProcessor = wire[ChiefOfStateReadProcessor]
+      lazy val chiefOfStateReadProcessor: ReadSideHandler = wire[ReadSideHandler]
       chiefOfStateReadProcessor.init()
     })
   }
@@ -79,16 +78,16 @@ abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends
 }
 
 /**
- * ChiefOfStateApplicationLoader boostraps the application at runtime
+ * ApplicationLoader boostraps the application at runtime
  */
-class ChiefOfStateApplicationLoader extends LagomApplicationLoader {
+class ApplicationLoader extends LagomApplicationLoader {
 
   // $COVERAGE-OFF$
   override def load(context: LagomApplicationContext): LagomApplication =
-    new ChiefOfStateApplication(context) with AkkaDiscoveryComponents
+    new Application(context) with AkkaDiscoveryComponents
 
   override def loadDevMode(context: LagomApplicationContext): LagomApplication =
-    new ChiefOfStateApplication(context) with LagomDevModeComponents
+    new Application(context) with LagomDevModeComponents
 
   override def describeService: Option[Descriptor] = Some(readDescriptor[ChiefOfStateService])
 

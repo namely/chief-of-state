@@ -10,8 +10,12 @@ import akka.grpc.GrpcClientSettings
  * @param host Host
  * @param port Port
  */
-final case class GrpcReadSideConfig(processorId: String, host: Option[String] = None, port: Option[Int] = None,
-  settings: Map[String, String] = Map()) {
+final case class ReadSideConfig(
+    processorId: String,
+    host: Option[String] = None,
+    port: Option[Int] = None,
+    settings: Map[String, String] = Map()
+) {
 
   /**
    * Adds a setting to the config
@@ -19,7 +23,7 @@ final case class GrpcReadSideConfig(processorId: String, host: Option[String] = 
    * @param key Setting key
    * @param value Setting value
    */
-  def addSetting(key: String, value: String): GrpcReadSideConfig = copy(settings = settings + (key -> value))
+  def addSetting(key: String, value: String): ReadSideConfig = copy(settings = settings + (key -> value))
 
   /**
    * Gets the setting from the config
@@ -35,7 +39,7 @@ final case class GrpcReadSideConfig(processorId: String, host: Option[String] = 
    * @param key Setting key
    * @return
    */
-  def removeSetting(key: String): GrpcReadSideConfig = copy(settings = settings.removed(key))
+  def removeSetting(key: String): ReadSideConfig = copy(settings = settings.removed(key))
 
   /**
    * Lists the settings from the config
@@ -56,9 +60,6 @@ final case class GrpcReadSideConfig(processorId: String, host: Option[String] = 
     require(host.isDefined, "Must define a host in the GrpcReadSideConfig")
     require(port.isDefined, "Must define a port in the GrpcReadSideConfig")
 
-    GrpcClientSettings.connectToServiceAt(
-      host.get,
-      port.get
-    )
+    GrpcClientSettings.connectToServiceAt(host.get, port.get)
   }
 }

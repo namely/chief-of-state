@@ -39,6 +39,7 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 
 | environment variable | description | default |
 |--- | --- | --- |
+| LOG_LEVEL | The possible values are: _**DEBUG**_, _**INFO**_, _**WARN**_, _**ERROR**_ | DEBUG |
 | COS_ADDRESS | container host | 0.0.0.0 |
 | COS_PORT | container port | 9000 |
 | COS_POSTGRES_USER | journal, snapshot and read side offsets store username | postgres |

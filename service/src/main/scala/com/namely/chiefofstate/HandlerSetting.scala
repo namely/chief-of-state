@@ -7,21 +7,20 @@ import com.typesafe.config.{Config, ConfigException}
  * This class need to be kick started on boot. When the configuration variables are not set
  * an exception should be thrown forcing the implementor to set the appropriate value
  */
-case class ChiefOfStateHandlerSetting(stateProtoFQN: String, eventProtosFQNs: Seq[String])
+case class HandlerSetting(stateProtoFQN: String, eventProtosFQNs: Seq[String])
 
-object ChiefOfStateHandlerSetting {
+object HandlerSetting {
 
   /**
-   * Help build the [[com.namely.chiefofstate.ChiefOfStateHandlerSetting]]
+   * Help build the [[com.namely.chiefofstate.HandlerSetting]]
    * This code will break if the env variable are not properly set which will halt the
    * application bootstrap.
    *
    * @param config application configuration
-   * @throws com.typesafe.config.ConfigException
    * @return
    */
   @throws(classOf[ConfigException])
-  def apply(config: Config): ChiefOfStateHandlerSetting = {
+  def apply(config: Config): HandlerSetting = {
 
     val stateProto: String = config
       .getString("chief-of-state.handlers-settings.state-proto")
@@ -37,6 +36,6 @@ object ChiefOfStateHandlerSetting {
     if (stateProto.isEmpty || eventProtos.isEmpty)
       throw new RuntimeException("[ChiefOfState] handler service settings not properly set.")
 
-    new ChiefOfStateHandlerSetting(stateProto, eventProtos)
+    new HandlerSetting(stateProto, eventProtos)
   }
 }

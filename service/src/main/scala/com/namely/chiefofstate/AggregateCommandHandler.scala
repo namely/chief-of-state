@@ -3,19 +3,15 @@ package com.namely.chiefofstate
 import akka.actor.ActorSystem
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.cos_common.{MetaData => _}
-import com.namely.protobuf.chief_of_state.cos_common
-import com.namely.protobuf.chief_of_state.cos_persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.cos_writeside_handler.{
+import com.namely.protobuf.chief_of_state.common.{MetaData => _}
+import com.namely.protobuf.chief_of_state.common
+import com.namely.protobuf.chief_of_state.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.writeside.{
   HandleCommandRequest,
   HandleCommandResponse,
   WriteSideHandlerServiceClient
 }
-import com.namely.protobuf.chief_of_state.cos_writeside_handler.HandleCommandResponse.ResponseType.{
-  Empty,
-  PersistAndReply,
-  Reply
-}
+import com.namely.protobuf.chief_of_state.writeside.HandleCommandResponse.ResponseType.{Empty, PersistAndReply, Reply}
 import io.grpc.Status
 import io.superflat.lagompb.{Command, CommandHandler}
 import io.superflat.lagompb.protobuf.core._
@@ -32,10 +28,10 @@ import scala.util.{Failure, Success, Try}
  * @param writeSideHandlerServiceClient the gRpcClient used to connect to the actual command handler
  * @param handlerSetting                the command handler setting
  */
-class ChiefOfStateCommandHandler(
+class AggregateCommandHandler(
     actorSystem: ActorSystem,
     writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
-    handlerSetting: ChiefOfStateHandlerSetting
+    handlerSetting: HandlerSetting
 ) extends CommandHandler[State](actorSystem) {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -43,9 +39,9 @@ class ChiefOfStateCommandHandler(
   /**
    * Handle command
    *
-   * @param command
-   * @param priorState
-   * @param priorEventMeta
+   * @param command the actual command to handle
+   * @param priorState the priorState
+   * @param priorEventMeta the priorEventMeta
    * @return
    */
   override def handle(command: Command, priorState: State, priorEventMeta: MetaData): Try[CommandHandlerResponse] = {
@@ -55,7 +51,7 @@ class ChiefOfStateCommandHandler(
           .withCommand(command.command.asInstanceOf[Any])
           .withCurrentState(priorState.getCurrentState)
           .withMeta(
-            cos_common
+            common
               .MetaData()
               .withData(priorEventMeta.data)
               .withRevisionDate(priorEventMeta.getRevisionDate)
@@ -113,7 +109,7 @@ class ChiefOfStateCommandHandler(
               case PersistAndReply(persistAndReply) =>
                 log.debug("[ChiefOfState]: command handler return successfully. An event will be persisted...")
 
-                val eventFQN: String = ChiefOfStateHelper.getProtoFullyQualifiedName(persistAndReply.getEvent)
+                val eventFQN: String = Util.getProtoFullyQualifiedName(persistAndReply.getEvent)
 
                 log.debug(s"[ChiefOfState]: command handler event to persist $eventFQN")
 

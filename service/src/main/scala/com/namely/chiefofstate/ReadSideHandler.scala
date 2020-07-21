@@ -3,9 +3,9 @@ package com.namely.chiefofstate
 import akka.Done
 import akka.actor.ActorSystem
 import akka.actor.typed.scaladsl.adapter._
-import com.namely.protobuf.chief_of_state.cos_common
-import com.namely.protobuf.chief_of_state.cos_persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.cos_readside_handler.{
+import com.namely.protobuf.chief_of_state.common
+import com.namely.protobuf.chief_of_state.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.readside.{
   HandleReadSideRequest,
   HandleReadSideResponse,
   ReadSideHandlerServiceClient
@@ -28,19 +28,20 @@ import scala.util.{Failure, Success, Try}
  * @param readSideHandlerServiceClient the gRpcClient used to connect to the actual readSide handler
  * @param handlerSetting               the readSide handler settingthe lagom readSide object that helps feed from events emitted in the journal
  */
-class ChiefOfStateReadProcessor(
-    grpcReadSideConfig: GrpcReadSideConfig,
+class ReadSideHandler(
+    grpcReadSideConfig: ReadSideConfig,
     encryption: ProtoEncryption,
     actorSystem: ActorSystem,
     readSideHandlerServiceClient: ReadSideHandlerServiceClient,
-    handlerSetting: ChiefOfStateHandlerSetting
+    handlerSetting: HandlerSetting
 )(implicit ec: ExecutionContext)
     extends ReadSideProcessor[State](encryption)(ec, actorSystem.toTyped) {
   // $COVERAGE-OFF$
 
   override def aggregateStateCompanion: GeneratedMessageCompanion[State] = State
 
-  override def projectionName: String = s"${grpcReadSideConfig.processorId}-${ConfigReader.serviceName}-readside-projection"
+  override def projectionName: String =
+    s"${grpcReadSideConfig.processorId}-${ConfigReader.serviceName}-readside-projection"
 
   // $COVERAGE-ON$
 
@@ -53,7 +54,7 @@ class ChiefOfStateReadProcessor(
               .withEvent(e.getEvent)
               .withState(state.getCurrentState)
               .withMeta(
-                cos_common
+                common
                   .MetaData()
                   .withData(metaData.data)
                   .withRevisionDate(metaData.getRevisionDate)
@@ -62,22 +63,35 @@ class ChiefOfStateReadProcessor(
           )
         ) match {
           case Failure(exception) =>
-            log.error(s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - unable to retrieve command handler response due to ${exception.getMessage}")
+            log.error(
+              s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - unable to retrieve command handler response due to ${exception.getMessage}"
+            )
             DBIOAction.failed(throw new GlobalException(exception.getMessage))
           case Success(eventualReadSideResponse: Future[HandleReadSideResponse]) =>
             Try {
               Await.result(eventualReadSideResponse, Duration.Inf)
             } match {
               case Failure(exception) =>
-                DBIOAction.failed(throw new GlobalException(s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - ${exception.getMessage}"))
+                DBIOAction.failed(
+                  throw new GlobalException(
+                    s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - ${exception.getMessage}"
+                  )
+                )
               case Success(value) =>
                 if (value.successful) DBIOAction.successful(Done)
-                else DBIOAction.failed(throw new GlobalException(s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - unable to handle readSide"))
+                else
+                  DBIOAction.failed(
+                    throw new GlobalException(
+                      s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - unable to handle readSide"
+                    )
+                  )
             }
         }
       case _ =>
         DBIOAction.failed(
-          throw new GlobalException(s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - event ${event.companion.scalaDescriptor.fullName} not handled")
+          throw new GlobalException(
+            s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - event ${event.companion.scalaDescriptor.fullName} not handled"
+          )
         )
     }
   }
