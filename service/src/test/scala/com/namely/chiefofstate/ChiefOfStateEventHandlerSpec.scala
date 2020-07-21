@@ -4,9 +4,9 @@ import java.util.UUID
 
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.cos_common
-import com.namely.protobuf.chief_of_state.cos_persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.cos_writeside_handler.{
+import com.namely.protobuf.chief_of_state.common
+import com.namely.protobuf.chief_of_state.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.writeside.{
   HandleEventRequest,
   HandleEventResponse,
   WriteSideHandlerServiceClient
@@ -27,7 +27,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
     "handle event successfully as expected" in {
       val priorState: State = State.defaultInstance
       val eventMeta: MetaData = MetaData.defaultInstance
-      val accouuntId: String = UUID.randomUUID.toString
+      val accountId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
       val stateProto: String = ChiefOfStateHelper.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
@@ -38,11 +38,11 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
-        .withAccountUuid(accouuntId)
+        .withAccountUuid(accountId)
 
       val resultingState = Account()
         .withAccountNumber(accountNumber)
-        .withAccountUuid(accouuntId)
+        .withAccountUuid(accountId)
         .withBalance(100)
 
       // let us create a mock instance of the handler service client
@@ -55,7 +55,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
             .withEvent(Any.pack(event))
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              cos_common
+              common
                 .MetaData()
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
@@ -106,7 +106,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
             .withEvent(Any.pack(event))
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              cos_common
+              common
                 .MetaData()
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
@@ -152,7 +152,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
             .withEvent(Any.pack(event))
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              cos_common
+              common
                 .MetaData()
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
@@ -193,7 +193,7 @@ class ChiefOfStateEventHandlerSpec extends LagompbSpec with MockFactory {
             .withEvent(Any.pack(event))
             .withCurrentState(priorState.getCurrentState)
             .withMeta(
-              cos_common
+              common
                 .MetaData()
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)

@@ -1,7 +1,7 @@
 package com.namely.chiefofstate
 
 import akka.actor.ActorSystem
-import com.namely.protobuf.chief_of_state.cos_persistence.State
+import com.namely.protobuf.chief_of_state.persistence.State
 import com.typesafe.config.Config
 import io.superflat.lagompb.{AggregateRoot, CommandHandler, EventHandler}
 import io.superflat.lagompb.encryption.ProtoEncryption

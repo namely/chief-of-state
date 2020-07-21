@@ -3,19 +3,15 @@ package com.namely.chiefofstate
 import akka.actor.ActorSystem
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.cos_common.{MetaData => _}
-import com.namely.protobuf.chief_of_state.cos_common
-import com.namely.protobuf.chief_of_state.cos_persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.cos_writeside_handler.{
+import com.namely.protobuf.chief_of_state.common.{MetaData => _}
+import com.namely.protobuf.chief_of_state.common
+import com.namely.protobuf.chief_of_state.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.writeside.{
   HandleCommandRequest,
   HandleCommandResponse,
   WriteSideHandlerServiceClient
 }
-import com.namely.protobuf.chief_of_state.cos_writeside_handler.HandleCommandResponse.ResponseType.{
-  Empty,
-  PersistAndReply,
-  Reply
-}
+import com.namely.protobuf.chief_of_state.writeside.HandleCommandResponse.ResponseType.{Empty, PersistAndReply, Reply}
 import io.grpc.Status
 import io.superflat.lagompb.{Command, CommandHandler}
 import io.superflat.lagompb.protobuf.core._
@@ -43,9 +39,9 @@ class ChiefOfStateCommandHandler(
   /**
    * Handle command
    *
-   * @param command
-   * @param priorState
-   * @param priorEventMeta
+   * @param command the actual command to handle
+   * @param priorState the priorState
+   * @param priorEventMeta the priorEventMeta
    * @return
    */
   override def handle(command: Command, priorState: State, priorEventMeta: MetaData): Try[CommandHandlerResponse] = {
@@ -55,7 +51,7 @@ class ChiefOfStateCommandHandler(
           .withCommand(command.command.asInstanceOf[Any])
           .withCurrentState(priorState.getCurrentState)
           .withMeta(
-            cos_common
+            common
               .MetaData()
               .withData(priorEventMeta.data)
               .withRevisionDate(priorEventMeta.getRevisionDate)

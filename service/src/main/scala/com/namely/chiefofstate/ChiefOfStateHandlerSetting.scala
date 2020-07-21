@@ -17,7 +17,6 @@ object ChiefOfStateHandlerSetting {
    * application bootstrap.
    *
    * @param config application configuration
-   * @throws com.typesafe.config.ConfigException
    * @return
    */
   @throws(classOf[ConfigException])

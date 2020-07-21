@@ -33,8 +33,8 @@ lazy val protogen = project
   .settings(
     inConfig(Compile)(
       Seq(
-        PB.protoSources ++= Seq(file("protos/chief_of_state")),
-        PB.includePaths ++= Seq(file("protos/chief_of_state")),
+        PB.protoSources ++= Seq(file("protos")),
+        PB.includePaths ++= Seq(file("protos")),
         excludeFilter in PB.generate := new SimpleFileFilter(
           (f: File) => f.getAbsolutePath.contains("google/protobuf/")
         )

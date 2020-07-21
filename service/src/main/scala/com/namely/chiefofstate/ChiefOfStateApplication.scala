@@ -12,9 +12,9 @@ import com.lightbend.lagom.scaladsl.server.{
   LagomServer
 }
 import com.namely.chiefofstate.api.ChiefOfStateService
-import com.namely.protobuf.chief_of_state.cos_persistence.State
-import com.namely.protobuf.chief_of_state.cos_readside_handler.ReadSideHandlerServiceClient
-import com.namely.protobuf.chief_of_state.cos_writeside_handler.WriteSideHandlerServiceClient
+import com.namely.protobuf.chief_of_state.persistence.State
+import com.namely.protobuf.chief_of_state.readside.ReadSideHandlerServiceClient
+import com.namely.protobuf.chief_of_state.writeside.WriteSideHandlerServiceClient
 import com.softwaremill.macwire.wire
 import io.superflat.lagompb.{AggregateRoot, BaseApplication, CommandHandler, EventHandler}
 import io.superflat.lagompb.encryption.{NoEncryption, ProtoEncryption}
@@ -22,7 +22,7 @@ import io.superflat.lagompb.encryption.{NoEncryption, ProtoEncryption}
 /**
  * ChiefOfState application
  *
- * @param context
+ * @param context the application context
  */
 abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends BaseApplication(context) {
   // $COVERAGE-OFF$
@@ -60,7 +60,6 @@ abstract class ChiefOfStateApplication(context: LagomApplicationContext) extends
 
     // wiring up the grpc for the readSide client
     ChiefOfStateHelper.getReadSideConfigs.foreach({ config =>
-
       lazy val readSideHandlerServiceClient: ReadSideHandlerServiceClient =
         ReadSideHandlerServiceClient(config.getGrpcClientSettings(actorSystem))
 
