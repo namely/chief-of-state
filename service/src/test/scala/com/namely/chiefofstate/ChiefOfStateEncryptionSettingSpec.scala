@@ -2,6 +2,7 @@ package com.namely.chiefofstate
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import io.superflat.lagompb.testkit.LagompbSpec
+
 import scala.util.Try
 
 class ChiefOfStateEncryptionSettingSpec extends LagompbSpec {
@@ -14,16 +15,15 @@ class ChiefOfStateEncryptionSettingSpec extends LagompbSpec {
     }
 
     "fail to load settings due to unknown encryption class" in {
-      val config: Config = ConfigFactory.empty()
-        .withValue(
-          ChiefOfStateEncryptionSetting.SETTING_KEY,
-          ConfigValueFactory.fromAnyRef("not.an.encryptor")
-        )
+      val config: Config = ConfigFactory
+        .empty()
+        .withValue(ChiefOfStateEncryptionSetting.SETTING_KEY, ConfigValueFactory.fromAnyRef("not.an.encryptor"))
       an[RuntimeException] shouldBe thrownBy(ChiefOfStateEncryptionSetting(config))
     }
 
     "read the provided encryption class" in {
-      val config: Config = ConfigFactory.empty()
+      val config: Config = ConfigFactory
+        .empty()
         .withValue(
           ChiefOfStateEncryptionSetting.SETTING_KEY,
           ConfigValueFactory.fromAnyRef("io.superflat.lagompb.encryption.NoEncryption")
@@ -31,7 +31,7 @@ class ChiefOfStateEncryptionSettingSpec extends LagompbSpec {
 
       val actual: Try[ChiefOfStateEncryptionSetting] = Try(ChiefOfStateEncryptionSetting(config))
 
-      actual.map(_.encryption).toOption shouldBe(Some(io.superflat.lagompb.encryption.NoEncryption))
+      actual.map(_.encryption).toOption shouldBe (Some(io.superflat.lagompb.encryption.NoEncryption))
     }
   }
 }

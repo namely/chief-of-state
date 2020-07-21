@@ -2,7 +2,7 @@ package com.namely.chiefofstate
 
 import io.superflat.lagompb.testkit.LagompbSpec
 
-class ChiefOfStateHelperSpec extends LagompbSpec{
+class ChiefOfStateHelperSpec extends LagompbSpec {
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -33,8 +33,8 @@ class ChiefOfStateHelperSpec extends LagompbSpec{
         val actual: Seq[GrpcReadSideConfig] = ChiefOfStateHelper.getReadSideConfigs
         val expected: Seq[GrpcReadSideConfig] = Seq(grpcReadSideConfig1, grpcReadSideConfig2)
 
-        actual.length should be (expected.length)
-        actual should contain theSameElementsAs(expected)
+        actual.length should be(expected.length)
+        actual should contain theSameElementsAs (expected)
       }
 
       "throw an exception if one or more of the read side configurations is invalid" in {
@@ -43,7 +43,7 @@ class ChiefOfStateHelperSpec extends LagompbSpec{
         EnvironmentHelper.setEnv("COS_READSIDE_CONFIG__PORT__", "0")
 
         val exception: Exception = intercept[Exception](ChiefOfStateHelper.getReadSideConfigs)
-        exception.getMessage shouldBe("One or more of the read side configurations is invalid")
+        exception.getMessage shouldBe ("One or more of the read side configurations is invalid")
       }
 
       "throw an exception if one or more of the read side configurations does not contain a host" in {
@@ -52,7 +52,7 @@ class ChiefOfStateHelperSpec extends LagompbSpec{
         EnvironmentHelper.setEnv("COS_READSIDE_CONFIG__PORT__RS2", "2")
 
         val exception: Exception = intercept[Exception](ChiefOfStateHelper.getReadSideConfigs)
-        exception.getMessage shouldBe("requirement failed: ProcessorId RS2 is missing a HOST")
+        exception.getMessage shouldBe ("requirement failed: ProcessorId RS2 is missing a HOST")
       }
 
       "throw an exception if one or more of the read side configurations does not contain a port" in {
@@ -61,7 +61,7 @@ class ChiefOfStateHelperSpec extends LagompbSpec{
         EnvironmentHelper.setEnv("COS_READSIDE_CONFIG__HOST__RS2", "host2")
 
         val exception: Exception = intercept[Exception](ChiefOfStateHelper.getReadSideConfigs)
-        exception.getMessage shouldBe("requirement failed: ProcessorId RS2 is missing a PORT")
+        exception.getMessage shouldBe ("requirement failed: ProcessorId RS2 is missing a PORT")
       }
 
       "throw an exception on an invalid setting name" in {
@@ -70,13 +70,14 @@ class ChiefOfStateHelperSpec extends LagompbSpec{
         EnvironmentHelper.setEnv("COS_READSIDE_CONFIG____RS1", "setting1")
 
         val exception: Exception = intercept[Exception](ChiefOfStateHelper.getReadSideConfigs)
-        exception.getMessage shouldBe("requirement failed: Setting must be defined in COS_READSIDE_CONFIG____RS1")
+        exception.getMessage shouldBe ("requirement failed: Setting must be defined in COS_READSIDE_CONFIG____RS1")
       }
     }
   }
 }
 
 object EnvironmentHelper {
+
   def setEnv(key: String, value: String): Unit = {
     val field = System.getenv().getClass.getDeclaredField("m")
     field.setAccessible(true)

@@ -17,7 +17,7 @@ import com.namely.protobuf.chief_of_state.readside.ReadSideHandlerServiceClient
 import com.namely.protobuf.chief_of_state.writeside.WriteSideHandlerServiceClient
 import com.softwaremill.macwire.wire
 import io.superflat.lagompb.{AggregateRoot, BaseApplication, CommandHandler, EventHandler}
-import io.superflat.lagompb.encryption.{NoEncryption, ProtoEncryption}
+import io.superflat.lagompb.encryption.ProtoEncryption
 
 /**
  * ChiefOfState application

@@ -10,8 +10,12 @@ import akka.grpc.GrpcClientSettings
  * @param host Host
  * @param port Port
  */
-final case class GrpcReadSideConfig(processorId: String, host: Option[String] = None, port: Option[Int] = None,
-  settings: Map[String, String] = Map()) {
+final case class GrpcReadSideConfig(
+    processorId: String,
+    host: Option[String] = None,
+    port: Option[Int] = None,
+    settings: Map[String, String] = Map()
+) {
 
   /**
    * Adds a setting to the config
@@ -56,9 +60,6 @@ final case class GrpcReadSideConfig(processorId: String, host: Option[String] = 
     require(host.isDefined, "Must define a host in the GrpcReadSideConfig")
     require(port.isDefined, "Must define a port in the GrpcReadSideConfig")
 
-    GrpcClientSettings.connectToServiceAt(
-      host.get,
-      port.get
-    )
+    GrpcClientSettings.connectToServiceAt(host.get, port.get)
   }
 }

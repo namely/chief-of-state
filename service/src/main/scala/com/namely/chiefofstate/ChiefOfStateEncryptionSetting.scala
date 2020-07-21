@@ -2,23 +2,22 @@ package com.namely.chiefofstate
 
 import com.typesafe.config.{Config, ConfigException}
 import io.superflat.lagompb.encryption.ProtoEncryption
+
 import scala.reflect.runtime.universe
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 
 /**
-  * Contains the configurations for COS encryption
-  *
-  * @param encryption
-  */
-case class ChiefOfStateEncryptionSetting(
-  encryption: ProtoEncryption,
-)
+ * Contains the configurations for COS encryption
+ *
+ * @param encryption
+ */
+case class ChiefOfStateEncryptionSetting(encryption: ProtoEncryption)
 
 object ChiefOfStateEncryptionSetting {
 
   /**
-    * constant key for the encryptor setting
-    */
+   * constant key for the encryptor setting
+   */
   val SETTING_KEY: String = "chief-of-state.encryption.encryption-class"
 
   /**

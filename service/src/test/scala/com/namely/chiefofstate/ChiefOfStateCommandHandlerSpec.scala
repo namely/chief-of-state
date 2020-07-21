@@ -7,9 +7,9 @@ import com.google.protobuf.any.Any
 import com.namely.protobuf.chief_of_state.common.{MetaData => _}
 import com.namely.protobuf.chief_of_state.common
 import com.namely.protobuf.chief_of_state.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened, OpenAccount}
 import com.namely.protobuf.chief_of_state.writeside._
 import com.namely.protobuf.chief_of_state.writeside.HandleCommandResponse.ResponseType
-import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened, OpenAccount}
 import io.grpc.Status
 import io.superflat.lagompb.protobuf.core._
 import io.superflat.lagompb.testkit.LagompbSpec
