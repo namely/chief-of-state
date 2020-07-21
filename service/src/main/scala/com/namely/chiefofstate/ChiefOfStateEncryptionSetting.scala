@@ -17,6 +17,11 @@ case class ChiefOfStateEncryptionSetting(
 object ChiefOfStateEncryptionSetting {
 
   /**
+    * constant key for the encryptor setting
+    */
+  val SETTING_KEY: String = "chief-of-state.encryption.encryption-class"
+
+  /**
    * Companion for [[com.namely.chiefofstate.ChiefOfStateEncryptionSetting]]
    * class which reads the relevant `chief-of-state.encryption` configurations
    * and or halts the application bootstrap on failure.
@@ -30,8 +35,12 @@ object ChiefOfStateEncryptionSetting {
 
     // read the preferred encryptor class from config
     val encryptionClassName: String = config
-      .getString("chief-of-state.encryption.encryption-class")
+      .getString(SETTING_KEY)
       .trim
+
+    if (encryptionClassName.isEmpty()) {
+      throw new RuntimeException("[ChiefOfState] encryption settings not properly set")
+    }
 
     // attempt reflection
     val output: Try[ProtoEncryption] = Try {
