@@ -30,7 +30,7 @@ class AggregateEventHandlerSpec extends LagompbSpec with MockFactory {
       val accountId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] =
         Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
@@ -81,7 +81,7 @@ class AggregateEventHandlerSpec extends LagompbSpec with MockFactory {
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = "namely.rogue.state"
+      val stateProto: Seq[String] = Seq("namely.rogue.state")
       val eventsProtos: Seq[String] =
         Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
@@ -132,7 +132,7 @@ class AggregateEventHandlerSpec extends LagompbSpec with MockFactory {
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] =
         Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
@@ -173,7 +173,7 @@ class AggregateEventHandlerSpec extends LagompbSpec with MockFactory {
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: String = Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance))
+      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] =
         Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 

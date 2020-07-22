@@ -16,7 +16,7 @@ class HandlerSettingSpec extends LagompbSpec {
       val config: Config = ConfigFactory
         .parseResources("handler-settings.conf")
         .withValue(
-          "chief-of-state.handlers-settings.state-proto",
+          "chief-of-state.handlers-settings.states-proto",
           ConfigValueFactory.fromAnyRef("namely.org_units.OrgUnit")
         )
         .resolve()
@@ -27,7 +27,7 @@ class HandlerSettingSpec extends LagompbSpec {
       val config: Config = ConfigFactory
         .parseResources("handler-settings.conf")
         .withValue(
-          "chief-of-state.handlers-settings.state-proto",
+          "chief-of-state.handlers-settings.states-proto",
           ConfigValueFactory.fromAnyRef("namely.org_units.OrgUnit")
         )
         .withValue(
