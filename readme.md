@@ -15,25 +15,48 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 
 ## Features
 
-- Journal, Snapshot are serialized using google protocol buffer message format.
+- Journal and Snapshot serialization using google protocol buffer message format.
 
 - Out of the box clustering and powerful events and domain entities sharding with split-brain-resolver algorithm.
 
 - Out of the box entities passivation mechanism to free resources whenever necessary.
 
-- All events, state are defined using google protocol buffer message format and persisted to postgres.
+- All events, state serialization using google protocol buffer message format and persisted to postgres.
 
 - Additional meta data are provided to your events via the `MetaData`.
 
 - Commands and Events handlers via gRPC.
 
-- Read Side processor via gRPC (every persisted event is made available when the read side is turn on).
+- Read Side processor via gRPC (every persisted event is available when the read side is turn on).
 
 - Out of the box Read Side offset management residing in the Chief-Of-State readSide store (postgresql).
 
 - Out of the box observability.
 
 - Out of the box configurable k8 deployment.
+
+### Local dev
+
+- For local development, the following pre-requisites are necessary: 
+    - `JRE` (at least java8) and `sbt` installed on the development machine
+    
+    - docker installed on the development machine
+    
+    - Set the [global](#global-environment-variables) in addition with the [local](#local-dev-options) ones. Check a sample docker-compose file inside the docker folder.
+    
+    - Run `sbt dockerComposeUp` to start the application
+    
+    - Run `sbt dockerComposeStop` to gracefully stop the application
+
+### Usage in an existing application using _docker-compose_
+
+- Pull the docker image from `registry.namely.land/namely/chief-of-state:<tag>` where `tag` is the latest release tag.
+  
+- Set the environment variable listed [here](#global-environment-variables) in addition with the [local](#local-dev-options) ones.
+
+- Set the following environment variable `JAVA_OPTS: "-Dconfig.resource=docker.conf"`
+
+- Happy hacking :)
 
 ### Global environment variables
 
@@ -68,7 +91,7 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 | COS_SERVICE_NAME | service name | chiefofstate |
 | TEAM_NAME | |
 | TRACE_HOST | Jaeger collector/agent host | localhost |
-| TRACE_PORT | Jaeger colletor/agent port | 14268 |
+| TRACE_PORT | Jaeger collector/agent port | 14268 |
 
 ### Local dev options
 
