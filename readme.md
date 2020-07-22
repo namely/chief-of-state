@@ -40,9 +40,9 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 - For local development, the following pre-requisites are necessary: 
     - Install at least Java 8 [Java download](https://www.oracle.com/java/technologies/javase-downloads.html) on your local dev machine.
     
-    -  Run `brew install sbt` on your local dev machine in case `sbt` is not installed on the machine.
+    -  [Sbt](https://www.scala-sbt.org/download.html) must be installed on the development machine.
     
-    - [Docker](https://www.docker.com/) installed on the development machine.
+    - [Docker](https://www.docker.com/get-started)  must be installed on the development machine.
     
     - Set the [global](#global-environment-variables) in addition with the [local](#local-dev-options) ones. Check a sample docker-compose file inside the docker folder.
     
