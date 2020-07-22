@@ -113,8 +113,8 @@ class AggregateCommandHandler(
 
                 log.debug(s"[ChiefOfState]: command handler event to persist $eventFQN")
 
-                if (handlerSetting.eventProtosFQNs.contains(eventFQN)) {
-                  log.debug(s"[ChiefOfState]: command handler event to perist $eventFQN is valid.")
+                if (handlerSetting.eventFQNs.contains(eventFQN)) {
+                  log.debug(s"[ChiefOfState]: command handler event to persist $eventFQN is valid.")
 
                   Try(
                     CommandHandlerResponse()
@@ -125,7 +125,7 @@ class AggregateCommandHandler(
                   )
                 } else {
                   log.debug(
-                    s"[ChiefOfState]: command handler event to perist $eventFQN is not configured. Failing request"
+                    s"[ChiefOfState]: command handler event to persist $eventFQN is not configured. Failing request"
                   )
 
                   Try(
