@@ -50,7 +50,7 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
     
     - Run `sbt dockerComposeStop` to gracefully stop the application
 
-### Usage in an existing application using _docker-compose_
+### Inside a _docker-compose_ file
 
 - Pull the docker image from `registry.namely.land/namely/chief-of-state:<tag>` where `tag` is the latest release tag.
   
