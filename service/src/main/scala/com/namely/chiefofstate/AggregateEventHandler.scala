@@ -61,14 +61,14 @@ class AggregateEventHandler(
 
             log.debug(s"[ChiefOfState]: event handler state $stateFQN")
 
-            if (handlerSetting.stateProtoFQN.equals(stateFQN)) {
+            if (handlerSetting.stateFQNs.contains(stateFQN)) {
 
               log.debug(s"[ChiefOfState]: event handler state $stateFQN is valid.")
 
               priorState.update(_.currentState := handleEventResponse.getResultingState)
             } else {
               throw new GlobalException(
-                s"[ChiefOfState]: command handler state to perist $stateFQN is not configured. Failing request"
+                s"[ChiefOfState]: command handler state to persist $stateFQN is not configured. Failing request"
               )
             }
         }

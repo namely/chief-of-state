@@ -50,7 +50,7 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 | COS_POSTGRES_SCHEMA | journal, snapshot and read side offsets store db schema | public |
 | COS_KAFKA_BROKER | kafka broker | localhost:9092 |
 | COS_EVENTS_BATCH_THRESHOLD | Number of Events to batch persist | 100 |
-| COS_NUM_SNAPSHOTS_TO_RETAIN | Number of Aggregate Snaphsot to persist to disk for swift recovery | 2 |
+| COS_NUM_SNAPSHOTS_TO_RETAIN | Number of Aggregate Snapshot to persist to disk for swift recovery | 2 |
 | COS_READ_SIDE_ENABLED | turn on readside or not | false |
 | COS_READ_SIDE_OFFSET_DB_HOST | readside offset storage host | localhost |
 | COS_READ_SIDE_OFFSET_DB_PORT | readside offset storage port | 5432 |
@@ -63,7 +63,7 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 | WRITE_SIDE_HANDLER_SERVICE_PORT | port for the gRPC writeSide handler service | <none> |
 | READ_SIDE_HANDLER_SERVICE_HOST | address of the gRPC readSide handler service. This must be set when readSide is turned on | <none> |
 | READ_SIDE_HANDLER_SERVICE_PORT | port for the gRPC readSide handler service. This must be set when readSide is turned on | <none> |
-| HANDLER_SERVICE_STATE_PROTO | handler service state proto message FQN (fully qualified typeUrl). Format: `packagename.messagename` | <none> |
+| HANDLER_SERVICE_STATES_PROTO | handler service states proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`.  This will be a comma separated list of values | <none> |
 | HANDLER_SERVICE_EVENTS_PROTOS | handler service events proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`. This will be a comma separated list of values | <none> |
 | COS_SERVICE_NAME | service name | chiefofstate |
 | TEAM_NAME | |

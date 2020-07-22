@@ -7,7 +7,7 @@ import com.typesafe.config.{Config, ConfigException}
  * This class need to be kick started on boot. When the configuration variables are not set
  * an exception should be thrown forcing the implementor to set the appropriate value
  */
-case class HandlerSetting(stateProtoFQN: String, eventProtosFQNs: Seq[String])
+case class HandlerSetting(stateFQNs: Seq[String], eventFQNs: Seq[String])
 
 object HandlerSetting {
 
@@ -22,9 +22,12 @@ object HandlerSetting {
   @throws(classOf[ConfigException])
   def apply(config: Config): HandlerSetting = {
 
-    val stateProto: String = config
-      .getString("chief-of-state.handlers-settings.state-proto")
-      .trim
+    val stateProtos: Seq[String] = config
+      .getString("chief-of-state.handlers-settings.states-proto")
+      .split(",")
+      .toSeq
+      .map(_.trim)
+      .filter(_.nonEmpty)
 
     val eventProtos: Seq[String] = config
       .getString("chief-of-state.handlers-settings.events-protos")
@@ -33,9 +36,9 @@ object HandlerSetting {
       .map(_.trim)
       .filter(_.nonEmpty)
 
-    if (stateProto.isEmpty || eventProtos.isEmpty)
+    if (stateProtos.isEmpty || eventProtos.isEmpty)
       throw new RuntimeException("[ChiefOfState] handler service settings not properly set.")
 
-    new HandlerSetting(stateProto, eventProtos)
+    new HandlerSetting(stateProtos, eventProtos)
   }
 }
