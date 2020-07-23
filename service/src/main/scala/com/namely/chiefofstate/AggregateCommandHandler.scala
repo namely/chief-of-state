@@ -20,6 +20,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
+import com.namely.protobuf.chief_of_state.service.GetStateRequest
 
 /**
  * ChiefOfStateCommandHandler
@@ -37,7 +38,7 @@ class AggregateCommandHandler(
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   /**
-   * Handle command
+   * general handle command implementation
    *
    * @param command the actual command to handle
    * @param priorState the priorState
@@ -45,122 +46,128 @@ class AggregateCommandHandler(
    * @return
    */
   override def handle(command: Command, priorState: State, priorEventMeta: MetaData): Try[CommandHandlerResponse] = {
-    Try(
-      writeSideHandlerServiceClient.handleCommand(
-        HandleCommandRequest()
-          .withCommand(command.command.asInstanceOf[Any])
-          .withCurrentState(priorState.getCurrentState)
-          .withMeta(
-            common
-              .MetaData()
-              .withData(priorEventMeta.data)
-              .withRevisionDate(priorEventMeta.getRevisionDate)
-              .withRevisionNumber(priorEventMeta.revisionNumber)
+    command match {
+      // handle get requests locally
+      case getStateRequest: GetStateRequest => Try(handleGetCommand(getStateRequest, priorState, priorEventMeta))
+      // handle all other requests in the gRPC handler
+      case _ => Try(handleRemotecommand(command, priorState, priorEventMeta))
+    }
+  }
+
+  /** handler for GetStateRequest command
+    *
+    * @param command a getStateRequest
+    * @param priorState the prior state for this entity
+    * @param priorEventMeta the prior event meta
+    * @return a command handler response indicating Reply or failure
+    */
+  def handleGetCommand(command: GetStateRequest, priorState: State, priorEventMeta: MetaData): CommandHandlerResponse = {
+    priorState
+      .currentState
+      .map(currentState => {
+        logger.debug(s"[ChiefOfState] found state for entity ${getStateRequest.entityId}")
+        CommandHandlerResponse()
+          .withSuccessResponse(
+            SuccessCommandHandlerResponse()
+              .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
           )
+      })
+      .getOrElse({
+        logger.error(s"[ChiefOfState] could not find state for entity ${getStateRequest.entityId}")
+        CommandHandlerResponse()
+          .withFailedResponse(
+            FailedCommandHandlerResponse()
+              .withReason("entity not found")
+              .withCause(FailureCause.InternalError)
+          )
+      })
+  }
+
+  /** handler for commands that should be forwarded by gRPC handler service
+    *
+    * @param command a command to forward
+    * @param priorState the prior state of the entity
+    * @param priorEventMeta the prior event meta data
+    * @return a CommandHandlerResponse
+    */
+  def handleRemoteCommand(command: Command, priorState: State, priorEventMeta: MetaData): CommandHandlerResponse = {
+    val request = HandleCommandRequest()
+      .withCommand(command.command.asInstanceOf[Any])
+      .withCurrentState(priorState.getCurrentState)
+      .withMeta(
+        common
+          .MetaData()
+          .withData(priorEventMeta.data)
+          .withRevisionDate(priorEventMeta.getRevisionDate)
+          .withRevisionNumber(priorEventMeta.revisionNumber)
       )
-    ) match {
 
-      case Failure(exception: Throwable) =>
-        exception match {
-          case e: GrpcServiceException =>
-            Try(
+    // await response from gRPC handler service
+    val responseAttempt: Try[HandleCommandResponse] = Try({
+      val futureResponse = writeSideHandlerServiceClient.handleCommand(request)
+      Await.result(future, Duration.Inf)
+    })
+
+    responseAttempt match {
+      case Success(response: HandleCommandResponse) =>
+        response.responseType match {
+          case PersistAndReply(persistAndReply) =>
+            log.debug("[ChiefOfState]: command handler return successfully. An event will be persisted...")
+            val eventFQN: String = Util.getProtoFullyQualifiedName(persistAndReply.getEvent)
+
+            log.debug(s"[ChiefOfState]: command handler event to persist $eventFQN")
+
+            if (handlerSetting.eventFQNs.contains(eventFQN)) {
+              log.debug(s"[ChiefOfState]: command handler event to persist $eventFQN is valid.")
+              CommandHandlerResponse()
+                .withSuccessResponse(
+                  SuccessCommandHandlerResponse()
+                    .withEvent(Any.pack(Event().withEvent(persistAndReply.getEvent)))
+                )
+            } else {
+              log.error(s"[ChiefOfState]: command handler event to persist $eventFQN is not configured. Failing request")
               CommandHandlerResponse()
                 .withFailedResponse(
                   FailedCommandHandlerResponse()
-                    .withReason(e.status.toString)
-                    .withCause(FailureCause.InternalError)
-                )
-            )
-
-          case _ =>
-            Try(
-              CommandHandlerResponse()
-                .withFailedResponse(
-                  FailedCommandHandlerResponse()
-                    .withReason(
-                      new GrpcServiceException(
-                        Status.INTERNAL.withDescription(
-                          s"Error occurred. Unable to handle command ${command.command.getClass.getCanonicalName}"
-                        )
-                      ).toString
-                    )
-                    .withCause(FailureCause.InternalError)
-                )
-            )
-        }
-
-      case Success(future: Future[HandleCommandResponse]) =>
-        Try {
-          Await.result(future, Duration.Inf)
-        } match {
-          case Failure(exception) =>
-            // this situation will never occur but for the sake of syntax
-            log.error(s"[ChiefOfState]: unable to retrieve command handler response due to ${exception.getMessage}")
-            Try(
-              CommandHandlerResponse()
-                .withFailedResponse(
-                  FailedCommandHandlerResponse()
-                    .withReason(new GrpcServiceException(Status.UNAVAILABLE).toString)
-                    .withCause(FailureCause.InternalError)
-                )
-            )
-          case Success(handleCommandResponse: HandleCommandResponse) =>
-            handleCommandResponse.responseType match {
-              case PersistAndReply(persistAndReply) =>
-                log.debug("[ChiefOfState]: command handler return successfully. An event will be persisted...")
-
-                val eventFQN: String = Util.getProtoFullyQualifiedName(persistAndReply.getEvent)
-
-                log.debug(s"[ChiefOfState]: command handler event to persist $eventFQN")
-
-                if (handlerSetting.eventFQNs.contains(eventFQN)) {
-                  log.debug(s"[ChiefOfState]: command handler event to persist $eventFQN is valid.")
-
-                  Try(
-                    CommandHandlerResponse()
-                      .withSuccessResponse(
-                        SuccessCommandHandlerResponse()
-                          .withEvent(Any.pack(Event().withEvent(persistAndReply.getEvent)))
-                      )
-                  )
-                } else {
-                  log.debug(
-                    s"[ChiefOfState]: command handler event to persist $eventFQN is not configured. Failing request"
-                  )
-
-                  Try(
-                    CommandHandlerResponse()
-                      .withFailedResponse(
-                        FailedCommandHandlerResponse()
-                          .withReason(new GrpcServiceException(Status.INVALID_ARGUMENT).toString)
-                          .withCause(FailureCause.ValidationError)
-                      )
-                  )
-                }
-              case Reply(_) =>
-                log.debug("[ChiefOfState]: command handler return successfully. No event will be persisted...")
-
-                Try(
-                  CommandHandlerResponse()
-                    .withSuccessResponse(
-                      SuccessCommandHandlerResponse()
-                        .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
-                    )
-                )
-              case Empty =>
-                // this situation will never occur but for the sake of syntax
-                log.debug("[ChiefOfState]: command handler return weird successful response...")
-
-                Try(
-                  CommandHandlerResponse()
-                    .withFailedResponse(
-                      FailedCommandHandlerResponse()
-                        .withReason(new GrpcServiceException(Status.INTERNAL).toString)
-                        .withCause(FailureCause.InternalError)
-                    )
+                    .withReason(s"received unknown event type $eventFQN")
+                    .withCause(FailureCause.ValidationError)
                 )
             }
+
+          case Reply(_) =>
+            log.debug("[ChiefOfState]: command handler return successfully. No event will be persisted...")
+            CommandHandlerResponse()
+              .withSuccessResponse(
+                SuccessCommandHandlerResponse()
+                  .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
+              )
+
+          case Empty =>
+            CommandHandlerResponse()
+              .withFailedResponse(
+                FailedCommandHandlerResponse()
+                  .withReason("command handler returned malformed event")
+                  .withCause(FailureCause.InternalError)
+              )
         }
+
+      case Failure(e: GrpcServiceException) =>
+        logger.error(e)
+        CommandHandlerResponse()
+          .withFailedResponse(
+            FailedCommandHandlerResponse()
+              .withReason(e.status.toString)
+              .withCause(FailureCause.InternalError)
+          )
+
+      case Failure(e: Throwable) =>
+        logger.error(e)
+        CommandHandlerResponse()
+          .withFailedResponse(
+            FailedCommandHandlerResponse()
+              .withReason(s"Error occurred. Unable to handle command ${command.command.getClass.getCanonicalName}")
+              .withCause(FailureCause.InternalError)
+          )
     }
   }
 }
