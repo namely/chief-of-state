@@ -1,6 +1,9 @@
 package com.namely.chiefofstate
 
 import io.superflat.lagompb.testkit.LagompbSpec
+import io.superflat.lagompb.protobuf.core.{MetaData => LagompbMetaData}
+import com.namely.protobuf.chief_of_state.common.{MetaData => CosMetaData}
+import com.google.protobuf.timestamp.Timestamp
 
 class UtilSpec extends LagompbSpec {
 
@@ -72,6 +75,29 @@ class UtilSpec extends LagompbSpec {
         val exception: Exception = intercept[Exception](Util.getReadSideConfigs)
         exception.getMessage shouldBe ("requirement failed: Setting must be defined in COS_READSIDE_CONFIG____RS1")
       }
+    }
+  }
+
+
+  "convertLagompbMeta" should {
+    "return the right COS MetaData" in {
+      val ts = Timestamp().withSeconds(3L).withNanos(2)
+      val revisionNumber = 2L
+      val data = Map("foo" -> "bar")
+
+      val lagomMetaData = LagompbMetaData()
+        .withRevisionNumber(revisionNumber)
+        .withRevisionDate(ts)
+        .withData(data)
+
+      val expected = CosMetaData()
+        .withRevisionNumber(revisionNumber)
+        .withRevisionDate(ts)
+        .withData(data)
+
+      val actual = Util.convertLagompbMeta(lagomMetaData)
+
+      actual shouldBe(expected)
     }
   }
 }
