@@ -14,6 +14,14 @@ class EncryptionSettingSpec extends LagompbSpec {
       an[RuntimeException] shouldBe thrownBy(EncryptionSetting(config))
     }
 
+    "fail to load settings due to empty values" in {
+      val config: Config = ConfigFactory
+        .empty()
+        .withValue(EncryptionSetting.SETTING_KEY, ConfigValueFactory.fromAnyRef(""))
+
+      an[RuntimeException] shouldBe thrownBy(EncryptionSetting(config))
+    }
+
     "fail to load settings due to unknown encryption class" in {
       val config: Config = ConfigFactory
         .empty()
