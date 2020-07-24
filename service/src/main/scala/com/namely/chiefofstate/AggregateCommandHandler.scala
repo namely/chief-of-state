@@ -46,11 +46,11 @@ class AggregateCommandHandler(
    * @return
    */
   override def handle(command: Command, priorState: State, priorEventMeta: MetaData): Try[CommandHandlerResponse] = {
-    command match {
+    command.command match {
       // handle get requests locally
       case getStateRequest: GetStateRequest => Try(handleGetCommand(getStateRequest, priorState, priorEventMeta))
       // handle all other requests in the gRPC handler
-      case _ => Try(handleRemotecommand(command, priorState, priorEventMeta))
+      case _ => Try(handleRemoteCommand(command, priorState, priorEventMeta))
     }
   }
 
@@ -65,7 +65,7 @@ class AggregateCommandHandler(
     priorState
       .currentState
       .map(currentState => {
-        logger.debug(s"[ChiefOfState] found state for entity ${getStateRequest.entityId}")
+        log.debug(s"[ChiefOfState] found state for entity ${command.entityId}")
         CommandHandlerResponse()
           .withSuccessResponse(
             SuccessCommandHandlerResponse()
@@ -73,7 +73,7 @@ class AggregateCommandHandler(
           )
       })
       .getOrElse({
-        logger.error(s"[ChiefOfState] could not find state for entity ${getStateRequest.entityId}")
+        log.error(s"[ChiefOfState] could not find state for entity ${command.entityId}")
         CommandHandlerResponse()
           .withFailedResponse(
             FailedCommandHandlerResponse()
@@ -105,7 +105,7 @@ class AggregateCommandHandler(
     // await response from gRPC handler service
     val responseAttempt: Try[HandleCommandResponse] = Try({
       val futureResponse = writeSideHandlerServiceClient.handleCommand(request)
-      Await.result(future, Duration.Inf)
+      Await.result(futureResponse, Duration.Inf)
     })
 
     responseAttempt match {
@@ -152,7 +152,7 @@ class AggregateCommandHandler(
         }
 
       case Failure(e: GrpcServiceException) =>
-        logger.error(e)
+        log.error(s"[ChiefOfState] handler gRPC failed with ${e.status.toString()} ${e.getMessage()}", e)
         CommandHandlerResponse()
           .withFailedResponse(
             FailedCommandHandlerResponse()
@@ -161,7 +161,7 @@ class AggregateCommandHandler(
           )
 
       case Failure(e: Throwable) =>
-        logger.error(e)
+        log.error(s"[ChiefOfState] gRPC handler critical failure", e)
         CommandHandlerResponse()
           .withFailedResponse(
             FailedCommandHandlerResponse()

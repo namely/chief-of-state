@@ -10,6 +10,7 @@ import com.namely.protobuf.chief_of_state.persistence.{Event, State}
 import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened, OpenAccount}
 import com.namely.protobuf.chief_of_state.writeside._
 import com.namely.protobuf.chief_of_state.writeside.HandleCommandResponse.ResponseType
+import com.namely.protobuf.chief_of_state.service.GetStateRequest
 import io.grpc.Status
 import io.superflat.lagompb.protobuf.core._
 import io.superflat.lagompb.testkit.LagompbSpec
@@ -434,6 +435,50 @@ class AggregateCommandHandlerSpec extends LagompbSpec with MockFactory {
               .withCause(FailureCause.InternalError)
           )
       ))
+    }
+  }
+
+  "GetStateRequest handler" should {
+    "return the current state when entity exists" in {
+
+      // create a CommandHandler with a mock client
+      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val mockGrpcClient = mock[WriteSideHandlerServiceClient]
+      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
+
+      val someAccount = Account()
+        .withAccountUuid(UUID.randomUUID.toString)
+        .withAccountNumber("12345")
+
+      val priorState: State = State()
+        .withCurrentState(Any.pack(someAccount))
+
+      val priorEventMeta: MetaData = MetaData.defaultInstance
+
+      val cmd = GetStateRequest(entityId = "x")
+
+      val actual: CommandHandlerResponse = cmdhandler.handleGetCommand(cmd, priorState, priorEventMeta)
+
+      actual.handlerResponse.isSuccessResponse shouldBe(true)
+      actual.handlerResponse.successResponse.map(_.response.isNoEvent) shouldBe(Some(true))
+    }
+
+    "return a failure when prior state is not found" in {
+      // create a CommandHandler with a mock client
+      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val mockGrpcClient = mock[WriteSideHandlerServiceClient]
+      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
+
+      val priorEventMeta: MetaData = MetaData.defaultInstance
+      val cmd = GetStateRequest(entityId = "x")
+      val priorState = State.defaultInstance
+      val actual: CommandHandlerResponse = cmdhandler.handleGetCommand(cmd, priorState, priorEventMeta)
+      actual.handlerResponse.isFailedResponse shouldBe(true)
+      actual.handlerResponse.failedResponse.map(_.reason) shouldBe (Some("entity not found"))
     }
   }
 }

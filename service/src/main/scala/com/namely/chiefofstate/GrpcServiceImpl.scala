@@ -51,8 +51,7 @@ class GrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding, aggreg
     * @return future of GetStateResponse
     */
   override def getState(in: GetStateRequest, metadata: Metadata): Future[GetStateResponse] = {
-
-    sendCommand[Any, State](clusterSharding, in.entityId, in, Map.empty[String, String])
+    sendCommand[GetStateRequest, State](clusterSharding, in.entityId, in, Map.empty[String, String])
       .map((namelyState: StateAndMeta[State]) => {
         GetStateResponse(
           state = namelyState.state.currentState,
@@ -60,5 +59,4 @@ class GrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding, aggreg
         )
       })
   }
-
 }
