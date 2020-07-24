@@ -22,33 +22,104 @@ import scala.util.{Success, Try}
 
 class AggregateCommandHandlerSpec extends LagompbSpec with MockFactory {
 
-  "Chief-Of-State Command Handler" should {
+  "main commandHandler" should {
+    "call the local state handler when given a GetStateRequest" in {
+      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+
+      val cmd = Command(
+        GetStateRequest.defaultInstance,
+        null, // ignore the actor ref in this test
+        Map.empty
+      )
+
+      val priorState: State = State().withCurrentState(Any.pack(Account.defaultInstance))
+      val priorEventMeta: MetaData = MetaData.defaultInstance
+
+      // let us create a mock instance of the handler service client
+      // this will always fail, but should not be called
+      val mockGrpcClient = mock[WriteSideHandlerServiceClient]
+
+      (mockGrpcClient
+        .handleCommand(_: HandleCommandRequest))
+        .expects(*)
+        .throws(new RuntimeException("this never throws"))
+        .never()
+
+      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
+      val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
+
+      result shouldBe(
+        Success(
+          CommandHandlerResponse()
+            .withSuccessResponse(
+              SuccessCommandHandlerResponse()
+                .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
+            )
+        )
+      )
+    }
+
+    "call the remote handler when given a normal request" in {
+      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+
+      val cmd = Command(
+        Any.pack(AccountOpened.defaultInstance),
+        null, // ignore the actor ref in this test
+        Map.empty
+      )
+
+      // let us create a mock instance of the handler service client
+      // this will always fail, but should not be called
+      val mockGrpcClient = mock[WriteSideHandlerServiceClient]
+
+      (mockGrpcClient
+        .handleCommand(_: HandleCommandRequest))
+        .expects(*)
+        .throws(new RuntimeException("this throws"))
+
+      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
+
+      val result: Try[CommandHandlerResponse] = cmdhandler.handle(
+        cmd,
+        State.defaultInstance,
+        MetaData.defaultInstance
+      )
+
+      result shouldBe(
+        Success(
+          CommandHandlerResponse()
+            .withFailedResponse(
+              FailedCommandHandlerResponse()
+                .withReason("Critical error occurred handling command com.google.protobuf.any.Any, this throws")
+                .withCause(FailureCause.InternalError)
+            )
+        )
+      )
+    }
+  }
+
+  "gRPC remote handler" should {
 
     "handle command successfully as expected with an event to persist" in {
       val priorState: State = State.defaultInstance
       val priorEventMeta: MetaData = MetaData.defaultInstance
-      val accouuntId: String = UUID.randomUUID.toString
-      val accountNumber: String = "123445"
-
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
-      val eventsProtos: Seq[String] =
-        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
       val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val cmd = Command(
-        Any.pack(
-          OpenAccount()
-            .withAccountNumber(accountNumber)
-            .withAccountUuid(accouuntId)
-        ),
+        Any.pack(OpenAccount.defaultInstance),
         null, // ignore the actor ref in this test
         Map.empty
       )
 
       val event = AccountOpened()
-        .withAccountNumber(accountNumber)
-        .withAccountUuid(accouuntId)
+        .withAccountNumber("123445")
+        .withAccountUuid(UUID.randomUUID.toString)
 
       // let us create a mock instance of the handler service client
       val mockGrpcClient = mock[WriteSideHandlerServiceClient]
@@ -79,55 +150,38 @@ class AggregateCommandHandlerSpec extends LagompbSpec with MockFactory {
 
       // let us execute the request
       val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
-      val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
-      result shouldBe (Success(
+      val result: CommandHandlerResponse = cmdhandler.handleRemoteCommand(cmd, priorState, priorEventMeta)
+
+      result shouldBe (
         CommandHandlerResponse()
-          .withSuccessResponse(SuccessCommandHandlerResponse().withEvent(Any.pack(Event().withEvent(Any.pack(event)))))
-      ))
+          .withSuccessResponse(
+            SuccessCommandHandlerResponse()
+              .withEvent(Any.pack(Event().withEvent(Any.pack(event))))
+          )
+      )
     }
 
     "handle command when event type is not specified in handler settings as expected" in {
       val priorState: State = State.defaultInstance
       val priorEventMeta: MetaData = MetaData.defaultInstance
-      val accouuntId: String = UUID.randomUUID.toString
-      val accountNumber: String = "123445"
-
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] = Seq("namely.com.SomeEvent")
-
       val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val cmd = Command(
-        Any.pack(
-          OpenAccount()
-            .withAccountNumber(accountNumber)
-            .withAccountUuid(accouuntId)
-        ),
+        Any.pack(OpenAccount.defaultInstance),
         null, // ignore the actor ref in this test
         Map.empty
       )
 
-      val event = AccountOpened()
-        .withAccountNumber(accountNumber)
-        .withAccountUuid(accouuntId)
+      val event = AccountOpened.defaultInstance
 
       // let us create a mock instance of the handler service client
       val mockGrpcClient = mock[WriteSideHandlerServiceClient]
 
       (mockGrpcClient
         .handleCommand(_: HandleCommandRequest))
-        .expects(
-          HandleCommandRequest()
-            .withCommand(cmd.command.asInstanceOf[Any])
-            .withCurrentState(priorState.getCurrentState)
-            .withMeta(
-              common
-                .MetaData()
-                .withData(priorEventMeta.data)
-                .withRevisionDate(priorEventMeta.getRevisionDate)
-                .withRevisionNumber(priorEventMeta.revisionNumber)
-            )
-        )
+        .expects(*)
         .returning(
           Future.successful(
             HandleCommandResponse()
@@ -140,36 +194,28 @@ class AggregateCommandHandlerSpec extends LagompbSpec with MockFactory {
 
       // let us execute the request
       val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
-      val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
-      result shouldBe (Success(
+      val result: CommandHandlerResponse = cmdhandler.handleRemoteCommand(cmd, priorState, priorEventMeta)
+
+      result shouldBe (
         CommandHandlerResponse()
           .withFailedResponse(
             FailedCommandHandlerResponse()
-              .withReason(new GrpcServiceException(Status.INVALID_ARGUMENT).toString)
+              .withReason("received unknown event type chief_of_state.AccountOpened")
               .withCause(FailureCause.ValidationError)
           )
-      ))
+      )
 
     }
 
     "handle command successfully as expected with no event to persist" in {
       val priorState: State = State.defaultInstance
       val priorEventMeta: MetaData = MetaData.defaultInstance
-      val accouuntId: String = UUID.randomUUID.toString
-      val accountNumber: String = "123445"
-
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
-      val eventsProtos: Seq[String] =
-        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
       val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val cmd = Command(
-        Any.pack(
-          OpenAccount()
-            .withAccountNumber(accountNumber)
-            .withAccountUuid(accouuntId)
-        ),
+        Any.pack(OpenAccount.defaultInstance),
         null, // ignore the actor ref in this test
         Map.empty
       )
@@ -179,18 +225,7 @@ class AggregateCommandHandlerSpec extends LagompbSpec with MockFactory {
 
       (mockGrpcClient
         .handleCommand(_: HandleCommandRequest))
-        .expects(
-          HandleCommandRequest()
-            .withCommand(cmd.command.asInstanceOf[Any])
-            .withCurrentState(priorState.getCurrentState)
-            .withMeta(
-              common
-                .MetaData()
-                .withData(priorEventMeta.data)
-                .withRevisionDate(priorEventMeta.getRevisionDate)
-                .withRevisionNumber(priorEventMeta.revisionNumber)
-            )
-        )
+        .expects(*)
         .returning(
           Future.successful(
             HandleCommandResponse()
@@ -200,61 +235,40 @@ class AggregateCommandHandlerSpec extends LagompbSpec with MockFactory {
 
       // let us execute the request
       val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
-      val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
-      result shouldBe (Success(
+      val result: CommandHandlerResponse = cmdhandler.handleRemoteCommand(cmd, priorState, priorEventMeta)
+      result shouldBe (
         CommandHandlerResponse()
           .withSuccessResponse(
             SuccessCommandHandlerResponse()
               .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
           )
-      ))
+      )
     }
 
     "handle wrong successful response as expected" in {
       val priorState: State = State.defaultInstance
       val priorEventMeta: MetaData = MetaData.defaultInstance
-      val accouuntId: String = UUID.randomUUID.toString
-      val accountNumber: String = "123445"
-
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
-      val eventsProtos: Seq[String] =
-        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
       val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
-
-      val cmd = Command(
-        Any.pack(
-          OpenAccount()
-            .withAccountNumber(accountNumber)
-            .withAccountUuid(accouuntId)
-        ),
-        null, // ignore the actor ref in this test
-        Map.empty
-      )
-
       // let us create a mock instance of the handler service client
       val mockGrpcClient = mock[WriteSideHandlerServiceClient]
 
       (mockGrpcClient
         .handleCommand(_: HandleCommandRequest))
-        .expects(
-          HandleCommandRequest()
-            .withCommand(cmd.command.asInstanceOf[Any])
-            .withCurrentState(priorState.getCurrentState)
-            .withMeta(
-              common
-                .MetaData()
-                .withData(priorEventMeta.data)
-                .withRevisionDate(priorEventMeta.getRevisionDate)
-                .withRevisionNumber(priorEventMeta.revisionNumber)
-            )
-        )
+        .expects(*)
         .returning(
           Future.successful(
             HandleCommandResponse()
               .withResponseType(ResponseType.Empty)
           )
         )
+
+      val cmd = Command(
+        Any.pack(OpenAccount.defaultInstance),
+        null, // ignore the actor ref in this test
+        Map.empty
+      )
 
       // let us execute the request
       val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
@@ -263,7 +277,7 @@ class AggregateCommandHandlerSpec extends LagompbSpec with MockFactory {
         CommandHandlerResponse()
           .withFailedResponse(
             FailedCommandHandlerResponse()
-              .withReason(new GrpcServiceException(Status.INTERNAL).toString)
+              .withReason("command handler returned malformed event")
               .withCause(FailureCause.InternalError)
           )
       ))
@@ -272,75 +286,47 @@ class AggregateCommandHandlerSpec extends LagompbSpec with MockFactory {
     "handle failed response as expected" in {
       val priorState: State = State.defaultInstance
       val priorEventMeta: MetaData = MetaData.defaultInstance
-      val accouuntId: String = UUID.randomUUID.toString
-      val accountNumber: String = "123445"
-
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
-      val eventsProtos: Seq[String] =
-        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
       val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
-
-      val cmd = Command(
-        Any.pack(
-          OpenAccount()
-            .withAccountNumber(accountNumber)
-            .withAccountUuid(accouuntId)
-        ),
-        null, // ignore the actor ref in this test
-        Map.empty
-      )
-
       // let us create a mock instance of the handler service client
       val mockGrpcClient = mock[WriteSideHandlerServiceClient]
 
       (mockGrpcClient
         .handleCommand(_: HandleCommandRequest))
-        .expects(
-          HandleCommandRequest()
-            .withCommand(cmd.command.asInstanceOf[Any])
-            .withCurrentState(priorState.getCurrentState)
-            .withMeta(
-              common
-                .MetaData()
-                .withData(priorEventMeta.data)
-                .withRevisionDate(priorEventMeta.getRevisionDate)
-                .withRevisionNumber(priorEventMeta.revisionNumber)
-            )
-        )
+        .expects(*)
         .returning(Future.failed(new GrpcServiceException(Status.NOT_FOUND)))
 
       // let us execute the request
       val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
-      val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
-      result shouldBe (Success(
+
+      val cmd = Command(
+        Any.pack(OpenAccount.defaultInstance),
+        null, // ignore the actor ref in this test
+        Map.empty
+      )
+
+      val result: CommandHandlerResponse = cmdhandler.handleRemoteCommand(cmd, priorState, priorEventMeta)
+
+      result shouldBe (
         CommandHandlerResponse()
           .withFailedResponse(
             FailedCommandHandlerResponse()
-              .withReason(new GrpcServiceException(Status.UNAVAILABLE).toString)
+              .withReason(Status.NOT_FOUND.toString)
               .withCause(FailureCause.InternalError)
           )
-      ))
+      )
     }
 
     "handle grpc exception sent by command handler as expected" in {
       val priorState: State = State.defaultInstance
       val priorEventMeta: MetaData = MetaData.defaultInstance
-      val accouuntId: String = UUID.randomUUID.toString
-      val accountNumber: String = "123445"
-
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
-      val eventsProtos: Seq[String] =
-        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
       val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val cmd = Command(
-        Any.pack(
-          OpenAccount()
-            .withAccountNumber(accountNumber)
-            .withAccountUuid(accouuntId)
-        ),
+        Any.pack(OpenAccount.defaultInstance),
         null, // ignore the actor ref in this test
         Map.empty
       )
@@ -350,18 +336,7 @@ class AggregateCommandHandlerSpec extends LagompbSpec with MockFactory {
 
       (mockGrpcClient
         .handleCommand(_: HandleCommandRequest))
-        .expects(
-          HandleCommandRequest()
-            .withCommand(cmd.command.asInstanceOf[Any])
-            .withCurrentState(priorState.getCurrentState)
-            .withMeta(
-              common
-                .MetaData()
-                .withData(priorEventMeta.data)
-                .withRevisionDate(priorEventMeta.getRevisionDate)
-                .withRevisionNumber(priorEventMeta.revisionNumber)
-            )
-        )
+        .expects(*)
         .throws(new GrpcServiceException(Status.INVALID_ARGUMENT))
 
       // let us execute the request
@@ -377,24 +352,13 @@ class AggregateCommandHandlerSpec extends LagompbSpec with MockFactory {
       ))
     }
 
-    "handle broken command handler as expected" in {
-      val priorState: State = State.defaultInstance
-      val priorEventMeta: MetaData = MetaData.defaultInstance
-      val accouuntId: String = UUID.randomUUID.toString
-      val accountNumber: String = "123445"
-
+    "handles a critical grpc failure" in {
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
-      val eventsProtos: Seq[String] =
-        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
       val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
 
       val cmd = Command(
-        Any.pack(
-          OpenAccount()
-            .withAccountNumber(accountNumber)
-            .withAccountUuid(accouuntId)
-        ),
+        Any.pack(OpenAccount.defaultInstance),
         null, // ignore the actor ref in this test
         Map.empty
       )
@@ -404,37 +368,23 @@ class AggregateCommandHandlerSpec extends LagompbSpec with MockFactory {
 
       (mockGrpcClient
         .handleCommand(_: HandleCommandRequest))
-        .expects(
-          HandleCommandRequest()
-            .withCommand(cmd.command.asInstanceOf[Any])
-            .withCurrentState(priorState.getCurrentState)
-            .withMeta(
-              common
-                .MetaData()
-                .withData(priorEventMeta.data)
-                .withRevisionDate(priorEventMeta.getRevisionDate)
-                .withRevisionNumber(priorEventMeta.revisionNumber)
-            )
-        )
+        .expects(*)
         .throws(new RuntimeException("broken"))
 
       // let us execute the request
       val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
-      val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
-      result shouldBe (Success(
+      val result: CommandHandlerResponse = cmdhandler.handleRemoteCommand(cmd, State.defaultInstance, MetaData.defaultInstance)
+
+      result.handlerResponse.isFailedResponse shouldBe(true)
+
+      result shouldBe(
         CommandHandlerResponse()
           .withFailedResponse(
             FailedCommandHandlerResponse()
-              .withReason(
-                new GrpcServiceException(
-                  Status.INTERNAL.withDescription(
-                    s"Error occurred. Unable to handle command ${cmd.command.getClass.getCanonicalName}"
-                  )
-                ).toString
-              )
+              .withReason("Critical error occurred handling command com.google.protobuf.any.Any, broken")
               .withCause(FailureCause.InternalError)
           )
-      ))
+      )
     }
   }
 

@@ -48,7 +48,7 @@ class AggregateCommandHandler(
   override def handle(command: Command, priorState: State, priorEventMeta: MetaData): Try[CommandHandlerResponse] = {
     command.command match {
       // handle get requests locally
-      case getStateRequest: GetStateRequest => Try(handleGetCommand(getStateRequest, priorState, priorEventMeta))
+      case x: GetStateRequest => Try(handleGetCommand(x, priorState, priorEventMeta))
       // handle all other requests in the gRPC handler
       case _ => Try(handleRemoteCommand(command, priorState, priorEventMeta))
     }
@@ -62,6 +62,8 @@ class AggregateCommandHandler(
     * @return a command handler response indicating Reply or failure
     */
   def handleGetCommand(command: GetStateRequest, priorState: State, priorEventMeta: MetaData): CommandHandlerResponse = {
+    log.debug("[ChiefOfState] handling GetStateRequest")
+
     priorState
       .currentState
       .map(currentState => {
@@ -91,6 +93,8 @@ class AggregateCommandHandler(
     * @return a CommandHandlerResponse
     */
   def handleRemoteCommand(command: Command, priorState: State, priorEventMeta: MetaData): CommandHandlerResponse = {
+    log.debug("[ChiefOfState] handling gRPC command")
+
     val request = HandleCommandRequest()
       .withCommand(command.command.asInstanceOf[Any])
       .withCurrentState(priorState.getCurrentState)
@@ -152,7 +156,7 @@ class AggregateCommandHandler(
         }
 
       case Failure(e: GrpcServiceException) =>
-        log.error(s"[ChiefOfState] handler gRPC failed with ${e.status.toString()} ${e.getMessage()}", e)
+        log.error(s"[ChiefOfState] handler gRPC failed with ${e.status.toString()}", e)
         CommandHandlerResponse()
           .withFailedResponse(
             FailedCommandHandlerResponse()
@@ -165,7 +169,7 @@ class AggregateCommandHandler(
         CommandHandlerResponse()
           .withFailedResponse(
             FailedCommandHandlerResponse()
-              .withReason(s"Error occurred. Unable to handle command ${command.command.getClass.getCanonicalName}")
+              .withReason(s"Critical error occurred handling command ${command.command.getClass.getCanonicalName}, ${e.getMessage()}")
               .withCause(FailureCause.InternalError)
           )
     }
