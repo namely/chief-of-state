@@ -79,7 +79,7 @@ class UtilSpec extends LagompbSpec {
   }
 
 
-  "convertLagompbMeta" should {
+  "toCosMetaData" should {
     "return the right COS MetaData" in {
       val ts = Timestamp().withSeconds(3L).withNanos(2)
       val revisionNumber = 2L
@@ -95,7 +95,7 @@ class UtilSpec extends LagompbSpec {
         .withRevisionDate(ts)
         .withData(data)
 
-      val actual = Util.convertLagompbMeta(lagomMetaData)
+      val actual = Util.toCosMetaData(lagomMetaData)
 
       actual shouldBe(expected)
     }

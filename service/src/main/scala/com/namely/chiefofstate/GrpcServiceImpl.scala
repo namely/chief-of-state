@@ -39,7 +39,7 @@ class GrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding, aggreg
       .map((namelyState: StateAndMeta[State]) => {
         ProcessCommandResponse(
           state = namelyState.state.currentState,
-          meta = Some(Util.convertLagompbMeta(namelyState.metaData))
+          meta = Some(Util.toCosMetaData(namelyState.metaData))
         )
       })
   }
@@ -55,7 +55,7 @@ class GrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding, aggreg
       .map((namelyState: StateAndMeta[State]) => {
         GetStateResponse(
           state = namelyState.state.currentState,
-          meta = Some(Util.convertLagompbMeta(namelyState.metaData))
+          meta = Some(Util.toCosMetaData(namelyState.metaData))
         )
       })
   }

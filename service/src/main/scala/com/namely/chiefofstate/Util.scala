@@ -70,7 +70,7 @@ object Util {
     * @param metaData
     * @return
     */
-  def convertLagompbMeta(metaData: MetaData): CosMetaData = {
+  def toCosMetaData(metaData: MetaData): CosMetaData = {
     CosMetaData(
       revisionNumber = metaData.revisionNumber,
       revisionDate = metaData.revisionDate,
