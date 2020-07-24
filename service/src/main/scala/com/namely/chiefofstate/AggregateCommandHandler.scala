@@ -48,7 +48,7 @@ class AggregateCommandHandler(
   override def handle(command: Command, priorState: State, priorEventMeta: MetaData): Try[CommandHandlerResponse] = {
     command.command match {
       // handle get requests locally
-      case x: GetStateRequest => Try(handleGetCommand(x, priorState, priorEventMeta))
+      case getStateRequest: GetStateRequest => Try(handleGetCommand(getStateRequest, priorState, priorEventMeta))
       // handle all other requests in the gRPC handler
       case _ => Try(handleRemoteCommand(command, priorState, priorEventMeta))
     }
