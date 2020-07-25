@@ -37,23 +37,23 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 
 ### Local dev
 
-- For local development, the following pre-requisites are necessary: 
+- For local development, the following pre-requisites are necessary:
     - Install at least Java 8 [Java download](https://www.oracle.com/java/technologies/javase-downloads.html) on your local dev machine.
-    
-    -  [Sbt](https://www.scala-sbt.org/download.html) must be installed on the development machine.
-    
+
+    - [Sbt](https://www.scala-sbt.org/download.html) must be installed on the development machine.
+
     - [Docker](https://www.docker.com/get-started)  must be installed on the development machine.
-    
+
     - Set the [global](#global-environment-variables) in addition with the [local](#local-dev-options) ones. Check a sample docker-compose file inside the docker folder.
-    
+
     - Run `sbt dockerComposeUp` to start the application
-    
+
     - Run `sbt dockerComposeStop` to gracefully stop the application
 
 ### Inside a _docker-compose_ file
 
 - Pull the docker image from `registry.namely.land/namely/chief-of-state:<tag>` where `tag` is the latest release tag.
-  
+
 - Set the environment variable listed [here](#global-environment-variables) in addition with the [local](#local-dev-options) ones.
 
 - Set the following environment variable `JAVA_OPTS: "-Dconfig.resource=docker.conf"`

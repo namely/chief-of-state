@@ -1,6 +1,8 @@
 package com.namely.chiefofstate
 
 import com.google.protobuf.any.Any
+import io.superflat.lagompb.protobuf.core.MetaData
+import com.namely.protobuf.chief_of_state.common.{MetaData => CosMetaData}
 
 /**
  * Utility methods
@@ -61,5 +63,18 @@ object Util {
           grpcConfig
       })
       .toSeq
+  }
+
+  /** Converts the lagom-pb MetaData class to the chief-of-state MetaData
+    *
+    * @param metaData
+    * @return
+    */
+  def toCosMetaData(metaData: MetaData): CosMetaData = {
+    CosMetaData(
+      revisionNumber = metaData.revisionNumber,
+      revisionDate = metaData.revisionDate,
+      data = metaData.data
+    )
   }
 }
