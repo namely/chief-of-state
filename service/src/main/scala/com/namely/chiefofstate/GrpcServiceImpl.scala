@@ -47,21 +47,13 @@ class GrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding, aggreg
       Future.fromTry(Failure(e))
 
     } else {
-      val output = sendCommand[Any, State](clusterSharding, in.entityId, in.command.get, Map.empty[String, String])
+      sendCommand[Any, State](clusterSharding, in.entityId, in.command.get, Map.empty[String, String])
         .map((namelyState: StateAndMeta[State]) => {
           ProcessCommandResponse(
             state = namelyState.state.currentState,
             meta = Some(Util.toCosMetaData(namelyState.metaData))
           )
         })
-        .transform(f => {
-          f.failed.foreach(someFailure => {
-            log.error(s"THIS IS THE ERROR", f.get)
-          })
-          f
-        })
-
-      output
     }
   }
 
