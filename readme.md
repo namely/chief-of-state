@@ -86,8 +86,6 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 | COS_ENCRYPTION_CLASS | java class to use for encryption | io.superflat.lagompb.encryption.NoEncryption |
 | WRITE_SIDE_HANDLER_SERVICE_HOST | address of the gRPC writeSide handler service | <none> |
 | WRITE_SIDE_HANDLER_SERVICE_PORT | port for the gRPC writeSide handler service | <none> |
-| READ_SIDE_HANDLER_SERVICE_HOST | address of the gRPC readSide handler service. This must be set when readSide is turned on | <none> |
-| READ_SIDE_HANDLER_SERVICE_PORT | port for the gRPC readSide handler service. This must be set when readSide is turned on | <none> |
 | HANDLER_SERVICE_STATES_PROTO | handler service states proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`.  This will be a comma separated list of values | <none> |
 | HANDLER_SERVICE_EVENTS_PROTOS | handler service events proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`. This will be a comma separated list of values | <none> |
 | COS_SERVICE_NAME | service name | chiefofstate |
