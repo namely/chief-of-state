@@ -11,7 +11,7 @@ import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened, OpenAcc
 import com.namely.protobuf.chief_of_state.writeside._
 import com.namely.protobuf.chief_of_state.writeside.HandleCommandResponse.ResponseType
 import com.namely.protobuf.chief_of_state.service.GetStateRequest
-import io.grpc.Status
+import io.grpc.{Status, StatusRuntimeException}
 import io.superflat.lagompb.protobuf.core._
 import io.superflat.lagompb.testkit.LagompbSpec
 import io.superflat.lagompb.Command
@@ -318,7 +318,7 @@ class AggregateCommandHandlerSpec extends LagompbSpec with MockFactory {
       )
     }
 
-    "handle grpc exception sent by command handler as expected" in {
+    "handle failed validations sent by command handler" in {
       val priorState: State = State.defaultInstance
       val priorEventMeta: MetaData = MetaData.defaultInstance
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
@@ -334,22 +334,84 @@ class AggregateCommandHandlerSpec extends LagompbSpec with MockFactory {
       // let us create a mock instance of the handler service client
       val mockGrpcClient = mock[WriteSideHandlerServiceClient]
 
+      val badStatus: Status = Status.INVALID_ARGUMENT.withDescription("very invalid")
+
       (mockGrpcClient
         .handleCommand(_: HandleCommandRequest))
         .expects(*)
-        .throws(new GrpcServiceException(Status.INVALID_ARGUMENT))
+        .throws(new StatusRuntimeException(badStatus))
 
       // let us execute the request
       val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
-      val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
-      result shouldBe (Success(
+      val result: CommandHandlerResponse = cmdhandler.handleRemoteCommand(cmd, priorState, priorEventMeta)
+      result.getFailedResponse.reason.contains(badStatus.getDescription) shouldBe(true)
+      result.getFailedResponse.reason.contains(badStatus.getCode.name) shouldBe(true)
+      result.getFailedResponse.cause shouldBe(FailureCause.ValidationError)
+    }
+
+    "handle gRPC internal errors from command handler" in {
+      val priorState: State = State.defaultInstance
+      val priorEventMeta: MetaData = MetaData.defaultInstance
+      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+
+      val cmd = Command(
+        Any.pack(OpenAccount.defaultInstance),
+        null, // ignore the actor ref in this test
+        Map.empty
+      )
+
+      // let us create a mock instance of the handler service client
+      val mockGrpcClient = mock[WriteSideHandlerServiceClient]
+
+      val badStatus: Status = Status.INTERNAL.withDescription("super broken")
+
+      (mockGrpcClient
+        .handleCommand(_: HandleCommandRequest))
+        .expects(*)
+        .throws(new StatusRuntimeException(badStatus))
+
+      // let us execute the request
+      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
+      val result: CommandHandlerResponse = cmdhandler.handleRemoteCommand(cmd, priorState, priorEventMeta)
+      result.getFailedResponse.reason.contains(badStatus.getDescription) shouldBe(true)
+      result.getFailedResponse.reason.contains(badStatus.getCode.name) shouldBe(true)
+      result.getFailedResponse.cause shouldBe(FailureCause.InternalError)
+    }
+
+    "handles akka gRPC exceptions" in {
+      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+
+      val cmd = Command(
+        Any.pack(OpenAccount.defaultInstance),
+        null, // ignore the actor ref in this test
+        Map.empty
+      )
+
+      // let us create a mock instance of the handler service client
+      val mockGrpcClient = mock[WriteSideHandlerServiceClient]
+      val badStatus: Status = Status.INTERNAL.withDescription("grpc broken")
+
+      (mockGrpcClient
+        .handleCommand(_: HandleCommandRequest))
+        .expects(*)
+        .throws(new GrpcServiceException(status=badStatus))
+
+      // let us execute the request
+      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
+      val result: CommandHandlerResponse = cmdhandler.handleRemoteCommand(cmd, State.defaultInstance, MetaData.defaultInstance)
+
+      result shouldBe(
         CommandHandlerResponse()
           .withFailedResponse(
             FailedCommandHandlerResponse()
-              .withReason(Status.INVALID_ARGUMENT.toString)
+              .withReason(badStatus.toString())
               .withCause(FailureCause.InternalError)
           )
-      ))
+      )
     }
 
     "handles a critical grpc failure" in {

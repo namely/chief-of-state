@@ -3,6 +3,7 @@ package com.namely.chiefofstate
 import akka.actor.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.scaladsl.Metadata
+import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
 import com.namely.protobuf.chief_of_state.common
 import com.namely.protobuf.chief_of_state.persistence.State
@@ -15,13 +16,17 @@ import com.namely.protobuf.chief_of_state.service.{
 }
 import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl, StateAndMeta}
 import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
-
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Failure
+import org.slf4j.{Logger, LoggerFactory}
+
 
 class GrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding, aggregate: AggregateRoot[State])(implicit
     ec: ExecutionContext
 ) extends AbstractChiefOfStateServicePowerApiRouter(sys)
     with BaseGrpcServiceImpl {
+
+  private val log: Logger = LoggerFactory.getLogger(getClass)
 
   override def aggregateRoot: AggregateRoot[_] = aggregate
 
@@ -35,13 +40,29 @@ class GrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding, aggreg
     */
   override def processCommand(in: ProcessCommandRequest, metadata: Metadata): Future[ProcessCommandResponse] = {
 
-    sendCommand[Any, State](clusterSharding, in.entityId, in.command.get, Map.empty[String, String])
-      .map((namelyState: StateAndMeta[State]) => {
-        ProcessCommandResponse(
-          state = namelyState.state.currentState,
-          meta = Some(Util.toCosMetaData(namelyState.metaData))
-        )
-      })
+    if(in.entityId.isEmpty()) {
+      val status = io.grpc.Status.INVALID_ARGUMENT.withDescription("empty entity ID")
+      val e: Throwable = new GrpcServiceException(status = status)
+      log.error(s"request missing entity id")
+      Future.fromTry(Failure(e))
+
+    } else {
+      val output = sendCommand[Any, State](clusterSharding, in.entityId, in.command.get, Map.empty[String, String])
+        .map((namelyState: StateAndMeta[State]) => {
+          ProcessCommandResponse(
+            state = namelyState.state.currentState,
+            meta = Some(Util.toCosMetaData(namelyState.metaData))
+          )
+        })
+        .transform(f => {
+          f.failed.foreach(someFailure => {
+            log.error(s"THIS IS THE ERROR", f.get)
+          })
+          f
+        })
+
+      output
+    }
   }
 
   /** gRPC GetState implementation
@@ -51,12 +72,20 @@ class GrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding, aggreg
     * @return future of GetStateResponse
     */
   override def getState(in: GetStateRequest, metadata: Metadata): Future[GetStateResponse] = {
-    sendCommand[GetStateRequest, State](clusterSharding, in.entityId, in, Map.empty[String, String])
-      .map((namelyState: StateAndMeta[State]) => {
-        GetStateResponse(
-          state = namelyState.state.currentState,
-          meta = Some(Util.toCosMetaData(namelyState.metaData))
-        )
-      })
+    if(in.entityId.isEmpty()) {
+      val status = io.grpc.Status.INVALID_ARGUMENT.withDescription("empty entity ID")
+      val e: Throwable = new GrpcServiceException(status = status)
+      log.error(s"request missing entity id")
+      Future.fromTry(Failure(e))
+
+    } else {
+      sendCommand[GetStateRequest, State](clusterSharding, in.entityId, in, Map.empty[String, String])
+        .map((namelyState: StateAndMeta[State]) => {
+          GetStateResponse(
+            state = namelyState.state.currentState,
+            meta = Some(Util.toCosMetaData(namelyState.metaData))
+          )
+        })
+    }
   }
 }
