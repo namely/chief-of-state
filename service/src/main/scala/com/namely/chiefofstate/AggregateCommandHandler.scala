@@ -12,7 +12,7 @@ import com.namely.protobuf.chief_of_state.writeside.{
   WriteSideHandlerServiceClient
 }
 import com.namely.protobuf.chief_of_state.writeside.HandleCommandResponse.ResponseType.{Empty, PersistAndReply, Reply}
-import io.grpc.Status
+import io.grpc.{Status, StatusRuntimeException}
 import io.superflat.lagompb.{Command, CommandHandler}
 import io.superflat.lagompb.protobuf.core._
 import org.slf4j.{Logger, LoggerFactory}
@@ -34,6 +34,8 @@ class AggregateCommandHandler(
     writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
     handlerSetting: HandlerSetting
 ) extends CommandHandler[State](actorSystem) {
+
+  import AggregateCommandHandler.GRPC_FAILED_VALIDATION_STATUSES
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -155,14 +157,35 @@ class AggregateCommandHandler(
               )
         }
 
+      case Failure(e: StatusRuntimeException) =>
+        val status: Status = e.getStatus()
+        val reason: String = s"command failed (${status.getCode.name}) ${status.getDescription()}"
+        log.error(s"[ChiefOfState] $reason")
+
+        // handle specific gRPC error statuses
+        val cause =
+          if (GRPC_FAILED_VALIDATION_STATUSES.contains(status.getCode)) {
+            FailureCause.ValidationError
+          } else {
+            FailureCause.InternalError
+          }
+
+        CommandHandlerResponse()
+          .withFailedResponse(
+            FailedCommandHandlerResponse()
+              .withReason(reason)
+              .withCause(cause)
+          )
+
       case Failure(e: GrpcServiceException) =>
         log.error(s"[ChiefOfState] handler gRPC failed with ${e.status.toString()}", e)
         CommandHandlerResponse()
           .withFailedResponse(
             FailedCommandHandlerResponse()
-              .withReason(e.status.toString)
+              .withReason(e.getStatus.toString)
               .withCause(FailureCause.InternalError)
           )
+
 
       case Failure(e: Throwable) =>
         log.error(s"[ChiefOfState] gRPC handler critical failure", e)
@@ -174,4 +197,20 @@ class AggregateCommandHandler(
           )
     }
   }
+}
+
+/**
+  * companion object
+  */
+object AggregateCommandHandler {
+
+  // statuses that should be considered validation errors
+  // in the command handler
+  val GRPC_FAILED_VALIDATION_STATUSES: Set[Status.Code] = Set(
+    Status.Code.INVALID_ARGUMENT,
+    Status.Code.ALREADY_EXISTS,
+    Status.Code.FAILED_PRECONDITION,
+    Status.Code.OUT_OF_RANGE,
+    Status.Code.PERMISSION_DENIED
+  )
 }
