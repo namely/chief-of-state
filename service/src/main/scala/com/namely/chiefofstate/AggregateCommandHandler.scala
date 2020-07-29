@@ -199,7 +199,13 @@ class AggregateCommandHandler(
   }
 }
 
+/**
+  * companion object
+  */
 object AggregateCommandHandler {
+
+  // statuses that should be considered validation errors
+  // in the command handler
   val GRPC_FAILED_VALIDATION_STATUSES: Set[Status.Code] = Set(
     Status.Code.INVALID_ARGUMENT,
     Status.Code.ALREADY_EXISTS,
