@@ -86,14 +86,23 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 | COS_ENCRYPTION_CLASS | java class to use for encryption | io.superflat.lagompb.encryption.NoEncryption |
 | WRITE_SIDE_HANDLER_SERVICE_HOST | address of the gRPC writeSide handler service | <none> |
 | WRITE_SIDE_HANDLER_SERVICE_PORT | port for the gRPC writeSide handler service | <none> |
-| READ_SIDE_HANDLER_SERVICE_HOST | address of the gRPC readSide handler service. This must be set when readSide is turned on | <none> |
-| READ_SIDE_HANDLER_SERVICE_PORT | port for the gRPC readSide handler service. This must be set when readSide is turned on | <none> |
 | HANDLER_SERVICE_STATES_PROTO | handler service states proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`.  This will be a comma separated list of values | <none> |
 | HANDLER_SERVICE_EVENTS_PROTOS | handler service events proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`. This will be a comma separated list of values | <none> |
 | COS_SERVICE_NAME | service name | chiefofstate |
 | TEAM_NAME | |
 | TRACE_HOST | Jaeger collector/agent host | localhost |
 | TRACE_PORT | Jaeger collector/agent port | 14268 |
+
+### Read side configurations
+
+- SETTING_NAME - Supported setting names:
+  - HOST - Read side host
+  - PORT - Read side port
+- READSIDE_ID - Unique id for the read side instance
+
+| environment variable | description | default |
+|--- | --- | --- |
+| COS_READ_SIDE_CONFIG_<SETTING_NAME>_<READSIDE_ID> | readside configuration settings | <none> |
 
 ### Local dev options
 
@@ -147,3 +156,4 @@ env:
 todo:
 
 - think about scaling out replicas in k8s (don't want to break the k8s replica)
+- add more read_side_config settings

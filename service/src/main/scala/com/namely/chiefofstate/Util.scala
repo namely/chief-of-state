@@ -27,7 +27,7 @@ object Util {
   def getReadSideConfigs: Seq[ReadSideConfig] = {
 
     val envVars: Map[String, String] = sys.env
-      .filter(_._1.startsWith("COS_READSIDE_CONFIG__"))
+      .filter(_._1.startsWith("COS_READ_SIDE_CONFIG__"))
 
     if (envVars.exists(_._1.split("__").length != 3)) {
       throw new Exception("One or more of the read side configurations is invalid")

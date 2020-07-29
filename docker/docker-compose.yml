@@ -84,6 +84,6 @@ services:
       COS_READ_SIDE_OFFSET_DB_PASSWORD: "changeme"
       COS_READ_SIDE_OFFSET_DB: "postgres"
       COS_READ_SIDE_OFFSET_DB_SCHEMA: "public"
-      READ_SIDE_HANDLER_SERVICE_HOST: host.docker.internal
-      READ_SIDE_HANDLER_SERVICE_PORT: 50053
+      COS_READ_SIDE_CONFIG__HOST__RS1: host.docker.internal
+      COS_READ_SIDE_CONFIG__PORT__RS1: 50053
       JAVA_OPTS: "-Dconfig.resource=docker.conf"
