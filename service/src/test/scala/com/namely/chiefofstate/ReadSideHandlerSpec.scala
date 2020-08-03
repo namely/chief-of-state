@@ -74,6 +74,7 @@ class ReadSideHandlerSpec
             .withMeta(
               common
                 .MetaData()
+                .withEntityId(eventMeta.entityId)
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
                 .withRevisionNumber(eventMeta.revisionNumber)
@@ -137,6 +138,7 @@ class ReadSideHandlerSpec
             .withMeta(
               common
                 .MetaData()
+                .withEntityId(eventMeta.entityId)
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
                 .withRevisionNumber(eventMeta.revisionNumber)
@@ -198,6 +200,7 @@ class ReadSideHandlerSpec
             .withMeta(
               common
                 .MetaData()
+                .withEntityId(eventMeta.entityId)
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
                 .withRevisionNumber(eventMeta.revisionNumber)
@@ -254,6 +257,7 @@ class ReadSideHandlerSpec
             .withMeta(
               common
                 .MetaData()
+                .withEntityId(eventMeta.entityId)
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
                 .withRevisionNumber(eventMeta.revisionNumber)
@@ -310,6 +314,7 @@ class ReadSideHandlerSpec
             .withMeta(
               common
                 .MetaData()
+                .withEntityId(eventMeta.entityId)
                 .withData(eventMeta.data)
                 .withRevisionDate(eventMeta.getRevisionDate)
                 .withRevisionNumber(eventMeta.revisionNumber)

@@ -23,7 +23,7 @@ class HandlerSettingSpec extends BaseSpec {
       an[RuntimeException] shouldBe thrownBy(HandlerSetting(config))
     }
 
-    "succeed to load settings because env variables for events-protos not set" in {
+    "succeed to load settings because env variables for events-protos set" in {
       val config: Config = ConfigFactory
         .parseResources("handler-settings.conf")
         .withValue(
