@@ -4,23 +4,23 @@ import java.util.UUID
 
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.common.{MetaData => _}
 import com.namely.protobuf.chief_of_state.common
+import com.namely.protobuf.chief_of_state.common.{MetaData => _}
 import com.namely.protobuf.chief_of_state.persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened, OpenAccount}
-import com.namely.protobuf.chief_of_state.writeside._
-import com.namely.protobuf.chief_of_state.writeside.HandleCommandResponse.ResponseType
 import com.namely.protobuf.chief_of_state.service.GetStateRequest
+import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened, OpenAccount}
+import com.namely.protobuf.chief_of_state.writeside.HandleCommandResponse.ResponseType
+import com.namely.protobuf.chief_of_state.writeside._
 import io.grpc.{Status, StatusRuntimeException}
-import io.superflat.lagompb.protobuf.core._
-import io.superflat.lagompb.testkit.LagompbSpec
 import io.superflat.lagompb.Command
+import io.superflat.lagompb.protobuf.core._
+import io.superflat.lagompb.testkit.BaseSpec
 import org.scalamock.scalatest.MockFactory
 
 import scala.concurrent.Future
 import scala.util.{Success, Try}
 
-class AggregateCommandHandlerSpec extends LagompbSpec with MockFactory {
+class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
 
   "main commandHandler" should {
     "call the local state handler when given a GetStateRequest" in {

@@ -1,11 +1,11 @@
 package com.namely.chiefofstate
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import io.superflat.lagompb.testkit.LagompbSpec
+import io.superflat.lagompb.testkit.BaseSpec
 
 import scala.util.Try
 
-class EncryptionSettingSpec extends LagompbSpec {
+class EncryptionSettingSpec extends BaseSpec {
 
   "Chief-Of-State encryption settings" should {
 

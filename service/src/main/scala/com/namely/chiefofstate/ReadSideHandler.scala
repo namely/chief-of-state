@@ -5,20 +5,15 @@ import akka.actor.ActorSystem
 import akka.actor.typed.scaladsl.adapter._
 import com.namely.protobuf.chief_of_state.common
 import com.namely.protobuf.chief_of_state.persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.readside.{
-  HandleReadSideRequest,
-  HandleReadSideResponse,
-  ReadSideHandlerServiceClient
-}
-import io.superflat.lagompb.{ConfigReader, GlobalException}
+import com.namely.protobuf.chief_of_state.readside.{HandleReadSideRequest, HandleReadSideResponse, ReadSideHandlerServiceClient}
 import io.superflat.lagompb.encryption.ProtoEncryption
-import io.superflat.lagompb.protobuf.core.MetaData
-import io.superflat.lagompb.readside.ReadSideProcessor
-import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
+import io.superflat.lagompb.readside.{ReadSideEvent, ReadSideProcessor}
+import io.superflat.lagompb.{ConfigReader, GlobalException}
+import scalapb.GeneratedMessageCompanion
 import slick.dbio.{DBIO, DBIOAction}
 
-import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -45,20 +40,23 @@ class ReadSideHandler(
 
   // $COVERAGE-ON$
 
-  override def handle(event: GeneratedMessage, state: State, metaData: MetaData): DBIO[Done] = {
-    event match {
+  override def handle(readSideEvent: ReadSideEvent[State]): DBIO[Done] = {
+
+    val metaDataContent = readSideEvent.metaData
+    readSideEvent.event match {
       case e: Event =>
         Try(
           readSideHandlerServiceClient.handleReadSide(
             HandleReadSideRequest()
               .withEvent(e.getEvent)
-              .withState(state.getCurrentState)
+              .withState(readSideEvent.state.getCurrentState)
               .withMeta(
                 common
                   .MetaData()
-                  .withData(metaData.data)
-                  .withRevisionDate(metaData.getRevisionDate)
-                  .withRevisionNumber(metaData.revisionNumber)
+                  .withEntityId(metaDataContent.entityId)
+                  .withRevisionNumber(metaDataContent.revisionNumber)
+                  .withRevisionDate(metaDataContent.getRevisionDate)
+                  .withData(metaDataContent.data)
               )
           )
         ) match {
@@ -90,7 +88,7 @@ class ReadSideHandler(
       case _ =>
         DBIOAction.failed(
           throw new GlobalException(
-            s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - event ${event.companion.scalaDescriptor.fullName} not handled"
+            s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - event ${readSideEvent.event.companion.scalaDescriptor.fullName} not handled"
           )
         )
     }

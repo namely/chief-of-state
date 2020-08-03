@@ -1,11 +1,11 @@
 package com.namely.chiefofstate
 
-import io.superflat.lagompb.testkit.LagompbSpec
-import io.superflat.lagompb.protobuf.core.{MetaData => LagompbMetaData}
-import com.namely.protobuf.chief_of_state.common.{MetaData => CosMetaData}
 import com.google.protobuf.timestamp.Timestamp
+import com.namely.protobuf.chief_of_state.common.{MetaData => CosMetaData}
+import io.superflat.lagompb.protobuf.core.{MetaData => LagompbMetaData}
+import io.superflat.lagompb.testkit.BaseSpec
 
-class UtilSpec extends LagompbSpec {
+class UtilSpec extends BaseSpec {
 
   override def beforeEach(): Unit = {
     super.beforeEach()

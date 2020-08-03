@@ -9,17 +9,14 @@ import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
 import com.namely.protobuf.chief_of_state.common
 import com.namely.protobuf.chief_of_state.persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.readside.{
-  HandleReadSideRequest,
-  HandleReadSideResponse,
-  ReadSideHandlerServiceClient
-}
+import com.namely.protobuf.chief_of_state.readside.{HandleReadSideRequest, HandleReadSideResponse, ReadSideHandlerServiceClient}
 import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened}
 import io.grpc.Status
 import io.superflat.lagompb.protobuf.core.MetaData
-import io.superflat.lagompb.testkit.LagompbActorTestKit
+import io.superflat.lagompb.testkit.BaseActorTestKit
 import io.superflat.lagompb.GlobalException
 import io.superflat.lagompb.encryption.NoEncryption
+import io.superflat.lagompb.readside.ReadSideEvent
 import org.scalamock.scalatest.MockFactory
 import slick.dbio.DBIO
 
@@ -27,7 +24,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class ReadSideHandlerSpec
-    extends LagompbActorTestKit(s"""
+    extends BaseActorTestKit(s"""
     akka {
       actor {
         serialize-messages = on
@@ -97,8 +94,18 @@ class ReadSideHandlerSpec
           mockGrpcClient,
           handlerSetting
         )
+
       val result: DBIO[Done] =
-        readSideProcessor.handle(Event().withEvent(Any.pack(event)), state, eventMeta)
+        readSideProcessor.handle(
+          ReadSideEvent(
+            event = Event()
+              .withEvent(Any.pack(event)),
+            eventTag = "",
+            state = state,
+            metaData = eventMeta
+          )
+        )
+
       result.map(r => r shouldBe (Done))
     }
 
@@ -151,7 +158,15 @@ class ReadSideHandlerSpec
           handlerSetting
         )
       an[GlobalException] shouldBe thrownBy(
-        readSideProcessor.handle(Event().withEvent(Any.pack(event)), state, eventMeta)
+        readSideProcessor.handle(
+          ReadSideEvent(
+            event = Event()
+                .withEvent(Any.pack(event)),
+            eventTag = "",
+            state = state,
+            metaData = eventMeta
+          )
+        )
       )
     }
 
@@ -199,7 +214,15 @@ class ReadSideHandlerSpec
           handlerSetting
         )
       an[GlobalException] shouldBe thrownBy(
-        readSideProcessor.handle(Event().withEvent(Any.pack(event)), state, eventMeta)
+        readSideProcessor.handle(
+          ReadSideEvent(
+            event = Event()
+              .withEvent(Any.pack(event)),
+            eventTag = "",
+            state = state,
+            metaData = eventMeta
+          )
+        )
       )
     }
 
@@ -247,7 +270,15 @@ class ReadSideHandlerSpec
           handlerSetting
         )
       an[GlobalException] shouldBe thrownBy(
-        readSideProcessor.handle(Event().withEvent(Any.pack(event)), state, eventMeta)
+        readSideProcessor.handle(
+          ReadSideEvent(
+            event = Event()
+              .withEvent(Any.pack(event)),
+            eventTag = "",
+            state = state,
+            metaData = eventMeta
+          )
+        )
       )
     }
 
@@ -295,7 +326,15 @@ class ReadSideHandlerSpec
           handlerSetting
         )
       an[GlobalException] shouldBe thrownBy(
-        readSideProcessor.handle(Event().withEvent(Any.pack(event)), state, eventMeta)
+        readSideProcessor.handle(
+          ReadSideEvent(
+            event = Event()
+              .withEvent(Any.pack(event)),
+            eventTag = "",
+            state = state,
+            metaData = eventMeta
+          )
+        )
       )
     }
 
@@ -317,7 +356,17 @@ class ReadSideHandlerSpec
 
       val readSideProcessor =
         new ReadSideHandler(defaultGrpcReadSideConfig, NoEncryption, testKit.system.toClassic, null, handlerSetting)
-      an[GlobalException] shouldBe thrownBy(readSideProcessor.handle(Any.pack(event), state, eventMeta))
+      an[GlobalException] shouldBe thrownBy(
+        readSideProcessor.handle(
+          ReadSideEvent(
+            event = Event()
+              .withEvent(Any.pack(event)),
+            eventTag = "",
+            state = state,
+            metaData = eventMeta
+          )
+        )
+      )
     }
   }
 }
