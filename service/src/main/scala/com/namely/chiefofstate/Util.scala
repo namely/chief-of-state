@@ -72,6 +72,7 @@ object Util {
     */
   def toCosMetaData(metaData: MetaData): CosMetaData = {
     CosMetaData(
+      entityId = metaData.entityId,
       revisionNumber = metaData.revisionNumber,
       revisionDate = metaData.revisionDate,
       data = metaData.data
