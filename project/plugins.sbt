@@ -1,4 +1,4 @@
-addSbtPlugin("com.lightbend.lagom" % "lagom-sbt-plugin" % "1.6.2")
+addSbtPlugin("io.superflat" % "lagompb-plugin" % "0.6-alpha.1")
 addSbtPlugin("com.dwijnand" % "sbt-dynver" % "4.0.0")
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.6.1")
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.3.2")
@@ -7,9 +7,4 @@ addSbtPlugin("com.beautiful-scala" % "sbt-scalastyle" % "1.4.0")
 addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.13")
 addSbtPlugin("au.com.onegeek" %% "sbt-dotenv" % "2.1.169")
 addSbtPlugin("com.tapad" % "sbt-docker-compose" % "1.0.35")
-addSbtPlugin("com.lightbend.akka.grpc" %% "sbt-akka-grpc" % "0.8.4")
 addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent" % "0.1.4")
-resolvers += Resolver.bintrayRepo("playframework", "maven")
-libraryDependencies += "com.lightbend.play" %% "play-grpc-generators" % "0.8.2"
-addSbtPlugin("com.thesamet" % "sbt-protoc" % "0.99.34")
-libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.10.7"

@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import com.namely.protobuf.chief_of_state.persistence.State
 import com.typesafe.config.Config
 import io.superflat.lagompb.{AggregateRoot, CommandHandler, EventHandler}
-import io.superflat.lagompb.encryption.ProtoEncryption
+import io.superflat.lagompb.encryption.EncryptionAdapter
 import scalapb.GeneratedMessageCompanion
 
 /**
@@ -20,8 +20,8 @@ class Aggregate(
     config: Config,
     commandHandler: CommandHandler[State],
     eventHandler: EventHandler[State],
-    protoEncryption: ProtoEncryption
-) extends AggregateRoot[State](actorSystem, commandHandler, eventHandler, protoEncryption) {
+    encryptionAdapter: EncryptionAdapter
+) extends AggregateRoot[State](actorSystem, commandHandler, eventHandler, encryptionAdapter) {
   // $COVERAGE-OFF$
   override def aggregateName: String = "chiefOfState"
 

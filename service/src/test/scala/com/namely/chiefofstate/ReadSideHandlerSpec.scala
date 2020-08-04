@@ -9,13 +9,17 @@ import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
 import com.namely.protobuf.chief_of_state.common
 import com.namely.protobuf.chief_of_state.persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.readside.{HandleReadSideRequest, HandleReadSideResponse, ReadSideHandlerServiceClient}
+import com.namely.protobuf.chief_of_state.readside.{
+  HandleReadSideRequest,
+  HandleReadSideResponse,
+  ReadSideHandlerServiceClient
+}
 import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened}
 import io.grpc.Status
 import io.superflat.lagompb.protobuf.core.MetaData
 import io.superflat.lagompb.testkit.BaseActorTestKit
 import io.superflat.lagompb.GlobalException
-import io.superflat.lagompb.encryption.NoEncryption
+import io.superflat.lagompb.encryption.{EncryptionAdapter, NoEncryption}
 import io.superflat.lagompb.readside.ReadSideEvent
 import org.scalamock.scalatest.MockFactory
 import slick.dbio.DBIO
@@ -45,6 +49,8 @@ class ReadSideHandlerSpec
   val defaultGrpcReadSideConfig: ReadSideConfig = ReadSideConfig("test")
 
   "Chief-Of-State ReadSide Processor" should {
+
+    val encryptionAdapter: EncryptionAdapter = new EncryptionAdapter(Some(NoEncryption))
 
     "handle events and state as expected when response was successful" in {
       val state: State = State.defaultInstance
@@ -90,7 +96,7 @@ class ReadSideHandlerSpec
       val readSideProcessor =
         new ReadSideHandler(
           defaultGrpcReadSideConfig,
-          NoEncryption,
+          encryptionAdapter,
           testKit.system.toClassic,
           mockGrpcClient,
           handlerSetting
@@ -154,7 +160,7 @@ class ReadSideHandlerSpec
       val readSideProcessor =
         new ReadSideHandler(
           defaultGrpcReadSideConfig,
-          NoEncryption,
+          encryptionAdapter,
           testKit.system.toClassic,
           mockGrpcClient,
           handlerSetting
@@ -163,7 +169,7 @@ class ReadSideHandlerSpec
         readSideProcessor.handle(
           ReadSideEvent(
             event = Event()
-                .withEvent(Any.pack(event)),
+              .withEvent(Any.pack(event)),
             eventTag = "",
             state = state,
             metaData = eventMeta
@@ -211,7 +217,7 @@ class ReadSideHandlerSpec
       val readSideProcessor =
         new ReadSideHandler(
           defaultGrpcReadSideConfig,
-          NoEncryption,
+          encryptionAdapter,
           testKit.system.toClassic,
           mockGrpcClient,
           handlerSetting
@@ -268,7 +274,7 @@ class ReadSideHandlerSpec
       val readSideProcessor =
         new ReadSideHandler(
           defaultGrpcReadSideConfig,
-          NoEncryption,
+          encryptionAdapter,
           testKit.system.toClassic,
           mockGrpcClient,
           handlerSetting
@@ -325,7 +331,7 @@ class ReadSideHandlerSpec
       val readSideProcessor =
         new ReadSideHandler(
           defaultGrpcReadSideConfig,
-          NoEncryption,
+          encryptionAdapter,
           testKit.system.toClassic,
           mockGrpcClient,
           handlerSetting
@@ -360,7 +366,13 @@ class ReadSideHandlerSpec
         .withAccountUuid(accouuntId)
 
       val readSideProcessor =
-        new ReadSideHandler(defaultGrpcReadSideConfig, NoEncryption, testKit.system.toClassic, null, handlerSetting)
+        new ReadSideHandler(
+          defaultGrpcReadSideConfig,
+          encryptionAdapter,
+          testKit.system.toClassic,
+          null,
+          handlerSetting
+        )
       an[GlobalException] shouldBe thrownBy(
         readSideProcessor.handle(
           ReadSideEvent(

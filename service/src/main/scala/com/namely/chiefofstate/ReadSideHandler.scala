@@ -5,15 +5,19 @@ import akka.actor.ActorSystem
 import akka.actor.typed.scaladsl.adapter._
 import com.namely.protobuf.chief_of_state.common
 import com.namely.protobuf.chief_of_state.persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.readside.{HandleReadSideRequest, HandleReadSideResponse, ReadSideHandlerServiceClient}
-import io.superflat.lagompb.encryption.ProtoEncryption
-import io.superflat.lagompb.readside.{ReadSideEvent, ReadSideProcessor}
+import com.namely.protobuf.chief_of_state.readside.{
+  HandleReadSideRequest,
+  HandleReadSideResponse,
+  ReadSideHandlerServiceClient
+}
 import io.superflat.lagompb.{ConfigReader, GlobalException}
+import io.superflat.lagompb.encryption.EncryptionAdapter
+import io.superflat.lagompb.readside.{ReadSideEvent, ReadSideProcessor}
 import scalapb.GeneratedMessageCompanion
 import slick.dbio.{DBIO, DBIOAction}
 
-import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -25,12 +29,12 @@ import scala.util.{Failure, Success, Try}
  */
 class ReadSideHandler(
     grpcReadSideConfig: ReadSideConfig,
-    encryption: ProtoEncryption,
+    encryptionAdapter: EncryptionAdapter,
     actorSystem: ActorSystem,
     readSideHandlerServiceClient: ReadSideHandlerServiceClient,
     handlerSetting: HandlerSetting
 )(implicit ec: ExecutionContext)
-    extends ReadSideProcessor[State](encryption)(ec, actorSystem.toTyped) {
+    extends ReadSideProcessor[State](encryptionAdapter)(ec, actorSystem.toTyped) {
   // $COVERAGE-OFF$
 
   override def aggregateStateCompanion: GeneratedMessageCompanion[State] = State
