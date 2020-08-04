@@ -2,30 +2,32 @@ package com.namely.chiefofstate
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import io.superflat.lagompb.testkit.BaseSpec
+import io.superflat.lagompb.encryption.NoEncryption
 
-import scala.util.Try
+import scala.util.{Try, Success}
 
 class EncryptionSettingSpec extends BaseSpec {
 
   "Chief-Of-State encryption settings" should {
 
-    "fail to load settings due to missing values" in {
+    "fail to load settings due to missing setting key" in {
       val config: Config = ConfigFactory.empty()
       an[RuntimeException] shouldBe thrownBy(EncryptionSetting(config))
     }
 
-    "fail to load settings due to empty values" in {
+    "defaults to None when no encryption value set" in {
       val config: Config = ConfigFactory
         .empty()
         .withValue(EncryptionSetting.SETTING_KEY, ConfigValueFactory.fromAnyRef(""))
 
-      an[RuntimeException] shouldBe thrownBy(EncryptionSetting(config))
+      EncryptionSetting(config) shouldBe(EncryptionSetting(encryption=None))
     }
 
     "fail to load settings due to unknown encryption class" in {
       val config: Config = ConfigFactory
         .empty()
         .withValue(EncryptionSetting.SETTING_KEY, ConfigValueFactory.fromAnyRef("not.an.encryptor"))
+
       an[RuntimeException] shouldBe thrownBy(EncryptionSetting(config))
     }
 
@@ -39,7 +41,7 @@ class EncryptionSettingSpec extends BaseSpec {
 
       val actual: Try[EncryptionSetting] = Try(EncryptionSetting(config))
 
-      actual.map(_.encryption).toOption shouldBe (Some(io.superflat.lagompb.encryption.NoEncryption))
+      actual shouldBe Success(EncryptionSetting(Some(NoEncryption)))
     }
   }
 }
