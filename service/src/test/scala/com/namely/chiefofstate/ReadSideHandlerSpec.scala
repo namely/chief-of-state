@@ -81,7 +81,7 @@ class ReadSideHandlerSpec
               common
                 .MetaData()
                 .withEntityId(eventMeta.entityId)
-                .withData(eventMeta.data)
+                .withData(eventMeta.data + ("eventTag" -> "tag1"))
                 .withRevisionDate(eventMeta.getRevisionDate)
                 .withRevisionNumber(eventMeta.revisionNumber)
             )
@@ -145,7 +145,7 @@ class ReadSideHandlerSpec
               common
                 .MetaData()
                 .withEntityId(eventMeta.entityId)
-                .withData(eventMeta.data)
+                .withData(eventMeta.data + ("eventTag" -> "tag1"))
                 .withRevisionDate(eventMeta.getRevisionDate)
                 .withRevisionNumber(eventMeta.revisionNumber)
             )
@@ -207,7 +207,7 @@ class ReadSideHandlerSpec
               common
                 .MetaData()
                 .withEntityId(eventMeta.entityId)
-                .withData(eventMeta.data)
+                .withData(eventMeta.data + ("eventTag" -> "tag1"))
                 .withRevisionDate(eventMeta.getRevisionDate)
                 .withRevisionNumber(eventMeta.revisionNumber)
             )
@@ -264,7 +264,7 @@ class ReadSideHandlerSpec
               common
                 .MetaData()
                 .withEntityId(eventMeta.entityId)
-                .withData(eventMeta.data)
+                .withData(eventMeta.data + ("eventTag" -> "tag1"))
                 .withRevisionDate(eventMeta.getRevisionDate)
                 .withRevisionNumber(eventMeta.revisionNumber)
             )
@@ -321,7 +321,7 @@ class ReadSideHandlerSpec
               common
                 .MetaData()
                 .withEntityId(eventMeta.entityId)
-                .withData(eventMeta.data)
+                .withData(eventMeta.data + ("eventTag" -> "tag1"))
                 .withRevisionDate(eventMeta.getRevisionDate)
                 .withRevisionNumber(eventMeta.revisionNumber)
             )
@@ -347,6 +347,71 @@ class ReadSideHandlerSpec
           )
         )
       )
+    }
+
+    "prove new metadata added successfully" in {
+      val state: State = State.defaultInstance
+      val eventMeta: MetaData = MetaData.defaultInstance
+      val accouuntId: String = UUID.randomUUID.toString
+      val accountNumber: String = "123445"
+
+      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
+      val eventsProtos: Seq[String] =
+        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+
+      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+
+      val event = AccountOpened()
+        .withAccountNumber(accountNumber)
+        .withAccountUuid(accouuntId)
+
+      // let us create a mock instance of the handler service client
+      val mockGrpcClient = mock[ReadSideHandlerServiceClient]
+
+      (mockGrpcClient
+        .handleReadSide(_: HandleReadSideRequest))
+        .expects(
+          HandleReadSideRequest()
+            .withEvent(Any.pack(event))
+            .withState(state.getCurrentState)
+            .withMeta(
+              common
+                .MetaData()
+                .withEntityId(eventMeta.entityId)
+                .withData(eventMeta.data + ("eventTag" -> "tag1"))
+                .withRevisionDate(eventMeta.getRevisionDate)
+                .withRevisionNumber(eventMeta.revisionNumber)
+            )
+        )
+        .returning(
+          Future.successful(
+            HandleReadSideResponse()
+              .withSuccessful(true)
+          )
+        )
+
+      val readSideProcessor =
+        new ReadSideHandler(
+          defaultGrpcReadSideConfig,
+          encryptionAdapter,
+          testKit.system.toClassic,
+          mockGrpcClient,
+          handlerSetting
+        )
+
+
+      val result: DBIO[Done] =
+        readSideProcessor.handle(
+          ReadSideEvent(
+            event = Event()
+              .withEvent(Any.pack(event)),
+            eventTag = "",
+            state = state,
+            metaData = eventMeta
+          )
+        )
+
+      result.map(r => r shouldBe (Done))
     }
 
     "handle unknown event" in {
@@ -385,5 +450,7 @@ class ReadSideHandlerSpec
         )
       )
     }
-  }
+
+    }
+
 }
