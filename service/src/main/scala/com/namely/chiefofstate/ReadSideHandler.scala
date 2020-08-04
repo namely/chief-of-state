@@ -45,8 +45,6 @@ class ReadSideHandler(
   // $COVERAGE-ON$
 
   override def handle(readSideEvent: ReadSideEvent[State]): DBIO[Done] = {
-
-    val metaDataContent = readSideEvent.metaData
     readSideEvent.event match {
       case e: Event =>
         Try(
@@ -57,10 +55,10 @@ class ReadSideHandler(
               .withMeta(
                 common
                   .MetaData()
-                  .withEntityId(metaDataContent.entityId)
-                  .withRevisionNumber(metaDataContent.revisionNumber)
-                  .withRevisionDate(metaDataContent.getRevisionDate)
-                  .withData(metaDataContent.data)
+                  .withEntityId(readSideEvent.metaData.entityId)
+                  .withRevisionNumber(readSideEvent.metaData.revisionNumber)
+                  .withRevisionDate(readSideEvent.metaData.getRevisionDate)
+                  .withData(readSideEvent.metaData.data)
               )
           )
         ) match {
