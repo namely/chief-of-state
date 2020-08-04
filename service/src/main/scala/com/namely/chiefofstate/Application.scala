@@ -18,6 +18,7 @@ import com.namely.protobuf.chief_of_state.writeside.WriteSideHandlerServiceClien
 import com.softwaremill.macwire.wire
 import io.superflat.lagompb.{AggregateRoot, BaseApplication, CommandHandler, EventHandler}
 import io.superflat.lagompb.encryption.ProtoEncryption
+import io.superflat.lagompb.encryption.NoEncryption
 
 /**
  * ChiefOfState application
@@ -26,6 +27,11 @@ import io.superflat.lagompb.encryption.ProtoEncryption
  */
 abstract class Application(context: LagomApplicationContext) extends BaseApplication(context) {
   // $COVERAGE-OFF$
+
+  // reflect encryption from config
+  def protoEncryption: Option[ProtoEncryption] = EncryptionSetting(config).encryption
+  // TODO: remove this when lagom-pb v0.6.xx rebased in
+  lazy val encryption: ProtoEncryption = protoEncryption.getOrElse(NoEncryption)
 
   // wiring up the grpc for the writeSide client
   lazy val writeSideHandlerServiceClient: WriteSideHandlerServiceClient = WriteSideHandlerServiceClient(
@@ -41,9 +47,6 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
     .addTask(CoordinatedShutdown.PhaseServiceUnbind, "shutdown-writeSidehandler-service-client") { () =>
       writeSideHandlerServiceClient.close()
     }
-
-  // reflect encryption from config
-  lazy val encryption: ProtoEncryption = EncryptionSetting(config).encryption
 
   // wire up the various event and command handler
   lazy val eventHandler: EventHandler[State] = wire[AggregateEventHandler]

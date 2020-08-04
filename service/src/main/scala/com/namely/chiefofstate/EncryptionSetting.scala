@@ -11,7 +11,7 @@ import scala.util.{Failure, Success, Try}
  *
  * @param encryption encryptor
  */
-case class EncryptionSetting(encryption: ProtoEncryption)
+case class EncryptionSetting(encryption: Option[ProtoEncryption])
 
 object EncryptionSetting {
 
@@ -37,23 +37,23 @@ object EncryptionSetting {
       .trim
 
     if (encryptionClassName.isEmpty()) {
-      throw new RuntimeException("[ChiefOfState] encryption settings not properly set")
-    }
+      EncryptionSetting(encryption = None)
+    } else {
+      // attempt reflection
+      val output: Try[ProtoEncryption] = Try {
+        val clazz: Class[_ <: Any] = Class.forName(encryptionClassName)
+        val runtimeMirror: universe.Mirror = universe.runtimeMirror(clazz.getClassLoader)
+        val module: universe.ModuleSymbol = runtimeMirror.staticModule(clazz.getName)
+        runtimeMirror.reflectModule(module).instance.asInstanceOf[ProtoEncryption]
+      }
 
-    // attempt reflection
-    val output: Try[ProtoEncryption] = Try {
-      val clazz: Class[_ <: Any] = Class.forName(encryptionClassName)
-      val runtimeMirror: universe.Mirror = universe.runtimeMirror(clazz.getClassLoader)
-      val module: universe.ModuleSymbol = runtimeMirror.staticModule(clazz.getName)
-      runtimeMirror.reflectModule(module).instance.asInstanceOf[ProtoEncryption]
-    }
+      output match {
+        case Success(protoEncryption) =>
+          EncryptionSetting(Some(protoEncryption))
 
-    output match {
-      case Success(protoEncryption) =>
-        EncryptionSetting(protoEncryption)
-
-      case Failure(e) =>
-        throw new RuntimeException(s"[ChiefOfState] could not load ProtoEncryption '$encryptionClassName'.")
+        case Failure(e) =>
+          throw new RuntimeException(s"[ChiefOfState] could not load ProtoEncryption '$encryptionClassName'.")
+      }
     }
   }
 }
