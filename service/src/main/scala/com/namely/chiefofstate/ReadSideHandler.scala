@@ -48,19 +48,22 @@ class ReadSideHandler(
     readSideEvent.event match {
       case e: Event =>
         Try(
-          readSideHandlerServiceClient.handleReadSide(
-            HandleReadSideRequest()
-              .withEvent(e.getEvent)
-              .withState(readSideEvent.state.getCurrentState)
-              .withMeta(
-                common
-                  .MetaData()
-                  .withEntityId(readSideEvent.metaData.entityId)
-                  .withRevisionNumber(readSideEvent.metaData.revisionNumber)
-                  .withRevisionDate(readSideEvent.metaData.getRevisionDate)
-                  .withData(readSideEvent.metaData.data)
-              )
-          )
+          readSideHandlerServiceClient.handleReadSide()
+            .addHeader("entityId", readSideEvent.metaData.entityId)
+            .addHeader("eventTag", readSideEvent.eventTag)
+            .invoke(
+              HandleReadSideRequest()
+                .withEvent(e.getEvent)
+                .withState(readSideEvent.state.getCurrentState)
+                .withMeta(
+                  common
+                    .MetaData()
+                    .withEntityId(readSideEvent.metaData.entityId)
+                    .withRevisionNumber(readSideEvent.metaData.revisionNumber)
+                    .withRevisionDate(readSideEvent.metaData.getRevisionDate)
+                    .withData(readSideEvent.metaData.data)
+                )
+            )
         ) match {
           case Failure(exception) =>
             log.error(
