@@ -6,6 +6,7 @@ import com.google.protobuf.any.Any
 import com.namely.protobuf.chief_of_state.common.{MetaData => _}
 import com.namely.protobuf.chief_of_state.common
 import com.namely.protobuf.chief_of_state.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.service.GetStateRequest
 import com.namely.protobuf.chief_of_state.writeside.{
   HandleCommandRequest,
   HandleCommandResponse,
@@ -17,10 +18,9 @@ import io.superflat.lagompb.{Command, CommandHandler}
 import io.superflat.lagompb.protobuf.core._
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
-import com.namely.protobuf.chief_of_state.service.GetStateRequest
 
 /**
  * ChiefOfStateCommandHandler
@@ -30,9 +30,9 @@ import com.namely.protobuf.chief_of_state.service.GetStateRequest
  * @param handlerSetting                the command handler setting
  */
 class AggregateCommandHandler(
-    actorSystem: ActorSystem,
-    writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
-    handlerSetting: HandlerSetting
+  actorSystem: ActorSystem,
+  writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
+  handlerSetting: HandlerSetting
 ) extends CommandHandler[State](actorSystem) {
 
   import AggregateCommandHandler.GRPC_FAILED_VALIDATION_STATUSES
@@ -56,18 +56,21 @@ class AggregateCommandHandler(
     }
   }
 
-  /** handler for GetStateRequest command
-    *
-    * @param command a getStateRequest
-    * @param priorState the prior state for this entity
-    * @param priorEventMeta the prior event meta
-    * @return a command handler response indicating Reply or failure
-    */
-  def handleGetCommand(command: GetStateRequest, priorState: State, priorEventMeta: MetaData): CommandHandlerResponse = {
+  /**
+   * handler for GetStateRequest command
+   *
+   * @param command a getStateRequest
+   * @param priorState the prior state for this entity
+   * @param priorEventMeta the prior event meta
+   * @return a command handler response indicating Reply or failure
+   */
+  def handleGetCommand(command: GetStateRequest,
+                       priorState: State,
+                       priorEventMeta: MetaData
+  ): CommandHandlerResponse = {
     log.debug("[ChiefOfState] handling GetStateRequest")
 
-    priorState
-      .currentState
+    priorState.currentState
       .map(currentState => {
         log.debug(s"[ChiefOfState] found state for entity ${command.entityId}")
         CommandHandlerResponse()
@@ -76,7 +79,7 @@ class AggregateCommandHandler(
               .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
           )
       })
-      .getOrElse({
+      .getOrElse {
         log.error(s"[ChiefOfState] could not find state for entity ${command.entityId}")
         CommandHandlerResponse()
           .withFailedResponse(
@@ -84,16 +87,17 @@ class AggregateCommandHandler(
               .withReason("entity not found")
               .withCause(FailureCause.InternalError)
           )
-      })
+      }
   }
 
-  /** handler for commands that should be forwarded by gRPC handler service
-    *
-    * @param command a command to forward
-    * @param priorState the prior state of the entity
-    * @param priorEventMeta the prior event meta data
-    * @return a CommandHandlerResponse
-    */
+  /**
+   * handler for commands that should be forwarded by gRPC handler service
+   *
+   * @param command a command to forward
+   * @param priorState the prior state of the entity
+   * @param priorEventMeta the prior event meta data
+   * @return a CommandHandlerResponse
+   */
   def handleRemoteCommand(command: Command, priorState: State, priorEventMeta: MetaData): CommandHandlerResponse = {
     log.debug("[ChiefOfState] handling gRPC command")
 
@@ -109,10 +113,10 @@ class AggregateCommandHandler(
       )
 
     // await response from gRPC handler service
-    val responseAttempt: Try[HandleCommandResponse] = Try({
+    val responseAttempt: Try[HandleCommandResponse] = Try {
       val futureResponse = writeSideHandlerServiceClient.handleCommand(request)
       Await.result(futureResponse, Duration.Inf)
-    })
+    }
 
     responseAttempt match {
       case Success(response: HandleCommandResponse) =>
@@ -131,7 +135,9 @@ class AggregateCommandHandler(
                     .withEvent(Any.pack(Event().withEvent(persistAndReply.getEvent)))
                 )
             } else {
-              log.error(s"[ChiefOfState]: command handler event to persist $eventFQN is not configured. Failing request")
+              log.error(
+                s"[ChiefOfState]: command handler event to persist $eventFQN is not configured. Failing request"
+              )
               CommandHandlerResponse()
                 .withFailedResponse(
                   FailedCommandHandlerResponse()
@@ -186,13 +192,14 @@ class AggregateCommandHandler(
               .withCause(FailureCause.InternalError)
           )
 
-
       case Failure(e: Throwable) =>
         log.error(s"[ChiefOfState] gRPC handler critical failure", e)
         CommandHandlerResponse()
           .withFailedResponse(
             FailedCommandHandlerResponse()
-              .withReason(s"Critical error occurred handling command ${command.command.getClass.getCanonicalName}, ${e.getMessage()}")
+              .withReason(
+                s"Critical error occurred handling command ${command.command.getClass.getCanonicalName}, ${e.getMessage()}"
+              )
               .withCause(FailureCause.InternalError)
           )
     }
@@ -200,8 +207,8 @@ class AggregateCommandHandler(
 }
 
 /**
-  * companion object
-  */
+ * companion object
+ */
 object AggregateCommandHandler {
 
   // statuses that should be considered validation errors

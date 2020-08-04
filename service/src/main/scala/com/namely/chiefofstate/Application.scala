@@ -18,7 +18,6 @@ import com.namely.protobuf.chief_of_state.writeside.WriteSideHandlerServiceClien
 import com.softwaremill.macwire.wire
 import io.superflat.lagompb.{AggregateRoot, BaseApplication, CommandHandler, EventHandler}
 import io.superflat.lagompb.encryption.ProtoEncryption
-import io.superflat.lagompb.encryption.NoEncryption
 
 /**
  * ChiefOfState application
@@ -29,9 +28,7 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
   // $COVERAGE-OFF$
 
   // reflect encryption from config
-  def protoEncryption: Option[ProtoEncryption] = EncryptionSetting(config).encryption
-  // TODO: remove this when lagom-pb v0.6.xx rebased in
-  lazy val encryption: ProtoEncryption = protoEncryption.getOrElse(NoEncryption)
+  override def protoEncryption: Option[ProtoEncryption] = EncryptionSetting(config).encryption
 
   // wiring up the grpc for the writeSide client
   lazy val writeSideHandlerServiceClient: WriteSideHandlerServiceClient = WriteSideHandlerServiceClient(
@@ -62,7 +59,7 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
   if (config.getBoolean("chief-of-state.read-model.enabled")) {
 
     // wiring up the grpc for the readSide client
-    Util.getReadSideConfigs.foreach({ config =>
+    Util.getReadSideConfigs.foreach { config =>
       lazy val readSideHandlerServiceClient: ReadSideHandlerServiceClient =
         ReadSideHandlerServiceClient(config.getGrpcClientSettings(actorSystem))
 
@@ -75,7 +72,7 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
 
       lazy val chiefOfStateReadProcessor: ReadSideHandler = wire[ReadSideHandler]
       chiefOfStateReadProcessor.init()
-    })
+    }
   }
   // $COVERAGE-ON$
 }

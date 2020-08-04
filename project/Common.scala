@@ -1,15 +1,13 @@
-package com.namely.chiefofstate
-
 import com.lightbend.lagom.sbt.LagomPlugin.autoImport.{
   lagomCassandraEnabled,
   lagomKafkaEnabled,
   lagomServiceGatewayAddress,
   lagomServiceLocatorAddress
 }
-import com.namely.chiefofstate.Dependencies.Versions
 import sbt.Keys.{credentials, isSnapshot, resolvers, _}
 import sbt.{compilerPlugin, plugins, url, AutoPlugin, Credentials, CrossVersion, Developer, Plugins, Resolver, _}
 import scoverage.ScoverageKeys.{coverageExcludedPackages, coverageFailOnMinimum, coverageMinimum}
+import Dependencies.Versions
 
 object Common extends AutoPlugin {
   override def requires: Plugins = plugins.JvmPlugin
@@ -18,7 +16,7 @@ object Common extends AutoPlugin {
 
   override def globalSettings =
     Seq(
-      scalaVersion := Versions.scala213,
+      scalaVersion := Versions.Scala213,
       organization := "com.namely",
       organizationName := "Namely Inc.",
       organizationHomepage := Some(url("https://www.namely.com/")),
@@ -76,15 +74,16 @@ object Common extends AutoPlugin {
       ),
       libraryDependencies ++= Seq(
         compilerPlugin(
-          ("com.github.ghik" % "silencer-plugin" % Versions.silencerVersion)
+          ("com.github.ghik" % "silencer-plugin" % Versions.SilencerVersion)
             .cross(CrossVersion.full)
         ),
-        ("com.github.ghik" % "silencer-lib" % Versions.silencerVersion % Provided)
+        ("com.github.ghik" % "silencer-lib" % Versions.SilencerVersion % Provided)
           .cross(CrossVersion.full)
       ),
       coverageExcludedPackages := "<empty>;com.namely.protobuf.*;" +
         "com.namely.protobuf.chief_of_state.*;" +
         "com.namely.chiefofstate.RestServiceImpl;" +
-        "com.namely.chiefofstate.api.*"
+        "com.namely.chiefofstate.api.*;" +
+        "com.namely.chiefofstate.GrpcServiceImpl;"
     )
 }

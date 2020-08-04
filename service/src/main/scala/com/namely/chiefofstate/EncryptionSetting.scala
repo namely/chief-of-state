@@ -36,7 +36,7 @@ object EncryptionSetting {
       .getString(SETTING_KEY)
       .trim
 
-    if (encryptionClassName.isEmpty()) {
+    if (encryptionClassName.isEmpty) {
       EncryptionSetting(encryption = None)
     } else {
       // attempt reflection

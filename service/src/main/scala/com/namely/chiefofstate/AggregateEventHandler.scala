@@ -25,9 +25,9 @@ import scala.util.{Failure, Success, Try}
  * @param handlerSetting                the event handler setting
  */
 class AggregateEventHandler(
-    actorSystem: ActorSystem,
-    writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
-    handlerSetting: HandlerSetting
+  actorSystem: ActorSystem,
+  writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
+  handlerSetting: HandlerSetting
 ) extends EventHandler[State](actorSystem) {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)

@@ -1,4 +1,3 @@
-import com.namely.chiefofstate.{Dependencies, LagomAkka, LagomApi, LagomImpl, ProtocRuntime}
 import play.grpc.gen.scaladsl.{PlayScalaClientCodeGenerator, PlayScalaServerCodeGenerator}
 
 enablePlugins(DockerComposePlugin)
@@ -22,7 +21,7 @@ lazy val `chiefofstate` = project
   .enablePlugins(PlayAkkaHttp2Support)
   .enablePlugins(LagomImpl)
   .enablePlugins(LagomAkka)
-  .settings(name := "chiefofstate", javaAgents += Dependencies.Compile.kanelaAgent)
+  .settings(name := "chiefofstate", javaAgents += Dependencies.Compile.KanelaAgent)
   .dependsOn(protogen, api)
 
 lazy val protogen = project

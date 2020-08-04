@@ -1,8 +1,8 @@
 package com.namely.chiefofstate
 
-import io.superflat.lagompb.testkit.LagompbActorTestKit
+import io.superflat.lagompb.testkit.BaseActorTestKit
 
-class ReadSideConfigSpec extends LagompbActorTestKit(s"""
+class ReadSideConfigSpec extends BaseActorTestKit(s"""
     akka {
       actor {
         serialize-messages = on
