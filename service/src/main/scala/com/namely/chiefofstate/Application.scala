@@ -59,7 +59,7 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
   if (config.getBoolean("chief-of-state.read-model.enabled")) {
 
     // wiring up the grpc for the readSide client
-    Util.getReadSideConfigs.foreach({ config =>
+    Util.getReadSideConfigs.foreach { config =>
       lazy val readSideHandlerServiceClient: ReadSideHandlerServiceClient =
         ReadSideHandlerServiceClient(config.getGrpcClientSettings(actorSystem))
 
@@ -72,7 +72,7 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
 
       lazy val chiefOfStateReadProcessor: ReadSideHandler = wire[ReadSideHandler]
       chiefOfStateReadProcessor.init()
-    })
+    }
   }
   // $COVERAGE-ON$
 }

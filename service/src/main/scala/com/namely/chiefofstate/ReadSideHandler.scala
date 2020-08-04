@@ -28,11 +28,11 @@ import scala.util.{Failure, Success, Try}
  * @param handlerSetting               the readSide handler settingthe lagom readSide object that helps feed from events emitted in the journal
  */
 class ReadSideHandler(
-    grpcReadSideConfig: ReadSideConfig,
-    encryptionAdapter: EncryptionAdapter,
-    actorSystem: ActorSystem,
-    readSideHandlerServiceClient: ReadSideHandlerServiceClient,
-    handlerSetting: HandlerSetting
+  grpcReadSideConfig: ReadSideConfig,
+  encryptionAdapter: EncryptionAdapter,
+  actorSystem: ActorSystem,
+  readSideHandlerServiceClient: ReadSideHandlerServiceClient,
+  handlerSetting: HandlerSetting
 )(implicit ec: ExecutionContext)
     extends ReadSideProcessor[State](encryptionAdapter)(ec, actorSystem.toTyped) {
   // $COVERAGE-OFF$

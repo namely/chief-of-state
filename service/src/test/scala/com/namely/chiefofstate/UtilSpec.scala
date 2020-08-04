@@ -78,7 +78,6 @@ class UtilSpec extends BaseSpec {
     }
   }
 
-
   "toCosMetaData" should {
     "return the right COS MetaData" in {
       val ts = Timestamp().withSeconds(3L).withNanos(2)
@@ -97,7 +96,7 @@ class UtilSpec extends BaseSpec {
 
       val actual = Util.toCosMetaData(lagomMetaData)
 
-      actual shouldBe(expected)
+      actual shouldBe (expected)
     }
   }
 }

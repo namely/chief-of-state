@@ -11,10 +11,10 @@ import akka.grpc.GrpcClientSettings
  * @param port Port
  */
 final case class ReadSideConfig(
-    processorId: String,
-    host: Option[String] = None,
-    port: Option[Int] = None,
-    settings: Map[String, String] = Map()
+  processorId: String,
+  host: Option[String] = None,
+  port: Option[Int] = None,
+  settings: Map[String, String] = Map()
 ) {
 
   /**

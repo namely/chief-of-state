@@ -16,11 +16,11 @@ import scalapb.GeneratedMessageCompanion
  * @param eventHandler   the events handler
  */
 class Aggregate(
-    actorSystem: ActorSystem,
-    config: Config,
-    commandHandler: CommandHandler[State],
-    eventHandler: EventHandler[State],
-    encryptionAdapter: EncryptionAdapter
+  actorSystem: ActorSystem,
+  config: Config,
+  commandHandler: CommandHandler[State],
+  eventHandler: EventHandler[State],
+  encryptionAdapter: EncryptionAdapter
 ) extends AggregateRoot[State](actorSystem, commandHandler, eventHandler, encryptionAdapter) {
   // $COVERAGE-OFF$
   override def aggregateName: String = "chiefOfState"

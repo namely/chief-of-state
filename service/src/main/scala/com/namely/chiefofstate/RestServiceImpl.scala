@@ -13,10 +13,10 @@ import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
 import scala.concurrent.{ExecutionContext, Future}
 
 class RestServiceImpl(
-    actorSystem: ActorSystem,
-    clusterSharding: ClusterSharding,
-    persistentEntityRegistry: PersistentEntityRegistry,
-    aggregate: AggregateRoot[State]
+  actorSystem: ActorSystem,
+  clusterSharding: ClusterSharding,
+  persistentEntityRegistry: PersistentEntityRegistry,
+  aggregate: AggregateRoot[State]
 )(implicit ec: ExecutionContext)
     extends BaseServiceImpl(clusterSharding, persistentEntityRegistry, aggregate)
     with ChiefOfStateService {

@@ -15,9 +15,8 @@ import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
-
 class GrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding, aggregate: AggregateRoot[State])(implicit
-    ec: ExecutionContext
+  ec: ExecutionContext
 ) extends AbstractChiefOfStateServicePowerApiRouter(sys)
     with BaseGrpcServiceImpl {
 
@@ -27,15 +26,16 @@ class GrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding, aggreg
 
   override def aggregateStateCompanion: GeneratedMessageCompanion[_ <: GeneratedMessage] = State
 
-  /** gRPC ProcessCommand implementation
-    *
-    * @param in the ProcessCommandRequest
-    * @param metadata akka gRPC metadata
-    * @return future with the command response
-    */
+  /**
+   * gRPC ProcessCommand implementation
+   *
+   * @param in the ProcessCommandRequest
+   * @param metadata akka gRPC metadata
+   * @return future with the command response
+   */
   override def processCommand(in: ProcessCommandRequest, metadata: Metadata): Future[ProcessCommandResponse] = {
 
-    if(in.entityId.isEmpty()) {
+    if (in.entityId.isEmpty()) {
       val status = Status.INVALID_ARGUMENT.withDescription("empty entity ID")
       val e: Throwable = new GrpcServiceException(status = status)
       log.error(s"request missing entity id")
@@ -52,14 +52,15 @@ class GrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding, aggreg
     }
   }
 
-  /** gRPC GetState implementation
-    *
-    * @param in GetStateRequest
-    * @param metadata akka gRPC metadata
-    * @return future of GetStateResponse
-    */
+  /**
+   * gRPC GetState implementation
+   *
+   * @param in GetStateRequest
+   * @param metadata akka gRPC metadata
+   * @return future of GetStateResponse
+   */
   override def getState(in: GetStateRequest, metadata: Metadata): Future[GetStateResponse] = {
-    if(in.entityId.isEmpty()) {
+    if (in.entityId.isEmpty()) {
       val status = Status.INVALID_ARGUMENT.withDescription("empty entity ID")
       val e: Throwable = new GrpcServiceException(status = status)
       log.error(s"request missing entity id")
