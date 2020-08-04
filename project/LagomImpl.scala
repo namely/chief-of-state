@@ -24,9 +24,7 @@ object LagomImpl extends AutoPlugin {
       lagomScaladslCluster,
       Compile.lagompb,
       Compile.lagompbReadSide,
-      Compile.scalapbCommon,
       Runtime.lagompbRuntime,
-      Runtime.scalapbCommonProtos,
       Runtime.scalapbRuntime,
       Test.akkaGrpcTestkit,
       Compile.kamonAkkaGrpc

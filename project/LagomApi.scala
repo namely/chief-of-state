@@ -14,9 +14,7 @@ object LagomApi extends AutoPlugin {
       lagomScaladslServer % Optional,
       lagomScaladslKafkaBroker,
       Compile.lagompb,
-      Compile.scalapbCommon,
       Runtime.lagompbRuntime,
-      Runtime.scalapbCommonProtos,
       Test.akkaGrpcTestkit
     )
   )

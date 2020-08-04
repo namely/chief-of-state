@@ -11,9 +11,7 @@ object ProtocRuntime extends AutoPlugin {
     Seq(
       libraryDependencies ++= Seq(
         Compile.lagompb,
-        Compile.scalapbCommon,
-        Runtime.lagompbRuntime,
-        Runtime.scalapbCommonProtos
+        Runtime.lagompbRuntime
       )
     )
 }

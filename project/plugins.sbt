@@ -11,3 +11,5 @@ addSbtPlugin("com.lightbend.akka.grpc" %% "sbt-akka-grpc" % "0.8.4")
 addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent" % "0.1.4")
 resolvers += Resolver.bintrayRepo("playframework", "maven")
 libraryDependencies += "com.lightbend.play" %% "play-grpc-generators" % "0.8.2"
+addSbtPlugin("com.thesamet" % "sbt-protoc" % "0.99.34")
+libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.10.7"
