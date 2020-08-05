@@ -45,27 +45,29 @@ class ReadSideHandler(
   // $COVERAGE-ON$
 
   private val EventTag = "eventTag"
+  private val EntityId = "entityId"
 
   override def handle(readSideEvent: ReadSideEvent[State]): DBIO[Done] = {
 
     readSideEvent.event match {
       case e: Event =>
         Try(
-          readSideHandlerServiceClient.handleReadSide(
-            HandleReadSideRequest()
-              .withEvent(e.getEvent)
-              .withState(readSideEvent.state.getCurrentState)
-              .withMeta(
-                common
-                  .MetaData()
-                  .withEntityId(readSideEvent.metaData.entityId)
-                  .withRevisionNumber(readSideEvent.metaData.revisionNumber)
-                  .withRevisionDate(readSideEvent.metaData.getRevisionDate)
-                  .withData(
-                    readSideEvent.metaData.data + (EventTag -> readSideEvent.eventTag)
-                  )
-              )
-          )
+          readSideHandlerServiceClient.handleReadSide()
+            .addHeader(EntityId, readSideEvent.metaData.entityId)
+            .addHeader(EventTag, readSideEvent.eventTag)
+            .invoke(
+              HandleReadSideRequest()
+                .withEvent(e.getEvent)
+                .withState(readSideEvent.state.getCurrentState)
+                .withMeta(
+                  common
+                    .MetaData()
+                    .withEntityId(readSideEvent.metaData.entityId)
+                    .withRevisionNumber(readSideEvent.metaData.revisionNumber)
+                    .withRevisionDate(readSideEvent.metaData.getRevisionDate)
+                    .withData(readSideEvent.metaData.data)
+                )
+            )
         ) match {
           case Failure(exception) =>
             log.error(
