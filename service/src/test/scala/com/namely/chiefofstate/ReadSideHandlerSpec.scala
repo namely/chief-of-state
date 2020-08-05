@@ -81,12 +81,12 @@ class ReadSideHandlerSpec
 
       (requestBuilder
         .addHeader(_: String, _: String))
-        .expects("eventTag", readSideEvent.eventTag)
+        .expects("x-cos-event-tag", readSideEvent.eventTag)
         .returning(requestBuilder)
 
       (requestBuilder
         .addHeader(_: String, _: String))
-        .expects("entityId", eventMeta.entityId)
+        .expects("x-cos-entity-id", eventMeta.entityId)
         .returning(requestBuilder)
 
       (requestBuilder.invoke _)
@@ -168,12 +168,12 @@ class ReadSideHandlerSpec
 
       (requestBuilder
         .addHeader(_: String, _: String))
-        .expects("eventTag", readSideEvent.eventTag)
+        .expects("x-cos-event-tag", readSideEvent.eventTag)
         .returning(requestBuilder)
 
       (requestBuilder
         .addHeader(_: String, _: String))
-        .expects("entityId", eventMeta.entityId)
+        .expects("x-cos-entity-id", eventMeta.entityId)
         .returning(requestBuilder)
 
       (requestBuilder.invoke _)
@@ -253,12 +253,12 @@ class ReadSideHandlerSpec
 
       (requestBuilder
         .addHeader(_: String, _: String))
-        .expects("eventTag", readSideEvent.eventTag)
+        .expects("x-cos-event-tag", readSideEvent.eventTag)
         .returning(requestBuilder)
 
       (requestBuilder
         .addHeader(_: String, _: String))
-        .expects("entityId", eventMeta.entityId)
+        .expects("x-cos-entity-id", eventMeta.entityId)
         .returning(requestBuilder)
 
       (requestBuilder.invoke _)
@@ -332,12 +332,12 @@ class ReadSideHandlerSpec
 
       (requestBuilder
         .addHeader(_: String, _: String))
-        .expects("eventTag", readSideEvent.eventTag)
+        .expects("x-cos-event-tag", readSideEvent.eventTag)
         .returning(requestBuilder)
 
       (requestBuilder
         .addHeader(_: String, _: String))
-        .expects("entityId", eventMeta.entityId)
+        .expects("x-cos-entity-id", eventMeta.entityId)
         .returning(requestBuilder)
 
       (requestBuilder.invoke _)
@@ -416,12 +416,12 @@ class ReadSideHandlerSpec
 
       (requestBuilder
         .addHeader(_: String, _: String))
-        .expects("eventTag", readSideEvent.eventTag)
+        .expects("x-cos-event-tag", readSideEvent.eventTag)
         .returning(requestBuilder)
 
       (requestBuilder
         .addHeader(_: String, _: String))
-        .expects("entityId", eventMeta.entityId)
+        .expects("x-cos-entity-id", eventMeta.entityId)
         .returning(requestBuilder)
 
       (requestBuilder.invoke _)

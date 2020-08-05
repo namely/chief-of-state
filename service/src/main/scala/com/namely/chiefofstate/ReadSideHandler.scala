@@ -44,8 +44,8 @@ class ReadSideHandler(
 
   // $COVERAGE-ON$
 
-  private val EventTag = "eventTag"
-  private val EntityId = "entityId"
+  private val COS_EVENT_TAG_HEADER = "x-cos-event-tag"
+  private val COS_ENTITY_ID_HEADER = "x-cos-entity-id"
 
   override def handle(readSideEvent: ReadSideEvent[State]): DBIO[Done] = {
 
@@ -53,8 +53,8 @@ class ReadSideHandler(
       case e: Event =>
         Try(
           readSideHandlerServiceClient.handleReadSide()
-            .addHeader(EntityId, readSideEvent.metaData.entityId)
-            .addHeader(EventTag, readSideEvent.eventTag)
+            .addHeader(COS_ENTITY_ID_HEADER, readSideEvent.metaData.entityId)
+            .addHeader(COS_EVENT_TAG_HEADER, readSideEvent.eventTag)
             .invoke(
               HandleReadSideRequest()
                 .withEvent(e.getEvent)
