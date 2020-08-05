@@ -6,7 +6,13 @@ import akka.grpc.GrpcServiceException
 import akka.grpc.scaladsl.Metadata
 import com.google.protobuf.any.Any
 import com.namely.protobuf.chief_of_state.persistence.State
-import com.namely.protobuf.chief_of_state.service._
+import com.namely.protobuf.chief_of_state.service.{
+  ProcessCommandRequest,
+  ProcessCommandResponse,
+  GetStateRequest,
+  GetStateResponse,
+  AbstractChiefOfStateServicePowerApiRouter
+}
 import io.grpc.Status
 import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl, StateAndMeta}
 import org.slf4j.{Logger, LoggerFactory}
