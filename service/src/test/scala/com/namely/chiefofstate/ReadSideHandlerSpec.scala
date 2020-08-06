@@ -5,6 +5,7 @@ import java.util.UUID
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.adapter._
+import akka.grpc.scaladsl.SingleResponseRequestBuilder
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
 import com.namely.protobuf.chief_of_state.common
@@ -68,11 +69,27 @@ class ReadSideHandlerSpec
         .withAccountNumber(accountNumber)
         .withAccountUuid(accouuntId)
 
-      // let us create a mock instance of the handler service client
-      val mockGrpcClient = mock[ReadSideHandlerServiceClient]
+      val readSideEvent = ReadSideEvent(
+        event = event,
+        eventTag = "tag1",
+        state = state,
+        metaData = eventMeta
+      )
 
-      (mockGrpcClient
-        .handleReadSide(_: HandleReadSideRequest))
+      val requestBuilder: SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse] =
+        mock[SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse]]
+
+      (requestBuilder
+        .addHeader(_: String, _: String))
+        .expects("x-cos-event-tag", readSideEvent.eventTag)
+        .returning(requestBuilder)
+
+      (requestBuilder
+        .addHeader(_: String, _: String))
+        .expects("x-cos-entity-id", eventMeta.entityId)
+        .returning(requestBuilder)
+
+      (requestBuilder.invoke _)
         .expects(
           HandleReadSideRequest()
             .withEvent(Any.pack(event))
@@ -93,6 +110,13 @@ class ReadSideHandlerSpec
           )
         )
 
+      // let us create a mock instance of the handler service client
+      val mockGrpcClient = mock[ReadSideHandlerServiceClient]
+
+      (mockGrpcClient.handleReadSide _: () => SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse])
+        .expects()
+        .returning(requestBuilder)
+
       val readSideProcessor =
         new ReadSideHandler(
           defaultGrpcReadSideConfig,
@@ -107,7 +131,7 @@ class ReadSideHandlerSpec
           ReadSideEvent(
             event = Event()
               .withEvent(Any.pack(event)),
-            eventTag = "",
+            eventTag = readSideEvent.eventTag,
             state = state,
             metaData = eventMeta
           )
@@ -132,11 +156,27 @@ class ReadSideHandlerSpec
         .withAccountNumber(accountNumber)
         .withAccountUuid(accountId)
 
-      // let us create a mock instance of the handler service client
-      val mockGrpcClient = mock[ReadSideHandlerServiceClient]
+      val readSideEvent = ReadSideEvent(
+        event = event,
+        eventTag = "tag1",
+        state = state,
+        metaData = eventMeta
+      )
 
-      (mockGrpcClient
-        .handleReadSide(_: HandleReadSideRequest))
+      val requestBuilder: SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse] =
+        mock[SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse]]
+
+      (requestBuilder
+        .addHeader(_: String, _: String))
+        .expects("x-cos-event-tag", readSideEvent.eventTag)
+        .returning(requestBuilder)
+
+      (requestBuilder
+        .addHeader(_: String, _: String))
+        .expects("x-cos-entity-id", eventMeta.entityId)
+        .returning(requestBuilder)
+
+      (requestBuilder.invoke _)
         .expects(
           HandleReadSideRequest()
             .withEvent(Any.pack(event))
@@ -157,6 +197,13 @@ class ReadSideHandlerSpec
           )
         )
 
+      // let us create a mock instance of the handler service client
+      val mockGrpcClient = mock[ReadSideHandlerServiceClient]
+
+      (mockGrpcClient.handleReadSide _: () => SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse])
+        .expects()
+        .returning(requestBuilder)
+
       val readSideProcessor =
         new ReadSideHandler(
           defaultGrpcReadSideConfig,
@@ -170,7 +217,7 @@ class ReadSideHandlerSpec
           ReadSideEvent(
             event = Event()
               .withEvent(Any.pack(event)),
-            eventTag = "",
+            eventTag = readSideEvent.eventTag,
             state = state,
             metaData = eventMeta
           )
@@ -194,11 +241,27 @@ class ReadSideHandlerSpec
         .withAccountNumber(accountNumber)
         .withAccountUuid(accouuntId)
 
-      // let us create a mock instance of the handler service client
-      val mockGrpcClient = mock[ReadSideHandlerServiceClient]
+      val readSideEvent = ReadSideEvent(
+        event = event,
+        eventTag = "tag1",
+        state = state,
+        metaData = eventMeta
+      )
 
-      (mockGrpcClient
-        .handleReadSide(_: HandleReadSideRequest))
+      val requestBuilder: SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse] =
+        mock[SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse]]
+
+      (requestBuilder
+        .addHeader(_: String, _: String))
+        .expects("x-cos-event-tag", readSideEvent.eventTag)
+        .returning(requestBuilder)
+
+      (requestBuilder
+        .addHeader(_: String, _: String))
+        .expects("x-cos-entity-id", eventMeta.entityId)
+        .returning(requestBuilder)
+
+      (requestBuilder.invoke _)
         .expects(
           HandleReadSideRequest()
             .withEvent(Any.pack(event))
@@ -211,8 +274,14 @@ class ReadSideHandlerSpec
                 .withRevisionDate(eventMeta.getRevisionDate)
                 .withRevisionNumber(eventMeta.revisionNumber)
             )
-        )
-        .throws(new RuntimeException("broken"))
+        ).throws(new RuntimeException("broken"))
+
+      // let us create a mock instance of the handler service client
+      val mockGrpcClient = mock[ReadSideHandlerServiceClient]
+
+      (mockGrpcClient.handleReadSide _: () => SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse])
+        .expects()
+        .returning(requestBuilder)
 
       val readSideProcessor =
         new ReadSideHandler(
@@ -227,7 +296,7 @@ class ReadSideHandlerSpec
           ReadSideEvent(
             event = Event()
               .withEvent(Any.pack(event)),
-            eventTag = "",
+            eventTag = readSideEvent.eventTag,
             state = state,
             metaData = eventMeta
           )
@@ -251,11 +320,27 @@ class ReadSideHandlerSpec
         .withAccountNumber(accountNumber)
         .withAccountUuid(accouuntId)
 
-      // let us create a mock instance of the handler service client
-      val mockGrpcClient = mock[ReadSideHandlerServiceClient]
+      val readSideEvent = ReadSideEvent(
+        event = event,
+        eventTag = "tag1",
+        state = state,
+        metaData = eventMeta
+      )
 
-      (mockGrpcClient
-        .handleReadSide(_: HandleReadSideRequest))
+      val requestBuilder: SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse] =
+        mock[SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse]]
+
+      (requestBuilder
+        .addHeader(_: String, _: String))
+        .expects("x-cos-event-tag", readSideEvent.eventTag)
+        .returning(requestBuilder)
+
+      (requestBuilder
+        .addHeader(_: String, _: String))
+        .expects("x-cos-entity-id", eventMeta.entityId)
+        .returning(requestBuilder)
+
+      (requestBuilder.invoke _)
         .expects(
           HandleReadSideRequest()
             .withEvent(Any.pack(event))
@@ -269,7 +354,18 @@ class ReadSideHandlerSpec
                 .withRevisionNumber(eventMeta.revisionNumber)
             )
         )
-        .returning(Future.failed(new GrpcServiceException(Status.NOT_FOUND)))
+        .returning(
+          Future.failed(
+            new GrpcServiceException(Status.NOT_FOUND)
+          )
+        )
+
+      // let us create a mock instance of the handler service client
+      val mockGrpcClient = mock[ReadSideHandlerServiceClient]
+
+      (mockGrpcClient.handleReadSide _: () => SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse])
+        .expects()
+        .returning(requestBuilder)
 
       val readSideProcessor =
         new ReadSideHandler(
@@ -284,7 +380,7 @@ class ReadSideHandlerSpec
           ReadSideEvent(
             event = Event()
               .withEvent(Any.pack(event)),
-            eventTag = "",
+            eventTag = readSideEvent.eventTag,
             state = state,
             metaData = eventMeta
           )
@@ -308,11 +404,27 @@ class ReadSideHandlerSpec
         .withAccountNumber(accountNumber)
         .withAccountUuid(accouuntId)
 
-      // let us create a mock instance of the handler service client
-      val mockGrpcClient = mock[ReadSideHandlerServiceClient]
+      val readSideEvent = ReadSideEvent(
+        event = event,
+        eventTag = "tag1",
+        state = state,
+        metaData = eventMeta
+      )
 
-      (mockGrpcClient
-        .handleReadSide(_: HandleReadSideRequest))
+      val requestBuilder: SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse] =
+        mock[SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse]]
+
+      (requestBuilder
+        .addHeader(_: String, _: String))
+        .expects("x-cos-event-tag", readSideEvent.eventTag)
+        .returning(requestBuilder)
+
+      (requestBuilder
+        .addHeader(_: String, _: String))
+        .expects("x-cos-entity-id", eventMeta.entityId)
+        .returning(requestBuilder)
+
+      (requestBuilder.invoke _)
         .expects(
           HandleReadSideRequest()
             .withEvent(Any.pack(event))
@@ -326,7 +438,18 @@ class ReadSideHandlerSpec
                 .withRevisionNumber(eventMeta.revisionNumber)
             )
         )
-        .throws(new GrpcServiceException(Status.INVALID_ARGUMENT))
+        .returning(
+          Future.failed(
+            new GrpcServiceException(Status.INVALID_ARGUMENT)
+          )
+        )
+
+      // let us create a mock instance of the handler service client
+      val mockGrpcClient = mock[ReadSideHandlerServiceClient]
+
+      (mockGrpcClient.handleReadSide _: () => SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse])
+        .expects()
+        .returning(requestBuilder)
 
       val readSideProcessor =
         new ReadSideHandler(
@@ -341,7 +464,7 @@ class ReadSideHandlerSpec
           ReadSideEvent(
             event = Event()
               .withEvent(Any.pack(event)),
-            eventTag = "",
+            eventTag = readSideEvent.eventTag,
             state = state,
             metaData = eventMeta
           )
@@ -385,5 +508,7 @@ class ReadSideHandlerSpec
         )
       )
     }
-  }
+
+    }
+
 }
