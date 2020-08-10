@@ -1,10 +1,6 @@
 package com.namely.chiefofstate
 
-import com.typesafe.config.{Config, ConfigException}
-import io.superflat.lagompb.encryption.ProtoEncryption
-
-import scala.reflect.runtime.universe
-import scala.util.{Failure, Success, Try}
+import com.typesafe.config.Config
 
 /**
  * Contains the configurations for COS send command

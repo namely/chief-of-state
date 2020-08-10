@@ -3,7 +3,7 @@ package com.namely.chiefofstate
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import io.superflat.lagompb.testkit.BaseSpec
 
-import scala.util.{Try, Success}
+import scala.util.{Success, Try}
 
 class SendCommandSettingsSpec extends BaseSpec {
 
@@ -12,7 +12,8 @@ class SendCommandSettingsSpec extends BaseSpec {
     "fail to load settings due to missing setting key" in {
       an[RuntimeException] shouldBe thrownBy(
         SendCommandSettings(
-          ConfigFactory.empty()
+          ConfigFactory
+            .empty()
             .withValue(
               SendCommandSettings.PERSISTED_HEADERS_KEY,
               ConfigValueFactory.fromAnyRef("x")
@@ -22,7 +23,8 @@ class SendCommandSettingsSpec extends BaseSpec {
 
       an[RuntimeException] shouldBe thrownBy(
         SendCommandSettings(
-          ConfigFactory.empty()
+          ConfigFactory
+            .empty()
             .withValue(
               SendCommandSettings.PROPAGATED_HEADERS_KEY,
               ConfigValueFactory.fromAnyRef("x")
@@ -37,7 +39,7 @@ class SendCommandSettingsSpec extends BaseSpec {
         .withValue(SendCommandSettings.PERSISTED_HEADERS_KEY, ConfigValueFactory.fromAnyRef(""))
         .withValue(SendCommandSettings.PROPAGATED_HEADERS_KEY, ConfigValueFactory.fromAnyRef(""))
 
-      SendCommandSettings(config) shouldBe(SendCommandSettings(propagatedHeaders=Set(), persistedHeaders=Set()))
+      SendCommandSettings(config) shouldBe (SendCommandSettings(propagatedHeaders = Set(), persistedHeaders = Set()))
     }
 
     "parse csv string" in {
@@ -54,9 +56,9 @@ class SendCommandSettingsSpec extends BaseSpec {
             config,
             SendCommandSettings.PERSISTED_HEADERS_KEY
           )
-        )
+      )
 
-      actual shouldBe Success(Set("foo","bar","baz"))
+      actual shouldBe Success(Set("foo", "bar", "baz"))
     }
   }
 }

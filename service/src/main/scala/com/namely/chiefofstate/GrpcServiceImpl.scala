@@ -4,23 +4,17 @@ import akka.actor.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.GrpcServiceException
 import akka.grpc.scaladsl.{BytesEntry, Metadata, StringEntry}
-import com.google.protobuf.any.Any
+import com.google.protobuf.ByteString
+import com.namely.protobuf.chief_of_state.internal.RemoteCommand
 import com.namely.protobuf.chief_of_state.persistence.State
-import com.namely.protobuf.chief_of_state.service.{
-  AbstractChiefOfStateServicePowerApiRouter,
-  GetStateRequest,
-  GetStateResponse,
-  ProcessCommandRequest,
-  ProcessCommandResponse
-}
+import com.namely.protobuf.chief_of_state.service._
 import io.grpc.Status
 import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl, StateAndMeta}
 import org.slf4j.{Logger, LoggerFactory}
 import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
-import com.namely.protobuf.chief_of_state.internal.RemoteCommand
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
-import com.google.protobuf.ByteString
 
 class GrpcServiceImpl(sys: ActorSystem,
                       clusterSharding: ClusterSharding,
@@ -46,12 +40,11 @@ class GrpcServiceImpl(sys: ActorSystem,
    */
   override def processCommand(in: ProcessCommandRequest, metadata: Metadata): Future[ProcessCommandResponse] = {
 
-    if (in.entityId.isEmpty()) {
-      val status = Status.INVALID_ARGUMENT.withDescription("empty entity ID")
-      val e: Throwable = new GrpcServiceException(status = status)
+    if (in.entityId.isEmpty) {
       log.error(s"request missing entity id")
-      Future.fromTry(Failure(e))
-
+      Future.fromTry(
+        Failure(new GrpcServiceException(status = Status.INVALID_ARGUMENT.withDescription("empty entity ID")))
+      )
     } else {
 
       // TODO: move this to a general plugin architecture
@@ -107,12 +100,11 @@ class GrpcServiceImpl(sys: ActorSystem,
    * @return future of GetStateResponse
    */
   override def getState(in: GetStateRequest, metadata: Metadata): Future[GetStateResponse] = {
-    if (in.entityId.isEmpty()) {
-      val status = Status.INVALID_ARGUMENT.withDescription("empty entity ID")
-      val e: Throwable = new GrpcServiceException(status = status)
+    if (in.entityId.isEmpty) {
       log.error(s"request missing entity id")
-      Future.fromTry(Failure(e))
-
+      Future.fromTry(
+        Failure(new GrpcServiceException(status = Status.INVALID_ARGUMENT.withDescription("empty entity ID")))
+      )
     } else {
       sendCommand[GetStateRequest, State](clusterSharding, in.entityId, in, Map.empty[String, String])
         .map((namelyState: StateAndMeta[State]) => {

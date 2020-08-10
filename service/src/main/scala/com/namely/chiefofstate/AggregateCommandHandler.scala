@@ -2,10 +2,9 @@ package com.namely.chiefofstate
 
 import akka.actor.ActorSystem
 import akka.grpc.GrpcServiceException
-import akka.grpc.scaladsl.SingleResponseRequestBuilder
 import com.google.protobuf.any.Any
 import com.namely.protobuf.chief_of_state.common.{MetaData => _}
-import com.namely.protobuf.chief_of_state.common
+import com.namely.protobuf.chief_of_state.internal.RemoteCommand
 import com.namely.protobuf.chief_of_state.persistence.{Event, State}
 import com.namely.protobuf.chief_of_state.service.GetStateRequest
 import com.namely.protobuf.chief_of_state.writeside.{
@@ -13,17 +12,15 @@ import com.namely.protobuf.chief_of_state.writeside.{
   HandleCommandResponse,
   WriteSideHandlerServiceClient
 }
-import com.namely.protobuf.chief_of_state.writeside.HandleCommandResponse.ResponseType.{Empty, PersistAndReply, Reply}
-import com.namely.protobuf.chief_of_state.internal.RemoteCommand
+import com.namely.protobuf.chief_of_state.writeside.HandleCommandResponse.ResponseType.{PersistAndReply, Reply}
 import io.grpc.{Status, StatusRuntimeException}
 import io.superflat.lagompb.{Command, CommandHandler}
 import io.superflat.lagompb.protobuf.core._
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
-import scala.concurrent.Future
 
 /**
  * ChiefOfStateCommandHandler
@@ -77,7 +74,7 @@ class AggregateCommandHandler(
     log.debug("[ChiefOfState] handling GetStateRequest")
 
     priorState.currentState
-      .map(currentState => {
+      .map(_ => {
         log.debug(s"[ChiefOfState] found state for entity ${command.entityId}")
         CommandHandlerResponse()
           .withSuccessResponse(
@@ -207,8 +204,8 @@ class AggregateCommandHandler(
   def handleRemoteResponseFailure(throwable: Throwable): CommandHandlerResponse = {
     throwable match {
       case e: StatusRuntimeException =>
-        val status: Status = e.getStatus()
-        val reason: String = s"command failed (${status.getCode.name}) ${status.getDescription()}"
+        val status: Status = e.getStatus
+        val reason: String = s"command failed (${status.getCode.name}) ${status.getDescription}"
         log.error(s"[ChiefOfState] $reason")
 
         // handle specific gRPC error statuses
@@ -227,7 +224,7 @@ class AggregateCommandHandler(
           )
 
       case e: GrpcServiceException =>
-        log.error(s"[ChiefOfState] handler gRPC failed with ${e.status.toString()}", e)
+        log.error(s"[ChiefOfState] handler gRPC failed with ${e.status.toString}", e)
         CommandHandlerResponse()
           .withFailedResponse(
             FailedCommandHandlerResponse()
@@ -241,7 +238,7 @@ class AggregateCommandHandler(
           .withFailedResponse(
             FailedCommandHandlerResponse()
               .withReason(
-                s"Critical error occurred handling command, ${e.getMessage()}"
+                s"Critical error occurred handling command, ${e.getMessage}"
               )
               .withCause(FailureCause.InternalError)
           )

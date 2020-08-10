@@ -113,7 +113,9 @@ class ReadSideHandlerSpec
       // let us create a mock instance of the handler service client
       val mockGrpcClient = mock[ReadSideHandlerServiceClient]
 
-      (mockGrpcClient.handleReadSide _: () => SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse])
+      (mockGrpcClient.handleReadSide _: () => SingleResponseRequestBuilder[HandleReadSideRequest,
+                                                                           HandleReadSideResponse
+      ])
         .expects()
         .returning(requestBuilder)
 
@@ -200,7 +202,9 @@ class ReadSideHandlerSpec
       // let us create a mock instance of the handler service client
       val mockGrpcClient = mock[ReadSideHandlerServiceClient]
 
-      (mockGrpcClient.handleReadSide _: () => SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse])
+      (mockGrpcClient.handleReadSide _: () => SingleResponseRequestBuilder[HandleReadSideRequest,
+                                                                           HandleReadSideResponse
+      ])
         .expects()
         .returning(requestBuilder)
 
@@ -274,12 +278,15 @@ class ReadSideHandlerSpec
                 .withRevisionDate(eventMeta.getRevisionDate)
                 .withRevisionNumber(eventMeta.revisionNumber)
             )
-        ).throws(new RuntimeException("broken"))
+        )
+        .throws(new RuntimeException("broken"))
 
       // let us create a mock instance of the handler service client
       val mockGrpcClient = mock[ReadSideHandlerServiceClient]
 
-      (mockGrpcClient.handleReadSide _: () => SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse])
+      (mockGrpcClient.handleReadSide _: () => SingleResponseRequestBuilder[HandleReadSideRequest,
+                                                                           HandleReadSideResponse
+      ])
         .expects()
         .returning(requestBuilder)
 
@@ -363,7 +370,9 @@ class ReadSideHandlerSpec
       // let us create a mock instance of the handler service client
       val mockGrpcClient = mock[ReadSideHandlerServiceClient]
 
-      (mockGrpcClient.handleReadSide _: () => SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse])
+      (mockGrpcClient.handleReadSide _: () => SingleResponseRequestBuilder[HandleReadSideRequest,
+                                                                           HandleReadSideResponse
+      ])
         .expects()
         .returning(requestBuilder)
 
@@ -447,7 +456,9 @@ class ReadSideHandlerSpec
       // let us create a mock instance of the handler service client
       val mockGrpcClient = mock[ReadSideHandlerServiceClient]
 
-      (mockGrpcClient.handleReadSide _: () => SingleResponseRequestBuilder[HandleReadSideRequest, HandleReadSideResponse])
+      (mockGrpcClient.handleReadSide _: () => SingleResponseRequestBuilder[HandleReadSideRequest,
+                                                                           HandleReadSideResponse
+      ])
         .expects()
         .returning(requestBuilder)
 
@@ -509,6 +520,6 @@ class ReadSideHandlerSpec
       )
     }
 
-    }
+  }
 
 }
