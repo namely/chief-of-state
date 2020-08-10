@@ -45,6 +45,9 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
       writeSideHandlerServiceClient.close()
     }
 
+  // get the SendCommandSettings for the GrpcServiceImpl
+  lazy val sendCommandSettings: SendCommandSettings = SendCommandSettings(config)
+
   // wire up the various event and command handler
   lazy val eventHandler: EventHandler[State] = wire[AggregateEventHandler]
   lazy val commandHandler: CommandHandler[State] = wire[AggregateCommandHandler]
