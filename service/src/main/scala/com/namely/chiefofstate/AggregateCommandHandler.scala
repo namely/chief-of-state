@@ -25,7 +25,6 @@ import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.Future
 
-
 /**
  * ChiefOfStateCommandHandler
  *
@@ -58,7 +57,8 @@ class AggregateCommandHandler(
       // handle all other requests in the gRPC handler
       case remoteCommand: RemoteCommand => Try(handleRemoteCommand(remoteCommand, priorState, priorEventMeta))
       // otherwise throw
-      case unhandled => Failure(new Exception(s"unhandled command type ${unhandled.companion.scalaDescriptor.fullName}"))
+      case unhandled =>
+        Failure(new Exception(s"unhandled command type ${unhandled.companion.scalaDescriptor.fullName}"))
     }
   }
 
@@ -104,7 +104,10 @@ class AggregateCommandHandler(
    * @param priorEventMeta the prior event meta data
    * @return a CommandHandlerResponse
    */
-  def handleRemoteCommand(remoteCommand: RemoteCommand, priorState: State, priorEventMeta: MetaData): CommandHandlerResponse = {
+  def handleRemoteCommand(remoteCommand: RemoteCommand,
+                          priorState: State,
+                          priorEventMeta: MetaData
+  ): CommandHandlerResponse = {
     log.debug("[ChiefOfState] handling gRPC command")
 
     // make blocking gRPC call to handler service
@@ -118,18 +121,19 @@ class AggregateCommandHandler(
       // create an akka gRPC request builder
       val futureResponse: Future[HandleCommandResponse] =
         remoteCommand.headers
-        // initiate foldLeft with empty handleCommand request builder
-        .foldLeft(writeSideHandlerServiceClient.handleCommand())(
-          // for each header, add the appropriate string/bytes header
-          (request, header) => {
-            header.value match {
-              case RemoteCommand.Header.Value.StringValue(value) => request.addHeader(header.key, value)
-              case RemoteCommand.Header.Value.BytesValue(value) => request.addHeader(header.key, akka.util.ByteString(value.toByteArray))
-              case unhandled => throw new Exception(s"unhandled gRPC header type, ${unhandled.getClass.getName}")
+          // initiate foldLeft with empty handleCommand request builder
+          .foldLeft(writeSideHandlerServiceClient.handleCommand())(
+            // for each header, add the appropriate string/bytes header
+            (request, header) => {
+              header.value match {
+                case RemoteCommand.Header.Value.StringValue(value) => request.addHeader(header.key, value)
+                case RemoteCommand.Header.Value.BytesValue(value) =>
+                  request.addHeader(header.key, akka.util.ByteString(value.toByteArray))
+                case unhandled => throw new Exception(s"unhandled gRPC header type, ${unhandled.getClass.getName}")
+              }
             }
-          }
-        )
-        .invoke(handleCommandRequest)
+          )
+          .invoke(handleCommandRequest)
 
       // await response and return
       Await.result(futureResponse, Duration.Inf)
@@ -137,16 +141,17 @@ class AggregateCommandHandler(
 
     responseAttempt match {
       case Success(response: HandleCommandResponse) => handleRemoteResponseSuccess(response)
-      case Failure(exception) => handleRemoteResponseFailure(exception)
+      case Failure(exception)                       => handleRemoteResponseFailure(exception)
     }
   }
 
-  /** Helper method to transform successful HandleCommandResponse into
-    * a lagom-pb CommandHandlerResponse message
-    *
-    * @param response a HandleCommandResponse from write-side handler
-    * @return an instance of CommandHandlerResponse
-    */
+  /**
+   * Helper method to transform successful HandleCommandResponse into
+   * a lagom-pb CommandHandlerResponse message
+   *
+   * @param response a HandleCommandResponse from write-side handler
+   * @return an instance of CommandHandlerResponse
+   */
   def handleRemoteResponseSuccess(response: HandleCommandResponse): CommandHandlerResponse = {
     response.responseType match {
       case PersistAndReply(persistAndReply) =>
@@ -192,12 +197,13 @@ class AggregateCommandHandler(
     }
   }
 
-  /** helper method to transform errors from remote command handler into
-    * appropriate CommandHandlerResponse
-    *
-    * @param throwable an exception from the handler gRPC call
-    * @return a CommandHandlerResponse
-    */
+  /**
+   * helper method to transform errors from remote command handler into
+   * appropriate CommandHandlerResponse
+   *
+   * @param throwable an exception from the handler gRPC call
+   * @return a CommandHandlerResponse
+   */
   def handleRemoteResponseFailure(throwable: Throwable): CommandHandlerResponse = {
     throwable match {
       case e: StatusRuntimeException =>

@@ -7,7 +7,7 @@ import scala.reflect.runtime.universe
 import scala.util.{Failure, Success, Try}
 
 /**
- * Contains the configurations for COS encryption
+ * Contains the configurations for COS send command
  *
  * @param propagatedHeaders headers to pass to the write side handler
  * @param persistedHeaders: headers to persist to the journal
@@ -17,10 +17,9 @@ case class SendCommandSettings(
   persistedHeaders: Set[String]
 )
 
-
 /**
-  * Companion for SendCommandSettings
-  */
+ * Companion for SendCommandSettings
+ */
 object SendCommandSettings {
   // setting key for propagated headers
   val PROPAGATED_HEADERS_KEY: String = "chief-of-state.send-command.propagated-headers"
@@ -36,18 +35,19 @@ object SendCommandSettings {
    * @return
    */
   def apply(config: Config): SendCommandSettings = {
-      SendCommandSettings(
-        propagatedHeaders = getCsvSetting(config, PROPAGATED_HEADERS_KEY),
-        persistedHeaders = getCsvSetting(config, PERSISTED_HEADERS_KEY)
-      )
+    SendCommandSettings(
+      propagatedHeaders = getCsvSetting(config, PROPAGATED_HEADERS_KEY),
+      persistedHeaders = getCsvSetting(config, PERSISTED_HEADERS_KEY)
+    )
   }
 
-  /** returns sequence of csv strings from the config
-    *
-    * @param config a config
-    * @param key the path to query
-    * @return set of strings
-    */
+  /**
+   * returns sequence of csv strings from the config
+   *
+   * @param config a config
+   * @param key the path to query
+   * @return set of strings
+   */
   def getCsvSetting(config: Config, key: String): Set[String] = {
     config
       .getString(key)

@@ -3,15 +3,15 @@ package com.namely.chiefofstate
 import akka.actor.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.GrpcServiceException
-import akka.grpc.scaladsl.{BytesEntry, StringEntry, Metadata}
+import akka.grpc.scaladsl.{BytesEntry, Metadata, StringEntry}
 import com.google.protobuf.any.Any
 import com.namely.protobuf.chief_of_state.persistence.State
 import com.namely.protobuf.chief_of_state.service.{
-  ProcessCommandRequest,
-  ProcessCommandResponse,
+  AbstractChiefOfStateServicePowerApiRouter,
   GetStateRequest,
   GetStateResponse,
-  AbstractChiefOfStateServicePowerApiRouter
+  ProcessCommandRequest,
+  ProcessCommandResponse
 }
 import io.grpc.Status
 import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl, StateAndMeta}
@@ -22,11 +22,11 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 import com.google.protobuf.ByteString
 
-class GrpcServiceImpl(
-  sys: ActorSystem,
-  clusterSharding: ClusterSharding,
-  aggregate: AggregateRoot[State],
-  sendCommandSettings: SendCommandSettings)(implicit
+class GrpcServiceImpl(sys: ActorSystem,
+                      clusterSharding: ClusterSharding,
+                      aggregate: AggregateRoot[State],
+                      sendCommandSettings: SendCommandSettings
+)(implicit
   ec: ExecutionContext
 ) extends AbstractChiefOfStateServicePowerApiRouter(sys)
     with BaseGrpcServiceImpl {
@@ -58,29 +58,29 @@ class GrpcServiceImpl(
       val metaData: Map[String, String] = {
         // get the headers to persist
         val persistedHeaders: Map[String, String] =
-          sendCommandSettings
-          .persistedHeaders
-          .map(s => (s, metadata.getText(s)))
-          .filter({case(_, value) => value.isDefined})
-          .map({case (k, optValue) => (s"grpcHeader|$k", optValue.getOrElse(""))})
-          .toMap
+          sendCommandSettings.persistedHeaders
+            .map(s => (s, metadata.getText(s)))
+            .filter({ case (_, value) => value.isDefined })
+            .map({ case (k, optValue) => (s"grpcHeader|$k", optValue.getOrElse("")) })
+            .toMap
 
         persistedHeaders
       }
 
       // get the headers to forward
-      val propagatedHeaders: Seq[RemoteCommand.Header] = metadata
-        .asList
+      val propagatedHeaders: Seq[RemoteCommand.Header] = metadata.asList
         // filter to relevant headers
-        .filter({case (k, _) => sendCommandSettings.propagatedHeaders.contains(k)})
+        .filter({ case (k, _) => sendCommandSettings.propagatedHeaders.contains(k) })
         .map({
           case (k, StringEntry(value)) =>
-            RemoteCommand.Header()
+            RemoteCommand
+              .Header()
               .withKey(k)
               .withStringValue(value)
 
           case (k, BytesEntry(value)) =>
-            RemoteCommand.Header()
+            RemoteCommand
+              .Header()
               .withKey(k)
               .withBytesValue(ByteString.copyFrom(value.toArray))
         })
