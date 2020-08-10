@@ -3,7 +3,7 @@ package com.namely.chiefofstate
 import akka.actor.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.GrpcServiceException
-import akka.grpc.scaladsl.Metadata
+import akka.grpc.scaladsl.{BytesEntry, StringEntry, Metadata}
 import com.google.protobuf.any.Any
 import com.namely.protobuf.chief_of_state.persistence.State
 import com.namely.protobuf.chief_of_state.service.{
@@ -17,11 +17,16 @@ import io.grpc.Status
 import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl, StateAndMeta}
 import org.slf4j.{Logger, LoggerFactory}
 import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
-
+import com.namely.protobuf.chief_of_state.internal.RemoteCommand
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
+import com.google.protobuf.ByteString
 
-class GrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding, aggregate: AggregateRoot[State])(implicit
+class GrpcServiceImpl(
+  sys: ActorSystem,
+  clusterSharding: ClusterSharding,
+  aggregate: AggregateRoot[State],
+  sendCommandSettings: SendCommandSettings)(implicit
   ec: ExecutionContext
 ) extends AbstractChiefOfStateServicePowerApiRouter(sys)
     with BaseGrpcServiceImpl {
@@ -48,7 +53,43 @@ class GrpcServiceImpl(sys: ActorSystem, clusterSharding: ClusterSharding, aggreg
       Future.fromTry(Failure(e))
 
     } else {
-      sendCommand[Any, State](clusterSharding, in.entityId, in.command.get, Map.empty[String, String])
+
+      // TODO: move this to a general plugin architecture
+      val metaData: Map[String, String] = {
+        // get the headers to persist
+        val persistedHeaders: Map[String, String] =
+          sendCommandSettings
+          .persistedHeaders
+          .map(s => (s, metadata.getText(s)))
+          .filter({case(_, value) => value.isDefined})
+          .map({case (k, optValue) => (s"grpcHeader|$k", optValue.getOrElse(""))})
+          .toMap
+
+        persistedHeaders
+      }
+
+      // get the headers to forward
+      val propagatedHeaders: Seq[RemoteCommand.Header] = metadata
+        .asList
+        // filter to relevant headers
+        .filter({case (k, _) => sendCommandSettings.propagatedHeaders.contains(k)})
+        .map({
+          case (k, StringEntry(value)) =>
+            RemoteCommand.Header()
+              .withKey(k)
+              .withStringValue(value)
+
+          case (k, BytesEntry(value)) =>
+            RemoteCommand.Header()
+              .withKey(k)
+              .withBytesValue(ByteString.copyFrom(value.toArray))
+        })
+
+      val remoteCommand: RemoteCommand = RemoteCommand()
+        .withCommand(in.getCommand)
+        .withHeaders(propagatedHeaders)
+
+      sendCommand[RemoteCommand, State](clusterSharding, in.entityId, remoteCommand, metaData)
         .map((namelyState: StateAndMeta[State]) => {
           ProcessCommandResponse(
             state = namelyState.state.currentState,
