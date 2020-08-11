@@ -52,7 +52,8 @@ class ReadSideHandler(
     readSideEvent.event match {
       case e: Event =>
         Try(
-          readSideHandlerServiceClient.handleReadSide()
+          readSideHandlerServiceClient
+            .handleReadSide()
             .addHeader(COS_ENTITY_ID_HEADER, readSideEvent.metaData.entityId)
             .addHeader(COS_EVENT_TAG_HEADER, readSideEvent.eventTag)
             .invoke(

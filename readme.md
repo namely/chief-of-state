@@ -93,6 +93,8 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 | TEAM_NAME | |
 | TRACE_HOST | Jaeger collector/agent host | localhost |
 | TRACE_PORT | Jaeger collector/agent port | 14268 |
+| COS_WRITE_PROPAGATED_HEADERS | CSV of gRPC headers to propagate to write side handler | none |
+| COS_WRITE_PERSISTED_HEADERS | CSV of gRPC headers to persist to journal (experimental) | none |
 
 ### Read side configurations
 

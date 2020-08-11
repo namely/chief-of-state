@@ -1,10 +1,10 @@
 package com.namely.chiefofstate
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import io.superflat.lagompb.testkit.BaseSpec
 import io.superflat.lagompb.encryption.NoEncryption
+import io.superflat.lagompb.testkit.BaseSpec
 
-import scala.util.{Try, Success}
+import scala.util.{Success, Try}
 
 class EncryptionSettingSpec extends BaseSpec {
 
@@ -20,7 +20,7 @@ class EncryptionSettingSpec extends BaseSpec {
         .empty()
         .withValue(EncryptionSetting.SETTING_KEY, ConfigValueFactory.fromAnyRef(""))
 
-      EncryptionSetting(config) shouldBe(EncryptionSetting(encryption=None))
+      EncryptionSetting(config) shouldBe (EncryptionSetting(encryption = None))
     }
 
     "fail to load settings due to unknown encryption class" in {
