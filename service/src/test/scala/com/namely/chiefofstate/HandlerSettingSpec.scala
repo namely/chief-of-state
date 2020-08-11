@@ -12,6 +12,18 @@ class HandlerSettingSpec extends BaseSpec {
       an[RuntimeException] shouldBe thrownBy(HandlerSetting(config))
     }
 
+    "success to load settings when enable-validation is disabled" in {
+      val config: Config = ConfigFactory
+        .parseResources("handler-settings.conf")
+        .withValue(
+          "chief-of-state.handlers-settings.enable-proto-validation",
+          ConfigValueFactory.fromAnyRef(false)
+        )
+        .resolve()
+      
+      noException shouldBe thrownBy(HandlerSetting(config))
+    }
+
     "fail to load settings because env variables for events-protos not set" in {
       val config: Config = ConfigFactory
         .parseResources("handler-settings.conf")
