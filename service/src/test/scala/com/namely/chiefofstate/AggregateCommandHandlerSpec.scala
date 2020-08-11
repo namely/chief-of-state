@@ -61,7 +61,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
   val testHandlerSetting: HandlerSetting = {
     val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
     val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-    HandlerSetting(stateProto, eventsProtos)
+    HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
   }
 
   "main commandHandler" should {
@@ -326,7 +326,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
           )
 
       // let us execute the request
-      val badHandlerSettings: HandlerSetting = HandlerSetting(Seq(), Seq())
+      val badHandlerSettings: HandlerSetting = HandlerSetting(enableProtoValidations = true, Seq(), Seq())
       val cmdhandler = new AggregateCommandHandler(null, null, badHandlerSettings)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseSuccess(badResponse)
 
@@ -336,6 +336,33 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
             FailedCommandHandlerResponse()
               .withReason("received unknown event type chief_of_state.AccountOpened")
               .withCause(FailureCause.ValidationError)
+          )
+        )
+
+    }
+
+    "handle command when event type in handler settings is disabled as expected" in {
+
+      val event = AccountOpened()
+        .withAccountNumber("123445")
+        .withAccountUuid(UUID.randomUUID.toString)
+
+      val response = HandleCommandResponse()
+        .withPersistAndReply(
+          PersistAndReply()
+            .withEvent(Any.pack(event))
+        )
+
+      // set enableProtoValidations to false and not provide event and state protos
+      val handlerSettings: HandlerSetting = HandlerSetting(enableProtoValidations = false, Seq(), Seq())
+      val cmdhandler = new AggregateCommandHandler(null, null, handlerSettings)
+      val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseSuccess(response)
+
+      result shouldBe (
+        CommandHandlerResponse()
+          .withSuccessResponse(
+            SuccessCommandHandlerResponse()
+              .withEvent(Any.pack(Event().withEvent(Any.pack(event))))
           )
         )
 

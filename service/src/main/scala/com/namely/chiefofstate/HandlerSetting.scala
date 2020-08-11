@@ -36,7 +36,7 @@ object HandlerSetting {
       .map(_.trim)
       .filter(_.nonEmpty)
 
-    val enableProtoValidations = config.getBoolean("chief-of-state.handlers-settings.enable-settings")
+    val enableProtoValidations = config.getBoolean("chief-of-state.handlers-settings.enable-proto-validation")
 
     if (stateProtos.isEmpty || eventProtos.isEmpty)
       throw new RuntimeException("[ChiefOfState] handler service settings not properly set.")
