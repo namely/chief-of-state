@@ -83,7 +83,7 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 | COS_READ_SIDE_OFFSET_DB_PASSWORD | readside offset storage password | changeme |
 | COS_READ_SIDE_OFFSET_DB_SCHEMA | readside offset storage db scheme | postgres |
 | COS_READ_SIDE_OFFSET_DB | readside offset storage db name | postgres |
-| COS_ENCRYPTION_CLASS | java class to use for encryption | io.superflat.lagompb.encryption.NoEncryption |
+| COS_ENCRYPTION_CLASS | java class to use for encryption | <none> |
 | WRITE_SIDE_HANDLER_SERVICE_HOST | address of the gRPC writeSide handler service | <none> |
 | WRITE_SIDE_HANDLER_SERVICE_PORT | port for the gRPC writeSide handler service | <none> |
 | HANDLER_SERVICE_ENABLE_PROTO_VALIDATION | enable validation of the handler service states and events proto message FQN. If not set to `true` the validation will be skipped.  | false |
@@ -93,8 +93,8 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 | TEAM_NAME | |
 | TRACE_HOST | Jaeger collector/agent host | localhost |
 | TRACE_PORT | Jaeger collector/agent port | 14268 |
-| COS_WRITE_PROPAGATED_HEADERS | CSV of gRPC headers to propagate to write side handler | none |
-| COS_WRITE_PERSISTED_HEADERS | CSV of gRPC headers to persist to journal (experimental) | none |
+| COS_WRITE_PROPAGATED_HEADERS | CSV of gRPC headers to propagate to write side handler | <none> |
+| COS_WRITE_PERSISTED_HEADERS | CSV of gRPC headers to persist to journal (experimental) | <none> |
 
 ### Read side configurations
 
