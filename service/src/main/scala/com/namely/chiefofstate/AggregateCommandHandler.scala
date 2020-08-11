@@ -156,23 +156,31 @@ class AggregateCommandHandler(
         val eventFQN: String = Util.getProtoFullyQualifiedName(persistAndReply.getEvent)
 
         log.debug(s"[ChiefOfState] command handler event to persist $eventFQN")
-
-        if (handlerSetting.eventFQNs.contains(eventFQN)) {
-          log.debug(s"[ChiefOfState] command handler event to persist $eventFQN is valid.")
+        if (handlerSetting.enableProtoValidations) {
+          if (handlerSetting.eventFQNs.contains(eventFQN)) {
+            log.debug(s"[ChiefOfState] command handler event to persist $eventFQN is valid.")
+            CommandHandlerResponse()
+              .withSuccessResponse(
+                SuccessCommandHandlerResponse()
+                  .withEvent(Any.pack(Event().withEvent(persistAndReply.getEvent)))
+              )
+          } else {
+            log.error(
+              s"[ChiefOfState] command handler event to persist $eventFQN is not configured. Failing request"
+            )
+            CommandHandlerResponse()
+              .withFailedResponse(
+                FailedCommandHandlerResponse()
+                  .withReason(s"received unknown event type $eventFQN")
+                  .withCause(FailureCause.ValidationError)
+              )
+          }
+        } else {
+          log.debug(s"[ChiefOfState] command handler event to persist $eventFQN. FQN validation skipped.")
           CommandHandlerResponse()
             .withSuccessResponse(
               SuccessCommandHandlerResponse()
                 .withEvent(Any.pack(Event().withEvent(persistAndReply.getEvent)))
-            )
-        } else {
-          log.error(
-            s"[ChiefOfState] command handler event to persist $eventFQN is not configured. Failing request"
-          )
-          CommandHandlerResponse()
-            .withFailedResponse(
-              FailedCommandHandlerResponse()
-                .withReason(s"received unknown event type $eventFQN")
-                .withCause(FailureCause.ValidationError)
             )
         }
 

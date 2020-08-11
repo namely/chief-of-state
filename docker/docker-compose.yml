@@ -62,8 +62,6 @@ services:
       COS_PORT: 9000
       WRITE_SIDE_HANDLER_SERVICE_HOST: host.docker.internal
       WRITE_SIDE_HANDLER_SERVICE_PORT: 50052
-      HANDLER_SERVICE_STATES_PROTOS: ""
-      HANDLER_SERVICE_EVENTS_PROTOS: ""
       TRACE_HOST: tracer
       TRACE_PORT: 14268
       COS_SERVICE_NAME: "chiefofstate"
