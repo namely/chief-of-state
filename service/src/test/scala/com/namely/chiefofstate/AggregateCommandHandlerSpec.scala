@@ -26,7 +26,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
     "call the local state handler when given a GetStateRequest" in {
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
 
       val cmd = Command(
         GetStateRequest.defaultInstance,
@@ -64,7 +64,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
     "call the remote handler when given a normal request" in {
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
 
       val cmd = Command(
         Any.pack(AccountOpened.defaultInstance),
@@ -109,7 +109,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val priorEventMeta: MetaData = MetaData.defaultInstance
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
 
       val cmd = Command(
         Any.pack(OpenAccount.defaultInstance),
@@ -166,7 +166,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val priorEventMeta: MetaData = MetaData.defaultInstance
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] = Seq("namely.com.SomeEvent")
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
 
       val cmd = Command(
         Any.pack(OpenAccount.defaultInstance),
@@ -212,7 +212,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val priorEventMeta: MetaData = MetaData.defaultInstance
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
 
       val cmd = Command(
         Any.pack(OpenAccount.defaultInstance),
@@ -250,7 +250,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val priorEventMeta: MetaData = MetaData.defaultInstance
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
       // let us create a mock instance of the handler service client
       val mockGrpcClient = mock[WriteSideHandlerServiceClient]
 
@@ -288,7 +288,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val priorEventMeta: MetaData = MetaData.defaultInstance
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
       // let us create a mock instance of the handler service client
       val mockGrpcClient = mock[WriteSideHandlerServiceClient]
 
@@ -323,7 +323,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val priorEventMeta: MetaData = MetaData.defaultInstance
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
 
       val cmd = Command(
         Any.pack(OpenAccount.defaultInstance),
@@ -354,7 +354,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val priorEventMeta: MetaData = MetaData.defaultInstance
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
 
       val cmd = Command(
         Any.pack(OpenAccount.defaultInstance),
@@ -383,7 +383,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
     "handles akka gRPC exceptions" in {
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
 
       val cmd = Command(
         Any.pack(OpenAccount.defaultInstance),
@@ -417,7 +417,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
     "handles a critical grpc failure" in {
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
 
       val cmd = Command(
         Any.pack(OpenAccount.defaultInstance),
@@ -456,7 +456,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       // create a CommandHandler with a mock client
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
       val mockGrpcClient = mock[WriteSideHandlerServiceClient]
       val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
 
@@ -481,7 +481,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       // create a CommandHandler with a mock client
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
       val mockGrpcClient = mock[WriteSideHandlerServiceClient]
       val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
 

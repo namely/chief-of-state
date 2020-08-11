@@ -63,7 +63,7 @@ class ReadSideHandlerSpec
       val eventsProtos: Seq[String] =
         Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -150,7 +150,7 @@ class ReadSideHandlerSpec
       val eventsProtos: Seq[String] =
         Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -235,7 +235,7 @@ class ReadSideHandlerSpec
       val eventsProtos: Seq[String] =
         Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -314,7 +314,7 @@ class ReadSideHandlerSpec
       val eventsProtos: Seq[String] =
         Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -398,7 +398,7 @@ class ReadSideHandlerSpec
       val eventsProtos: Seq[String] =
         Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -482,7 +482,7 @@ class ReadSideHandlerSpec
       val eventsProtos: Seq[String] =
         Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: HandlerSetting = HandlerSetting(stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
