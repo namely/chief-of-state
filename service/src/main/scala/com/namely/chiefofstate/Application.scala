@@ -11,11 +11,7 @@ import com.lightbend.lagom.scaladsl.server.{
   LagomApplicationLoader,
   LagomServer
 }
-import com.namely.chiefofstate.config.{
-  HandlerSetting,
-  EncryptionSetting,
-  SendCommandSettings
-}
+import com.namely.chiefofstate.config.{EncryptionSetting, HandlerSetting, SendCommandSettings}
 import com.namely.chiefofstate.api.ChiefOfStateService
 import com.namely.protobuf.chief_of_state.persistence.State
 import com.namely.protobuf.chief_of_state.readside.ReadSideHandlerServiceClient
