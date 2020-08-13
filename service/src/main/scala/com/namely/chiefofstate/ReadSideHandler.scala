@@ -10,7 +10,7 @@ import com.namely.protobuf.chief_of_state.readside.{
   HandleReadSideResponse,
   ReadSideHandlerServiceClient
 }
-import com.namely.chiefofstate.config.{HandlerSetting, ReadSideConfig}
+import com.namely.chiefofstate.config.{HandlerSetting, ReadSideSetting}
 import io.superflat.lagompb.{ConfigReader, GlobalException}
 import io.superflat.lagompb.encryption.EncryptionAdapter
 import io.superflat.lagompb.readside.{ReadSideEvent, ReadSideProcessor}
@@ -29,7 +29,7 @@ import scala.util.{Failure, Success, Try}
  * @param handlerSetting               the readSide handler settingthe lagom readSide object that helps feed from events emitted in the journal
  */
 class ReadSideHandler(
-  grpcReadSideConfig: ReadSideConfig,
+  grpcReadSideConfig: ReadSideSetting,
   encryptionAdapter: EncryptionAdapter,
   actorSystem: ActorSystem,
   readSideHandlerServiceClient: ReadSideHandlerServiceClient,
