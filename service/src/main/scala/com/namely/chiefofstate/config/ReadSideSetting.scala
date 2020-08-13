@@ -64,7 +64,6 @@ final case class ReadSideSetting(
   }
 }
 
-
 object ReadSideSetting {
 
   val READ_SIDE_HOST_KEY: String = "HOST"
