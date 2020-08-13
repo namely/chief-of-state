@@ -13,6 +13,7 @@ import com.namely.protobuf.chief_of_state.service.GetStateRequest
 import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened, OpenAccount}
 import com.namely.protobuf.chief_of_state.writeside._
 import com.namely.protobuf.chief_of_state.writeside.HandleCommandResponse.ResponseType
+import com.namely.chiefofstate.config.HandlerSetting
 import io.grpc.{Status, StatusRuntimeException}
 import io.superflat.lagompb.Command
 import io.superflat.lagompb.protobuf.core.{

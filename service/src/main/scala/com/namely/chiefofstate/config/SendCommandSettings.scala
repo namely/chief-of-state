@@ -1,4 +1,4 @@
-package com.namely.chiefofstate
+package com.namely.chiefofstate.config
 
 import com.typesafe.config.Config
 

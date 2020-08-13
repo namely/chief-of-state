@@ -16,6 +16,10 @@ import com.namely.protobuf.chief_of_state.readside.{
   ReadSideHandlerServiceClient
 }
 import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened}
+import com.namely.chiefofstate.config.{
+  HandlerSetting,
+  ReadSideSetting
+}
 import io.grpc.Status
 import io.superflat.lagompb.protobuf.core.MetaData
 import io.superflat.lagompb.testkit.BaseActorTestKit
@@ -47,7 +51,7 @@ class ReadSideHandlerSpec
     with MockFactory {
 
   val sys: ActorSystem[Nothing] = testKit.system
-  val defaultGrpcReadSideConfig: ReadSideConfig = ReadSideConfig("test")
+  val defaultGrpcReadSideSetting: ReadSideSetting = ReadSideSetting("test")
 
   "Chief-Of-State ReadSide Processor" should {
 
@@ -121,7 +125,7 @@ class ReadSideHandlerSpec
 
       val readSideProcessor =
         new ReadSideHandler(
-          defaultGrpcReadSideConfig,
+          defaultGrpcReadSideSetting,
           encryptionAdapter,
           testKit.system.toClassic,
           mockGrpcClient,
@@ -210,7 +214,7 @@ class ReadSideHandlerSpec
 
       val readSideProcessor =
         new ReadSideHandler(
-          defaultGrpcReadSideConfig,
+          defaultGrpcReadSideSetting,
           encryptionAdapter,
           testKit.system.toClassic,
           mockGrpcClient,
@@ -292,7 +296,7 @@ class ReadSideHandlerSpec
 
       val readSideProcessor =
         new ReadSideHandler(
-          defaultGrpcReadSideConfig,
+          defaultGrpcReadSideSetting,
           encryptionAdapter,
           testKit.system.toClassic,
           mockGrpcClient,
@@ -378,7 +382,7 @@ class ReadSideHandlerSpec
 
       val readSideProcessor =
         new ReadSideHandler(
-          defaultGrpcReadSideConfig,
+          defaultGrpcReadSideSetting,
           encryptionAdapter,
           testKit.system.toClassic,
           mockGrpcClient,
@@ -464,7 +468,7 @@ class ReadSideHandlerSpec
 
       val readSideProcessor =
         new ReadSideHandler(
-          defaultGrpcReadSideConfig,
+          defaultGrpcReadSideSetting,
           encryptionAdapter,
           testKit.system.toClassic,
           mockGrpcClient,
@@ -501,7 +505,7 @@ class ReadSideHandlerSpec
 
       val readSideProcessor =
         new ReadSideHandler(
-          defaultGrpcReadSideConfig,
+          defaultGrpcReadSideSetting,
           encryptionAdapter,
           testKit.system.toClassic,
           null,

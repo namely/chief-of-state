@@ -11,6 +11,7 @@ import com.lightbend.lagom.scaladsl.server.{
   LagomApplicationLoader,
   LagomServer
 }
+import com.namely.chiefofstate.config.{EncryptionSetting, HandlerSetting, ReadSideSetting, SendCommandSettings}
 import com.namely.chiefofstate.api.ChiefOfStateService
 import com.namely.protobuf.chief_of_state.persistence.State
 import com.namely.protobuf.chief_of_state.readside.ReadSideHandlerServiceClient
@@ -18,6 +19,7 @@ import com.namely.protobuf.chief_of_state.writeside.WriteSideHandlerServiceClien
 import com.softwaremill.macwire.wire
 import io.superflat.lagompb.{AggregateRoot, BaseApplication, CommandHandler, EventHandler}
 import io.superflat.lagompb.encryption.ProtoEncryption
+import com.lightbend.lagom.internal.persistence.ReadSideConfig
 
 /**
  * ChiefOfState application
@@ -62,7 +64,7 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
   if (config.getBoolean("chief-of-state.read-model.enabled")) {
 
     // wiring up the grpc for the readSide client
-    Util.getReadSideConfigs.foreach { config =>
+    ReadSideSetting.getReadSideSettings.foreach { config =>
       lazy val readSideHandlerServiceClient: ReadSideHandlerServiceClient =
         ReadSideHandlerServiceClient(config.getGrpcClientSettings(actorSystem))
 

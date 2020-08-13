@@ -13,6 +13,7 @@ import com.namely.protobuf.chief_of_state.writeside.{
   WriteSideHandlerServiceClient
 }
 import com.namely.protobuf.chief_of_state.writeside.HandleCommandResponse.ResponseType.{PersistAndReply, Reply}
+import com.namely.chiefofstate.config.HandlerSetting
 import io.grpc.{Status, StatusRuntimeException}
 import io.superflat.lagompb.{Command, CommandHandler}
 import io.superflat.lagompb.protobuf.core._

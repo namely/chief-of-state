@@ -8,6 +8,7 @@ import com.namely.protobuf.chief_of_state.common
 import com.namely.protobuf.chief_of_state.persistence.{Event, State}
 import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened}
 import com.namely.protobuf.chief_of_state.writeside.{HandleEventRequest, HandleEventResponse, WriteSideHandlerServiceClient}
+import com.namely.chiefofstate.config.HandlerSetting
 import io.grpc.Status
 import io.superflat.lagompb.GlobalException
 import io.superflat.lagompb.protobuf.core.MetaData

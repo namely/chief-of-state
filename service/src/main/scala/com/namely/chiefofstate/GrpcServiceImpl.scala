@@ -12,6 +12,7 @@ import io.grpc.Status
 import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl, StateAndMeta}
 import org.slf4j.{Logger, LoggerFactory}
 import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
+import com.namely.chiefofstate.config.SendCommandSettings
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
