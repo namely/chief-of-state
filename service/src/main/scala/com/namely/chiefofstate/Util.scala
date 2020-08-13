@@ -3,6 +3,7 @@ package com.namely.chiefofstate
 import com.google.protobuf.any.Any
 import com.namely.protobuf.chief_of_state.common.{MetaData => CosMetaData}
 import io.superflat.lagompb.protobuf.core.MetaData
+import com.namely.chiefofstate.config.ReadSideConfig
 
 /**
  * Utility methods

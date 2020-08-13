@@ -10,6 +10,10 @@ import com.namely.protobuf.chief_of_state.readside.{
   HandleReadSideResponse,
   ReadSideHandlerServiceClient
 }
+import com.namely.chiefofstate.config.{
+  HandlerSetting,
+  ReadSideConfig
+}
 import io.superflat.lagompb.{ConfigReader, GlobalException}
 import io.superflat.lagompb.encryption.EncryptionAdapter
 import io.superflat.lagompb.readside.{ReadSideEvent, ReadSideProcessor}

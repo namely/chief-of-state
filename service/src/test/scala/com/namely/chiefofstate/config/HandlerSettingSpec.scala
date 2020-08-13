@@ -1,4 +1,4 @@
-package com.namely.chiefofstate
+package com.namely.chiefofstate.config
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import io.superflat.lagompb.testkit.BaseSpec
@@ -20,7 +20,7 @@ class HandlerSettingSpec extends BaseSpec {
           ConfigValueFactory.fromAnyRef(false)
         )
         .resolve()
-      
+
       noException shouldBe thrownBy(HandlerSetting(config))
     }
 

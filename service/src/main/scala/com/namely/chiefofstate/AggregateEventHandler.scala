@@ -1,5 +1,6 @@
 package com.namely.chiefofstate
 
+import com.namely.chiefofstate.config.HandlerSetting
 import akka.actor.ActorSystem
 import com.namely.protobuf.chief_of_state.common
 import com.namely.protobuf.chief_of_state.persistence.{Event, State}
