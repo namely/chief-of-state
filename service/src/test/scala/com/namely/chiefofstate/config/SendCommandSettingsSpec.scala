@@ -39,7 +39,7 @@ class SendCommandSettingsSpec extends BaseSpec {
         .withValue(SendCommandSettings.PERSISTED_HEADERS_KEY, ConfigValueFactory.fromAnyRef(""))
         .withValue(SendCommandSettings.PROPAGATED_HEADERS_KEY, ConfigValueFactory.fromAnyRef(""))
 
-      SendCommandSettings(config) shouldBe (SendCommandSettings(propagatedHeaders = Set(), persistedHeaders = Set()))
+      SendCommandSettings(config) shouldBe SendCommandSettings(propagatedHeaders = Set(), persistedHeaders = Set())
     }
 
     "parse csv string" in {
