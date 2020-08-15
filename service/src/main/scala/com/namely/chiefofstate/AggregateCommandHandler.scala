@@ -16,7 +16,7 @@ import com.namely.protobuf.chief_of_state.writeside.HandleCommandResponse.Respon
 import com.namely.chiefofstate.config.HandlerSetting
 import io.grpc.{Status, StatusRuntimeException}
 import io.superflat.lagompb.{Command, CommandHandler}
-import io.superflat.lagompb.protobuf.core._
+import io.superflat.lagompb.protobuf.v1.core._
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.duration._
@@ -89,7 +89,7 @@ class AggregateCommandHandler(
           .withFailedResponse(
             FailedCommandHandlerResponse()
               .withReason("entity not found")
-              .withCause(FailureCause.InternalError)
+              .withCause(FailureCause.INTERNAL_ERROR)
           )
       }
   }
@@ -173,7 +173,7 @@ class AggregateCommandHandler(
               .withFailedResponse(
                 FailedCommandHandlerResponse()
                   .withReason(s"received unknown event type $eventFQN")
-                  .withCause(FailureCause.ValidationError)
+                  .withCause(FailureCause.VALIDATION_ERROR)
               )
           }
         } else {
@@ -198,7 +198,7 @@ class AggregateCommandHandler(
           .withFailedResponse(
             FailedCommandHandlerResponse()
               .withReason(s"command handler returned malformed event, ${unhandled.getClass.getName}")
-              .withCause(FailureCause.InternalError)
+              .withCause(FailureCause.INTERNAL_ERROR)
           )
     }
   }
@@ -220,9 +220,9 @@ class AggregateCommandHandler(
         // handle specific gRPC error statuses
         val cause =
           if (GRPC_FAILED_VALIDATION_STATUSES.contains(status.getCode)) {
-            FailureCause.ValidationError
+            FailureCause.VALIDATION_ERROR
           } else {
-            FailureCause.InternalError
+            FailureCause.INTERNAL_ERROR
           }
 
         CommandHandlerResponse()
@@ -238,7 +238,7 @@ class AggregateCommandHandler(
           .withFailedResponse(
             FailedCommandHandlerResponse()
               .withReason(e.getStatus.toString)
-              .withCause(FailureCause.InternalError)
+              .withCause(FailureCause.INTERNAL_ERROR)
           )
 
       case e: Throwable =>
@@ -249,7 +249,7 @@ class AggregateCommandHandler(
               .withReason(
                 s"Critical error occurred handling command, ${e.getMessage}"
               )
-              .withCause(FailureCause.InternalError)
+              .withCause(FailureCause.INTERNAL_ERROR)
           )
     }
   }

@@ -16,7 +16,7 @@ import com.namely.protobuf.chief_of_state.writeside.HandleCommandResponse.Respon
 import com.namely.chiefofstate.config.HandlerSetting
 import io.grpc.{Status, StatusRuntimeException}
 import io.superflat.lagompb.Command
-import io.superflat.lagompb.protobuf.core.{
+import io.superflat.lagompb.protobuf.v1.core.{
   CommandHandlerResponse,
   FailedCommandHandlerResponse,
   FailureCause,
@@ -36,7 +36,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
    *
    * @return mock request builder
    */
-  def getMockRequestBuilder(): SingleResponseRequestBuilder[HandleCommandRequest, HandleCommandResponse] = {
+  def getMockRequestBuilder: SingleResponseRequestBuilder[HandleCommandRequest, HandleCommandResponse] = {
     mock[SingleResponseRequestBuilder[HandleCommandRequest, HandleCommandResponse]]
   }
 
@@ -76,17 +76,15 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val priorState: State = State().withCurrentState(Any.pack(Account.defaultInstance))
       val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
 
-      val cmdhandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, null, testHandlerSetting)
       val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
 
-      result shouldBe (
-        Success(
-          CommandHandlerResponse()
-            .withSuccessResponse(
-              SuccessCommandHandlerResponse()
-                .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
-            )
-        )
+      result shouldBe Success(
+        CommandHandlerResponse()
+          .withSuccessResponse(
+            SuccessCommandHandlerResponse()
+              .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
+          )
       )
     }
 
@@ -102,7 +100,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
 
       // let us create a mock instance of the handler service client
       // this will always fail, but should not be called
-      val requestBuilder = getMockRequestBuilder()
+      val requestBuilder = getMockRequestBuilder
 
       (requestBuilder.invoke _)
         .expects(*)
@@ -119,15 +117,13 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
         LagompbMetaData.defaultInstance
       )
 
-      result shouldBe (
-        Success(
-          CommandHandlerResponse()
-            .withFailedResponse(
-              FailedCommandHandlerResponse()
-                .withReason("Critical error occurred handling command, this throws")
-                .withCause(FailureCause.InternalError)
-            )
-        )
+      result shouldBe Success(
+        CommandHandlerResponse()
+          .withFailedResponse(
+            FailedCommandHandlerResponse()
+              .withReason("Critical error occurred handling command, this throws")
+              .withCause(FailureCause.INTERNAL_ERROR)
+          )
       )
     }
 
@@ -172,7 +168,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val currentMeta: LagompbMetaData = LagompbMetaData.defaultInstance
 
       // let us create a mock instance of the handler service client
-      val mockRequestBuilder = getMockRequestBuilder()
+      val mockRequestBuilder = getMockRequestBuilder
       val mockGrpcClient = getMockClient(mockRequestBuilder)
 
       (mockRequestBuilder
@@ -182,7 +178,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
 
       (mockRequestBuilder
         .addHeader(_: String, _: akka.util.ByteString))
-        .expects(header2.key, akka.util.ByteString(header2.getBytesValue.toByteArray()))
+        .expects(header2.key, akka.util.ByteString(header2.getBytesValue.toByteArray))
         .returning(mockRequestBuilder)
 
       (mockRequestBuilder
@@ -217,7 +213,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
             .withEvent(Any.pack(Event().withEvent(Any.pack(event))))
         )
 
-      result shouldBe (expected)
+      result shouldBe expected
     }
 
     "fail when headers are invalid" in {
@@ -231,7 +227,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
         .addHeaders(badHeader)
 
       // let us create a mock instance of the handler service client
-      val mockRequestBuilder = getMockRequestBuilder()
+      val mockRequestBuilder = getMockRequestBuilder
       val mockGrpcClient = getMockClient(mockRequestBuilder)
 
       val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, testHandlerSetting)
@@ -243,7 +239,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
           LagompbMetaData.defaultInstance
         )
 
-      result.getFailedResponse.reason.contains("unhandled gRPC header type") shouldBe (true)
+      result.getFailedResponse.reason.contains("unhandled gRPC header type") shouldBe true
     }
 
     "handle command successfully as expected with an event to persist" in {
@@ -258,7 +254,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
         .withAccountUuid(UUID.randomUUID.toString)
 
       // let us create a mock instance of the handler service client
-      val mockRequestBuilder = getMockRequestBuilder()
+      val mockRequestBuilder = getMockRequestBuilder
       val mockGrpcClient = getMockClient(mockRequestBuilder)
 
       (mockRequestBuilder
@@ -283,12 +279,10 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, testHandlerSetting)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteCommand(cmd, priorState, priorEventMeta)
 
-      result shouldBe (
-        CommandHandlerResponse()
-          .withSuccessResponse(
-            SuccessCommandHandlerResponse()
-              .withEvent(Any.pack(Event().withEvent(Any.pack(event))))
-          )
+      result shouldBe CommandHandlerResponse()
+        .withSuccessResponse(
+          SuccessCommandHandlerResponse()
+            .withEvent(Any.pack(Event().withEvent(Any.pack(event))))
         )
     }
   }
@@ -308,12 +302,10 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val cmdhandler = new AggregateCommandHandler(null, null, testHandlerSetting)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseSuccess(response)
 
-      result shouldBe (
-        CommandHandlerResponse()
-          .withSuccessResponse(
-            SuccessCommandHandlerResponse()
-              .withEvent(Any.pack(Event().withEvent(Any.pack(event))))
-          )
+      result shouldBe CommandHandlerResponse()
+        .withSuccessResponse(
+          SuccessCommandHandlerResponse()
+            .withEvent(Any.pack(Event().withEvent(Any.pack(event))))
         )
 
     }
@@ -331,13 +323,11 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val cmdhandler = new AggregateCommandHandler(null, null, badHandlerSettings)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseSuccess(badResponse)
 
-      result shouldBe (
-        CommandHandlerResponse()
-          .withFailedResponse(
-            FailedCommandHandlerResponse()
-              .withReason("received unknown event type chief_of_state.AccountOpened")
-              .withCause(FailureCause.ValidationError)
-          )
+      result shouldBe CommandHandlerResponse()
+        .withFailedResponse(
+          FailedCommandHandlerResponse()
+            .withReason("received unknown event type chief_of_state.AccountOpened")
+            .withCause(FailureCause.VALIDATION_ERROR)
         )
 
     }
@@ -359,12 +349,10 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val cmdhandler = new AggregateCommandHandler(null, null, handlerSettings)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseSuccess(response)
 
-      result shouldBe (
-        CommandHandlerResponse()
-          .withSuccessResponse(
-            SuccessCommandHandlerResponse()
-              .withEvent(Any.pack(Event().withEvent(Any.pack(event))))
-          )
+      result shouldBe CommandHandlerResponse()
+        .withSuccessResponse(
+          SuccessCommandHandlerResponse()
+            .withEvent(Any.pack(Event().withEvent(Any.pack(event))))
         )
 
     }
@@ -376,12 +364,10 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val response = HandleCommandResponse().withReply(Reply.defaultInstance)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseSuccess(response)
 
-      result shouldBe (
-        CommandHandlerResponse()
-          .withSuccessResponse(
-            SuccessCommandHandlerResponse()
-              .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
-          )
+      result shouldBe CommandHandlerResponse()
+        .withSuccessResponse(
+          SuccessCommandHandlerResponse()
+            .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
         )
     }
 
@@ -391,15 +377,13 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val response = HandleCommandResponse().withResponseType(ResponseType.Empty)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseSuccess(response)
 
-      result shouldBe (
-        CommandHandlerResponse()
-          .withFailedResponse(
-            FailedCommandHandlerResponse()
-              .withReason(
-                s"command handler returned malformed event, ${HandleCommandResponse.ResponseType.Empty.getClass.getName}"
-              )
-              .withCause(FailureCause.InternalError)
-          )
+      result shouldBe CommandHandlerResponse()
+        .withFailedResponse(
+          FailedCommandHandlerResponse()
+            .withReason(
+              s"command handler returned malformed event, ${HandleCommandResponse.ResponseType.Empty.getClass.getName}"
+            )
+            .withCause(FailureCause.INTERNAL_ERROR)
         )
     }
   }
@@ -412,68 +396,62 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val exception = new GrpcServiceException(Status.NOT_FOUND)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
 
-      result shouldBe (
-        CommandHandlerResponse()
-          .withFailedResponse(
-            FailedCommandHandlerResponse()
-              .withReason(Status.NOT_FOUND.toString)
-              .withCause(FailureCause.InternalError)
-          )
+      result shouldBe CommandHandlerResponse()
+        .withFailedResponse(
+          FailedCommandHandlerResponse()
+            .withReason(Status.NOT_FOUND.toString)
+            .withCause(FailureCause.INTERNAL_ERROR)
         )
     }
 
     "handle failed validations sent by command handler" in {
       val badStatus: Status = Status.INVALID_ARGUMENT.withDescription("very invalid")
-      val exception = new StatusRuntimeException(badStatus)
-      val cmdhandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val exception: StatusRuntimeException = new StatusRuntimeException(badStatus)
+      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, null, testHandlerSetting)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
 
-      result.getFailedResponse.reason.contains(badStatus.getDescription) shouldBe (true)
-      result.getFailedResponse.reason.contains(badStatus.getCode.name) shouldBe (true)
-      result.getFailedResponse.cause shouldBe (FailureCause.ValidationError)
+      result.getFailedResponse.reason.contains(badStatus.getDescription) shouldBe true
+      result.getFailedResponse.reason.contains(badStatus.getCode.name) shouldBe true
+      result.getFailedResponse.cause shouldBe FailureCause.VALIDATION_ERROR
     }
 
     "handle gRPC internal errors from command handler" in {
       val badStatus: Status = Status.INTERNAL.withDescription("super broken")
-      val exception = new StatusRuntimeException(badStatus)
-      val cmdhandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val exception: StatusRuntimeException = new StatusRuntimeException(badStatus)
+      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, null, testHandlerSetting)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
 
-      result.getFailedResponse.reason.contains(badStatus.getDescription) shouldBe (true)
-      result.getFailedResponse.reason.contains(badStatus.getCode.name) shouldBe (true)
-      result.getFailedResponse.cause shouldBe (FailureCause.InternalError)
+      result.getFailedResponse.reason.contains(badStatus.getDescription) shouldBe true
+      result.getFailedResponse.reason.contains(badStatus.getCode.name) shouldBe true
+      result.getFailedResponse.cause shouldBe FailureCause.INTERNAL_ERROR
     }
 
     "handle akka gRPC exceptions" in {
       val badStatus: Status = Status.INTERNAL.withDescription("grpc broken")
-      val exception = new GrpcServiceException(status = badStatus)
-      val cmdhandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val exception: GrpcServiceException = new GrpcServiceException(status = badStatus)
+      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, null, testHandlerSetting)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
 
-      result shouldBe (
-        CommandHandlerResponse()
-          .withFailedResponse(
-            FailedCommandHandlerResponse()
-              .withReason(badStatus.toString())
-              .withCause(FailureCause.InternalError)
-          )
+      result shouldBe CommandHandlerResponse()
+        .withFailedResponse(
+          FailedCommandHandlerResponse()
+            .withReason(badStatus.toString)
+            .withCause(FailureCause.INTERNAL_ERROR)
         )
     }
 
     "handles a critical grpc failure" in {
-      val exception = new RuntimeException("broken")
-      val cmdhandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val exception: RuntimeException = new RuntimeException("broken")
+      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, null, testHandlerSetting)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
 
-      result.handlerResponse.isFailedResponse shouldBe (true)
+      result.handlerResponse.isFailedResponse shouldBe true
 
-      result shouldBe (
-        CommandHandlerResponse()
-          .withFailedResponse(
-            FailedCommandHandlerResponse()
-              .withReason("Critical error occurred handling command, broken")
-              .withCause(FailureCause.InternalError)
-          )
+      result shouldBe CommandHandlerResponse()
+        .withFailedResponse(
+          FailedCommandHandlerResponse()
+            .withReason("Critical error occurred handling command, broken")
+            .withCause(FailureCause.INTERNAL_ERROR)
         )
     }
   }
@@ -501,8 +479,8 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
 
       val actual: CommandHandlerResponse = cmdhandler.handleGetCommand(cmd, priorState, priorEventMeta)
 
-      actual.handlerResponse.isSuccessResponse shouldBe (true)
-      actual.handlerResponse.successResponse.map(_.response.isNoEvent) shouldBe (Some(true))
+      actual.handlerResponse.isSuccessResponse shouldBe true
+      actual.handlerResponse.successResponse.map(_.response.isNoEvent) shouldBe Some(true)
     }
 
     "return a failure when prior state is not found" in {
@@ -510,15 +488,15 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
       val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
-      val mockGrpcClient = mock[WriteSideHandlerServiceClient]
-      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
+      val mockGrpcClient: WriteSideHandlerServiceClient = mock[WriteSideHandlerServiceClient]
+      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
 
       val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
       val cmd = GetStateRequest(entityId = "x")
       val priorState = State.defaultInstance
       val actual: CommandHandlerResponse = cmdhandler.handleGetCommand(cmd, priorState, priorEventMeta)
-      actual.handlerResponse.isFailedResponse shouldBe (true)
-      actual.handlerResponse.failedResponse.map(_.reason) shouldBe (Some("entity not found"))
+      actual.handlerResponse.isFailedResponse shouldBe true
+      actual.handlerResponse.failedResponse.map(_.reason) shouldBe Some("entity not found")
     }
   }
 }
