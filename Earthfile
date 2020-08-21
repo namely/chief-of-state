@@ -8,8 +8,8 @@ all:
 code:
     # copy relevant files in, save as a base image
     FROM registry.namely.land/namely/sbt:1.3.6-2.13.1
-    COPY -dir api db docker project protos sbt-dist service .
-    COPY -dir .scalafmt.conf build.sbt .env .
+    COPY -dir project sbt-dist .scalafmt.conf build.sbt .
+    COPY -dir api protos service .env .
     RUN sbt clean cleanFiles
     SAVE IMAGE
 
