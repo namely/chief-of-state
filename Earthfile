@@ -10,12 +10,12 @@ code:
     FROM registry.namely.land/namely/sbt:1.3.6-2.13.1
     COPY -dir api db docker project protos sbt-dist service .
     COPY -dir .scalafmt.conf build.sbt .env .
-    RUN sbt clean
+    RUN sbt clean cleanFiles
     SAVE IMAGE
 
 test:
     FROM +code
-    RUN sbt clean coverage test coverageAggregate
+    RUN sbt coverage test coverageAggregate
     # RUN curl -s https://codecov.io/bash | bash || echo 'Codecov failed to upload'
 
 docker-prep:
