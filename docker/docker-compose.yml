@@ -46,7 +46,7 @@ services:
       - "9090:9090"
 
   chiefofstate:
-    image: cost:latest
+    image: cos:latest
     hostname: "chiefofstate"
     depends_on:
       - postgres

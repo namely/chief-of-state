@@ -1,5 +1,8 @@
 import play.grpc.gen.scaladsl.{PlayScalaClientCodeGenerator, PlayScalaServerCodeGenerator}
 
+enablePlugins(DockerComposePlugin)
+dockerImageCreationTask := (Docker / publishLocal in `chiefofstate`).value
+
 debianPackageDependencies := Seq("java8-runtime-headless")
 enablePlugins(DebianPlugin)
 
