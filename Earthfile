@@ -14,14 +14,15 @@ test:
     # RUN curl -s https://codecov.io/bash | bash || echo 'Codecov failed to upload'
 
 docker-prep:
+    # package the jars/executables
     FROM +code
     RUN sbt docker:stage
     RUN chmod -R u=rX,g=rX service/target/docker/stage
     RUN chmod a+r service/target/docker/stage
     SAVE ARTIFACT service/target/docker/stage
 
-# temporary target that imitates the generated dockerfile
 docker-build:
+    # bundle into a slimmer, runnable container
     FROM openjdk:8-jre-slim
 
     USER root
