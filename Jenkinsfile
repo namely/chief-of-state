@@ -14,6 +14,10 @@ node(NODE_TAG) {
     /* reach out to jenkins-shared library for boilerplate setup */
     (COMMIT_HASH, COMMIT_HASH_WITH_SUFFIX) = prep.checkout(true)
 
+    stage("get earth") {
+        sh('wget https://github.com/earthly/earthly/releases/latest/download/earth-linux-amd64 -O /usr/local/bin/earth && chmod +x /usr/local/bin/earth')
+    }
+
     stage("Codegen") {
         sh "ls -la"
     }
