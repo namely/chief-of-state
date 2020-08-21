@@ -29,6 +29,8 @@ node(NODE_TAG) {
         // sh('echo "JFROG_USERNAME=$JFROG_USERNAME" >> .env')
         // sh('echo "JFROG_PASSWORD=$JFROG_PASSWORD" >> .env')
 
+        sh('printenv')
+
         sh('earth +docker-prep')
 
     }
