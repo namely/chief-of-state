@@ -29,9 +29,7 @@ node(NODE_TAG) {
         // sh('echo "JFROG_USERNAME=$JFROG_USERNAME" >> .env')
         // sh('echo "JFROG_PASSWORD=$JFROG_PASSWORD" >> .env')
 
-        sh('echo $EARTHLY_SECRETS')
-
-        sh('earth --secret JFROG_USERNAME --secret JFROG_PASSWORD +docker-prep')
+        sh('EARTHLY_SECRETS="JFROG_USERNAME,JFROG_PASSWORD" earth +docker-prep')
 
     }
 }
