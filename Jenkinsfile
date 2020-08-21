@@ -25,15 +25,13 @@ node(NODE_TAG) {
             JFROG_PASSWORD = credentials('data-jfrog-password')
         }
 
-        steps {
-            sh('echo "JFROG_USERNAME=$JFROG_USERNAME" > .env')
-            sh('echo "JFROG_PASSWORD=$JFROG_PASSWORD" > .env')
+        sh('echo "JFROG_USERNAME=$JFROG_USERNAME" > .env')
+        sh('echo "JFROG_PASSWORD=$JFROG_PASSWORD" > .env')
 
-            sh('cat .env')
-            sh('ls -la')
+        sh('cat .env')
+        sh('ls -la')
 
-            sh('earth +code')
-        }
+        sh('earth +docker-prep')
 
     }
 }
