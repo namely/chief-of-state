@@ -26,10 +26,11 @@ node(NODE_TAG) {
             EARTHLY_SECRETS = 'JFROG_USERNAME,JFROG_PASSWORD'
         }
         sh('touch .env')
-        // sh('echo "JFROG_USERNAME=$JFROG_USERNAME" >> .env')
-        // sh('echo "JFROG_PASSWORD=$JFROG_PASSWORD" >> .env')
+        sh('echo "JFROG_USERNAME=$JFROG_USERNAME" >> .env')
+        sh('echo "JFROG_PASSWORD=$JFROG_PASSWORD" >> .env')
 
-        sh('EARTHLY_SECRETS="JFROG_USERNAME,JFROG_PASSWORD" earth +docker-prep')
+        // sh('EARTHLY_SECRETS="JFROG_USERNAME,JFROG_PASSWORD" earth +docker-prep')
+        sh('earth +all')
 
     }
 }
