@@ -1,5 +1,9 @@
 #Earthfile
 
+# SETUP:
+# - brew install earthly
+# - earth build +all
+
 all:
     # target running it all
     BUILD +test
