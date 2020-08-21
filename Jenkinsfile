@@ -11,6 +11,7 @@ node(NODE_TAG) {
     /* clean directory and then checkout code */
     deleteDir()
     checkout scm
+
     /* reach out to jenkins-shared library for boilerplate setup */
     (COMMIT_HASH, COMMIT_HASH_WITH_SUFFIX) = prep.checkout(true)
 
@@ -19,7 +20,17 @@ node(NODE_TAG) {
     }
 
     stage("earth") {
-        sh('ls -la')
-        sh('earth +code')
+        environment {
+            JFROG_USERNAME = credentials('data-jfrog-username'),
+            JFROG_PASSWORD = credentials('data-jfrog-password'),
+        }
+        steps {
+            sh('echo "JFROG_USERNAME=$JFROG_USERNAME" > .env')
+            sh('echo "JFROG_PASSWORD=$JFROG_PASSWORD" > .env')
+
+            sh('ls -la')
+
+            sh('earth +code')
+        }
     }
 }
