@@ -19,7 +19,7 @@ node(NODE_TAG) {
         sh('earth help')
     }
 
-    stage("Codegen") {
+    stage("test") {
         sh "ls -la"
     }
 }
