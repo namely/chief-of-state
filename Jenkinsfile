@@ -18,8 +18,7 @@ node(NODE_TAG) {
         sh('wget https://github.com/earthly/earthly/releases/latest/download/earth-linux-amd64 -O /usr/local/bin/earth && chmod +x /usr/local/bin/earth')
     }
 
-    stage("test") {
-        sh "ls -la"
-        sh('earth help')
+    stage("earth") {
+        sh('earth +code')
     }
 }
