@@ -1,7 +1,7 @@
 import play.grpc.gen.scaladsl.{PlayScalaClientCodeGenerator, PlayScalaServerCodeGenerator}
 
-enablePlugins(DockerComposePlugin)
-dockerImageCreationTask := (Docker / publishLocal in `chiefofstate`).value
+debianPackageDependencies := Seq("java8-runtime-headless")
+enablePlugins(DebianPlugin)
 
 lazy val root = project
   .in(file("."))
@@ -21,7 +21,13 @@ lazy val `chiefofstate` = project
   .enablePlugins(PlayAkkaHttp2Support)
   .enablePlugins(LagomImpl)
   .enablePlugins(LagomAkka)
-  .settings(name := "chiefofstate", javaAgents += Dependencies.Compile.KanelaAgent)
+  .settings(
+    name := "chiefofstate",
+    javaAgents += Dependencies.Compile.KanelaAgent,
+    maintainer := "namely",
+    packageSummary in Linux := "Chief of State",
+    packageDescription := "Chief of State"
+  )
   .dependsOn(protogen, api)
 
 lazy val protogen = project
