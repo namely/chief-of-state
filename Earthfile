@@ -14,7 +14,7 @@ code:
     FROM registry.namely.land/namely/sbt:1.3.6-2.13.1
     COPY -dir project sbt-dist .scalafmt.conf build.sbt .
     COPY -dir api protos service *.env .
-    RUN sbt clean cleanFiles
+    RUN -s JFROG_USERNAME=+secrets/JFROG_USERNAME -s JFROG_PASSWORD=+secrets/JFROG_PASSWORD sbt clean cleanFiles
     SAVE IMAGE
 
 test:
