@@ -16,6 +16,8 @@ test:
 docker-prep:
     FROM +code
     RUN sbt docker:stage
+    RUN chmod -R u=rX,g=rX service/target/docker/stage
+    RUN chmod a+r service/target/docker/stage
     SAVE ARTIFACT service/target/docker/stage
 
 # temporary target that imitates the generated dockerfile
@@ -29,13 +31,8 @@ docker-build:
 
     # copy over files
     WORKDIR /opt/docker
-    COPY +docker-prep/stage/opt /opt
-    COPY +docker-prep/stage/1/opt /opt
-    COPY +docker-prep/stage/2/opt /opt
-
-    # apply correct permissioning
-    RUN ["chmod", "-R", "u=rX,g=rX", "/opt/docker"]
-    RUN chown -R cos:root /opt/docker
+    COPY --dir +docker-prep/stage/opt +docker-prep/stage/1/opt +docker-prep/stage/2/opt /
+    RUN chmod -R a+x /opt/docker/bin/chiefofstate && chown -R cos:root /opt/docker/bin/chiefofstate
 
     # set runtime user to cos
     USER cos
