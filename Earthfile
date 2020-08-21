@@ -60,11 +60,3 @@ it-test:
     FROM docker:19.03.7-dind
     # DOCKER LOAD +docker-build img
     # RUN --with-docker docker run img ...
-
-# docker-tags:
-#     FROM registry.namely.land/namely/drone-docker-tag:latest
-#     ARG EARTHLY_TARGET
-#     ARG EARTHLY_GIT_ORIGIN_URL
-#     ARG EARTHLY_GIT_HASH
-#     ARG EARTHLY_TARGET_TAG_DOCKER
-#     RUN printenv
