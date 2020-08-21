@@ -25,11 +25,14 @@ node(NODE_TAG) {
             JFROG_PASSWORD = credentials('data-jfrog-password')
             EARTHLY_SECRETS = 'JFROG_USERNAME,JFROG_PASSWORD'
         }
-        sh('touch .env')
-        sh('echo "JFROG_USERNAME=$JFROG_USERNAME" >> .env')
-        sh('echo "JFROG_PASSWORD=$JFROG_PASSWORD" >> .env')
 
-        // sh('EARTHLY_SECRETS="JFROG_USERNAME,JFROG_PASSWORD" earth +docker-prep')
+        // TODO: use earthly secrets
+        sh('''
+            touch .env
+            echo "JFROG_USERNAME=$JFROG_USERNAME" >> .env
+            echo "JFROG_PASSWORD=$JFROG_PASSWORD" >> .env
+        ''')
+
         sh('earth +all')
 
     }
