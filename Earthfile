@@ -16,8 +16,6 @@ test:
 docker-prep:
     FROM +code
     RUN sbt docker:stage
-    RUN ls -la service/target/docker/stage/1/opt/docker/
-    RUN ls -la service/target/docker/stage/2/opt/docker/
     SAVE ARTIFACT service/target/docker/stage
 
 # temporary target that imitates the generated dockerfile
@@ -72,7 +70,6 @@ all:
 
 #     USER root
 #     COPY -dir +deb-package/cos.deb /opt
-#     COPY -dir +deb-package/
 #     RUN apt-get install /opt/cos.deb
 #     RUN rm /opt/cos.deb
 
