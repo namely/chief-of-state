@@ -26,7 +26,7 @@ deb-package:
     SAVE ARTIFACT service/target/cos.deb
 
 docker-build:
-    FROM openjdk:8
+    FROM openjdk:8-jre-slim
 
     USER root
     WORKDIR /opt/docker
@@ -39,8 +39,8 @@ docker-build:
 
     # build the image and push remotely (if all steps are successful)
     # https://docs.earthly.dev/earthfile#save-image
-    # SAVE IMAGE --push registry.namely.land/namely/sample:<tag>
-    SAVE IMAGE
+    # SAVE IMAGE cos:latest --push registry.namely.land/namely/sample:<tag>
+    SAVE IMAGE cos:latest
 
 all:
     # target running it all
