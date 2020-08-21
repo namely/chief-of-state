@@ -19,6 +19,7 @@ node(NODE_TAG) {
     }
 
     stage("earth") {
+        sh('ls -la')
         sh('earth +code')
     }
 }
