@@ -29,6 +29,7 @@ node(NODE_TAG) {
             sh('echo "JFROG_USERNAME=$JFROG_USERNAME" > .env')
             sh('echo "JFROG_PASSWORD=$JFROG_PASSWORD" > .env')
 
+            sh('cat .env')
             sh('ls -la')
 
             sh('earth +code')
