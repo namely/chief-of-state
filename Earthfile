@@ -40,6 +40,9 @@ docker-build:
     ENTRYPOINT ["/opt/docker/bin/chiefofstate"]
     CMD []
 
+    # build the image and push remotely (if all steps are successful)
+    # https://docs.earthly.dev/earthfile#save-image
+    # SAVE IMAGE cos:latest --push registry.namely.land/namely/sample:<tag>
     SAVE IMAGE cos:latest
 
 all:
@@ -74,10 +77,10 @@ all:
 #     ENTRYPOINT chiefofstate
 #     CMD []
 
-#     # build the image and push remotely (if all steps are successful)
-#     # https://docs.earthly.dev/earthfile#save-image
-#     # SAVE IMAGE cos:latest --push registry.namely.land/namely/sample:<tag>
-#     SAVE IMAGE cos:latest
+    # # build the image and push remotely (if all steps are successful)
+    # # https://docs.earthly.dev/earthfile#save-image
+    # # SAVE IMAGE cos:latest --push registry.namely.land/namely/sample:<tag>
+    # SAVE IMAGE cos:latest
 
 
 ## save the staged files to host
