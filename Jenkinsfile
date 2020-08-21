@@ -31,7 +31,7 @@ node(NODE_TAG) {
 
         sh('echo $EARTHLY_SECRETS')
 
-        sh('earth +docker-prep')
+        sh('earth --secret JFROG_USERNAME --secret JFROG_PASSWORD +docker-prep')
 
     }
 }
