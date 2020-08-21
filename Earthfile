@@ -1,20 +1,20 @@
 #Earthfile
 
-compile:
+code:
     # copy relevant files in, save as a base image
     FROM registry.namely.land/namely/sbt:1.3.6-2.13.1
     COPY -dir api db docker project protos sbt-dist service .
     COPY -dir .scalafmt.conf build.sbt .env .
-    RUN sbt clean compile
+    RUN sbt clean
     SAVE IMAGE
 
 test:
-    FROM +compile
+    FROM +code
     RUN sbt clean coverage test coverageAggregate
     # RUN curl -s https://codecov.io/bash | bash || echo 'Codecov failed to upload'
 
 deb-package:
-    FROM +compile
+    FROM +code
 
     # TODO: install these beforehand
     COPY -dir debian-setup.sh .
@@ -36,6 +36,10 @@ docker-build:
     USER chiefofstate
     ENTRYPOINT chiefofstate
     CMD []
+
+    # build the image and push remotely (if all steps are successful)
+    # https://docs.earthly.dev/earthfile#save-image
+    # SAVE IMAGE --push registry.namely.land/namely/sample:<tag>
     SAVE IMAGE
 
 all:
