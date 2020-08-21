@@ -23,7 +23,6 @@ node(NODE_TAG) {
         environment {
             JFROG_USERNAME = credentials('data-jfrog-username')
             JFROG_PASSWORD = credentials('data-jfrog-password')
-            EARTHLY_SECRETS = 'JFROG_USERNAME,JFROG_PASSWORD'
         }
 
         // TODO: use earthly secrets
