@@ -21,8 +21,8 @@ node(NODE_TAG) {
 
     stage("earth") {
         environment {
-            JFROG_USERNAME = credentials('data-jfrog-username'),
-            JFROG_PASSWORD = credentials('data-jfrog-password'),
+            JFROG_USERNAME = credentials('data-jfrog-username')
+            JFROG_PASSWORD = credentials('data-jfrog-password')
         }
 
         sh('echo "JFROG_USERNAME=$JFROG_USERNAME" > .env')
