@@ -23,16 +23,22 @@ node(NODE_TAG) {
         environment {
             JFROG_USERNAME = credentials('data-jfrog-username')
             JFROG_PASSWORD = credentials('data-jfrog-password')
+            EARTHLY_SECRETS = 'JFROG_USERNAME,JFROG_PASSWORD'
         }
 
         // TODO: use earthly secrets
-        sh('''
-            touch .env
-            echo "JFROG_USERNAME=$JFROG_USERNAME" >> .env
-            echo "JFROG_PASSWORD=$JFROG_PASSWORD" >> .env
-        ''')
+        // sh('''
+        //     touch .env
+        //     echo "JFROG_USERNAME=$JFROG_USERNAME" >> .env
+        //     echo "JFROG_PASSWORD=$JFROG_PASSWORD" >> .env
+        // ''')
 
-        sh('earth +all')
+        sh('''
+            [ -z "$JFROG_USERNAME" ] && echo "JFROG_USERNAME empty"
+            [ -z "$JFROG_PASSWORD" ] && echo "JFROG_PASSWORD empty"
+            [ -z "$EARTHLY_SECRETS" ] && echo "EARTHLY_SECRETS empty"
+            earth -s JFROG_USERNAME -s JFROG_PASSWORD +all
+        ''')
 
     }
 }

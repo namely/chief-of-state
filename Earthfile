@@ -13,9 +13,16 @@ code:
     # copy relevant files in, save as a base image
     FROM registry.namely.land/namely/sbt:1.3.6-2.13.1
     COPY -dir project sbt-dist .scalafmt.conf build.sbt .
-    COPY -dir api protos service *.env .
-    # RUN --secret JFROG_USERNAME=+secrets/JFROG_USERNAME --secret JFROG_PASSWORD=+secrets/JFROG_PASSWORD sbt clean cleanFiles
-    RUN sbt clean cleanFiles
+    COPY -dir api protos service .
+    # COPY -dir .env .
+
+    # clean and get dependencies
+    RUN \
+        --secret JFROG_USERNAME=+secrets/JFROG_USERNAME \
+        --secret JFROG_PASSWORD=+secrets/JFROG_PASSWORD \
+        sbt clean cleanFiles update
+
+    # RUN sbt clean cleanFiles
     SAVE IMAGE
 
 test:
