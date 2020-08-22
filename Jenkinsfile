@@ -27,9 +27,9 @@ node(NODE_TAG) {
         }
 
         sh('''
-            [ -z "$JFROG_USERNAME" ] && echo "JFROG_USERNAME empty"
-            [ -z "$JFROG_PASSWORD" ] && echo "JFROG_PASSWORD empty"
-            [ -z "$EARTHLY_SECRETS" ] && echo "EARTHLY_SECRETS empty"
+            [ -z "\$JFROG_USERNAME" ] && echo "JFROG_USERNAME empty"
+            [ -z "\$JFROG_PASSWORD" ] && echo "JFROG_PASSWORD empty"
+            [ -z "\$EARTHLY_SECRETS" ] && echo "EARTHLY_SECRETS empty"
         ''')
 
         // TODO: use earthly secrets
