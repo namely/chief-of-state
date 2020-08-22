@@ -28,7 +28,6 @@ node(NODE_TAG) {
                 earth \
                 -s JFROG_USERNAME \
                 -s JFROG_PASSWORD \
-                --no-cache \
                 +all
             ''')
         }
