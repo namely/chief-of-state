@@ -17,6 +17,8 @@ code:
     COPY -dir project sbt-dist .scalafmt.conf build.sbt .
     COPY -dir api protos service .
 
+    RUN --secret SOME_SECRET=+secrets/SOME_SECRET echo $SOME_SECRET
+
     # clean and get dependencies
     RUN \
         --secret JFROG_USERNAME=+secrets/JFROG_USERNAME \
