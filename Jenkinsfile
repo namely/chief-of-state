@@ -26,6 +26,12 @@ node(NODE_TAG) {
             EARTHLY_SECRETS = 'JFROG_USERNAME,JFROG_PASSWORD'
         }
 
+        sh('''
+            [ -z "$JFROG_USERNAME" ] && echo "JFROG_USERNAME empty"
+            [ -z "$JFROG_PASSWORD" ] && echo "JFROG_PASSWORD empty"
+            [ -z "$EARTHLY_SECRETS" ] && echo "EARTHLY_SECRETS empty"
+        ''')
+
         // TODO: use earthly secrets
         // sh('''
         //     touch .env
@@ -34,11 +40,15 @@ node(NODE_TAG) {
         // ''')
 
         sh('''
-            [ -z "$JFROG_USERNAME" ] && echo "JFROG_USERNAME empty"
-            [ -z "$JFROG_PASSWORD" ] && echo "JFROG_PASSWORD empty"
-            [ -z "$EARTHLY_SECRETS" ] && echo "EARTHLY_SECRETS empty"
-            earth +all
+            earth \
+            --secret JFROG_USERNAME \
+            --secret JFROG_PASSWORD \
+            +all
         ''')
+
+    }
+
+    stage("earth") {
 
     }
 }

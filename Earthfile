@@ -4,6 +4,8 @@
 # - brew install earthly
 # - earth build +all
 
+FROM registry.namely.land/namely/sbt:1.3.6-2.13.1
+
 all:
     # target running it all
     BUILD +test
