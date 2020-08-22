@@ -19,18 +19,34 @@ node(NODE_TAG) {
         sh('wget https://github.com/earthly/earthly/releases/latest/download/earth-linux-amd64 -O /usr/local/bin/earth && chmod +x /usr/local/bin/earth')
     }
 
-    stage("earth") {
-        withEnv({
+    stage("earth 1") {
+        environment({
             JFROG_USERNAME = credentials('data-jfrog-username')
             JFROG_PASSWORD = credentials('data-jfrog-password')
             EARTHLY_SECRETS = 'JFROG_USERNAME,JFROG_PASSWORD'
-        }) {
-            sh('''
-                [ -z "\$JFROG_USERNAME" ] && echo "JFROG_USERNAME empty"
-                [ -z "\$JFROG_PASSWORD" ] && echo "JFROG_PASSWORD empty"
-                [ -z "\$EARTHLY_SECRETS" ] && echo "EARTHLY_SECRETS empty"
-            ''')
+        })
+        sh("""
+            [ -z "$JFROG_USERNAME" ] && echo "JFROG_USERNAME empty"
+            [ -z "$JFROG_PASSWORD" ] && echo "JFROG_PASSWORD empty"
+            [ -z "$EARTHLY_SECRETS" ] && echo "EARTHLY_SECRETS empty"
+        """)
 
+        sh('''
+            earth \
+            --secret JFROG_USERNAME=\$JFROG_USERNAME \
+            --secret JFROG_PASSWORD=\$JFROG_PASSWORD \
+            --secret SOME_SECRET=xxx \
+            --no-cache \
+            +code
+        ''')
+
+    // }
+
+    stage("earth 2") {
+        withCredentials([
+            string(credentialsId: 'data-jfrog-username', variable: 'JFROG_USERNAME'),
+            string(credentialsId: 'data-jfrog-password', variable: 'JFROG_PASSWORD')
+        ]) {
             sh('''
                 earth \
                 --secret JFROG_USERNAME=\$JFROG_USERNAME \
@@ -40,6 +56,5 @@ node(NODE_TAG) {
                 +code
             ''')
         }
-
     }
 }
