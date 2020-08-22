@@ -41,8 +41,8 @@ node(NODE_TAG) {
 
         sh('''
             earth \
-            --secret JFROG_USERNAME \
-            --secret JFROG_PASSWORD \
+            --secret JFROG_USERNAME=$JFROG_USERNAME \
+            --secret JFROG_PASSWORD=$JFROG_PASSWORD \
             +all
         ''')
 
