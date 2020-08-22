@@ -37,7 +37,7 @@ node(NODE_TAG) {
             [ -z "$JFROG_USERNAME" ] && echo "JFROG_USERNAME empty"
             [ -z "$JFROG_PASSWORD" ] && echo "JFROG_PASSWORD empty"
             [ -z "$EARTHLY_SECRETS" ] && echo "EARTHLY_SECRETS empty"
-            earth -s JFROG_USERNAME -s JFROG_PASSWORD +all
+            earth +all
         ''')
 
     }
