@@ -20,33 +20,26 @@ node(NODE_TAG) {
     }
 
     stage("earth") {
-        environment {
+        script.withEnv({
             JFROG_USERNAME = credentials('data-jfrog-username')
             JFROG_PASSWORD = credentials('data-jfrog-password')
             EARTHLY_SECRETS = 'JFROG_USERNAME,JFROG_PASSWORD'
+        }) {
+            sh('''
+                [ -z "\$JFROG_USERNAME" ] && echo "JFROG_USERNAME empty"
+                [ -z "\$JFROG_PASSWORD" ] && echo "JFROG_PASSWORD empty"
+                [ -z "\$EARTHLY_SECRETS" ] && echo "EARTHLY_SECRETS empty"
+            ''')
+
+            sh('''
+                earth \
+                --secret JFROG_USERNAME=\$JFROG_USERNAME \
+                --secret JFROG_PASSWORD=\$JFROG_PASSWORD \
+                --secret SOME_SECRET=xxx \
+                --no-cache \
+                +code
+            ''')
         }
-
-        sh('''
-            [ -z "\$JFROG_USERNAME" ] && echo "JFROG_USERNAME empty"
-            [ -z "\$JFROG_PASSWORD" ] && echo "JFROG_PASSWORD empty"
-            [ -z "\$EARTHLY_SECRETS" ] && echo "EARTHLY_SECRETS empty"
-        ''')
-
-        // TODO: use earthly secrets
-        // sh('''
-        //     touch .env
-        //     echo "JFROG_USERNAME=$JFROG_USERNAME" >> .env
-        //     echo "JFROG_PASSWORD=$JFROG_PASSWORD" >> .env
-        // ''')
-
-        sh('''
-            earth \
-            --secret JFROG_USERNAME=\$JFROG_USERNAME \
-            --secret JFROG_PASSWORD=\$JFROG_PASSWORD \
-            --secret SOME_SECRET=xxx \
-            --no-cache \
-            +code
-        ''')
 
     }
 }
