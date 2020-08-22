@@ -42,16 +42,32 @@ node(NODE_TAG) {
     //     ''')
     // }
 
-    stage("earth 2") {
-        withCredentials([
+    // stage("earth 2") {
+    //     withCredentials([
+    //         string(credentialsId: 'data-jfrog-username', variable: 'JFROG_USERNAME'),
+    //         string(credentialsId: 'data-jfrog-password', variable: 'JFROG_PASSWORD')
+    //     ]) {
+    //         sh('''
+    //             earth \
+    //             --secret JFROG_USERNAME \
+    //             --secret JFROG_PASSWORD \
+    //             --secret SOME_SECRET=xxx \
+    //             --no-cache \
+    //             +code
+    //         ''')
+    //     }
+    // }
+
+    stage("earth 3") {
+        withEnv([
             string(credentialsId: 'data-jfrog-username', variable: 'JFROG_USERNAME'),
             string(credentialsId: 'data-jfrog-password', variable: 'JFROG_PASSWORD')
         ]) {
             sh('''
                 earth \
-                --secret JFROG_USERNAME \
-                --secret JFROG_PASSWORD \
-                --secret SOME_SECRET=xxx \
+                -s JFROG_USERNAME \
+                -s JFROG_PASSWORD \
+                -s SOME_SECRET=xxx \
                 --no-cache \
                 +code
             ''')
