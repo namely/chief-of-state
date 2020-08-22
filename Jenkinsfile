@@ -43,7 +43,8 @@ node(NODE_TAG) {
             earth \
             --secret JFROG_USERNAME=\$JFROG_USERNAME \
             --secret JFROG_PASSWORD=\$JFROG_PASSWORD \
-            +all
+            --no-cache \
+            +code
         ''')
 
     }
