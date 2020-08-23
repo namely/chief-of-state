@@ -20,7 +20,7 @@ node(NODE_TAG) {
     }
 
     stage("env stuff") {
-        sh('''printenv''')
+        sh('''printenv | sort''')
     }
 
     stage("git stuff") {
