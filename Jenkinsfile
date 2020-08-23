@@ -28,6 +28,7 @@ node(NODE_TAG) {
             git remote -v
             git tag --points-at HEAD
             git rev-parse --abbrev-ref HEAD
+            git branch
         ''')
     }
 
