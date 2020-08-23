@@ -19,9 +19,14 @@ node(NODE_TAG) {
         sh('wget https://github.com/earthly/earthly/releases/latest/download/earth-linux-amd64 -O /usr/local/bin/earth && chmod +x /usr/local/bin/earth')
     }
 
+    stage("env stuff") {
+        sh('''printenv''')
+    }
+
     stage("git stuff") {
         sh('''
-            git log
+            git remote -v
+            git tag --points-at HEAD
         ''')
     }
 
