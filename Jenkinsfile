@@ -21,6 +21,7 @@ node(NODE_TAG) {
 
     stage("env stuff") {
         sh('''printenv | sort''')
+
     }
 
     stage("git stuff") {
@@ -30,6 +31,16 @@ node(NODE_TAG) {
             git rev-parse --abbrev-ref HEAD
             git branch
         ''')
+    }
+
+    stage("build params") {
+        sh('''
+            jq -n '$ARGS.named' \
+            --arg tag_name $TAG_NAME \
+            >> .build_info.json
+        ''')
+
+        sh('''cat .build_info.json''')
     }
 
     // stage("earth") {
