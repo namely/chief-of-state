@@ -21,11 +21,6 @@ node(NODE_TAG) {
         }
     }
 
-    stage("get earth") {
-        sh('wget https://github.com/earthly/earthly/releases/latest/download/earth-linux-amd64 -O /usr/local/bin/earth && chmod +x /usr/local/bin/earth')
-        sh('earth --version')
-    }
-
     stage("checking environment") {
         sh('''printenv | sort''')
         sh('''
@@ -38,10 +33,16 @@ node(NODE_TAG) {
 
     stage("build params") {
         sh('''
-            printenv | grep -ie '^(BRANCH|BUILD|CHANGE|TAG)' | sort > .build.env
+            bash -c "printenv | grep -ie '^(BRANCH|BUILD|CHANGE|TAG)' | sort > .build.env"
         ''')
 
         sh('''cat .build.env''')
+    }
+
+
+    stage("get earth") {
+        sh('wget https://github.com/earthly/earthly/releases/latest/download/earth-linux-amd64 -O /usr/local/bin/earth && chmod +x /usr/local/bin/earth')
+        sh('earth --version')
     }
 
     stage("earth") {
