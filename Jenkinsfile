@@ -9,7 +9,7 @@ GIT_REPOSITORY = "git@github.com:namely/chief-of-state.git"
 
 node(NODE_TAG) {
 
-    stage("Checkout") {
+    stage("checkout") {
         /* clean directory and then checkout code */
         deleteDir()
         checkout scm
