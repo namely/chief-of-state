@@ -15,6 +15,12 @@ node(NODE_TAG) {
         checkout scm
     }
 
+    stage("Login") {
+        withCredentials([string(credentialsId: 'registry-namely-land', variable: 'DOCKER_LOGIN')]) {
+            sh('''docker login -u="namely+jenkins" -p="$DOCKER_LOGIN" registry.namely.land''')
+        }
+    }
+
     stage("get earth") {
         sh('wget https://github.com/earthly/earthly/releases/latest/download/earth-linux-amd64 -O /usr/local/bin/earth && chmod +x /usr/local/bin/earth')
         sh('earth --version')
