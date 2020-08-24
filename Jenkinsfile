@@ -19,12 +19,8 @@ node(NODE_TAG) {
         sh('wget https://github.com/earthly/earthly/releases/latest/download/earth-linux-amd64 -O /usr/local/bin/earth && chmod +x /usr/local/bin/earth')
     }
 
-    stage("env stuff") {
+    stage("checking environment") {
         sh('''printenv | sort''')
-
-    }
-
-    stage("git stuff") {
         sh('''
             git remote -v
             git tag --points-at HEAD
@@ -41,17 +37,17 @@ node(NODE_TAG) {
         sh('''cat .build.env''')
     }
 
-    // stage("earth") {
-    //     withCredentials([
-    //         string(credentialsId: 'data-jfrog-username', variable: 'JFROG_USERNAME'),
-    //         string(credentialsId: 'data-jfrog-password', variable: 'JFROG_PASSWORD')
-    //     ]) {
-    //         sh('''
-    //             earth \
-    //             -s JFROG_USERNAME \
-    //             -s JFROG_PASSWORD \
-    //             +all
-    //         ''')
-    //     }
-    // }
+    stage("earth") {
+        withCredentials([
+            string(credentialsId: 'data-jfrog-username', variable: 'JFROG_USERNAME'),
+            string(credentialsId: 'data-jfrog-password', variable: 'JFROG_PASSWORD')
+        ]) {
+            sh('''
+                earth \
+                -s JFROG_USERNAME \
+                -s JFROG_PASSWORD \
+                +all
+            ''')
+        }
+    }
 }
