@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat
 NODE_TAG = "alpine"
 PRODUCTION_BRANCH = "master"
 GIT_REPOSITORY = "git@github.com:namely/chief-of-state.git"
+CODECOV_TOKEN = ""
 
 node(NODE_TAG) {
 
@@ -21,15 +22,15 @@ node(NODE_TAG) {
         }
     }
 
-    stage("checking environment") {
-        sh('''printenv | sort''')
-        sh('''
-            git remote -v
-            git tag --points-at HEAD
-            git rev-parse --abbrev-ref HEAD
-            git branch
-        ''')
-    }
+    // stage("checking environment") {
+    //     sh('''printenv | sort''')
+    //     sh('''
+    //         git remote -v
+    //         git tag --points-at HEAD
+    //         git rev-parse --abbrev-ref HEAD
+    //         git branch
+    //     ''')
+    // }
 
     // TODO: convert to a shared-libraries function that extracts
     // event type (branch, pull, tag), branch name, tag name, pr number,
