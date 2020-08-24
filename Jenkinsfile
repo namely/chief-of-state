@@ -35,12 +35,10 @@ node(NODE_TAG) {
 
     stage("build params") {
         sh('''
-            jq -n '$ARGS.named' \
-            --arg tag_name $TAG_NAME \
-            >> .build_info.json
+            printenv | grep -ie '^(BRANCH|BUILD|CHANGE|TAG)' | sort > .build.env
         ''')
 
-        sh('''cat .build_info.json''')
+        sh('''cat .build.env''')
     }
 
     // stage("earth") {
