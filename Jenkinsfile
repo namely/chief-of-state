@@ -31,11 +31,12 @@ node(NODE_TAG) {
         ''')
     }
 
+    // TODO: convert to a shared-libraries function that extracts
+    // event type (branch, pull, tag), branch name, tag name, pr number,
+    // build number and computes the artifact version(s) for the build
+    // like the drone magic tag plugin
     stage("build params") {
-        sh('''
-            bash -c "printenv | grep -iE '^(BRANCH|BUILD|CHANGE|TAG)' | sort > .build.env"
-        ''')
-
+        sh('''bash -c "printenv | grep -iE '^(BRANCH|BUILD|CHANGE|TAG)' | sort > .build.env"''')
         sh('''cat .build.env''')
     }
 
