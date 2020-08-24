@@ -15,7 +15,7 @@ node(NODE_TAG) {
         checkout scm
     }
 
-    stage("Login") {
+    stage("docker login") {
         withCredentials([string(credentialsId: 'registry-namely-land', variable: 'DOCKER_LOGIN')]) {
             sh('''docker login -u="namely+jenkins" -p="$DOCKER_LOGIN" registry.namely.land''')
         }
