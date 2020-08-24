@@ -33,7 +33,7 @@ node(NODE_TAG) {
 
     stage("build params") {
         sh('''
-            bash -c "printenv | grep -ie '^(BRANCH|BUILD|CHANGE|TAG)' | sort > .build.env"
+            bash -c "printenv | grep -iE '^(BRANCH|BUILD|CHANGE|TAG)' | sort > .build.env"
         ''')
 
         sh('''cat .build.env''')
