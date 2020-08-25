@@ -49,7 +49,7 @@ node(NODE_TAG) {
         }
 
         // run
-        earthRunner.run("+all")
+        sh(earthRunner.getCommand("+all"))
     }
 
 
