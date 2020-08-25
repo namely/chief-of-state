@@ -53,6 +53,7 @@ node(NODE_TAG) {
             string(credentialsId: 'data-jfrog-password', variable: 'JFROG_PASSWORD')
         ]) {
             sh('''
+                FORCE_COLOR=1 \
                 earth \
                 -s JFROG_USERNAME \
                 -s JFROG_PASSWORD \
