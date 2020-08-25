@@ -120,9 +120,8 @@ class GrpcServiceImpl(sys: ActorSystem,
           )
 
         // handle not-found errors specifically
-        case Failure(e: GlobalException) if e.getMessage == AggregateCommandHandler.GET_STATE_NOT_FOUND_FAILURE.reason =>
-          log.error(s"entity not found")
-          Failure(new GrpcServiceException(status = Status.NOT_FOUND))
+        case Failure(e) if e.getMessage == AggregateCommandHandler.GET_STATE_NOT_FOUND_FAILURE.reason =>
+          Failure(new GrpcServiceException(status = Status.NOT_FOUND.withDescription("COS could not find entity")))
 
         // pass through other failures
         case Failure(e) =>
