@@ -7,6 +7,7 @@ NODE_TAG = "alpine"
 PRODUCTION_BRANCH = "master"
 GIT_REPOSITORY = "git@github.com:namely/chief-of-state.git"
 CODECOV_TOKEN = ""
+EARTH_VERSION = "latest"
 
 node(NODE_TAG) {
 
