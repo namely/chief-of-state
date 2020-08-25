@@ -64,7 +64,6 @@ docker-build:
     CMD []
 
     # build the image and push remotely (if all steps are successful)
-    # https://docs.earthly.dev/earthfile#save-image
     SAVE IMAGE --push registry.namely.land/namely/chief-of-state:${VERSION}
 
 it-test:
