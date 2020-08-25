@@ -44,6 +44,8 @@ docker-build:
     # bundle into a slimmer, runnable container
     FROM openjdk:8-jre-slim
 
+    ARG VERSION=dev
+
     USER root
 
     # create cos user for the service
@@ -62,8 +64,7 @@ docker-build:
 
     # build the image and push remotely (if all steps are successful)
     # https://docs.earthly.dev/earthfile#save-image
-    # SAVE IMAGE cos:latest --push registry.namely.land/namely/sample:<tag>
-    SAVE IMAGE cos:latest
+    SAVE IMAGE --push registry.namely.land/namely/chief-of-state:${VERSION}
 
 it-test:
     # use the image from +docker-build for IT test if desired
