@@ -34,8 +34,9 @@ test:
 docker-prep:
     # package the jars/executables
     FROM +code
+    ARG VERSION=dev
     # TODO: use a simpler linux packager
-    RUN sbt docker:stage
+    RUN VERSION=${VERISON} sbt docker:stage
     RUN chmod -R u=rX,g=rX service/target/docker/stage
     RUN chmod a+r service/target/docker/stage
     SAVE ARTIFACT service/target/docker/stage
