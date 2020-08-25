@@ -35,8 +35,13 @@ node(NODE_TAG) {
         earthRunner.addBuildArg("VERSION", buildInfo.version)
         earthRunner.addBuildArg("COMMIT_HASH", buildInfo.commitHashShort)
 
-        earthRunner.addSecret("JFROG_USERNAME")
-        earthRunner.addSecret("JFROG_PASSWORD")
+        withCredentials([
+            string(credentialsId: 'data-jfrog-username', variable: 'JFROG_USERNAME'),
+            string(credentialsId: 'data-jfrog-password', variable: 'JFROG_PASSWORD')
+        ]) {
+            earthRunner.addSecret("JFROG_USERNAME", "$JFROG_USERNAME")
+            earthRunner.addSecret("JFROG_PASSWORD", "$JFROG_PASSWORD")
+        }
 
         // add dynamic args
         if(buildInfo.shouldPush()) {
@@ -44,15 +49,7 @@ node(NODE_TAG) {
         }
 
         // run
-        withCredentials([
-            string(credentialsId: 'data-jfrog-username', variable: 'JFROG_USERNAME'),
-            string(credentialsId: 'data-jfrog-password', variable: 'JFROG_PASSWORD')
-        ]) {
-            earthRunner.run("+all")
-        }
-
-
-
+        earthRunner.run("+all")
     }
 
 
