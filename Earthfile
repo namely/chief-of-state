@@ -36,6 +36,7 @@ docker-prep:
     FROM +code
     ARG VERSION=dev
     # TODO: use a simpler linux packager
+    # https://www.scala-sbt.org/sbt-native-packager/formats/debian.html
     RUN sbt docker:stage
     RUN chmod -R u=rX,g=rX service/target/docker/stage
     RUN chmod a+r service/target/docker/stage
