@@ -34,7 +34,7 @@ test-local:
     SAVE IMAGE
 
 codecov:
-    FROM +run-test
+    FROM +test-local
     # can make codecov a separate target if needed
     RUN curl -s https://codecov.io/bash | bash || echo 'Codecov failed to upload'
 
