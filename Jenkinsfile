@@ -39,6 +39,8 @@ node(NODE_TAG) {
         earthRunner.addSecret("JFROG_USERNAME")
         earthRunner.addSecret("JFROG_PASSWORD")
 
+        earthRunner.addArg("--no-cache")
+
         // add dynamic args
         if(buildInfo.shouldPush()) {
             earthRunner.addArg("--push")
