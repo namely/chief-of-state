@@ -53,6 +53,4 @@ node(NODE_TAG) {
             sh earthRunner.getCommand("+all")
         }
     }
-
-
 }
