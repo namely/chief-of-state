@@ -87,9 +87,7 @@ class AggregateCommandHandler(
         log.error(s"[ChiefOfState] could not find state for entity ${command.entityId}")
         CommandHandlerResponse()
           .withFailedResponse(
-            FailedCommandHandlerResponse()
-              .withReason("entity not found")
-              .withCause(FailureCause.INTERNAL_ERROR)
+            AggregateCommandHandler.GET_STATE_NOT_FOUND_FAILURE
           )
       }
   }
@@ -269,4 +267,10 @@ object AggregateCommandHandler {
     Status.Code.OUT_OF_RANGE,
     Status.Code.PERMISSION_DENIED
   )
+
+  // constant failure for entity not found
+  val GET_STATE_NOT_FOUND_FAILURE: FailedCommandHandlerResponse =
+    FailedCommandHandlerResponse()
+      .withReason("entity not found")
+      .withCause(FailureCause.INTERNAL_ERROR)
 }
