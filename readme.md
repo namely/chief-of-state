@@ -1,6 +1,6 @@
 # Chief of State
 
-[![Build Status](https://drone.namely.land/api/badges/namely/chief-of-state/status.svg)](https://drone.namely.land/namely/chief-of-state)
+[![Build Status](https://jenkins.namely.land/buildStatus/icon?job=chief-of-state/chief-of-state/master)](https://jenkins.namely.land/blue/organizations/jenkins/chief-of-state%2Fchief-of-state)
 [![codecov](https://codecov.io/gh/namely/chief-of-state/branch/master/graph/badge.svg?token=82PZVNR2P1)](https://codecov.io/gh/namely/chief-of-state)
 
 ## Overview
@@ -37,20 +37,28 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 
 - Out of the box configurable k8 deployment.
 
-### Local dev
+### Locally build / test
 
-- For local development, the following pre-requisites are necessary:
-    - Install at least Java 8 [Java download](https://www.oracle.com/java/technologies/javase-downloads.html) on your local dev machine.
+```bash
+# install earth cli
+brew install earth
 
-    - [Sbt](https://www.scala-sbt.org/download.html) must be installed on the development machine.
+# add JFROG_USERNAME and JFROG_PASSWORD env vars
+# (if using .env, shortcut to load into environment)
+set -o allexport; source .env; set +o allexport
 
-    - [Docker](https://www.docker.com/get-started)  must be installed on the development machine.
+# locally build the image
+earth -s JFROG_USERNAME -s JFROG_PASSWORD +docker-build
 
-    - Set the [global](#global-environment-variables) in addition with the [local](#local-dev-options) ones. Check a sample docker-compose file inside the docker folder.
+# run local cluster with docker/docker-compose.yml
+docker-compose -f ./docker/docker-compose.yml --project-directory . up -d
 
-    - Run `sbt dockerComposeUp` to start the application
+# observe containers
+docker-compose -f ./docker/docker-compose.yml --project-directory . ps
 
-    - Run `sbt dockerComposeStop` to gracefully stop the application
+# shut it down
+docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
+```
 
 ### Inside a _docker-compose_ file
 

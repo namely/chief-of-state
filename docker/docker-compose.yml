@@ -46,7 +46,7 @@ services:
       - "9090:9090"
 
   chiefofstate:
-    image: chiefofstate:development<localBuild>
+    image: registry.namely.land/namely/chief-of-state:dev
     hostname: "chiefofstate"
     depends_on:
       - postgres
