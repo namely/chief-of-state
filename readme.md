@@ -51,7 +51,10 @@ set -o allexport; source .env; set +o allexport
 earth -s JFROG_USERNAME -s JFROG_PASSWORD +docker-build
 
 # run local cluster with docker/docker-compose.yml
-docker-compose -f ./docker/docker-compose.yml up
+docker-compose -f ./docker/docker-compose.yml --project-directory . up -d
+
+# observe containers
+docker-compose -f ./docker/docker-compose.yml --project-directory . ps
 
 # shut it down
 docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
