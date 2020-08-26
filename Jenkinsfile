@@ -44,12 +44,13 @@ node(NODE_TAG) {
             earthRunner.addArg("--push")
         }
 
-        // run
+        // provide a context with the secrets we need as env vars
         withCredentials([
             string(credentialsId: 'data-jfrog-username', variable: 'JFROG_USERNAME'),
             string(credentialsId: 'data-jfrog-password', variable: 'JFROG_PASSWORD')
         ]) {
-            sh(earthRunner.getCommand("+all"))
+            // run the earthly command that was built
+            sh earthRunner.getCommand("+all")
         }
     }
 
