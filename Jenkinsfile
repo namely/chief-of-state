@@ -6,7 +6,7 @@ import java.text.SimpleDateFormat
 NODE_TAG = "alpine"
 PRODUCTION_BRANCH = "master"
 GIT_REPOSITORY = "git@github.com:namely/chief-of-state.git"
-CODECOV_TOKEN = ""
+CODECOV_TOKEN = "a2d86796-50b0-4244-a850-d96ede6f917e"
 EARTH_VERSION = "latest"
 
 node(NODE_TAG) {
@@ -34,6 +34,7 @@ node(NODE_TAG) {
         // add constant args
         earthRunner.addBuildArg("VERSION", buildInfo.version)
         earthRunner.addBuildArg("COMMIT_HASH", buildInfo.commitHashShort)
+        earthRunner.addBuildArg("CODECOV_TOKEN", CODECOV_TOKEN)
 
         earthRunner.addSecret("JFROG_USERNAME")
         earthRunner.addSecret("JFROG_PASSWORD")

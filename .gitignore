@@ -21,3 +21,4 @@ project/metals.sbt
 .DS_Store
 protos/chief_of_state/target
 .target/
+.vscode/

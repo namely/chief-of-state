@@ -8,7 +8,7 @@ FROM registry.namely.land/namely/sbt:1.3.6-2.13.1
 
 all:
     # target running it all
-    BUILD +test
+    BUILD +test-all
     BUILD +docker-build
 
 code:
@@ -26,10 +26,21 @@ code:
     # RUN sbt clean cleanFiles
     SAVE IMAGE
 
-test:
+test-local:
     FROM +code
+    ARG CODECOV_TOKEN=""
+    ENV CODECOV_TOKEN=${CODECOV_TOKEN}
     RUN sbt coverage test coverageAggregate
-    # RUN curl -s https://codecov.io/bash | bash || echo 'Codecov failed to upload'
+    SAVE IMAGE
+
+codecov:
+    FROM +run-test
+    # can make codecov a separate target if needed
+    RUN curl -s https://codecov.io/bash | bash || echo 'Codecov failed to upload'
+
+test-all:
+    BUILD +test-local
+    BUILD +codecov
 
 docker-prep:
     # package the jars/executables
