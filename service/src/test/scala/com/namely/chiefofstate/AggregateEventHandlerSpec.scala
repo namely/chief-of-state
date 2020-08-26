@@ -7,11 +7,15 @@ import com.google.protobuf.any.Any
 import com.namely.protobuf.chief_of_state.common
 import com.namely.protobuf.chief_of_state.persistence.{Event, State}
 import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened}
-import com.namely.protobuf.chief_of_state.writeside.{HandleEventRequest, HandleEventResponse, WriteSideHandlerServiceClient}
+import com.namely.protobuf.chief_of_state.writeside.{
+  HandleEventRequest,
+  HandleEventResponse,
+  WriteSideHandlerServiceClient
+}
 import com.namely.chiefofstate.config.HandlerSetting
 import io.grpc.Status
 import io.superflat.lagompb.GlobalException
-import io.superflat.lagompb.protobuf.core.MetaData
+import io.superflat.lagompb.protobuf.v1.core.MetaData
 import io.superflat.lagompb.testkit.BaseSpec
 import org.scalamock.scalatest.MockFactory
 
@@ -69,7 +73,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
       val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
       val result: State = eventHandler.handle(Event().withEvent(Any.pack(event)), priorState, eventMeta)
       result shouldBe (State().withCurrentState(Any.pack(resultingState)))
-      result.getCurrentState.unpack[Account] shouldBe (resultingState)
+      result.getCurrentState.unpack[Account] shouldBe resultingState
     }
 
     "handle event when event type is not specified in handler settings as expected" in {

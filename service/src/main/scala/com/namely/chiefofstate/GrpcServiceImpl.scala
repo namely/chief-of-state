@@ -15,7 +15,8 @@ import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
 import com.namely.chiefofstate.config.SendCommandSettings
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Failure
+import scala.util.{Try, Success, Failure}
+import io.superflat.lagompb.GlobalException
 
 class GrpcServiceImpl(sys: ActorSystem,
                       clusterSharding: ClusterSharding,
@@ -108,12 +109,25 @@ class GrpcServiceImpl(sys: ActorSystem,
       )
     } else {
       sendCommand[GetStateRequest, State](clusterSharding, in.entityId, in, Map.empty[String, String])
-        .map((namelyState: StateAndMeta[State]) => {
-          GetStateResponse(
-            state = namelyState.state.currentState,
-            meta = Some(Util.toCosMetaData(namelyState.metaData))
+      .transform({
+        // transform success to a GetStateResponse
+        case Success(namelyState) =>
+          Success(
+            GetStateResponse(
+              state = namelyState.state.currentState,
+              meta = Some(Util.toCosMetaData(namelyState.metaData))
+            )
           )
-        })
+
+        // handle not-found errors specifically
+        case Failure(e) if e.getMessage == AggregateCommandHandler.GET_STATE_NOT_FOUND_FAILURE.reason =>
+          Failure(new GrpcServiceException(status = Status.NOT_FOUND.withDescription("COS could not find entity")))
+
+        // pass through other failures
+        case Failure(e) =>
+          log.error(s"unhandled error in getState", e)
+          Failure(e)
+      })
     }
   }
 }

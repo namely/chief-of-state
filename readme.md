@@ -5,6 +5,8 @@
 
 ## Overview
 
+![Architecture Diagram](img/architecture.png?raw=true "Title")
+
 Chief-Of-State is a **_gRPC distributed event sourcing_** application that provides scalable, configurable, events and state management strategies to relieve this responsibility from the developers.
 
 Chief-Of-State is language agnostic, which means that services can be written in any language that supports gRPC.
@@ -67,6 +69,7 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 | LOG_LEVEL | The possible values are: _**DEBUG**_, _**INFO**_, _**WARN**_, _**ERROR**_ | DEBUG |
 | COS_ADDRESS | container host | 0.0.0.0 |
 | COS_PORT | container port | 9000 |
+| COS_STORES_AUTO_CREATE | when enabled create both writeside journal/snapshot store tables and readside offset store if readside settings enabled. | false |
 | COS_POSTGRES_USER | journal, snapshot and read side offsets store username | postgres |
 | COS_POSTGRES_PASSWORD | journal, snapshot and read side offsets store password | changeme |
 | COS_POSTGRES_HOST | journal, snapshot and read side offsets store host | localhost |

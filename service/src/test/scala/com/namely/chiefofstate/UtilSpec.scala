@@ -2,7 +2,7 @@ package com.namely.chiefofstate
 
 import com.google.protobuf.timestamp.Timestamp
 import com.namely.protobuf.chief_of_state.common.{MetaData => CosMetaData}
-import io.superflat.lagompb.protobuf.core.{MetaData => LagompbMetaData}
+import io.superflat.lagompb.protobuf.v1.core.{MetaData => LagompbMetaData}
 import io.superflat.lagompb.testkit.BaseSpec
 
 class UtilSpec extends BaseSpec {
