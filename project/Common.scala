@@ -9,7 +9,6 @@ import sbt.{compilerPlugin, plugins, url, AutoPlugin, Credentials, CrossVersion,
 import scoverage.ScoverageKeys.{coverageExcludedPackages, coverageFailOnMinimum, coverageMinimum}
 import Dependencies.Versions
 
-
 object Common extends AutoPlugin {
   override def requires: Plugins = plugins.JvmPlugin
 
