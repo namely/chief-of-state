@@ -10,7 +10,7 @@ import com.namely.protobuf.chief_of_state.writeside.{
   WriteSideHandlerServiceClient
 }
 import io.superflat.lagompb.{EventHandler, GlobalException}
-import io.superflat.lagompb.protobuf.core.MetaData
+import io.superflat.lagompb.protobuf.v1.core.MetaData
 import org.slf4j.{Logger, LoggerFactory}
 import scalapb.GeneratedMessage
 

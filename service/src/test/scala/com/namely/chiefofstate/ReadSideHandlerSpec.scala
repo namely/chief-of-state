@@ -16,12 +16,9 @@ import com.namely.protobuf.chief_of_state.readside.{
   ReadSideHandlerServiceClient
 }
 import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened}
-import com.namely.chiefofstate.config.{
-  HandlerSetting,
-  ReadSideSetting
-}
+import com.namely.chiefofstate.config.{HandlerSetting, ReadSideSetting}
 import io.grpc.Status
-import io.superflat.lagompb.protobuf.core.MetaData
+import io.superflat.lagompb.protobuf.v1.core.MetaData
 import io.superflat.lagompb.testkit.BaseActorTestKit
 import io.superflat.lagompb.GlobalException
 import io.superflat.lagompb.encryption.{EncryptionAdapter, NoEncryption}
