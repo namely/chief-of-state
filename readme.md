@@ -43,7 +43,8 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 # install earth cli
 brew install earth
 
-# load .env into environment
+# add JFROG_USERNAME and JFROG_PASSWORD env vars
+# (if using .env, shortcut to load into environment)
 set -o allexport; source .env; set +o allexport
 
 # locally build the image
