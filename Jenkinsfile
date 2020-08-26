@@ -49,10 +49,6 @@ node(NODE_TAG) {
             string(credentialsId: 'data-jfrog-username', variable: 'JFROG_USERNAME'),
             string(credentialsId: 'data-jfrog-password', variable: 'JFROG_PASSWORD')
         ]) {
-            // temporary workaround (earthfile copies this in so
-            // local dev doesn't have to pass around credentials
-            // in env vars)
-            sh "touch .env"
             // run the earthly command that was built
             sh earthRunner.getCommand("+all")
         }

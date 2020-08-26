@@ -16,8 +16,6 @@ code:
     FROM registry.namely.land/namely/sbt:1.3.6-2.13.1
     COPY -dir project sbt-dist .scalafmt.conf build.sbt .
     COPY -dir api protos service .
-    # TODO: probably remove this, this is for local dev
-    COPY -dir .env .
 
     # clean and get dependencies
     RUN \
