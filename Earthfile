@@ -40,7 +40,7 @@ codecov:
     ARG BRANCH_NAME=""
     ARG BUILD_NUMBER=""
     # RUN curl -s https://codecov.io/bash  | bash || echo 'Codecov failed to upload'
-    RUN curl -s https://codecov.io/bash | bash -s - -B ${BRANCH_NAME} -C ${COMMIT_HASH} -b ${BUILD_NUMBER}
+    RUN curl -s https://codecov.io/bash | bash -s - -B "${BRANCH_NAME}" -C "${COMMIT_HASH}" -b "${BUILD_NUMBER}"
 
 test-all:
     BUILD +test-local
