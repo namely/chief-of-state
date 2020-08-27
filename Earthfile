@@ -50,14 +50,16 @@ docker-prep:
 
 docker-build:
     # bundle into a slimmer, runnable container
-    FROM openjdk:8-jre-slim
+    FROM openjdk:8-jre-alpine
 
     ARG VERSION=dev
 
     USER root
 
+    RUN apk add --no-cache bash
+
     # create cos user for the service
-    RUN groupadd -r cos && useradd --gid cos -r --shell /bin/false cos
+    RUN adduser -S cos -s /bin/false
 
     # copy over files
     WORKDIR /opt/docker
