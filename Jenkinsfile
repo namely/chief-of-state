@@ -42,7 +42,11 @@ node(NODE_TAG) {
 
         // add dynamic args
         if(buildInfo.shouldPush()) {
+            // add --push if it should upload
             earthRunner.addArg("--push")
+        } else {
+            // else output nothing (speed up PR builds)
+            earthRunner.addArg("--no-output")
         }
 
         // provide a context with the secrets we need as env vars
