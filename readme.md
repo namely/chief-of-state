@@ -41,7 +41,7 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 
 ```bash
 # install earth cli
-brew install earth
+brew install earthly
 
 # add JFROG_USERNAME and JFROG_PASSWORD env vars
 # (if using .env, shortcut to load into environment)
