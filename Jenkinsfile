@@ -35,6 +35,7 @@ node(NODE_TAG) {
         earthRunner.addBuildArg("VERSION", buildInfo.version)
         earthRunner.addBuildArg("COMMIT_HASH", buildInfo.commitHash)
         earthRunner.addBuildArg("CODECOV_TOKEN", CODECOV_TOKEN)
+        earthRunner.addBuildArg("BRANCH_NAME", buildInfo.branchName)
 
         earthRunner.addSecret("JFROG_USERNAME")
         earthRunner.addSecret("JFROG_PASSWORD")

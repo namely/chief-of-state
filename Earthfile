@@ -36,7 +36,11 @@ test-local:
 codecov:
     FROM +test-local
     # can make codecov a separate target if needed
-    RUN curl -s https://codecov.io/bash | bash || echo 'Codecov failed to upload'
+    ARG COMMIT_HASH=""
+    ARG BRANCH_NAME=""
+    ARG BUILD_NUMBER=""
+    # RUN curl -s https://codecov.io/bash  | bash || echo 'Codecov failed to upload'
+    RUN bash <(curl -s https://codecov.io/bash) -B ${BRANCH_NAME} -C ${COMMIT_HASH} -b ${BUILD_NUMBER}
 
 test-all:
     BUILD +test-local
