@@ -1,9 +1,3 @@
-#Earthfile
-
-# SETUP:
-# - brew install earthly
-# - earth build +all
-
 FROM registry.namely.land/namely/sbt:1.3.6-2.13.1
 
 all:
@@ -52,7 +46,6 @@ docker-prep:
     # https://www.scala-sbt.org/sbt-native-packager/formats/debian.html
     RUN sbt docker:stage
     RUN chmod -R u=rX,g=rX service/target/docker/stage
-    RUN chmod a+r service/target/docker/stage
     SAVE ARTIFACT service/target/docker/stage
 
 docker-build:
@@ -68,8 +61,7 @@ docker-build:
 
     # copy over files
     WORKDIR /opt/docker
-    COPY --dir +docker-prep/stage/opt +docker-prep/stage/1/opt +docker-prep/stage/2/opt /
-    RUN chmod -R a+x /opt/docker/bin/chiefofstate && chown -R cos:root /opt/docker/bin/chiefofstate
+    COPY --chown cos:root --dir +docker-prep/stage/opt +docker-prep/stage/1/opt +docker-prep/stage/2/opt /
 
     # set runtime user to cos
     USER cos
