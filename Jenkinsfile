@@ -33,7 +33,7 @@ node(NODE_TAG) {
 
         // add constant args
         earthRunner.addBuildArg("VERSION", buildInfo.version)
-        earthRunner.addBuildArg("COMMIT_HASH", buildInfo.commitHashShort)
+        earthRunner.addBuildArg("COMMIT_HASH", buildInfo.commitHash)
         earthRunner.addBuildArg("CODECOV_TOKEN", CODECOV_TOKEN)
 
         earthRunner.addSecret("JFROG_USERNAME")
