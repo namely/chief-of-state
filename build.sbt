@@ -1,6 +1,6 @@
 import play.grpc.gen.scaladsl.{PlayScalaClientCodeGenerator, PlayScalaServerCodeGenerator}
 
-enablePlugins(JavaAppPackaging, AshScriptPlugin)
+enablePlugins(DockerComposePlugin)
 dockerImageCreationTask := (Docker / publishLocal in `chiefofstate`).value
 
 lazy val root = project
@@ -21,11 +21,7 @@ lazy val `chiefofstate` = project
   .enablePlugins(PlayAkkaHttp2Support)
   .enablePlugins(LagomImpl)
   .enablePlugins(LagomAkka)
-  .settings(
-    name := "chiefofstate",
-    javaAgents += Dependencies.Compile.KanelaAgent,
-    dockerBaseImage := "openjdk:8-jre-alpine"
-  )
+  .settings(name := "chiefofstate", javaAgents += Dependencies.Compile.KanelaAgent)
   .dependsOn(protogen, api)
 
 lazy val protogen = project
