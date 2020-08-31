@@ -1,6 +1,6 @@
 #!/usr/bin/env groovy
 /* This library allows you to access global jenkins functions - see https://www.github.com/namely/jenkins-shared-libraries */
-@Library('jenkins-shared-libraries@add-earthly-helpers')
+@Library('jenkins-shared-libraries@v0.1.0')
 import java.text.SimpleDateFormat
 
 NODE_TAG = "alpine"
