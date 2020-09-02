@@ -32,9 +32,12 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
   // reflect encryption from config
   override def protoEncryption: Option[ProtoEncryption] = EncryptionSetting(config).encryption
 
+  // making an implicit actor system provider for the generated clients
+  implicit lazy val sys = actorSystem
+
   // wiring up the grpc for the writeSide client
   lazy val writeSideHandlerServiceClient: WriteSideHandlerServiceClient = WriteSideHandlerServiceClient(
-    GrpcClientSettings.fromConfig("chief_of_state.WriteSideHandlerService")(actorSystem)
+    GrpcClientSettings.fromConfig("chief_of_state.WriteSideHandlerService")
   )
 
   // let us wire up the handler settings
