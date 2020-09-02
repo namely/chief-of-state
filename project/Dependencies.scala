@@ -5,7 +5,7 @@ object Dependencies {
   // Package versions
   object Versions {
     val Scala213 = "2.13.1"
-    val LagompVersion = "0.7.3"
+    val LagomPbVersion = "0.7.3"
     val AkkaVersion: String = "2.6.8"
     val KanelaAgentVersion = "1.0.5"
     val SilencerVersion = "1.6.0"
@@ -13,15 +13,15 @@ object Dependencies {
   }
 
   object Compile {
-    val Lagompb: ModuleID = "io.superflat" %% "lagompb-core" % Versions.LagompVersion
-    val LagompbReadSide = "io.superflat" %% "lagompb-readside" % Versions.LagompVersion
+    val Lagompb: ModuleID = "io.superflat" %% "lagompb-core" % Versions.LagomPbVersion
+    val LagompbReadSide = "io.superflat" %% "lagompb-readside" % Versions.LagomPbVersion
 
     val KanelaAgent = "io.kamon" % "kanela-agent" % Versions.KanelaAgentVersion
     val KamonAkkaGrpc = ("com.github.nezasa" %% "kamon-akka-grpc" % Versions.KamonAkkaGrpcVersion).intransitive()
   }
 
   object Runtime {
-    val LagompbRuntime: ModuleID = "io.superflat" %% "lagompb-core" % Versions.LagompVersion % "protobuf"
+    val LagompbRuntime: ModuleID = "io.superflat" %% "lagompb-core" % Versions.LagomPbVersion % "protobuf"
   }
 
   object Test {
