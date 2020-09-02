@@ -7,7 +7,7 @@ object Dependencies {
     val Scala213 = "2.13.1"
     val LagomPbVersion = "0.7.3"
     val AkkaVersion: String = "2.6.8"
-    val KanelaAgentVersion = "1.0.5"
+    val KanelaAgentVersion = "1.0.6"
     val SilencerVersion = "1.6.0"
     val KamonAkkaGrpcVersion = "0.0.9"
   }
