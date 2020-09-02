@@ -22,3 +22,4 @@ project/metals.sbt
 protos/chief_of_state/target
 .target/
 .vscode/
+metals.sbt

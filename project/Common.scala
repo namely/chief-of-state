@@ -42,6 +42,8 @@ object Common extends AutoPlugin {
         "-Xfatal-warnings",
         "-deprecation",
         "-Xlint",
+        "-P:silencer:checkUnused",
+        "-P:silencer:pathFilters=.protogen[/].*",
         "-P:silencer:globalFilters=Unused import;deprecated",
         "-P:silencer:globalFilters=Marked as deprecated in proto file;The Materializer now has all methods the ActorMaterializer used to have;Could not find any member to link;unbalanced or unclosed heading"
       ),
