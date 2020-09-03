@@ -54,13 +54,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
           HandleEventRequest()
             .withEvent(Any.pack(event))
             .withCurrentState(priorState)
-            .withMeta(
-              common
-                .MetaData()
-                .withData(eventMeta.data)
-                .withRevisionDate(eventMeta.getRevisionDate)
-                .withRevisionNumber(eventMeta.revisionNumber)
-            )
+            .withMeta(Util.toCosMetaData(eventMeta))
         )
         .returning(
           Future.successful(
@@ -104,13 +98,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
           HandleEventRequest()
             .withEvent(Any.pack(event))
             .withCurrentState(priorState)
-            .withMeta(
-              common
-                .MetaData()
-                .withData(eventMeta.data)
-                .withRevisionDate(eventMeta.getRevisionDate)
-                .withRevisionNumber(eventMeta.revisionNumber)
-            )
+            .withMeta(Util.toCosMetaData(eventMeta))
         )
         .returning(
           Future.successful(
@@ -151,13 +139,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
           HandleEventRequest()
             .withEvent(Any.pack(event))
             .withCurrentState(priorState)
-            .withMeta(
-              common
-                .MetaData()
-                .withData(eventMeta.data)
-                .withRevisionDate(eventMeta.getRevisionDate)
-                .withRevisionNumber(eventMeta.revisionNumber)
-            )
+            .withMeta(Util.toCosMetaData(eventMeta))
         )
         .returning(
           Future.successful(
@@ -197,13 +179,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
           HandleEventRequest()
             .withEvent(Any.pack(event))
             .withCurrentState(priorState)
-            .withMeta(
-              common
-                .MetaData()
-                .withData(eventMeta.data)
-                .withRevisionDate(eventMeta.getRevisionDate)
-                .withRevisionNumber(eventMeta.revisionNumber)
-            )
+            .withMeta(Util.toCosMetaData(eventMeta))
         )
         .returning(
           Future.successful(
@@ -244,13 +220,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
           HandleEventRequest()
             .withEvent(Any.pack(event))
             .withCurrentState(priorState)
-            .withMeta(
-              common
-                .MetaData()
-                .withData(eventMeta.data)
-                .withRevisionDate(eventMeta.getRevisionDate)
-                .withRevisionNumber(eventMeta.revisionNumber)
-            )
+            .withMeta(Util.toCosMetaData(eventMeta))
         )
         .returning(Future.failed(new GrpcServiceException(Status.INTERNAL)))
 
@@ -285,13 +255,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
           HandleEventRequest()
             .withEvent(Any.pack(event))
             .withCurrentState(priorState)
-            .withMeta(
-              common
-                .MetaData()
-                .withData(eventMeta.data)
-                .withRevisionDate(eventMeta.getRevisionDate)
-                .withRevisionNumber(eventMeta.revisionNumber)
-            )
+            .withMeta(Util.toCosMetaData(eventMeta))
         )
         .throws(new RuntimeException("broken"))
 

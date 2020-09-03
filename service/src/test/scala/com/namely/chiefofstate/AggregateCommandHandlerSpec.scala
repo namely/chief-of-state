@@ -27,6 +27,7 @@ import org.scalamock.scalatest.MockFactory
 
 import scala.concurrent.Future
 import scala.util.{Success, Try}
+import io.superflat.lagompb.ProtosRegistry
 
 class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
 
@@ -65,10 +66,12 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
   }
 
   "main commandHandler" should {
-    "call the local state handler when given a GetStateRequest" in {
-      val cmd: Any = Any.pack(GetStateRequest.defaultInstance)
-      val priorState: Any = Any.pack(Account.defaultInstance)
+    "unmarshall in the parent handler" in {
+      ProtosRegistry.load()
+      val cmd = Any.pack(GetStateRequest.defaultInstance)
+      val priorState: Any = Any.pack(Account.defaultInstance.withAccountNumber(("123")))
       val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
+        .withRevisionNumber(1L)
 
       val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, null, testHandlerSetting)
       val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
@@ -82,10 +85,27 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       )
     }
 
+    "call the local state handler when given a GetStateRequest" in {
+      val cmd = GetStateRequest.defaultInstance
+      val priorState: Any = Any.pack(Account.defaultInstance)
+      val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
+        .withRevisionNumber(1L)
+
+      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val result: Try[CommandHandlerResponse] = cmdhandler.handleTyped(cmd, priorState, priorEventMeta)
+
+      result shouldBe Success(
+        CommandHandlerResponse()
+          .withSuccessResponse(
+            SuccessCommandHandlerResponse()
+              .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
+          )
+      )
+    }
+
     "call the remote handler when given a RemoteCommand" in {
       val innerCmd = Any.pack(AccountOpened.defaultInstance)
-      val outerCmd = RemoteCommand().withCommand(innerCmd)
-      val cmd: Any = Any.pack(outerCmd)
+      val cmd = RemoteCommand().withCommand(innerCmd)
       val priorState: Any = Any.pack(Account.defaultInstance)
       val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
 
@@ -102,7 +122,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
 
       val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, testHandlerSetting)
 
-      val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
+      val result: Try[CommandHandlerResponse] = cmdhandler.handleTyped(cmd, priorState, priorEventMeta)
 
       result shouldBe Success(
         CommandHandlerResponse()
@@ -149,6 +169,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
 
       val currentState: Any = Any.pack(Account.defaultInstance)
       val currentMeta: LagompbMetaData = LagompbMetaData.defaultInstance
+        .withRevisionNumber(1L)
 
       // let us create a mock instance of the handler service client
       val mockRequestBuilder = getMockRequestBuilder
@@ -168,7 +189,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
         .invoke(_: HandleCommandRequest))
         .expects(
           HandleCommandRequest()
-            .withCommand(Any.pack(cmd))
+            .withCommand(cmd.getCommand)
             .withCurrentState(currentState)
             .withMeta(Util.toCosMetaData(currentMeta))
         )
@@ -227,9 +248,11 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
     "handle command successfully as expected with an event to persist" in {
       val priorState: Any = Any.pack(Account.defaultInstance)
       val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
+        .withRevisionNumber(1L)
 
+      val innerCmd = Any.pack(OpenAccount.defaultInstance)
       val cmd = RemoteCommand()
-        .withCommand(Any.pack(OpenAccount.defaultInstance))
+        .withCommand(innerCmd)
 
       val event = Any.pack(
         AccountOpened()
@@ -245,7 +268,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
         .invoke(_: HandleCommandRequest))
         .expects(
           HandleCommandRequest()
-            .withCommand(Any.pack(cmd))
+            .withCommand(innerCmd)
             .withCurrentState(priorState)
             .withMeta(Util.toCosMetaData(priorEventMeta))
         )
@@ -450,7 +473,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val mockGrpcClient = mock[WriteSideHandlerServiceClient]
       val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
 
-      val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
+      val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance.withRevisionNumber(1L)
 
       val cmd = GetStateRequest(entityId = "x")
 
