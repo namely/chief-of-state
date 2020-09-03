@@ -14,7 +14,7 @@ import com.namely.protobuf.chief_of_state.v1beta1.writeside.{
 import com.namely.protobuf.chief_of_state.v1beta1.writeside.HandleCommandResponse.ResponseType.{PersistAndReply, Reply}
 import com.namely.chiefofstate.config.HandlerSetting
 import io.grpc.{Status, StatusRuntimeException}
-import io.superflat.lagompb.TypedCommandHandler
+import io.superflat.lagompb.{CommandHandler, ProtosRegistry}
 import io.superflat.lagompb.protobuf.v1.core._
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -33,11 +33,34 @@ class AggregateCommandHandler(
   actorSystem: ActorSystem,
   writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
   handlerSetting: HandlerSetting
-) extends TypedCommandHandler[Any](actorSystem) {
+) extends CommandHandler {
 
   import AggregateCommandHandler.GRPC_FAILED_VALIDATION_STATUSES
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
+
+  /**
+    * entrypoint command handler that unpacks the command proto and calls
+    * the typed parameter
+    *
+    * @param command
+    * @param priorState
+    * @param priorEventMeta
+    * @return
+    */
+  final def handle(command: Any, priorState: Any, priorEventMeta: MetaData): Try[CommandHandlerResponse] = {
+    ProtosRegistry.unpackAny(command) match {
+      case Failure(exception) =>
+        Failure(exception)
+
+      case Success(innerCommand) =>
+        handleTyped(
+          command = innerCommand,
+          priorState = priorState,
+          priorEventMeta = priorEventMeta
+        )
+    }
+  }
 
   /**
    * general handle command implementation
