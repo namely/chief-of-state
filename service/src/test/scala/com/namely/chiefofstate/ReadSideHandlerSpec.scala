@@ -9,7 +9,6 @@ import akka.grpc.scaladsl.SingleResponseRequestBuilder
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
 import com.namely.protobuf.chief_of_state.v1beta1.common
-import com.namely.protobuf.chief_of_state.v1beta1.persistence.{Event, State}
 import com.namely.protobuf.chief_of_state.v1beta1.readside.{
   HandleReadSideRequest,
   HandleReadSideResponse,
@@ -55,20 +54,16 @@ class ReadSideHandlerSpec
     val encryptionAdapter: EncryptionAdapter = new EncryptionAdapter(Some(NoEncryption))
 
     "handle events and state as expected when response was successful" in {
-      val state: State = State.defaultInstance
+      val state: Any = Any.pack(Account.defaultInstance)
       val eventMeta: MetaData = MetaData.defaultInstance
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
-      val eventsProtos: Seq[String] =
-        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-
-      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
-
-      val event = AccountOpened()
+      val event = Any.pack(
+        AccountOpened()
         .withAccountNumber(accountNumber)
         .withAccountUuid(accouuntId)
+      )
 
       val readSideEvent = ReadSideEvent(
         event = event,
@@ -93,16 +88,9 @@ class ReadSideHandlerSpec
       (requestBuilder.invoke _)
         .expects(
           HandleReadSideRequest()
-            .withEvent(Any.pack(event))
-            .withState(state.getCurrentState)
-            .withMeta(
-              common
-                .MetaData()
-                .withEntityId(eventMeta.entityId)
-                .withData(eventMeta.data)
-                .withRevisionDate(eventMeta.getRevisionDate)
-                .withRevisionNumber(eventMeta.revisionNumber)
-            )
+            .withEvent(event)
+            .withState(state)
+            .withMeta(Util.toCosMetaData(eventMeta))
         )
         .returning(
           Future.successful(
@@ -120,6 +108,10 @@ class ReadSideHandlerSpec
         .expects()
         .returning(requestBuilder)
 
+      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(state))
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(event))
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
+
       val readSideProcessor =
         new ReadSideHandler(
           defaultGrpcReadSideSetting,
@@ -132,8 +124,7 @@ class ReadSideHandlerSpec
       val result: DBIO[Done] =
         readSideProcessor.handle(
           ReadSideEvent(
-            event = Event()
-              .withEvent(Any.pack(event)),
+            event = event,
             eventTag = readSideEvent.eventTag,
             state = state,
             metaData = eventMeta
@@ -144,20 +135,16 @@ class ReadSideHandlerSpec
     }
 
     "handle events and state as expected when response was not successful" in {
-      val state: State = State.defaultInstance
+      val state: Any = Any.pack(AccountOpened.defaultInstance)
       val eventMeta: MetaData = MetaData.defaultInstance
       val accountId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
-      val eventsProtos: Seq[String] =
-        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-
-      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
-
-      val event = AccountOpened()
+      val event = Any.pack(
+        AccountOpened()
         .withAccountNumber(accountNumber)
         .withAccountUuid(accountId)
+      )
 
       val readSideEvent = ReadSideEvent(
         event = event,
@@ -182,16 +169,9 @@ class ReadSideHandlerSpec
       (requestBuilder.invoke _)
         .expects(
           HandleReadSideRequest()
-            .withEvent(Any.pack(event))
-            .withState(state.getCurrentState)
-            .withMeta(
-              common
-                .MetaData()
-                .withEntityId(eventMeta.entityId)
-                .withData(eventMeta.data)
-                .withRevisionDate(eventMeta.getRevisionDate)
-                .withRevisionNumber(eventMeta.revisionNumber)
-            )
+            .withEvent(event)
+            .withState(state)
+            .withMeta(Util.toCosMetaData(eventMeta))
         )
         .returning(
           Future.successful(
@@ -209,6 +189,10 @@ class ReadSideHandlerSpec
         .expects()
         .returning(requestBuilder)
 
+      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(state))
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(event))
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
+
       val readSideProcessor =
         new ReadSideHandler(
           defaultGrpcReadSideSetting,
@@ -220,8 +204,7 @@ class ReadSideHandlerSpec
       an[GlobalException] shouldBe thrownBy(
         readSideProcessor.handle(
           ReadSideEvent(
-            event = Event()
-              .withEvent(Any.pack(event)),
+            event = event,
             eventTag = readSideEvent.eventTag,
             state = state,
             metaData = eventMeta
@@ -231,20 +214,16 @@ class ReadSideHandlerSpec
     }
 
     "handle events and state as expected when handler failed" in {
-      val state: State = State.defaultInstance
+      val state: Any = Any.pack(AccountOpened.defaultInstance)
       val eventMeta: MetaData = MetaData.defaultInstance
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
-      val eventsProtos: Seq[String] =
-        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-
-      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
-
-      val event = AccountOpened()
+      val event = Any.pack(
+        AccountOpened()
         .withAccountNumber(accountNumber)
         .withAccountUuid(accouuntId)
+      )
 
       val readSideEvent = ReadSideEvent(
         event = event,
@@ -269,16 +248,9 @@ class ReadSideHandlerSpec
       (requestBuilder.invoke _)
         .expects(
           HandleReadSideRequest()
-            .withEvent(Any.pack(event))
-            .withState(state.getCurrentState)
-            .withMeta(
-              common
-                .MetaData()
-                .withEntityId(eventMeta.entityId)
-                .withData(eventMeta.data)
-                .withRevisionDate(eventMeta.getRevisionDate)
-                .withRevisionNumber(eventMeta.revisionNumber)
-            )
+            .withEvent(event)
+            .withState(state)
+            .withMeta(Util.toCosMetaData(eventMeta))
         )
         .throws(new RuntimeException("broken"))
 
@@ -291,6 +263,10 @@ class ReadSideHandlerSpec
         .expects()
         .returning(requestBuilder)
 
+      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(state))
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(event))
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
+
       val readSideProcessor =
         new ReadSideHandler(
           defaultGrpcReadSideSetting,
@@ -302,8 +278,7 @@ class ReadSideHandlerSpec
       an[GlobalException] shouldBe thrownBy(
         readSideProcessor.handle(
           ReadSideEvent(
-            event = Event()
-              .withEvent(Any.pack(event)),
+            event = event,
             eventTag = readSideEvent.eventTag,
             state = state,
             metaData = eventMeta
@@ -313,20 +288,16 @@ class ReadSideHandlerSpec
     }
 
     "handle failed response as expected" in {
-      val state: State = State.defaultInstance
+      val state: Any = Any.pack(AccountOpened.defaultInstance)
       val eventMeta: MetaData = MetaData.defaultInstance
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
-      val eventsProtos: Seq[String] =
-        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-
-      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
-
-      val event = AccountOpened()
+      val event = Any.pack(
+        AccountOpened()
         .withAccountNumber(accountNumber)
         .withAccountUuid(accouuntId)
+      )
 
       val readSideEvent = ReadSideEvent(
         event = event,
@@ -351,16 +322,9 @@ class ReadSideHandlerSpec
       (requestBuilder.invoke _)
         .expects(
           HandleReadSideRequest()
-            .withEvent(Any.pack(event))
-            .withState(state.getCurrentState)
-            .withMeta(
-              common
-                .MetaData()
-                .withEntityId(eventMeta.entityId)
-                .withData(eventMeta.data)
-                .withRevisionDate(eventMeta.getRevisionDate)
-                .withRevisionNumber(eventMeta.revisionNumber)
-            )
+            .withEvent(event)
+            .withState(state)
+            .withMeta(Util.toCosMetaData(eventMeta))
         )
         .returning(
           Future.failed(
@@ -377,6 +341,10 @@ class ReadSideHandlerSpec
         .expects()
         .returning(requestBuilder)
 
+      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(state))
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(event))
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
+
       val readSideProcessor =
         new ReadSideHandler(
           defaultGrpcReadSideSetting,
@@ -388,8 +356,7 @@ class ReadSideHandlerSpec
       an[GlobalException] shouldBe thrownBy(
         readSideProcessor.handle(
           ReadSideEvent(
-            event = Event()
-              .withEvent(Any.pack(event)),
+            event = event,
             eventTag = readSideEvent.eventTag,
             state = state,
             metaData = eventMeta
@@ -399,20 +366,16 @@ class ReadSideHandlerSpec
     }
 
     "handle grpc exception sent by read processor as expected" in {
-      val state: State = State.defaultInstance
+      val state: Any = Any.pack(AccountOpened.defaultInstance)
       val eventMeta: MetaData = MetaData.defaultInstance
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
-      val eventsProtos: Seq[String] =
-        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-
-      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
-
-      val event = AccountOpened()
+      val event = Any.pack(
+        AccountOpened()
         .withAccountNumber(accountNumber)
         .withAccountUuid(accouuntId)
+      )
 
       val readSideEvent = ReadSideEvent(
         event = event,
@@ -438,7 +401,7 @@ class ReadSideHandlerSpec
         .expects(
           HandleReadSideRequest()
             .withEvent(Any.pack(event))
-            .withState(state.getCurrentState)
+            .withState(state)
             .withMeta(
               common
                 .MetaData()
@@ -463,6 +426,10 @@ class ReadSideHandlerSpec
         .expects()
         .returning(requestBuilder)
 
+      val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(state))
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(event))
+      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
+
       val readSideProcessor =
         new ReadSideHandler(
           defaultGrpcReadSideSetting,
@@ -474,8 +441,7 @@ class ReadSideHandlerSpec
       an[GlobalException] shouldBe thrownBy(
         readSideProcessor.handle(
           ReadSideEvent(
-            event = Event()
-              .withEvent(Any.pack(event)),
+            event = event,
             eventTag = readSideEvent.eventTag,
             state = state,
             metaData = eventMeta
@@ -485,7 +451,7 @@ class ReadSideHandlerSpec
     }
 
     "handle unknown event" in {
-      val state: State = State.defaultInstance
+      val state: Any = Any.pack(Account.defaultInstance)
       val eventMeta: MetaData = MetaData.defaultInstance
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
@@ -496,9 +462,11 @@ class ReadSideHandlerSpec
 
       val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
 
-      val event = AccountOpened()
+      val event = Any.pack(
+        AccountOpened()
         .withAccountNumber(accountNumber)
         .withAccountUuid(accouuntId)
+      )
 
       val readSideProcessor =
         new ReadSideHandler(
@@ -510,9 +478,7 @@ class ReadSideHandlerSpec
         )
       an[GlobalException] shouldBe thrownBy(
         readSideProcessor.handle(
-          ReadSideEvent(
-            event = Event()
-              .withEvent(Any.pack(event)),
+          ReadSideEvent(event,
             eventTag = "",
             state = state,
             metaData = eventMeta

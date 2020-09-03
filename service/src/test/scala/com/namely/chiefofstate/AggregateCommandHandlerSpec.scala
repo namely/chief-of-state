@@ -450,10 +450,6 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val mockGrpcClient = mock[WriteSideHandlerServiceClient]
       val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
 
-      val someAccount = Account()
-        .withAccountUuid(UUID.randomUUID.toString)
-        .withAccountNumber("12345")
-
       val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
 
       val cmd = GetStateRequest(entityId = "x")
