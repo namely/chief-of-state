@@ -5,9 +5,9 @@ import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.GrpcServiceException
 import akka.grpc.scaladsl.{BytesEntry, Metadata, StringEntry}
 import com.google.protobuf.ByteString
-import com.namely.protobuf.chief_of_state.internal.RemoteCommand
-import com.namely.protobuf.chief_of_state.persistence.State
-import com.namely.protobuf.chief_of_state.service._
+import com.google.protobuf.any.Any
+import com.namely.protobuf.chief_of_state.v1beta1.internal.RemoteCommand
+import com.namely.protobuf.chief_of_state.v1beta1.service._
 import io.grpc.Status
 import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl, StateAndMeta}
 import org.slf4j.{Logger, LoggerFactory}
@@ -20,7 +20,7 @@ import io.superflat.lagompb.GlobalException
 
 class GrpcServiceImpl(sys: ActorSystem,
                       clusterSharding: ClusterSharding,
-                      aggregate: AggregateRoot[State],
+                      aggregate: Aggregate,
                       sendCommandSettings: SendCommandSettings
 )(implicit
   ec: ExecutionContext
@@ -31,7 +31,7 @@ class GrpcServiceImpl(sys: ActorSystem,
 
   override def aggregateRoot: AggregateRoot[_] = aggregate
 
-  override def aggregateStateCompanion: GeneratedMessageCompanion[_ <: GeneratedMessage] = State
+  override def aggregateStateCompanion: GeneratedMessageCompanion[_ <: GeneratedMessage] = Any
 
   /**
    * gRPC ProcessCommand implementation
@@ -84,10 +84,10 @@ class GrpcServiceImpl(sys: ActorSystem,
         .withCommand(in.getCommand)
         .withHeaders(propagatedHeaders)
 
-      sendCommand[RemoteCommand, State](clusterSharding, in.entityId, remoteCommand, metaData)
-        .map((namelyState: StateAndMeta[State]) => {
+      sendCommand[RemoteCommand, Any](clusterSharding, in.entityId, remoteCommand, metaData)
+        .map((namelyState: StateAndMeta[Any]) => {
           ProcessCommandResponse(
-            state = namelyState.state.currentState,
+            state = Some(namelyState.state),
             meta = Some(Util.toCosMetaData(namelyState.metaData))
           )
         })
@@ -108,13 +108,13 @@ class GrpcServiceImpl(sys: ActorSystem,
         Failure(new GrpcServiceException(status = Status.INVALID_ARGUMENT.withDescription("empty entity ID")))
       )
     } else {
-      sendCommand[GetStateRequest, State](clusterSharding, in.entityId, in, Map.empty[String, String])
+      sendCommand[GetStateRequest, Any](clusterSharding, in.entityId, in, Map.empty[String, String])
       .transform({
         // transform success to a GetStateResponse
         case Success(namelyState) =>
           Success(
             GetStateResponse(
-              state = namelyState.state.currentState,
+              state = Some(namelyState.state),
               meta = Some(Util.toCosMetaData(namelyState.metaData))
             )
           )

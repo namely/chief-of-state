@@ -4,10 +4,10 @@ import java.util.UUID
 
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.common
-import com.namely.protobuf.chief_of_state.persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened}
-import com.namely.protobuf.chief_of_state.writeside.{
+import com.namely.protobuf.chief_of_state.v1beta1.common
+import com.namely.protobuf.chief_of_state.v1beta1.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.v1beta1.tests.{Account, AccountOpened}
+import com.namely.protobuf.chief_of_state.v1beta1.writeside.{
   HandleEventRequest,
   HandleEventResponse,
   WriteSideHandlerServiceClient
@@ -26,7 +26,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
   "Chief-Of-State Event Handler" should {
 
     "handle event successfully as expected" in {
-      val priorState: State = State.defaultInstance
+      val priorState: Any = Any.pack(Account.defaultInstance)
       val eventMeta: MetaData = MetaData.defaultInstance
       val accountId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
@@ -54,7 +54,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
         .expects(
           HandleEventRequest()
             .withEvent(Any.pack(event))
-            .withCurrentState(priorState.getCurrentState)
+            .withCurrentState(priorState)
             .withMeta(
               common
                 .MetaData()

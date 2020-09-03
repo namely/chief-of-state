@@ -8,14 +8,14 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.grpc.scaladsl.SingleResponseRequestBuilder
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.common
-import com.namely.protobuf.chief_of_state.persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.readside.{
+import com.namely.protobuf.chief_of_state.v1beta1.common
+import com.namely.protobuf.chief_of_state.v1beta1.persistence.{Event, State}
+import com.namely.protobuf.chief_of_state.v1beta1.readside.{
   HandleReadSideRequest,
   HandleReadSideResponse,
   ReadSideHandlerServiceClient
 }
-import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened}
+import com.namely.protobuf.chief_of_state.v1beta1.tests.{Account, AccountOpened}
 import com.namely.chiefofstate.config.{HandlerSetting, ReadSideSetting}
 import io.grpc.Status
 import io.superflat.lagompb.protobuf.v1.core.MetaData

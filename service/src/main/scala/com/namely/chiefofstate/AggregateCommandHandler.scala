@@ -3,19 +3,18 @@ package com.namely.chiefofstate
 import akka.actor.ActorSystem
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.common.{MetaData => _}
-import com.namely.protobuf.chief_of_state.internal.RemoteCommand
-import com.namely.protobuf.chief_of_state.persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.service.GetStateRequest
-import com.namely.protobuf.chief_of_state.writeside.{
+import com.namely.protobuf.chief_of_state.v1beta1.common.{MetaData => _}
+import com.namely.protobuf.chief_of_state.v1beta1.internal.RemoteCommand
+import com.namely.protobuf.chief_of_state.v1beta1.service.GetStateRequest
+import com.namely.protobuf.chief_of_state.v1beta1.writeside.{
   HandleCommandRequest,
   HandleCommandResponse,
   WriteSideHandlerServiceClient
 }
-import com.namely.protobuf.chief_of_state.writeside.HandleCommandResponse.ResponseType.{PersistAndReply, Reply}
+import com.namely.protobuf.chief_of_state.v1beta1.writeside.HandleCommandResponse.ResponseType.{PersistAndReply, Reply}
 import com.namely.chiefofstate.config.HandlerSetting
 import io.grpc.{Status, StatusRuntimeException}
-import io.superflat.lagompb.{Command, CommandHandler}
+import io.superflat.lagompb.TypedCommandHandler
 import io.superflat.lagompb.protobuf.v1.core._
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -34,7 +33,7 @@ class AggregateCommandHandler(
   actorSystem: ActorSystem,
   writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
   handlerSetting: HandlerSetting
-) extends CommandHandler[State](actorSystem) {
+) extends TypedCommandHandler[Any](actorSystem) {
 
   import AggregateCommandHandler.GRPC_FAILED_VALIDATION_STATUSES
 
@@ -48,10 +47,10 @@ class AggregateCommandHandler(
    * @param priorEventMeta the priorEventMeta
    * @return
    */
-  override def handle(command: Command, priorState: State, priorEventMeta: MetaData): Try[CommandHandlerResponse] = {
-    command.command match {
+  def handleTyped(command: scalapb.GeneratedMessage, priorState: Any, priorEventMeta: MetaData): Try[CommandHandlerResponse] = {
+    command match {
       // handle get requests locally
-      case getStateRequest: GetStateRequest => Try(handleGetCommand(getStateRequest, priorState, priorEventMeta))
+      case getStateRequest: GetStateRequest => Try(handleGetCommand(getStateRequest, priorEventMeta))
       // handle all other requests in the gRPC handler
       case remoteCommand: RemoteCommand => Try(handleRemoteCommand(remoteCommand, priorState, priorEventMeta))
       // otherwise throw
@@ -64,32 +63,29 @@ class AggregateCommandHandler(
    * handler for GetStateRequest command
    *
    * @param command a getStateRequest
-   * @param priorState the prior state for this entity
    * @param priorEventMeta the prior event meta
    * @return a command handler response indicating Reply or failure
    */
   def handleGetCommand(command: GetStateRequest,
-                       priorState: State,
                        priorEventMeta: MetaData
   ): CommandHandlerResponse = {
     log.debug("[ChiefOfState] handling GetStateRequest")
 
-    priorState.currentState
-      .map(_ => {
-        log.debug(s"[ChiefOfState] found state for entity ${command.entityId}")
-        CommandHandlerResponse()
-          .withSuccessResponse(
-            SuccessCommandHandlerResponse()
-              .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
-          )
-      })
-      .getOrElse {
-        log.error(s"[ChiefOfState] could not find state for entity ${command.entityId}")
-        CommandHandlerResponse()
-          .withFailedResponse(
-            AggregateCommandHandler.GET_STATE_NOT_FOUND_FAILURE
-          )
-      }
+    // use revision number to determine if there was a prior state
+    if (priorEventMeta.revisionNumber > 0) {
+      log.debug(s"[ChiefOfState] found state for entity ${command.entityId}")
+      CommandHandlerResponse()
+        .withSuccessResponse(
+          SuccessCommandHandlerResponse()
+            .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
+        )
+    } else {
+      log.error(s"[ChiefOfState] could not find state for entity ${command.entityId}")
+      CommandHandlerResponse()
+        .withFailedResponse(
+          AggregateCommandHandler.GET_STATE_NOT_FOUND_FAILURE
+        )
+    }
   }
 
   /**
@@ -101,7 +97,7 @@ class AggregateCommandHandler(
    * @return a CommandHandlerResponse
    */
   def handleRemoteCommand(remoteCommand: RemoteCommand,
-                          priorState: State,
+                          priorState: Any,
                           priorEventMeta: MetaData
   ): CommandHandlerResponse = {
     log.debug("[ChiefOfState] handling gRPC command")
@@ -109,9 +105,8 @@ class AggregateCommandHandler(
     // make blocking gRPC call to handler service
     val responseAttempt: Try[HandleCommandResponse] = Try {
       // construct the request message
-      val handleCommandRequest = HandleCommandRequest()
-        .withCommand(remoteCommand.getCommand)
-        .withCurrentState(priorState.getCurrentState)
+      val handleCommandRequest = HandleCommandRequest(command=remoteCommand.command)
+        .withCurrentState(priorState)
         .withMeta(Util.toCosMetaData(priorEventMeta))
 
       // create an akka gRPC request builder
@@ -122,7 +117,8 @@ class AggregateCommandHandler(
             // for each header, add the appropriate string/bytes header
             (request, header) => {
               header.value match {
-                case RemoteCommand.Header.Value.StringValue(value) => request.addHeader(header.key, value)
+                case RemoteCommand.Header.Value.StringValue(value) =>
+                  request.addHeader(header.key, value)
                 case RemoteCommand.Header.Value.BytesValue(value) =>
                   request.addHeader(header.key, akka.util.ByteString(value.toByteArray))
                 case unhandled => throw new Exception(s"unhandled gRPC header type, ${unhandled.getClass.getName}")
@@ -161,7 +157,7 @@ class AggregateCommandHandler(
             CommandHandlerResponse()
               .withSuccessResponse(
                 SuccessCommandHandlerResponse()
-                  .withEvent(Any.pack(Event().withEvent(persistAndReply.getEvent)))
+                  .withEvent(persistAndReply.getEvent)
               )
           } else {
             log.error(
@@ -179,7 +175,7 @@ class AggregateCommandHandler(
           CommandHandlerResponse()
             .withSuccessResponse(
               SuccessCommandHandlerResponse()
-                .withEvent(Any.pack(Event().withEvent(persistAndReply.getEvent)))
+                .withEvent(persistAndReply.getEvent)
             )
         }
 

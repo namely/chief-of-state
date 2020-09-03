@@ -6,7 +6,7 @@ import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
 import com.namely.chiefofstate.api.ChiefOfStateService
-import com.namely.protobuf.chief_of_state.persistence.State
+import com.google.protobuf.any.Any
 import io.superflat.lagompb.{AggregateRoot, BaseServiceImpl}
 import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
 
@@ -16,7 +16,7 @@ class RestServiceImpl(
   actorSystem: ActorSystem,
   clusterSharding: ClusterSharding,
   persistentEntityRegistry: PersistentEntityRegistry,
-  aggregate: AggregateRoot[State]
+  aggregate: Aggregate
 )(implicit ec: ExecutionContext)
     extends BaseServiceImpl(clusterSharding, persistentEntityRegistry, aggregate)
     with ChiefOfStateService {
@@ -26,5 +26,6 @@ class RestServiceImpl(
       Future.successful("Welcome to Chief Of State. The gRPC distributed event sourcing application!!!")
     }
 
-  override def aggregateStateCompanion: GeneratedMessageCompanion[_ <: GeneratedMessage] = State
+  // TODO: Deprecate this!
+  def aggregateStateCompanion: GeneratedMessageCompanion[_ <: scalapb.GeneratedMessage] = Any
 }

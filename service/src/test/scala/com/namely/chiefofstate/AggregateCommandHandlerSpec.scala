@@ -7,12 +7,11 @@ import akka.grpc.scaladsl.SingleResponseRequestBuilder
 import com.google.protobuf.any.Any
 import com.google.protobuf.ByteString
 import com.google.protobuf.wrappers.StringValue
-import com.namely.protobuf.chief_of_state.internal.RemoteCommand
-import com.namely.protobuf.chief_of_state.persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.service.GetStateRequest
-import com.namely.protobuf.chief_of_state.tests.{Account, AccountOpened, OpenAccount}
-import com.namely.protobuf.chief_of_state.writeside._
-import com.namely.protobuf.chief_of_state.writeside.HandleCommandResponse.ResponseType
+import com.namely.protobuf.chief_of_state.v1beta1.internal.RemoteCommand
+import com.namely.protobuf.chief_of_state.v1beta1.service.GetStateRequest
+import com.namely.protobuf.chief_of_state.v1beta1.tests.{Account, AccountOpened, OpenAccount}
+import com.namely.protobuf.chief_of_state.v1beta1.writeside._
+import com.namely.protobuf.chief_of_state.v1beta1.writeside.HandleCommandResponse.ResponseType
 import com.namely.chiefofstate.config.HandlerSetting
 import io.grpc.{Status, StatusRuntimeException}
 import io.superflat.lagompb.Command
@@ -164,7 +163,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
         .withAccountNumber("123445")
         .withAccountUuid(UUID.randomUUID.toString)
 
-      val currentState: State = State().withCurrentState(Any.pack(Account.defaultInstance))
+      val currentState: Any = Any.pack(Account.defaultInstance)
       val currentMeta: LagompbMetaData = LagompbMetaData.defaultInstance
 
       // let us create a mock instance of the handler service client
