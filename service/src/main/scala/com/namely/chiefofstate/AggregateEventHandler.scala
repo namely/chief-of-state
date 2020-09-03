@@ -2,9 +2,8 @@ package com.namely.chiefofstate
 
 import com.namely.chiefofstate.config.HandlerSetting
 import akka.actor.ActorSystem
-import com.namely.protobuf.chief_of_state.common
-import com.namely.protobuf.chief_of_state.persistence.{Event, State}
-import com.namely.protobuf.chief_of_state.writeside.{
+import com.namely.protobuf.chiefofstate.v1.common
+import com.namely.protobuf.chiefofstate.v1.writeside.{
   HandleEventRequest,
   HandleEventResponse,
   WriteSideHandlerServiceClient
@@ -13,9 +12,10 @@ import io.superflat.lagompb.{EventHandler, GlobalException}
 import io.superflat.lagompb.protobuf.v1.core.MetaData
 import org.slf4j.{Logger, LoggerFactory}
 import scalapb.GeneratedMessage
+import com.google.protobuf.any.Any
 
 import scala.concurrent.{Await, Future}
-import scala.concurrent.duration._
+import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -29,23 +29,17 @@ class AggregateEventHandler(
   actorSystem: ActorSystem,
   writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
   handlerSetting: HandlerSetting
-) extends EventHandler[State](actorSystem) {
+) extends EventHandler {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
-  override def handle(event: GeneratedMessage, priorState: State, eventMeta: MetaData): State = {
+  override def handle(event: Any, priorState: Any, eventMeta: MetaData): Any = {
     Try(
       writeSideHandlerServiceClient.handleEvent(
         HandleEventRequest()
-          .withEvent(event.asInstanceOf[Event].getEvent)
-          .withCurrentState(priorState.getCurrentState)
-          .withMeta(
-            common
-              .MetaData()
-              .withData(eventMeta.data)
-              .withRevisionDate(eventMeta.getRevisionDate)
-              .withRevisionNumber(eventMeta.revisionNumber)
-          )
+          .withEvent(event)
+          .withCurrentState(priorState)
+          .withMeta(Util.toCosMetaData(eventMeta))
       )
     ) match {
 
@@ -58,26 +52,18 @@ class AggregateEventHandler(
         } match {
           case Failure(exception) => throw new GlobalException(exception.getMessage)
           case Success(handleEventResponse: HandleEventResponse) =>
+
             val stateFQN: String = Util.getProtoFullyQualifiedName(handleEventResponse.getResultingState)
+            log.debug(s"[ChiefOfState]: received event handler state $stateFQN")
 
-            log.debug(s"[ChiefOfState]: event handler state $stateFQN")
-
-            if (handlerSetting.enableProtoValidations) {
-              if (handlerSetting.stateFQNs.contains(stateFQN)) {
-
-                log.debug(s"[ChiefOfState]: event handler state $stateFQN is valid.")
-
-                priorState.update(_.currentState := handleEventResponse.getResultingState)
-              } else {
-                throw new GlobalException(
-                  s"[ChiefOfState]: command handler state to persist $stateFQN is not configured. Failing request"
-                )
-              }
-            } else {
-              log.debug(s"[ChiefOfState]: event handler state: $stateFQN. FQN validation skipped.")
-
-              priorState.update(_.currentState := handleEventResponse.getResultingState)
+            // if enabled, validate the state type url returned by event handler
+            if (handlerSetting.enableProtoValidations && !handlerSetting.stateFQNs.contains(stateFQN)) {
+              log.error(s"[ChiefOfState]: command handler state to persist $stateFQN is not configured. Failing request")
+              throw new GlobalException(s"received unknown state $stateFQN")
             }
+
+            // pass through state returned by event handler
+            handleEventResponse.getResultingState
         }
     }
   }

@@ -13,9 +13,8 @@ import com.lightbend.lagom.scaladsl.server.{
 }
 import com.namely.chiefofstate.config.{EncryptionSetting, HandlerSetting, ReadSideSetting, SendCommandSettings}
 import com.namely.chiefofstate.api.ChiefOfStateService
-import com.namely.protobuf.chief_of_state.persistence.State
-import com.namely.protobuf.chief_of_state.readside.ReadSideHandlerServiceClient
-import com.namely.protobuf.chief_of_state.writeside.WriteSideHandlerServiceClient
+import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceClient
+import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceClient
 import com.softwaremill.macwire.wire
 import io.superflat.lagompb.{AggregateRoot, BaseApplication, CommandHandler, EventHandler}
 import io.superflat.lagompb.encryption.ProtoEncryption
@@ -54,11 +53,11 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
   lazy val sendCommandSettings: SendCommandSettings = SendCommandSettings(config)
 
   // wire up the various event and command handler
-  lazy val eventHandler: EventHandler[State] = wire[AggregateEventHandler]
-  lazy val commandHandler: CommandHandler[State] = wire[AggregateCommandHandler]
-  lazy val aggregate: AggregateRoot[State] = wire[Aggregate]
+  lazy val eventHandler: EventHandler = wire[AggregateEventHandler]
+  lazy val commandHandler: CommandHandler = wire[AggregateCommandHandler]
 
-  override def aggregateRoot: AggregateRoot[_] = aggregate
+  lazy val typedAggregate: Aggregate = wire[Aggregate]
+  override def aggregateRoot: AggregateRoot[_] = typedAggregate
 
   override def server: LagomServer =
     serverFor[ChiefOfStateService](wire[RestServiceImpl])
