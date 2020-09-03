@@ -400,16 +400,9 @@ class ReadSideHandlerSpec
       (requestBuilder.invoke _)
         .expects(
           HandleReadSideRequest()
-            .withEvent(Any.pack(event))
+            .withEvent(event)
             .withState(state)
-            .withMeta(
-              common
-                .MetaData()
-                .withEntityId(eventMeta.entityId)
-                .withData(eventMeta.data)
-                .withRevisionDate(eventMeta.getRevisionDate)
-                .withRevisionNumber(eventMeta.revisionNumber)
-            )
+            .withMeta(Util.toCosMetaData(eventMeta))
         )
         .returning(
           Future.failed(
