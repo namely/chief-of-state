@@ -5,7 +5,6 @@ import java.util.UUID
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
 import com.namely.protobuf.chief_of_state.v1beta1.common
-import com.namely.protobuf.chief_of_state.v1beta1.persistence.{Event, State}
 import com.namely.protobuf.chief_of_state.v1beta1.tests.{Account, AccountOpened}
 import com.namely.protobuf.chief_of_state.v1beta1.writeside.{
   HandleEventRequest,
@@ -71,20 +70,19 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
         )
 
       val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
-      val result: State = eventHandler.handle(Event().withEvent(Any.pack(event)), priorState, eventMeta)
-      result shouldBe (State().withCurrentState(Any.pack(resultingState)))
-      result.getCurrentState.unpack[Account] shouldBe resultingState
+      val result: Any = eventHandler.handle(Any.pack(event), priorState, eventMeta)
+      result shouldBe (Any.pack(resultingState))
+      result.unpack[Account] shouldBe resultingState
     }
 
     "handle event when event type is not specified in handler settings as expected" in {
-      val priorState: State = State.defaultInstance
+      val priorState: Any = Any.pack(Account.defaultInstance)
       val eventMeta: MetaData = MetaData.defaultInstance
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
       val stateProto: Seq[String] = Seq("namely.rogue.state")
-      val eventsProtos: Seq[String] =
-        Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
+      val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(priorState))
 
       val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
 
@@ -105,7 +103,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
         .expects(
           HandleEventRequest()
             .withEvent(Any.pack(event))
-            .withCurrentState(priorState.getCurrentState)
+            .withCurrentState(priorState)
             .withMeta(
               common
                 .MetaData()
@@ -123,12 +121,12 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
 
       val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
       a[GlobalException] shouldBe thrownBy(
-        eventHandler.handle(Event().withEvent(Any.pack(event)), priorState, eventMeta)
+        eventHandler.handle(Any.pack(event), priorState, eventMeta)
       )
     }
 
     "handle event when event protos validation is disabled in handler settings as expected" in {
-      val priorState: State = State.defaultInstance
+      val priorState: Any = Any.pack(Account.defaultInstance)
       val eventMeta: MetaData = MetaData.defaultInstance
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
@@ -152,7 +150,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
         .expects(
           HandleEventRequest()
             .withEvent(Any.pack(event))
-            .withCurrentState(priorState.getCurrentState)
+            .withCurrentState(priorState)
             .withMeta(
               common
                 .MetaData()
@@ -170,11 +168,11 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
 
       val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
 
-      noException shouldBe thrownBy(eventHandler.handle(Event().withEvent(Any.pack(event)), priorState, eventMeta))
+      noException shouldBe thrownBy(eventHandler.handle(Any.pack(event), priorState, eventMeta))
     }
 
     "handle event when event validation is enabled and the FQNs not provided in handler settings as expected" in {
-      val priorState: State = State.defaultInstance
+      val priorState: Any = Any.pack(Account.defaultInstance)
       val eventMeta: MetaData = MetaData.defaultInstance
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
@@ -198,7 +196,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
         .expects(
           HandleEventRequest()
             .withEvent(Any.pack(event))
-            .withCurrentState(priorState.getCurrentState)
+            .withCurrentState(priorState)
             .withMeta(
               common
                 .MetaData()
@@ -217,12 +215,12 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
       val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
 
       a[GlobalException] shouldBe thrownBy(
-        eventHandler.handle(Event().withEvent(Any.pack(event)), priorState, eventMeta)
+        eventHandler.handle(Any.pack(event), priorState, eventMeta)
       )
     }
 
     "handle failed response as expected" in {
-      val priorState: State = State.defaultInstance
+      val priorState: Any = Any.pack(Account.defaultInstance)
       val eventMeta: MetaData = MetaData.defaultInstance
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
@@ -245,7 +243,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
         .expects(
           HandleEventRequest()
             .withEvent(Any.pack(event))
-            .withCurrentState(priorState.getCurrentState)
+            .withCurrentState(priorState)
             .withMeta(
               common
                 .MetaData()
@@ -258,12 +256,12 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
 
       val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
       a[GlobalException] shouldBe thrownBy(
-        eventHandler.handle(Event().withEvent(Any.pack(event)), priorState, eventMeta)
+        eventHandler.handle(Any.pack(event), priorState, eventMeta)
       )
     }
 
     "handle broken event handler as expected" in {
-      val priorState: State = State.defaultInstance
+      val priorState: Any = Any.pack(Account.defaultInstance)
       val eventMeta: MetaData = MetaData.defaultInstance
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
@@ -286,7 +284,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
         .expects(
           HandleEventRequest()
             .withEvent(Any.pack(event))
-            .withCurrentState(priorState.getCurrentState)
+            .withCurrentState(priorState)
             .withMeta(
               common
                 .MetaData()
@@ -299,7 +297,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
 
       val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
       a[GlobalException] shouldBe thrownBy(
-        eventHandler.handle(Event().withEvent(Any.pack(event)), priorState, eventMeta)
+        eventHandler.handle(Any.pack(event), priorState, eventMeta)
       )
     }
   }
