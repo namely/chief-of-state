@@ -83,7 +83,7 @@ object Common extends AutoPlugin {
           .cross(CrossVersion.full)
       ),
       coverageExcludedPackages := "<empty>;com.namely.protobuf.*;" +
-        "com.namely.protobuf.chief_of_state.v1beta1.*;" +
+        "com.namely.protobuf.*;" +
         "com.namely.chiefofstate.RestServiceImpl;" +
         "com.namely.chiefofstate.api.*;" +
         "com.namely.chiefofstate.GrpcServiceImpl;"
