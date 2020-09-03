@@ -4,9 +4,9 @@ import java.util.UUID
 
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.v1beta1.common
-import com.namely.protobuf.chief_of_state.v1beta1.tests.{Account, AccountOpened}
-import com.namely.protobuf.chief_of_state.v1beta1.writeside.{
+import com.namely.protobuf.chiefofstate.v1.common
+import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened}
+import com.namely.protobuf.chiefofstate.v1.writeside.{
   HandleEventRequest,
   HandleEventResponse,
   WriteSideHandlerServiceClient

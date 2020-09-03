@@ -2,8 +2,8 @@ package com.namely.chiefofstate
 
 import com.namely.chiefofstate.config.HandlerSetting
 import akka.actor.ActorSystem
-import com.namely.protobuf.chief_of_state.v1beta1.common
-import com.namely.protobuf.chief_of_state.v1beta1.writeside.{
+import com.namely.protobuf.chiefofstate.v1.common
+import com.namely.protobuf.chiefofstate.v1.writeside.{
   HandleEventRequest,
   HandleEventResponse,
   WriteSideHandlerServiceClient

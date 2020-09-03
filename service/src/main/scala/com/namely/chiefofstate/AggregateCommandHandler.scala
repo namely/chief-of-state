@@ -3,15 +3,15 @@ package com.namely.chiefofstate
 import akka.actor.ActorSystem
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.v1beta1.common.{MetaData => _}
-import com.namely.protobuf.chief_of_state.v1beta1.internal.RemoteCommand
-import com.namely.protobuf.chief_of_state.v1beta1.service.GetStateRequest
-import com.namely.protobuf.chief_of_state.v1beta1.writeside.{
+import com.namely.protobuf.chiefofstate.v1.common.{MetaData => _}
+import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
+import com.namely.protobuf.chiefofstate.v1.service.GetStateRequest
+import com.namely.protobuf.chiefofstate.v1.writeside.{
   HandleCommandRequest,
   HandleCommandResponse,
   WriteSideHandlerServiceClient
 }
-import com.namely.protobuf.chief_of_state.v1beta1.writeside.HandleCommandResponse.ResponseType.{PersistAndReply, Reply}
+import com.namely.protobuf.chiefofstate.v1.writeside.HandleCommandResponse.ResponseType.{PersistAndReply, Reply}
 import com.namely.chiefofstate.config.HandlerSetting
 import io.grpc.{Status, StatusRuntimeException}
 import io.superflat.lagompb.{CommandHandler, ProtosRegistry}

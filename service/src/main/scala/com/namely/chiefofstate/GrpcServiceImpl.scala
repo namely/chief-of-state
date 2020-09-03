@@ -6,8 +6,8 @@ import akka.grpc.GrpcServiceException
 import akka.grpc.scaladsl.{BytesEntry, Metadata, StringEntry}
 import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chief_of_state.v1beta1.internal.RemoteCommand
-import com.namely.protobuf.chief_of_state.v1beta1.service._
+import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
+import com.namely.protobuf.chiefofstate.v1.service._
 import io.grpc.Status
 import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl, StateAndMeta}
 import org.slf4j.{Logger, LoggerFactory}

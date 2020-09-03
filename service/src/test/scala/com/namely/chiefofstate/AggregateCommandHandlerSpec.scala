@@ -7,11 +7,11 @@ import akka.grpc.scaladsl.SingleResponseRequestBuilder
 import com.google.protobuf.any.Any
 import com.google.protobuf.ByteString
 import com.google.protobuf.wrappers.StringValue
-import com.namely.protobuf.chief_of_state.v1beta1.internal.RemoteCommand
-import com.namely.protobuf.chief_of_state.v1beta1.service.GetStateRequest
-import com.namely.protobuf.chief_of_state.v1beta1.tests.{Account, AccountOpened, OpenAccount}
-import com.namely.protobuf.chief_of_state.v1beta1.writeside._
-import com.namely.protobuf.chief_of_state.v1beta1.writeside.HandleCommandResponse.ResponseType
+import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
+import com.namely.protobuf.chiefofstate.v1.service.GetStateRequest
+import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened, OpenAccount}
+import com.namely.protobuf.chiefofstate.v1.writeside._
+import com.namely.protobuf.chiefofstate.v1.writeside.HandleCommandResponse.ResponseType
 import com.namely.chiefofstate.config.HandlerSetting
 import io.grpc.{Status, StatusRuntimeException}
 import io.superflat.lagompb.Command

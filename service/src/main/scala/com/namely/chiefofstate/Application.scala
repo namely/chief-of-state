@@ -13,8 +13,8 @@ import com.lightbend.lagom.scaladsl.server.{
 }
 import com.namely.chiefofstate.config.{EncryptionSetting, HandlerSetting, ReadSideSetting, SendCommandSettings}
 import com.namely.chiefofstate.api.ChiefOfStateService
-import com.namely.protobuf.chief_of_state.v1beta1.readside.ReadSideHandlerServiceClient
-import com.namely.protobuf.chief_of_state.v1beta1.writeside.WriteSideHandlerServiceClient
+import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceClient
+import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceClient
 import com.softwaremill.macwire.wire
 import io.superflat.lagompb.{AggregateRoot, BaseApplication, CommandHandler, EventHandler}
 import io.superflat.lagompb.encryption.ProtoEncryption

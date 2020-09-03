@@ -3,8 +3,8 @@ package com.namely.chiefofstate
 import akka.Done
 import akka.actor.ActorSystem
 import akka.actor.typed.scaladsl.adapter._
-import com.namely.protobuf.chief_of_state.v1beta1.common
-import com.namely.protobuf.chief_of_state.v1beta1.readside.{
+import com.namely.protobuf.chiefofstate.v1.common
+import com.namely.protobuf.chiefofstate.v1.readside.{
   HandleReadSideRequest,
   HandleReadSideResponse,
   ReadSideHandlerServiceClient
