@@ -17,6 +17,7 @@ import com.namely.chiefofstate.config.SendCommandSettings
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Try, Success, Failure}
 import io.superflat.lagompb.GlobalException
+import io.superflat.lagompb.protobuf.v1.core.StateWrapper
 
 class GrpcServiceImpl(sys: ActorSystem,
                       clusterSharding: ClusterSharding,
@@ -84,11 +85,11 @@ class GrpcServiceImpl(sys: ActorSystem,
         .withCommand(in.getCommand)
         .withHeaders(propagatedHeaders)
 
-      sendCommand[RemoteCommand, Any](clusterSharding, in.entityId, remoteCommand, metaData)
-        .map((namelyState: StateAndMeta[Any]) => {
+      sendCommand(clusterSharding, in.entityId, remoteCommand, metaData)
+        .map((stateWrapper: StateWrapper) => {
           ProcessCommandResponse(
-            state = Some(namelyState.state),
-            meta = Some(Util.toCosMetaData(namelyState.metaData))
+            state = stateWrapper.state,
+            meta = stateWrapper.meta.map(Util.toCosMetaData)
           )
         })
     }
@@ -108,14 +109,14 @@ class GrpcServiceImpl(sys: ActorSystem,
         Failure(new GrpcServiceException(status = Status.INVALID_ARGUMENT.withDescription("empty entity ID")))
       )
     } else {
-      sendCommand[GetStateRequest, Any](clusterSharding, in.entityId, in, Map.empty[String, String])
+      sendCommand(clusterSharding, in.entityId, in, Map.empty[String, String])
       .transform({
         // transform success to a GetStateResponse
-        case Success(namelyState) =>
+        case Success(stateWrapper: StateWrapper) =>
           Success(
             GetStateResponse(
-              state = Some(namelyState.state),
-              meta = Some(Util.toCosMetaData(namelyState.metaData))
+              state = stateWrapper.state,
+              meta = stateWrapper.meta.map(Util.toCosMetaData)
             )
           )
 
