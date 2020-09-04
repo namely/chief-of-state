@@ -85,7 +85,7 @@ class GrpcServiceImpl(sys: ActorSystem,
         .withCommand(in.getCommand)
         .withHeaders(propagatedHeaders)
 
-      sendCommand[RemoteCommand, Any](clusterSharding, in.entityId, remoteCommand, metaData)
+      sendCommand(clusterSharding, in.entityId, remoteCommand, metaData)
         .map((stateWrapper: StateWrapper) => {
           ProcessCommandResponse(
             state = stateWrapper.state,
@@ -109,7 +109,7 @@ class GrpcServiceImpl(sys: ActorSystem,
         Failure(new GrpcServiceException(status = Status.INVALID_ARGUMENT.withDescription("empty entity ID")))
       )
     } else {
-      sendCommand[GetStateRequest, Any](clusterSharding, in.entityId, in, Map.empty[String, String])
+      sendCommand(clusterSharding, in.entityId, in, Map.empty[String, String])
       .transform({
         // transform success to a GetStateResponse
         case Success(stateWrapper: StateWrapper) =>
