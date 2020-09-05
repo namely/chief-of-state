@@ -9,7 +9,7 @@ import com.google.protobuf.any.Any
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service._
 import io.grpc.Status
-import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl, StateAndMeta}
+import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl}
 import org.slf4j.{Logger, LoggerFactory}
 import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
 import com.namely.chiefofstate.config.SendCommandSettings
@@ -20,7 +20,7 @@ import io.superflat.lagompb.GlobalException
 import io.superflat.lagompb.protobuf.v1.core.StateWrapper
 
 class GrpcServiceImpl(sys: ActorSystem,
-                      clusterSharding: ClusterSharding,
+                      val clusterSharding: ClusterSharding,
                       aggregate: Aggregate,
                       sendCommandSettings: SendCommandSettings
 )(implicit
@@ -31,8 +31,6 @@ class GrpcServiceImpl(sys: ActorSystem,
   private val log: Logger = LoggerFactory.getLogger(getClass)
 
   override def aggregateRoot: AggregateRoot[_] = aggregate
-
-  override def aggregateStateCompanion: GeneratedMessageCompanion[_ <: GeneratedMessage] = Any
 
   /**
    * gRPC ProcessCommand implementation
@@ -85,7 +83,7 @@ class GrpcServiceImpl(sys: ActorSystem,
         .withCommand(in.getCommand)
         .withHeaders(propagatedHeaders)
 
-      sendCommand(clusterSharding, in.entityId, remoteCommand, metaData)
+      sendCommand(in.entityId, remoteCommand, metaData)
         .map((stateWrapper: StateWrapper) => {
           ProcessCommandResponse(
             state = stateWrapper.state,
@@ -109,7 +107,7 @@ class GrpcServiceImpl(sys: ActorSystem,
         Failure(new GrpcServiceException(status = Status.INVALID_ARGUMENT.withDescription("empty entity ID")))
       )
     } else {
-      sendCommand(clusterSharding, in.entityId, in, Map.empty[String, String])
+      sendCommand(in.entityId, in, Map.empty[String, String])
       .transform({
         // transform success to a GetStateResponse
         case Success(stateWrapper: StateWrapper) =>

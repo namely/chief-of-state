@@ -17,7 +17,7 @@ class RestServiceImpl(
   clusterSharding: ClusterSharding,
   persistentEntityRegistry: PersistentEntityRegistry,
   aggregate: Aggregate
-)(implicit ec: ExecutionContext)
+)
     extends BaseServiceImpl(clusterSharding, persistentEntityRegistry, aggregate)
     with ChiefOfStateService {
 
