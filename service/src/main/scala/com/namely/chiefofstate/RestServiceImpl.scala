@@ -16,9 +16,9 @@ class RestServiceImpl(
   actorSystem: ActorSystem,
   clusterSharding: ClusterSharding,
   persistentEntityRegistry: PersistentEntityRegistry,
-  aggregate: Aggregate
+  aggregateRoot: AggregateRoot
 )
-    extends BaseServiceImpl(clusterSharding, persistentEntityRegistry, aggregate)
+    extends BaseServiceImpl(clusterSharding, persistentEntityRegistry, aggregateRoot)
     with ChiefOfStateService {
 
   override def handleCommand(): ServiceCall[NotUsed, String] =

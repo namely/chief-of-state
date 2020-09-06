@@ -56,10 +56,9 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
   lazy val eventHandler: EventHandler = wire[AggregateEventHandler]
   lazy val commandHandler: CommandHandler = wire[AggregateCommandHandler]
 
-  lazy val typedAggregate: Aggregate = wire[Aggregate]
-  override def aggregateRoot: AggregateRoot[_] = typedAggregate
+  override lazy val aggregateRoot: AggregateRoot =  wire[Aggregate]
 
-  override def server: LagomServer =
+  override lazy val server: LagomServer =
     serverFor[ChiefOfStateService](wire[RestServiceImpl])
       .additionalRouter(wire[GrpcServiceImpl])
 

@@ -21,7 +21,7 @@ import io.superflat.lagompb.protobuf.v1.core.StateWrapper
 
 class GrpcServiceImpl(sys: ActorSystem,
                       val clusterSharding: ClusterSharding,
-                      aggregate: Aggregate,
+                      val aggregateRoot: AggregateRoot,
                       sendCommandSettings: SendCommandSettings
 )(implicit
   ec: ExecutionContext
@@ -29,8 +29,6 @@ class GrpcServiceImpl(sys: ActorSystem,
     with BaseGrpcServiceImpl {
 
   private val log: Logger = LoggerFactory.getLogger(getClass)
-
-  override def aggregateRoot: AggregateRoot[_] = aggregate
 
   /**
    * gRPC ProcessCommand implementation
