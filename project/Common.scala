@@ -84,6 +84,7 @@ object Common extends AutoPlugin {
       ),
       coverageExcludedPackages := "<empty>;com.namely.protobuf.*;" +
         "com.namely.protobuf.*;" +
+        "com.namely.chiefofstate.ChiefOfStateService;" +
         "com.namely.chiefofstate.RestServiceImpl;" +
         "com.namely.chiefofstate.api.*;" +
         "com.namely.chiefofstate.GrpcServiceImpl;"
