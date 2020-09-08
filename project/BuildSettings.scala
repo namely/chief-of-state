@@ -4,7 +4,7 @@ import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.{dockerBaseImage
 import sbt.{plugins, AutoPlugin, Plugins}
 import sbt.Keys.libraryDependencies
 
-object LagomImpl extends AutoPlugin {
+object BuildSettings extends AutoPlugin {
   override def requires: Plugins = plugins.JvmPlugin
 
   override def projectSettings =

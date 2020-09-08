@@ -85,9 +85,9 @@ sbt:
     # Install sbt
     ARG SBT_VERSION=1.3.6
     RUN \
-        curl -L -o sbt-${SBT_VERSION}.deb https://dl.bintray.com/sbt/debian/sbt-${SBT_VERSION}.deb && \
-        dpkg -i sbt-${SBT_VERSION}.deb && \
-        rm sbt-${SBT_VERSION}.deb && \
+        curl -L -o sbt.deb https://dl.bintray.com/sbt/debian/sbt-${SBT_VERSION}.deb && \
+        dpkg -i sbt.deb && \
+        rm sbt.deb && \
         apt-get update && \
         apt-get install sbt && \
         sbt sbtVersion

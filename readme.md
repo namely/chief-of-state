@@ -43,12 +43,8 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 # install earth cli
 brew install earthly
 
-# add JFROG_USERNAME and JFROG_PASSWORD env vars
-# (if using .env, shortcut to load into environment)
-set -o allexport; source .env; set +o allexport
-
 # locally build the image
-earth -s JFROG_USERNAME -s JFROG_PASSWORD +docker-build
+earth +docker-build
 
 # run local cluster with docker/docker-compose.yml
 docker-compose -f ./docker/docker-compose.yml --project-directory . up -d

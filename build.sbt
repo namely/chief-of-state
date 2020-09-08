@@ -13,9 +13,7 @@ lazy val `chiefofstate` = project
   .enablePlugins(LagomScala)
   .enablePlugins(JavaAppPackaging, JavaAgent)
   .enablePlugins(PlayAkkaHttp2Support)
-  .enablePlugins(LagomImpl)
-  .enablePlugins(LagomAkka)
-  .enablePlugins(LagomApi)
+  .enablePlugins(BuildSettings)
   .settings(name := "chiefofstate", javaAgents += Dependencies.Compile.KanelaAgent)
   .dependsOn(protogen)
 
@@ -27,10 +25,15 @@ lazy val protogen = project
   .settings(
     inConfig(Compile)(
       Seq(
-        PB.protoSources ++= Seq(file("protos")),
-        PB.includePaths ++= Seq(file("protos")),
-        excludeFilter in PB.generate := new SimpleFileFilter(
-          (f: File) => f.getAbsolutePath.contains("google/protobuf/")
+        PB.protoSources := Seq(
+          // instruct scalapb to build all COS protos
+          file("protos/chief_of_state")
+        ),
+        PB.includePaths := Seq(
+          // includes the protobuf source for imports
+          file("protos"),
+          // includes external protobufs (like google dependencies)
+          baseDirectory.value / "target/protobuf_external"
         )
       )
     ),
