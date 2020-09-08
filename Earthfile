@@ -8,8 +8,8 @@ all:
 code:
     # copy relevant files in, save as a base image
     FROM registry.namely.land/namely/sbt:1.3.6-2.13.1
-    COPY -dir project sbt-dist .scalafmt.conf build.sbt .
-    COPY -dir api protos service .
+    COPY -dir project .scalafmt.conf build.sbt .
+    COPY -dir protos service .
 
     # clean and get dependencies
     RUN \

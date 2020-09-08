@@ -5,27 +5,22 @@ dockerImageCreationTask := (Docker / publishLocal in `chiefofstate`).value
 
 lazy val root = project
   .in(file("."))
-  .aggregate(api, protogen, `chiefofstate`)
+  .aggregate(protogen, `chiefofstate`)
   .settings(publishArtifact := false, skip in publish := true)
 
-lazy val api = project
-  .in(file("api"))
-  .enablePlugins(LagomApi)
-  .enablePlugins(LagomAkka)
-  .settings(name := "api")
-
 lazy val `chiefofstate` = project
-  .in(file("service"))
+  .in(file("code/service"))
   .enablePlugins(LagomScala)
   .enablePlugins(JavaAppPackaging, JavaAgent)
   .enablePlugins(PlayAkkaHttp2Support)
   .enablePlugins(LagomImpl)
   .enablePlugins(LagomAkka)
+  .enablePlugins(LagomApi)
   .settings(name := "chiefofstate", javaAgents += Dependencies.Compile.KanelaAgent)
-  .dependsOn(protogen, api)
+  .dependsOn(protogen)
 
 lazy val protogen = project
-  .in(file(".protogen"))
+  .in(file("code/.protogen"))
   .enablePlugins(AkkaGrpcPlugin)
   .enablePlugins(ProtocRuntime)
   .settings(name := "protogen")

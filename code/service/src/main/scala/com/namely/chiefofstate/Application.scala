@@ -12,7 +12,6 @@ import com.lightbend.lagom.scaladsl.server.{
   LagomServer
 }
 import com.namely.chiefofstate.config.{EncryptionSetting, HandlerSetting, ReadSideSetting, SendCommandSettings}
-import com.namely.chiefofstate.api.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceClient
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceClient
 import com.softwaremill.macwire.wire
