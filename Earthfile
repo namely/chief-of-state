@@ -15,7 +15,7 @@ code:
     # copy code
     COPY code/service/src ./code/service/src
     # clean and get dependencies
-    RUN sbt clean cleanFiles update
+    RUN sbt clean cleanFiles update protocGenerate
     # save base image for use downstream
     SAVE IMAGE
 
