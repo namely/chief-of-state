@@ -35,7 +35,7 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
 
   // wiring up the grpc for the writeSide client
   lazy val writeSideHandlerServiceClient: WriteSideHandlerServiceClient = WriteSideHandlerServiceClient(
-    GrpcClientSettings.fromConfig("chief_of_state.WriteSideHandlerService")
+    GrpcClientSettings.fromConfig("chief_of_state.v1.WriteSideHandlerService")
   )
 
   // let us wire up the handler settings
