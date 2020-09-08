@@ -37,9 +37,6 @@ node(NODE_TAG) {
         earthRunner.addBuildArg("CODECOV_TOKEN", CODECOV_TOKEN)
         earthRunner.addBuildArg("BRANCH_NAME", buildInfo.branchName)
 
-        earthRunner.addSecret("JFROG_USERNAME")
-        earthRunner.addSecret("JFROG_PASSWORD")
-
         // add dynamic args
         if(buildInfo.shouldPush()) {
             // add --push if it should upload
@@ -49,13 +46,7 @@ node(NODE_TAG) {
             earthRunner.addArg("--no-output")
         }
 
-        // provide a context with the secrets we need as env vars
-        withCredentials([
-            string(credentialsId: 'data-jfrog-username', variable: 'JFROG_USERNAME'),
-            string(credentialsId: 'data-jfrog-password', variable: 'JFROG_PASSWORD')
-        ]) {
-            // run the earthly command that was built
-            sh earthRunner.getCommand("+all")
-        }
+         // run the earthly command that was built
+        sh earthRunner.getCommand("+all")
     }
 }

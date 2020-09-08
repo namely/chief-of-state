@@ -15,10 +15,7 @@ code:
     # copy code
     COPY code/service/src ./code/service/src
     # clean and get dependencies
-    RUN \
-    --secret JFROG_USERNAME=+secrets/JFROG_USERNAME \
-    --secret JFROG_PASSWORD=+secrets/JFROG_PASSWORD \
-    sbt clean cleanFiles update
+    RUN sbt clean cleanFiles update
     # save base image for use downstream
     SAVE IMAGE
 
