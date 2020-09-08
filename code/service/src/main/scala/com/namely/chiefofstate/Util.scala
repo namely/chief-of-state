@@ -28,6 +28,7 @@ object Util {
   def toCosMetaData(metaData: MetaData): CosMetaData = {
     CosMetaData(
       entityId = metaData.entityId,
+      // TODO: remove .toInt
       revisionNumber = metaData.revisionNumber.toInt,
       revisionDate = metaData.revisionDate,
       data = metaData.data
