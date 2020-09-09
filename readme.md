@@ -80,7 +80,6 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 | COS_POSTGRES_PORT | journal, snapshot and read side offsets store port | 5432 |
 | COS_POSTGRES_DB | journal, snapshot and read side offsets store db name | postgres |
 | COS_POSTGRES_SCHEMA | journal, snapshot and read side offsets store db schema | public |
-| COS_KAFKA_BROKER | kafka broker | localhost:9092 |
 | COS_EVENTS_BATCH_THRESHOLD | Number of Events to batch persist | 100 |
 | COS_NUM_SNAPSHOTS_TO_RETAIN | Number of Aggregate Snapshot to persist to disk for swift recovery | 2 |
 | COS_READ_SIDE_ENABLED | turn on readside or not | false |
