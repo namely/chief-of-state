@@ -26,7 +26,7 @@ object Dependencies {
 
   object Test {
     final val Test = sbt.Test
-    val AkkaGrpcTestkit = "com.lightbend.play" %% "lagom-scaladsl-grpc-testkit" % "0.8.2"
+    val AkkaGrpcTestkit = "com.lightbend.play" %% "lagom-scaladsl-grpc-testkit" % "0.8.2" % "test"
   }
 
 }

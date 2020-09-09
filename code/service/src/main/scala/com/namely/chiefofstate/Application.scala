@@ -12,7 +12,6 @@ import com.lightbend.lagom.scaladsl.server.{
   LagomServer
 }
 import com.namely.chiefofstate.config.{EncryptionSetting, HandlerSetting, ReadSideSetting, SendCommandSettings}
-import com.namely.chiefofstate.api.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceClient
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceClient
 import com.softwaremill.macwire.wire
@@ -36,7 +35,7 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
 
   // wiring up the grpc for the writeSide client
   lazy val writeSideHandlerServiceClient: WriteSideHandlerServiceClient = WriteSideHandlerServiceClient(
-    GrpcClientSettings.fromConfig("chief_of_state.WriteSideHandlerService")
+    GrpcClientSettings.fromConfig("chief_of_state.v1.WriteSideHandlerService")
   )
 
   // let us wire up the handler settings

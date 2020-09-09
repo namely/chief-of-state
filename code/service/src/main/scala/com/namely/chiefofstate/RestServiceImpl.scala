@@ -5,11 +5,13 @@ import akka.actor.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
-import com.namely.chiefofstate.api.ChiefOfStateService
+import com.lightbend.lagom.scaladsl.api.{Descriptor, ServiceCall}
+import com.lightbend.lagom.scaladsl.api.Service.restCall
+import com.lightbend.lagom.scaladsl.api.transport.Method
 import com.google.protobuf.any.Any
 import io.superflat.lagompb.{AggregateRoot, BaseServiceImpl}
+import io.superflat.lagompb.BaseService
 import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
-
 import scala.concurrent.{ExecutionContext, Future}
 
 class RestServiceImpl(
@@ -28,4 +30,11 @@ class RestServiceImpl(
 
   // TODO: Deprecate this!
   def aggregateStateCompanion: GeneratedMessageCompanion[_ <: scalapb.GeneratedMessage] = Any
+}
+
+trait ChiefOfStateService extends BaseService {
+
+  def handleCommand(): ServiceCall[NotUsed, String]
+
+  override val routes: Seq[Descriptor.Call[_, _]] = Seq(restCall(Method.GET, "/", handleCommand _))
 }

@@ -43,12 +43,8 @@ Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com
 # install earth cli
 brew install earthly
 
-# add JFROG_USERNAME and JFROG_PASSWORD env vars
-# (if using .env, shortcut to load into environment)
-set -o allexport; source .env; set +o allexport
-
 # locally build the image
-earth -s JFROG_USERNAME -s JFROG_PASSWORD +docker-build
+earth +docker-build
 
 # run local cluster with docker/docker-compose.yml
 docker-compose -f ./docker/docker-compose.yml --project-directory . up -d
@@ -62,7 +58,7 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 
 ### Inside a _docker-compose_ file
 
-- Pull the docker image from `registry.namely.land/namely/chief-of-state:<tag>` where `tag` is the latest release tag.
+- Pull the docker image from `chief-of-state:<tag>` where `tag` is the latest release tag.
 
 - Set the environment variable listed [here](#global-environment-variables) in addition with the [local](#local-dev-options) ones.
 
@@ -84,7 +80,6 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 | COS_POSTGRES_PORT | journal, snapshot and read side offsets store port | 5432 |
 | COS_POSTGRES_DB | journal, snapshot and read side offsets store db name | postgres |
 | COS_POSTGRES_SCHEMA | journal, snapshot and read side offsets store db schema | public |
-| COS_KAFKA_BROKER | kafka broker | localhost:9092 |
 | COS_EVENTS_BATCH_THRESHOLD | Number of Events to batch persist | 100 |
 | COS_NUM_SNAPSHOTS_TO_RETAIN | Number of Aggregate Snapshot to persist to disk for swift recovery | 2 |
 | COS_READ_SIDE_ENABLED | turn on readside or not | false |
@@ -146,28 +141,8 @@ env:
         fieldPath: status.podIP
 ```
 
-- K8s configuration for tracing agent at Namely
-
-```yaml
-- name: NODE_NAME
-  valueFrom:
-    fieldRef:
-      fieldPath: spec.nodeName
-- name: TRACE_HOST
-  value: $(NODE_NAME)
-- name: TRACE_PORT
-  value: "9080"
-```
-
 ### Sample Projects
 
 - [.NET Core](https://github.com/namely/cos-banking)
 - [Golang](https://github.com/namely/cos-go-sample)
 - [Python](https://github.com/namely/cos-python-sample)
-
-### Notes
-
-todo:
-
-- think about scaling out replicas in k8s (don't want to break the k8s replica)
-- add more read_side_config settings

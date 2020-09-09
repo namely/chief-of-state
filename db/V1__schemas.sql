@@ -20,15 +20,6 @@ CREATE TABLE IF NOT EXISTS snapshot
     PRIMARY KEY (persistence_id, sequence_number)
 );
 
-CREATE TABLE IF NOT EXISTS read_side_offsets
-(
-    read_side_id     VARCHAR(255),
-    tag              VARCHAR(255),
-    sequence_offset  bigint,
-    time_uuid_offset char(36),
-    PRIMARY KEY (read_side_id, tag)
-);
-
 create table if not exists "AKKA_PROJECTION_OFFSET_STORE"
 (
     "PROJECTION_NAME" CHAR(255)                   NOT NULL,

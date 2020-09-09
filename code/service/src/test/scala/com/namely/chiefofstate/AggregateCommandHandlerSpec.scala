@@ -71,7 +71,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val cmd = Any.pack(GetStateRequest.defaultInstance)
       val priorState: Any = Any.pack(Account.defaultInstance.withAccountNumber(("123")))
       val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
-        .withRevisionNumber(1L)
+        .withRevisionNumber(1)
 
       val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, null, testHandlerSetting)
       val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
@@ -89,7 +89,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val cmd = GetStateRequest.defaultInstance
       val priorState: Any = Any.pack(Account.defaultInstance)
       val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
-        .withRevisionNumber(1L)
+        .withRevisionNumber(1)
 
       val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, null, testHandlerSetting)
       val result: Try[CommandHandlerResponse] = cmdhandler.handleTyped(cmd, priorState, priorEventMeta)
@@ -169,7 +169,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
 
       val currentState: Any = Any.pack(Account.defaultInstance)
       val currentMeta: LagompbMetaData = LagompbMetaData.defaultInstance
-        .withRevisionNumber(1L)
+        .withRevisionNumber(1)
 
       // let us create a mock instance of the handler service client
       val mockRequestBuilder = getMockRequestBuilder
@@ -248,7 +248,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
     "handle command successfully as expected with an event to persist" in {
       val priorState: Any = Any.pack(Account.defaultInstance)
       val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
-        .withRevisionNumber(1L)
+        .withRevisionNumber(1)
 
       val innerCmd = Any.pack(OpenAccount.defaultInstance)
       val cmd = RemoteCommand()
@@ -333,7 +333,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       result shouldBe CommandHandlerResponse()
         .withFailedResponse(
           FailedCommandHandlerResponse()
-            .withReason("received unknown event type chief_of_state.AccountOpened")
+            .withReason("received unknown event type chief_of_state.v1.AccountOpened")
             .withCause(FailureCause.VALIDATION_ERROR)
         )
 

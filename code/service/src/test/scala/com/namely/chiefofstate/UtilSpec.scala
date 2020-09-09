@@ -10,7 +10,7 @@ class UtilSpec extends BaseSpec {
   "toCosMetaData" should {
     "return the right COS MetaData" in {
       val ts = Timestamp().withSeconds(3L).withNanos(2)
-      val revisionNumber = 2L
+      val revisionNumber = 2
       val data = Map("foo" -> "bar")
 
       val lagomMetaData = LagompbMetaData()
