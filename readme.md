@@ -58,7 +58,7 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 
 ### Inside a _docker-compose_ file
 
-- Pull the docker image from `registry.namely.land/namely/chief-of-state:<tag>` where `tag` is the latest release tag.
+- Pull the docker image from `chief-of-state:<tag>` where `tag` is the latest release tag.
 
 - Set the environment variable listed [here](#global-environment-variables) in addition with the [local](#local-dev-options) ones.
 
@@ -141,28 +141,8 @@ env:
         fieldPath: status.podIP
 ```
 
-- K8s configuration for tracing agent at Namely
-
-```yaml
-- name: NODE_NAME
-  valueFrom:
-    fieldRef:
-      fieldPath: spec.nodeName
-- name: TRACE_HOST
-  value: $(NODE_NAME)
-- name: TRACE_PORT
-  value: "9080"
-```
-
 ### Sample Projects
 
 - [.NET Core](https://github.com/namely/cos-banking)
 - [Golang](https://github.com/namely/cos-go-sample)
 - [Python](https://github.com/namely/cos-python-sample)
-
-### Notes
-
-todo:
-
-- think about scaling out replicas in k8s (don't want to break the k8s replica)
-- add more read_side_config settings
