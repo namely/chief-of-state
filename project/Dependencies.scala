@@ -5,8 +5,7 @@ object Dependencies {
   // Package versions
   object Versions {
     val Scala213 = "2.13.1"
-    val LagomPbVersion = "0.8.2+1-84b0c123-SNAPSHOT"
-    val AkkaVersion: String = "2.6.8"
+    val LagomPbVersion = "0.9.0"
     val KanelaAgentVersion = "1.0.6"
     val SilencerVersion = "1.6.0"
     val KamonAkkaGrpcVersion = "0.0.9"
