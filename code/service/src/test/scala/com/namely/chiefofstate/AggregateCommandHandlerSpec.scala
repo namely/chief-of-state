@@ -7,14 +7,13 @@ import akka.grpc.scaladsl.SingleResponseRequestBuilder
 import com.google.protobuf.any.Any
 import com.google.protobuf.ByteString
 import com.google.protobuf.wrappers.StringValue
+import com.namely.chiefofstate.config.HandlerSetting
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service.GetStateRequest
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened, OpenAccount}
 import com.namely.protobuf.chiefofstate.v1.writeside._
 import com.namely.protobuf.chiefofstate.v1.writeside.HandleCommandResponse.ResponseType
-import com.namely.chiefofstate.config.HandlerSetting
 import io.grpc.{Status, StatusRuntimeException}
-import io.superflat.lagompb.Command
 import io.superflat.lagompb.protobuf.v1.core.{
   CommandHandlerResponse,
   FailedCommandHandlerResponse,
@@ -23,11 +22,11 @@ import io.superflat.lagompb.protobuf.v1.core.{
   MetaData => LagompbMetaData
 }
 import io.superflat.lagompb.testkit.BaseSpec
+import io.superflat.lagompb.ProtosRegistry
 import org.scalamock.scalatest.MockFactory
 
 import scala.concurrent.Future
 import scala.util.{Success, Try}
-import io.superflat.lagompb.ProtosRegistry
 
 class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
 
@@ -69,7 +68,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
     "unmarshall in the parent handler" in {
       ProtosRegistry.load()
       val cmd = Any.pack(GetStateRequest.defaultInstance)
-      val priorState: Any = Any.pack(Account.defaultInstance.withAccountNumber(("123")))
+      val priorState: Any = Any.pack(Account.defaultInstance.withAccountNumber("123"))
       val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
         .withRevisionNumber(1)
 
@@ -163,8 +162,8 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
 
       val event = Any.pack(
         AccountOpened()
-        .withAccountNumber("123445")
-        .withAccountUuid(UUID.randomUUID.toString)
+          .withAccountNumber("123445")
+          .withAccountUuid(UUID.randomUUID.toString)
       )
 
       val currentState: Any = Any.pack(Account.defaultInstance)
@@ -256,8 +255,8 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
 
       val event = Any.pack(
         AccountOpened()
-        .withAccountNumber("123445")
-        .withAccountUuid(UUID.randomUUID.toString)
+          .withAccountNumber("123445")
+          .withAccountUuid(UUID.randomUUID.toString)
       )
 
       // let us create a mock instance of the handler service client
@@ -473,7 +472,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val mockGrpcClient = mock[WriteSideHandlerServiceClient]
       val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
 
-      val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance.withRevisionNumber(1L)
+      val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance.withRevisionNumber(1)
 
       val cmd = GetStateRequest(entityId = "x")
 
