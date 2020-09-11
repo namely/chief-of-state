@@ -11,7 +11,6 @@ import com.namely.protobuf.chiefofstate.v1.writeside.{
   HandleCommandResponse,
   WriteSideHandlerServiceClient
 }
-import com.namely.protobuf.chiefofstate.v1.writeside.HandleCommandResponse.ResponseType.{PersistAndReply, Reply}
 import com.namely.chiefofstate.config.HandlerSetting
 import io.grpc.{Status, StatusRuntimeException}
 import io.superflat.lagompb.{CommandHandler, ProtosRegistry}
@@ -169,40 +168,30 @@ class AggregateCommandHandler(
    */
   def handleRemoteResponseSuccess(response: HandleCommandResponse): CommandHandlerResponse = {
     response.responseType match {
-      case PersistAndReply(persistAndReply) =>
-        log.debug("[ChiefOfState] command handler return successfully. An event will be persisted...")
-        val eventFQN: String = Util.getProtoFullyQualifiedName(persistAndReply.getEvent)
+      case HandleCommandResponse.ResponseType.Event(event) =>
 
-        log.debug(s"[ChiefOfState] command handler event to persist $eventFQN")
-        if (handlerSetting.enableProtoValidations) {
-          if (handlerSetting.eventFQNs.contains(eventFQN)) {
-            log.debug(s"[ChiefOfState] command handler event to persist $eventFQN is valid.")
+        log.debug("[ChiefOfState] command handler return successfully. An event will be persisted...")
+
+        val eventFQN: String = Util.getProtoFullyQualifiedName(event)
+
+        if (handlerSetting.enableProtoValidations && !handlerSetting.eventFQNs.contains(eventFQN)) {
+          log.error(s"[ChiefOfState] command handler returned unknown event type, $eventFQN")
+          CommandHandlerResponse()
+            .withFailedResponse(
+              FailedCommandHandlerResponse()
+                .withReason(s"received unknown event type $eventFQN")
+                .withCause(FailureCause.VALIDATION_ERROR)
+            )
+        } else {
+          log.debug(s"[ChiefOfState] command handler event to persist $eventFQN is valid.")
             CommandHandlerResponse()
               .withSuccessResponse(
                 SuccessCommandHandlerResponse()
-                  .withEvent(persistAndReply.getEvent)
+                  .withEvent(event)
               )
-          } else {
-            log.error(
-              s"[ChiefOfState] command handler event to persist $eventFQN is not configured. Failing request"
-            )
-            CommandHandlerResponse()
-              .withFailedResponse(
-                FailedCommandHandlerResponse()
-                  .withReason(s"received unknown event type $eventFQN")
-                  .withCause(FailureCause.VALIDATION_ERROR)
-              )
-          }
-        } else {
-          log.debug(s"[ChiefOfState] command handler event to persist $eventFQN. FQN validation skipped.")
-          CommandHandlerResponse()
-            .withSuccessResponse(
-              SuccessCommandHandlerResponse()
-                .withEvent(persistAndReply.getEvent)
-            )
         }
 
-      case Reply(_) =>
+      case HandleCommandResponse.ResponseType.NoEvent(_) =>
         log.debug("[ChiefOfState] command handler return successfully. No event will be persisted...")
         CommandHandlerResponse()
           .withSuccessResponse(

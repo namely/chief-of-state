@@ -5,6 +5,7 @@ import java.util.UUID
 import akka.grpc.GrpcServiceException
 import akka.grpc.scaladsl.SingleResponseRequestBuilder
 import com.google.protobuf.any.Any
+import com.google.protobuf.empty.Empty
 import com.google.protobuf.ByteString
 import com.google.protobuf.wrappers.StringValue
 import com.namely.chiefofstate.config.HandlerSetting
@@ -79,7 +80,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
         CommandHandlerResponse()
           .withSuccessResponse(
             SuccessCommandHandlerResponse()
-              .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
+              .withNoEvent(Empty.defaultInstance)
           )
       )
     }
@@ -97,7 +98,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
         CommandHandlerResponse()
           .withSuccessResponse(
             SuccessCommandHandlerResponse()
-              .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
+              .withNoEvent(Empty.defaultInstance)
           )
       )
     }
@@ -195,10 +196,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
         .returning(
           Future.successful(
             HandleCommandResponse()
-              .withPersistAndReply(
-                PersistAndReply()
-                  .withEvent(event)
-              )
+              .withEvent(event)
           )
         )
 
@@ -274,10 +272,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
         .returning(
           Future.successful(
             HandleCommandResponse()
-              .withPersistAndReply(
-                PersistAndReply()
-                  .withEvent(event)
-              )
+              .withEvent(event)
           )
         )
 
@@ -299,12 +294,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
         .withAccountNumber("123445")
         .withAccountUuid(UUID.randomUUID.toString)
 
-      val response = HandleCommandResponse()
-        .withPersistAndReply(
-          PersistAndReply()
-            .withEvent(Any.pack(event))
-        )
-
+      val response = HandleCommandResponse().withEvent(Any.pack(event))
       val cmdhandler = new AggregateCommandHandler(null, null, testHandlerSetting)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseSuccess(response)
 
@@ -319,10 +309,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
     "handle command when event type is not specified in handler settings as expected" in {
       val badResponse =
         HandleCommandResponse()
-          .withPersistAndReply(
-            PersistAndReply()
-              .withEvent(Any.pack(AccountOpened.defaultInstance))
-          )
+          .withEvent(Any.pack(AccountOpened.defaultInstance))
 
       // let us execute the request
       val badHandlerSettings: HandlerSetting = HandlerSetting(enableProtoValidations = true, Seq(), Seq())
@@ -344,11 +331,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
         .withAccountNumber("123445")
         .withAccountUuid(UUID.randomUUID.toString)
 
-      val response = HandleCommandResponse()
-        .withPersistAndReply(
-          PersistAndReply()
-            .withEvent(Any.pack(event))
-        )
+      val response = HandleCommandResponse().withEvent(Any.pack(event))
 
       // set enableProtoValidations to false and not provide event and state protos
       val handlerSettings: HandlerSetting = HandlerSetting(enableProtoValidations = false, Seq(), Seq())
@@ -367,20 +350,20 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       // let us execute the request
       val cmdhandler = new AggregateCommandHandler(null, null, testHandlerSetting)
 
-      val response = HandleCommandResponse().withReply(Reply.defaultInstance)
+      val response = HandleCommandResponse().withNoEvent(Empty())
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseSuccess(response)
 
       result shouldBe CommandHandlerResponse()
         .withSuccessResponse(
           SuccessCommandHandlerResponse()
-            .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
+            .withNoEvent(Empty.defaultInstance)
         )
     }
 
     "handle wrong successful response as expected" in {
       val cmdhandler = new AggregateCommandHandler(null, null, testHandlerSetting)
       // define a response that will fail
-      val response = HandleCommandResponse().withResponseType(ResponseType.Empty)
+      val response = HandleCommandResponse()
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseSuccess(response)
 
       result shouldBe CommandHandlerResponse()
