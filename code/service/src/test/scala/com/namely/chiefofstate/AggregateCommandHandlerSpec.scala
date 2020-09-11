@@ -13,7 +13,6 @@ import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service.GetStateRequest
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened, OpenAccount}
 import com.namely.protobuf.chiefofstate.v1.writeside._
-import com.namely.protobuf.chiefofstate.v1.writeside.HandleCommandResponse.ResponseType
 import io.grpc.{Status, StatusRuntimeException}
 import io.superflat.lagompb.protobuf.v1.core.{
   CommandHandlerResponse,
@@ -79,8 +78,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       result shouldBe Success(
         CommandHandlerResponse()
           .withSuccessResponse(
-            SuccessCommandHandlerResponse()
-              .withNoEvent(Empty.defaultInstance)
+            SuccessCommandHandlerResponse().withNoEvent(Empty())
           )
       )
     }
@@ -97,8 +95,7 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       result shouldBe Success(
         CommandHandlerResponse()
           .withSuccessResponse(
-            SuccessCommandHandlerResponse()
-              .withNoEvent(Empty.defaultInstance)
+            SuccessCommandHandlerResponse().withNoEvent(Empty())
           )
       )
     }
@@ -358,30 +355,12 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
     "handle command successfully as expected with no event to persist" in {
       // let us execute the request
       val cmdhandler = new AggregateCommandHandler(null, null, testHandlerSetting)
-
-      val response = HandleCommandResponse().withNoEvent(Empty())
-      val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseSuccess(response)
-
-      result shouldBe CommandHandlerResponse()
-        .withSuccessResponse(
-          SuccessCommandHandlerResponse()
-            .withNoEvent(Empty.defaultInstance)
-        )
-    }
-
-    "handle wrong successful response as expected" in {
-      val cmdhandler = new AggregateCommandHandler(null, null, testHandlerSetting)
-      // define a response that will fail
       val response = HandleCommandResponse()
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseSuccess(response)
 
       result shouldBe CommandHandlerResponse()
-        .withFailedResponse(
-          FailedCommandHandlerResponse()
-            .withReason(
-              s"command handler returned malformed event, ${HandleCommandResponse.ResponseType.Empty.getClass.getName}"
-            )
-            .withCause(FailureCause.INTERNAL_ERROR)
+        .withSuccessResponse(
+          SuccessCommandHandlerResponse().withNoEvent(Empty())
         )
     }
   }

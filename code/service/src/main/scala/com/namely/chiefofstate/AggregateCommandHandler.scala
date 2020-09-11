@@ -167,8 +167,8 @@ class AggregateCommandHandler(
    * @return an instance of CommandHandlerResponse
    */
   def handleRemoteResponseSuccess(response: HandleCommandResponse): CommandHandlerResponse = {
-    response.responseType match {
-      case HandleCommandResponse.ResponseType.Event(event) =>
+    response.event match {
+      case Some(event) =>
 
         log.debug("[ChiefOfState] command handler return successfully. An event will be persisted...")
 
@@ -191,20 +191,12 @@ class AggregateCommandHandler(
               )
         }
 
-      case HandleCommandResponse.ResponseType.NoEvent(_) =>
+      case None =>
         log.debug("[ChiefOfState] command handler return successfully. No event will be persisted...")
         CommandHandlerResponse()
           .withSuccessResponse(
             SuccessCommandHandlerResponse()
               .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
-          )
-
-      case unhandled =>
-        CommandHandlerResponse()
-          .withFailedResponse(
-            FailedCommandHandlerResponse()
-              .withReason(s"command handler returned malformed event, ${unhandled.getClass.getName}")
-              .withCause(FailureCause.INTERNAL_ERROR)
           )
     }
   }
