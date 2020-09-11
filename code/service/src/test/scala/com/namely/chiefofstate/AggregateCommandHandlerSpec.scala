@@ -142,6 +142,15 @@ class AggregateCommandHandlerSpec extends BaseSpec with MockFactory {
       val actual = cmdhandler.handle(cmd, priorState, priorEventMeta)
       actual.failed.get.getMessage.contains("unhandled command type")
     }
+
+    "fails in the typed handler for unknown types" in {
+      val cmd = Any.pack(StringValue("oops"))
+      val priorState: Any = Any.pack(Account.defaultInstance)
+      val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
+      val cmdhandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val actual = cmdhandler.handleTyped(cmd, priorState, priorEventMeta)
+      actual.failed.get.getMessage.contains("unhandled command type")
+    }
   }
 
   "gRPC remote handler" should {
