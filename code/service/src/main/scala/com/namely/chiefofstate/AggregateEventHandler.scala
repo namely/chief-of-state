@@ -8,7 +8,7 @@ import com.namely.protobuf.chiefofstate.v1.writeside.{
   HandleEventResponse,
   WriteSideHandlerServiceClient
 }
-import io.superflat.lagompb.{EventHandler, GlobalException}
+import io.superflat.lagompb.EventHandler
 import io.superflat.lagompb.protobuf.v1.core.MetaData
 import org.slf4j.{Logger, LoggerFactory}
 import scalapb.GeneratedMessage
@@ -44,13 +44,13 @@ class AggregateEventHandler(
     ) match {
 
       case Failure(e) =>
-        throw new GlobalException(e.getMessage)
+        throw new Exception(e.getMessage)
 
       case Success(eventualEventResponse: Future[HandleEventResponse]) =>
         Try {
           Await.result(eventualEventResponse, Duration.Inf)
         } match {
-          case Failure(exception) => throw new GlobalException(exception.getMessage)
+          case Failure(exception) => throw new Exception(exception.getMessage)
           case Success(handleEventResponse: HandleEventResponse) =>
 
             val stateFQN: String = Util.getProtoFullyQualifiedName(handleEventResponse.getResultingState)
@@ -59,7 +59,7 @@ class AggregateEventHandler(
             // if enabled, validate the state type url returned by event handler
             if (handlerSetting.enableProtoValidations && !handlerSetting.stateFQNs.contains(stateFQN)) {
               log.error(s"[ChiefOfState]: command handler state to persist $stateFQN is not configured. Failing request")
-              throw new GlobalException(s"received unknown state $stateFQN")
+              throw new Exception(s"received unknown state $stateFQN")
             }
 
             // pass through state returned by event handler

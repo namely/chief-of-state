@@ -13,7 +13,6 @@ import com.namely.protobuf.chiefofstate.v1.writeside.{
 }
 import com.namely.chiefofstate.config.HandlerSetting
 import io.grpc.Status
-import io.superflat.lagompb.GlobalException
 import io.superflat.lagompb.protobuf.v1.core.MetaData
 import io.superflat.lagompb.testkit.BaseSpec
 import org.scalamock.scalatest.MockFactory
@@ -108,7 +107,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
         )
 
       val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
-      a[GlobalException] shouldBe thrownBy(
+      a[Exception] shouldBe thrownBy(
         eventHandler.handle(Any.pack(event), priorState, eventMeta)
       )
     }
@@ -190,7 +189,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
 
       val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
 
-      a[GlobalException] shouldBe thrownBy(
+      a[Exception] shouldBe thrownBy(
         eventHandler.handle(Any.pack(event), priorState, eventMeta)
       )
     }
@@ -225,7 +224,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
         .returning(Future.failed(new GrpcServiceException(Status.INTERNAL)))
 
       val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
-      a[GlobalException] shouldBe thrownBy(
+      a[Exception] shouldBe thrownBy(
         eventHandler.handle(Any.pack(event), priorState, eventMeta)
       )
     }
@@ -260,7 +259,7 @@ class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
         .throws(new RuntimeException("broken"))
 
       val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
-      a[GlobalException] shouldBe thrownBy(
+      a[Exception] shouldBe thrownBy(
         eventHandler.handle(Any.pack(event), priorState, eventMeta)
       )
     }

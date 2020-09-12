@@ -10,7 +10,7 @@ import com.namely.protobuf.chiefofstate.v1.readside.{
   ReadSideHandlerServiceClient
 }
 import com.namely.chiefofstate.config.{HandlerSetting, ReadSideSetting}
-import io.superflat.lagompb.{ConfigReader, GlobalException}
+import io.superflat.lagompb.ConfigReader
 import io.superflat.lagompb.encryption.EncryptionAdapter
 import com.namely.chiefofstate.Util
 import io.superflat.lagompb.readside.{ReadSideEvent, ReadSideProcessor}
@@ -63,14 +63,14 @@ class ReadSideHandler(
           log.error(
             s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - unable to retrieve command handler response due to ${exception.getMessage}"
           )
-          DBIOAction.failed(throw new GlobalException(exception.getMessage))
+          DBIOAction.failed(throw new Exception(exception.getMessage))
         case Success(eventualReadSideResponse: Future[HandleReadSideResponse]) =>
           Try {
             Await.result(eventualReadSideResponse, Duration.Inf)
           } match {
             case Failure(exception) =>
               DBIOAction.failed(
-                throw new GlobalException(
+                throw new Exception(
                   s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - ${exception.getMessage}"
                 )
               )
@@ -78,7 +78,7 @@ class ReadSideHandler(
               if (value.successful) DBIOAction.successful(Done)
               else
                 DBIOAction.failed(
-                  throw new GlobalException(
+                  throw new Exception(
                     s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - unable to handle readSide"
                   )
                 )

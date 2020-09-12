@@ -16,9 +16,9 @@ object BuildSettings extends AutoPlugin {
       libraryDependencies ++= Seq(
         Dependencies.Compile.Lagompb,
         Dependencies.Compile.LagompbReadSide,
+        Dependencies.Compile.KamonAkkaGrpc,
         Dependencies.Runtime.LagompbRuntime,
-        Dependencies.Test.AkkaGrpcTestkit,
-        Dependencies.Compile.KamonAkkaGrpc
+        Dependencies.Test.AkkaGrpcTestkit
       )
     )
 }

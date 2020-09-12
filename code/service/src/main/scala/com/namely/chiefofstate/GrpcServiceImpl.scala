@@ -16,7 +16,6 @@ import com.namely.chiefofstate.config.SendCommandSettings
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Try, Success, Failure}
-import io.superflat.lagompb.GlobalException
 import io.superflat.lagompb.protobuf.v1.core.StateWrapper
 
 class GrpcServiceImpl(sys: ActorSystem,
@@ -106,24 +105,11 @@ class GrpcServiceImpl(sys: ActorSystem,
       )
     } else {
       sendCommand(in.entityId, in, Map.empty[String, String])
-      .transform({
-        // transform success to a GetStateResponse
-        case Success(stateWrapper: StateWrapper) =>
-          Success(
-            GetStateResponse(
-              state = stateWrapper.state,
-              meta = stateWrapper.meta.map(Util.toCosMetaData)
-            )
-          )
-
-        // handle not-found errors specifically
-        case Failure(e) if e.getMessage == AggregateCommandHandler.GET_STATE_NOT_FOUND_FAILURE.reason =>
-          Failure(new GrpcServiceException(status = Status.NOT_FOUND.withDescription("COS could not find entity")))
-
-        // pass through other failures
-        case Failure(e) =>
-          log.error(s"unhandled error in getState", e)
-          Failure(e)
+      .map((stateWrapper: StateWrapper) => {
+        GetStateResponse(
+          state = stateWrapper.state,
+          meta = stateWrapper.meta.map(Util.toCosMetaData)
+        )
       })
     }
   }
