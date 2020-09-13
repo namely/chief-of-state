@@ -2,7 +2,7 @@ import com.lightbend.sbt.javaagent.JavaAgent.JavaAgentKeys.javaAgents
 
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.{dockerBaseImage, dockerRepository, dockerUsername}
 import sbt.{plugins, AutoPlugin, Plugins}
-import sbt.Keys.libraryDependencies
+import sbt.Keys.{dependencyOverrides, libraryDependencies}
 
 object BuildSettings extends AutoPlugin {
   override def requires: Plugins = plugins.JvmPlugin
@@ -16,9 +16,10 @@ object BuildSettings extends AutoPlugin {
       libraryDependencies ++= Seq(
         Dependencies.Compile.Lagompb,
         Dependencies.Compile.LagompbReadSide,
+        Dependencies.Compile.KamonAkkaGrpc,
         Dependencies.Runtime.LagompbRuntime,
-        Dependencies.Test.AkkaGrpcTestkit,
-        Dependencies.Compile.KamonAkkaGrpc
-      )
+        Dependencies.Test.AkkaGrpcTestkit
+      ),
+      dependencyOverrides ++= Dependencies.AkkaOverrideDeps
     )
 }

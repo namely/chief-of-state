@@ -11,7 +11,6 @@ import com.namely.protobuf.chiefofstate.v1.writeside.{
   HandleCommandResponse,
   WriteSideHandlerServiceClient
 }
-import com.namely.protobuf.chiefofstate.v1.writeside.HandleCommandResponse.ResponseType.{PersistAndReply, Reply}
 import com.namely.chiefofstate.config.HandlerSetting
 import io.grpc.{Status, StatusRuntimeException}
 import io.superflat.lagompb.{CommandHandler, ProtosRegistry}
@@ -98,16 +97,10 @@ class AggregateCommandHandler(
     if (priorEventMeta.revisionNumber > 0) {
       log.debug(s"[ChiefOfState] found state for entity ${command.entityId}")
       CommandHandlerResponse()
-        .withSuccessResponse(
-          SuccessCommandHandlerResponse()
-            .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
-        )
     } else {
       log.error(s"[ChiefOfState] could not find state for entity ${command.entityId}")
       CommandHandlerResponse()
-        .withFailedResponse(
-          AggregateCommandHandler.GET_STATE_NOT_FOUND_FAILURE
-        )
+        .withFailure(FailureResponse().withNotFound("entity not found"))
     }
   }
 
@@ -128,9 +121,10 @@ class AggregateCommandHandler(
     // make blocking gRPC call to handler service
     val responseAttempt: Try[HandleCommandResponse] = Try {
       // construct the request message
-      val handleCommandRequest = HandleCommandRequest(command=remoteCommand.command)
-        .withCurrentState(priorState)
-        .withMeta(Util.toCosMetaData(priorEventMeta))
+      val handleCommandRequest =
+        HandleCommandRequest(command=remoteCommand.command)
+          .withCurrentState(priorState)
+          .withMeta(Util.toCosMetaData(priorEventMeta))
 
       // create an akka gRPC request builder
       val futureResponse: Future[HandleCommandResponse] =
@@ -144,7 +138,7 @@ class AggregateCommandHandler(
                   request.addHeader(header.key, value)
                 case RemoteCommand.Header.Value.BytesValue(value) =>
                   request.addHeader(header.key, akka.util.ByteString(value.toByteArray))
-                case unhandled => throw new Exception(s"unhandled gRPC header type, ${unhandled.getClass.getName}")
+                case _ => throw new Exception(s"header value must be string or bytes")
               }
             }
           )
@@ -168,55 +162,29 @@ class AggregateCommandHandler(
    * @return an instance of CommandHandlerResponse
    */
   def handleRemoteResponseSuccess(response: HandleCommandResponse): CommandHandlerResponse = {
-    response.responseType match {
-      case PersistAndReply(persistAndReply) =>
-        log.debug("[ChiefOfState] command handler return successfully. An event will be persisted...")
-        val eventFQN: String = Util.getProtoFullyQualifiedName(persistAndReply.getEvent)
+    response.event match {
+      case Some(event) =>
 
-        log.debug(s"[ChiefOfState] command handler event to persist $eventFQN")
-        if (handlerSetting.enableProtoValidations) {
-          if (handlerSetting.eventFQNs.contains(eventFQN)) {
-            log.debug(s"[ChiefOfState] command handler event to persist $eventFQN is valid.")
-            CommandHandlerResponse()
-              .withSuccessResponse(
-                SuccessCommandHandlerResponse()
-                  .withEvent(persistAndReply.getEvent)
-              )
-          } else {
-            log.error(
-              s"[ChiefOfState] command handler event to persist $eventFQN is not configured. Failing request"
-            )
-            CommandHandlerResponse()
-              .withFailedResponse(
-                FailedCommandHandlerResponse()
-                  .withReason(s"received unknown event type $eventFQN")
-                  .withCause(FailureCause.VALIDATION_ERROR)
-              )
-          }
-        } else {
-          log.debug(s"[ChiefOfState] command handler event to persist $eventFQN. FQN validation skipped.")
+        log.debug("[ChiefOfState] command handler return successfully. An event will be persisted...")
+
+        val eventFQN: String = Util.getProtoFullyQualifiedName(event)
+
+        if (handlerSetting.enableProtoValidations && !handlerSetting.eventFQNs.contains(eventFQN)) {
+          log.error(s"[ChiefOfState] command handler returned unknown event type, $eventFQN")
           CommandHandlerResponse()
-            .withSuccessResponse(
-              SuccessCommandHandlerResponse()
-                .withEvent(persistAndReply.getEvent)
+            .withFailure(
+              FailureResponse()
+                .withValidation(s"received unknown event type $eventFQN")
             )
+        } else {
+          log.debug(s"[ChiefOfState] command handler event to persist $eventFQN is valid.")
+            CommandHandlerResponse()
+              .withEvent(event)
         }
 
-      case Reply(_) =>
+      case None =>
         log.debug("[ChiefOfState] command handler return successfully. No event will be persisted...")
         CommandHandlerResponse()
-          .withSuccessResponse(
-            SuccessCommandHandlerResponse()
-              .withNoEvent(com.google.protobuf.empty.Empty.defaultInstance)
-          )
-
-      case unhandled =>
-        CommandHandlerResponse()
-          .withFailedResponse(
-            FailedCommandHandlerResponse()
-              .withReason(s"command handler returned malformed event, ${unhandled.getClass.getName}")
-              .withCause(FailureCause.INTERNAL_ERROR)
-          )
     }
   }
 
@@ -235,38 +203,28 @@ class AggregateCommandHandler(
         log.error(s"[ChiefOfState] $reason")
 
         // handle specific gRPC error statuses
-        val cause =
+        val failureResponse =
           if (GRPC_FAILED_VALIDATION_STATUSES.contains(status.getCode)) {
-            FailureCause.VALIDATION_ERROR
+            FailureResponse().withValidation(status.getDescription)
           } else {
-            FailureCause.INTERNAL_ERROR
+            FailureResponse().withCritical(status.getDescription)
           }
 
-        CommandHandlerResponse()
-          .withFailedResponse(
-            FailedCommandHandlerResponse()
-              .withReason(reason)
-              .withCause(cause)
-          )
+        CommandHandlerResponse().withFailure(failureResponse)
 
       case e: GrpcServiceException =>
         log.error(s"[ChiefOfState] handler gRPC failed with ${e.status.toString}", e)
         CommandHandlerResponse()
-          .withFailedResponse(
-            FailedCommandHandlerResponse()
-              .withReason(e.getStatus.toString)
-              .withCause(FailureCause.INTERNAL_ERROR)
+          .withFailure(
+            FailureResponse().withCritical(e.getStatus.getDescription)
           )
 
       case e: Throwable =>
         log.error(s"[ChiefOfState] gRPC handler critical failure", e)
         CommandHandlerResponse()
-          .withFailedResponse(
-            FailedCommandHandlerResponse()
-              .withReason(
-                s"Critical error occurred handling command, ${e.getMessage}"
-              )
-              .withCause(FailureCause.INTERNAL_ERROR)
+          .withFailure(
+            FailureResponse()
+              .withCritical(s"Critical error occurred handling command, ${e.getMessage}")
           )
     }
   }
@@ -286,10 +244,4 @@ object AggregateCommandHandler {
     Status.Code.OUT_OF_RANGE,
     Status.Code.PERMISSION_DENIED
   )
-
-  // constant failure for entity not found
-  val GET_STATE_NOT_FOUND_FAILURE: FailedCommandHandlerResponse =
-    FailedCommandHandlerResponse()
-      .withReason("entity not found")
-      .withCause(FailureCause.INTERNAL_ERROR)
 }

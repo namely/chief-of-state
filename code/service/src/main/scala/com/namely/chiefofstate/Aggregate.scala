@@ -22,8 +22,7 @@ class Aggregate(
   eventHandler: EventHandler,
   encryptionAdapter: EncryptionAdapter
 ) extends AggregateRoot(actorSystem, commandHandler, eventHandler, Empty.defaultInstance, encryptionAdapter) {
-  // $COVERAGE-OFF$
+
   override def aggregateName: String = "chiefOfState"
 
-  // $COVERAGE-ON$
 }
