@@ -36,12 +36,9 @@ class ReadSideHandler(
   handlerSetting: HandlerSetting
 )(implicit ec: ExecutionContext)
     extends ReadSideProcessor(encryptionAdapter)(ec, actorSystem.toTyped) {
-  // $COVERAGE-OFF$
 
   override def projectionName: String =
     s"${grpcReadSideConfig.processorId}-${ConfigReader.serviceName}-readside-projection"
-
-  // $COVERAGE-ON$
 
   private val COS_EVENT_TAG_HEADER = "x-cos-event-tag"
   private val COS_ENTITY_ID_HEADER = "x-cos-entity-id"

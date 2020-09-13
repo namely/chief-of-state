@@ -25,7 +25,6 @@ import com.lightbend.lagom.internal.persistence.ReadSideConfig
  * @param context the application context
  */
 abstract class Application(context: LagomApplicationContext) extends BaseApplication(context) {
-  // $COVERAGE-OFF$
 
   // reflect encryption from config
   override def protoEncryption: Option[ProtoEncryption] = EncryptionSetting(config).encryption
@@ -79,15 +78,12 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
       chiefOfStateReadProcessor.init()
     }
   }
-  // $COVERAGE-ON$
 }
 
 /**
  * ApplicationLoader boostraps the application at runtime
  */
 class ApplicationLoader extends LagomApplicationLoader {
-
-  // $COVERAGE-OFF$
   override def load(context: LagomApplicationContext): LagomApplication =
     new Application(context) with AkkaDiscoveryComponents
 
@@ -95,6 +91,4 @@ class ApplicationLoader extends LagomApplicationLoader {
     new Application(context) with LagomDevModeComponents
 
   override def describeService: Option[Descriptor] = Some(readDescriptor[ChiefOfStateService])
-
-  // $COVERAGE-ON$
 }
