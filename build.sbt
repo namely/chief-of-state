@@ -3,12 +3,12 @@ import play.grpc.gen.scaladsl.{PlayScalaClientCodeGenerator, PlayScalaServerCode
 enablePlugins(DockerComposePlugin)
 dockerImageCreationTask := (Docker / publishLocal in `chiefofstate`).value
 
-lazy val root = project
+lazy val root: Project = project
   .in(file("."))
   .aggregate(protogen, `chiefofstate`)
   .settings(publishArtifact := false, skip in publish := true)
 
-lazy val `chiefofstate` = project
+lazy val `chiefofstate`: Project = project
   .in(file("code/service"))
   .enablePlugins(LagomScala)
   .enablePlugins(JavaAppPackaging, JavaAgent)
@@ -17,7 +17,7 @@ lazy val `chiefofstate` = project
   .settings(name := "chiefofstate", javaAgents += Dependencies.Compile.KanelaAgent)
   .dependsOn(protogen)
 
-lazy val protogen = project
+lazy val protogen: Project = project
   .in(file("code/.protogen"))
   .enablePlugins(AkkaGrpcPlugin)
   .enablePlugins(ProtocRuntime)

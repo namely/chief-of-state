@@ -1,4 +1,4 @@
-package com.namely.chiefofstate.config
+package com.namely.chiefofstate.test.helpers
 
 object EnvironmentHelper {
 

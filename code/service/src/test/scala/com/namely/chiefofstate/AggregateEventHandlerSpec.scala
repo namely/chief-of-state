@@ -4,22 +4,21 @@ import java.util.UUID
 
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
-import com.namely.protobuf.chiefofstate.v1.common
+import com.namely.chiefofstate.config.HandlerSetting
+import com.namely.chiefofstate.test.helpers.TestSpec
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened}
 import com.namely.protobuf.chiefofstate.v1.writeside.{
   HandleEventRequest,
   HandleEventResponse,
   WriteSideHandlerServiceClient
 }
-import com.namely.chiefofstate.config.HandlerSetting
 import io.grpc.Status
 import io.superflat.lagompb.protobuf.v1.core.MetaData
-import io.superflat.lagompb.testkit.BaseSpec
 import org.scalamock.scalatest.MockFactory
 
 import scala.concurrent.Future
 
-class AggregateEventHandlerSpec extends BaseSpec with MockFactory {
+class AggregateEventHandlerSpec extends TestSpec with MockFactory {
 
   "Chief-Of-State Event Handler" should {
 

@@ -1,11 +1,11 @@
 package com.namely.chiefofstate.config
 
+import com.namely.chiefofstate.test.helpers.TestSpec
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import io.superflat.lagompb.testkit.BaseSpec
 
 import scala.util.{Success, Try}
 
-class SendCommandSettingsSpec extends BaseSpec {
+class SendCommandSettingsSpec extends TestSpec {
 
   "Chief-Of-State send-command settings" should {
 

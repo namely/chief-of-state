@@ -1,11 +1,11 @@
 package com.namely.chiefofstate
 
 import com.google.protobuf.timestamp.Timestamp
+import com.namely.chiefofstate.test.helpers.TestSpec
 import com.namely.protobuf.chiefofstate.v1.common.{MetaData => CosMetaData}
 import io.superflat.lagompb.protobuf.v1.core.{MetaData => LagompbMetaData}
-import io.superflat.lagompb.testkit.BaseSpec
 
-class UtilSpec extends BaseSpec {
+class UtilSpec extends TestSpec {
 
   "toCosMetaData" should {
     "return the right COS MetaData" in {

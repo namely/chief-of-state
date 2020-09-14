@@ -1,12 +1,12 @@
 package com.namely.chiefofstate.config
 
+import com.namely.chiefofstate.test.helpers.TestSpec
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import io.superflat.lagompb.encryption.NoEncryption
-import io.superflat.lagompb.testkit.BaseSpec
 
 import scala.util.{Success, Try}
 
-class EncryptionSettingSpec extends BaseSpec {
+class EncryptionSettingSpec extends TestSpec {
 
   "Chief-Of-State encryption settings" should {
 

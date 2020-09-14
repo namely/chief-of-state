@@ -4,20 +4,24 @@ object Dependencies {
 
   // Package versions
   object Versions {
-    val Scala213 = "2.13.1"
-    val LagomPbVersion = "0.9.0+3-5ec5cf5e-SNAPSHOT"
-    val KanelaAgentVersion = "1.0.6"
-    val SilencerVersion = "1.6.0"
-    val KamonAkkaGrpcVersion = "0.0.9"
-    val AkkaVersion = "2.6.9"
+    val Scala213: String = "2.13.1"
+    val LagomPbVersion: String = "1.0.0"
+    val KanelaAgentVersion: String = "1.0.6"
+    val SilencerVersion: String = "1.6.0"
+    val KamonAkkaGrpcVersion: String = "0.0.9"
+    val AkkaVersion: String = "2.6.9"
+    val KamonVersion: String = "2.1.6"
   }
 
   object Compile {
     val Lagompb: ModuleID = "io.superflat" %% "lagompb-core" % Versions.LagomPbVersion
     val LagompbReadSide = "io.superflat" %% "lagompb-readside" % Versions.LagomPbVersion
-
-    val KanelaAgent = "io.kamon" % "kanela-agent" % Versions.KanelaAgentVersion
-    val KamonAkkaGrpc = ("com.github.nezasa" %% "kamon-akka-grpc" % Versions.KamonAkkaGrpcVersion).intransitive()
+    val KamonBundle: ModuleID = "io.kamon" %% "kamon-bundle" % Versions.KamonVersion
+    val KamonPrometheus: ModuleID = "io.kamon" %% "kamon-prometheus" % Versions.KamonVersion
+    val KamonJaeger: ModuleID = "io.kamon" %% "kamon-jaeger" % Versions.KamonVersion
+    val KanelaAgent: ModuleID = "io.kamon" % "kanela-agent" % Versions.KanelaAgentVersion
+    val KamonAkkaGrpc: ModuleID =
+      ("com.github.nezasa" %% "kamon-akka-grpc" % Versions.KamonAkkaGrpcVersion).intransitive()
   }
 
   object Runtime {
