@@ -11,7 +11,7 @@ code:
     # copy configurations
     COPY -dir project .scalafmt.conf build.sbt .
     # copy proto definitions
-    COPY -dir protos .
+    COPY -dir proto .
     # copy code
     COPY code/service/src ./code/service/src
     # clean and get dependencies
