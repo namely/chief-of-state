@@ -27,11 +27,13 @@ lazy val protogen: Project = project
       Seq(
         PB.protoSources := Seq(
           // instruct scalapb to build all COS protos
-          file("protos/chief_of_state")
+          file("proto/chief-of-state-protos/chief_of_state"),
+          file("proto/internal")
         ),
         PB.includePaths := Seq(
           // includes the protobuf source for imports
-          file("protos"),
+          file("proto/chief-of-state-protos"),
+          file("proto/internal"),
           // includes external protobufs (like google dependencies)
           baseDirectory.value / "target/protobuf_external"
         )
