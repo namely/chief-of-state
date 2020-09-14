@@ -1,9 +1,9 @@
 package com.namely.chiefofstate.config
 
+import com.namely.chiefofstate.test.helpers.TestSpec
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import io.superflat.lagompb.testkit.BaseSpec
 
-class HandlerSettingSpec extends BaseSpec {
+class HandlerSettingSpec extends TestSpec {
 
   "Chief-Of-State handler settings" should {
 

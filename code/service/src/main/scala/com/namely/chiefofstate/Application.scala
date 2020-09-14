@@ -17,7 +17,7 @@ import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceClie
 import com.softwaremill.macwire.wire
 import io.superflat.lagompb.{AggregateRoot, BaseApplication, CommandHandler, EventHandler}
 import io.superflat.lagompb.encryption.ProtoEncryption
-import com.lightbend.lagom.internal.persistence.ReadSideConfig
+import kamon.Kamon
 
 /**
  * ChiefOfState application
@@ -25,6 +25,9 @@ import com.lightbend.lagom.internal.persistence.ReadSideConfig
  * @param context the application context
  */
 abstract class Application(context: LagomApplicationContext) extends BaseApplication(context) {
+
+  // start kamon
+  Kamon.init()
 
   // reflect encryption from config
   override def protoEncryption: Option[ProtoEncryption] = EncryptionSetting(config).encryption
@@ -54,7 +57,7 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
   lazy val eventHandler: EventHandler = wire[AggregateEventHandler]
   lazy val commandHandler: CommandHandler = wire[AggregateCommandHandler]
 
-  override lazy val aggregateRoot: AggregateRoot =  wire[Aggregate]
+  override lazy val aggregateRoot: AggregateRoot = wire[Aggregate]
 
   override lazy val server: LagomServer =
     serverFor[ChiefOfStateService](wire[RestServiceImpl])
