@@ -43,7 +43,7 @@
     <!-- Turn down Slick noise-->
     <logger name="scala.slick" level="ERROR"/>
 
-    <variable name="ENV" value="${DEPLOYMENT_ENV:-dev}"/>
+    <variable name="DEPLOYMENT_ENV" value="${DEPLOYMENT_ENV:-dev}"/>
     <if condition='p("DEPLOYMENT_ENV").equals("dev")'>
         <then>
             <root level="${LOG_LEVEL}">
