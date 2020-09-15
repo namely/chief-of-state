@@ -13,7 +13,7 @@
     </appender>
 
     <!-- Let us define some env vars -->
-    <variable name="NAMELY_ENV" value="${NAMELY_ENV:-dev}"/>
+    <variable name="DEPLOYMENT_ENV" value="${DEPLOYMENT_ENV:-dev}"/>
     <variable name="LOG_LEVEL" value="${LOG_LEVEL:-DEBUG}"/>
 
     <appender name="ASYNCJSON" class="net.logstash.logback.appender.LoggingEventAsyncDisruptorAppender">
@@ -43,8 +43,8 @@
     <!-- Turn down Slick noise-->
     <logger name="scala.slick" level="ERROR"/>
 
-    <variable name="NAMELY_ENV" value="${NAMELY_ENV:-dev}"/>
-    <if condition='p("NAMELY_ENV").equals("dev")'>
+    <variable name="ENV" value="${DEPLOYMENT_ENV:-dev}"/>
+    <if condition='p("DEPLOYMENT_ENV").equals("dev")'>
         <then>
             <root level="${LOG_LEVEL}">
                 <appender-ref ref="STDOUT"/>

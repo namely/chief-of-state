@@ -20,6 +20,8 @@ object BuildSettings extends AutoPlugin {
         Dependencies.Compile.KamonBundle,
         Dependencies.Compile.KamonJaeger,
         Dependencies.Compile.KamonPrometheus,
+        Dependencies.Compile.Janino,
+        Dependencies.Compile.LogstashLogback,
         Dependencies.Runtime.LagompbRuntime,
         Dependencies.Test.AkkaGrpcTestkit
       ),
