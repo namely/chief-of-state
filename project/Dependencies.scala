@@ -11,6 +11,8 @@ object Dependencies {
     val KamonAkkaGrpcVersion: String = "0.0.9"
     val AkkaVersion: String = "2.6.9"
     val KamonVersion: String = "2.1.6"
+    val JaninoVersion: String = "3.1.2"
+    val LogstashLogbackVersion = "6.3"
   }
 
   object Compile {
@@ -22,6 +24,8 @@ object Dependencies {
     val KanelaAgent: ModuleID = "io.kamon" % "kanela-agent" % Versions.KanelaAgentVersion
     val KamonAkkaGrpc: ModuleID =
       ("com.github.nezasa" %% "kamon-akka-grpc" % Versions.KamonAkkaGrpcVersion).intransitive()
+    val Janino = "org.codehaus.janino" % "janino" % Versions.JaninoVersion
+    val LogstashLogback = "net.logstash.logback" % "logstash-logback-encoder" % Versions.LogstashLogbackVersion
   }
 
   object Runtime {
