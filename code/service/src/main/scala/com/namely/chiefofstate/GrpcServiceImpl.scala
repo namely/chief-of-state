@@ -6,17 +6,17 @@ import akka.grpc.GrpcServiceException
 import akka.grpc.scaladsl.{BytesEntry, Metadata, StringEntry}
 import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
+import com.namely.chiefofstate.config.SendCommandSettings
+import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Header, Headers}
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service._
 import io.grpc.Status
+import io.superflat.lagompb.protobuf.v1.core.StateWrapper
 import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl}
 import org.slf4j.{Logger, LoggerFactory}
-import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
-import com.namely.chiefofstate.config.SendCommandSettings
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Try, Success, Failure}
-import io.superflat.lagompb.protobuf.v1.core.StateWrapper
+import scala.util.Failure
 
 class GrpcServiceImpl(sys: ActorSystem,
                       val clusterSharding: ClusterSharding,
@@ -46,17 +46,23 @@ class GrpcServiceImpl(sys: ActorSystem,
     } else {
 
       // TODO: move this to a general plugin architecture
-      val metaData: Map[String, String] = {
-        // get the headers to persist
-        val persistedHeaders: Map[String, String] =
-          sendCommandSettings.persistedHeaders
-            .map(s => (s, metadata.getText(s)))
-            .filter({ case (_, value) => value.isDefined })
-            .map({ case (k, optValue) => (s"grpcHeader|$k", optValue.getOrElse("")) })
-            .toMap
+      val persistedHeaders: Seq[Header] = metadata.asList
+        .filter({ case (k, _) => sendCommandSettings.propagatedHeaders.contains(k) })
+        .map({
+          case (k, StringEntry(value)) =>
+            com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers
+              .Header()
+              .withKey(k)
+              .withStringValue(value)
 
-        persistedHeaders
-      }
+          case (k, BytesEntry(value)) =>
+            com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers
+              .Header()
+              .withKey(k)
+              .withBytesValue(ByteString.copyFrom(value.toArray))
+        })
+
+      val meta = Map("persisted_headers.v1" -> Any.pack(Headers().withHeaders(persistedHeaders)))
 
       // get the headers to forward
       val propagatedHeaders: Seq[RemoteCommand.Header] = metadata.asList
@@ -80,7 +86,7 @@ class GrpcServiceImpl(sys: ActorSystem,
         .withCommand(in.getCommand)
         .withHeaders(propagatedHeaders)
 
-      sendCommand(in.entityId, remoteCommand, metaData)
+      sendCommand(in.entityId, remoteCommand, meta)
         .map((stateWrapper: StateWrapper) => {
           ProcessCommandResponse(
             state = stateWrapper.state,
@@ -104,13 +110,13 @@ class GrpcServiceImpl(sys: ActorSystem,
         Failure(new GrpcServiceException(status = Status.INVALID_ARGUMENT.withDescription("empty entity ID")))
       )
     } else {
-      sendCommand(in.entityId, in, Map.empty[String, String])
-      .map((stateWrapper: StateWrapper) => {
-        GetStateResponse(
-          state = stateWrapper.state,
-          meta = stateWrapper.meta.map(Util.toCosMetaData)
-        )
-      })
+      sendCommand(in.entityId, in, Map.empty[String, Any])
+        .map((stateWrapper: StateWrapper) => {
+          GetStateResponse(
+            state = stateWrapper.state,
+            meta = stateWrapper.meta.map(Util.toCosMetaData)
+          )
+        })
     }
   }
 }
