@@ -1,5 +1,7 @@
 package com.namely.chiefofstate
 
+import com.google.protobuf.any.Any
+import com.google.protobuf.empty.Empty
 import com.google.protobuf.timestamp.Timestamp
 import com.namely.chiefofstate.test.helpers.TestSpec
 import com.namely.protobuf.chiefofstate.v1.common.{MetaData => CosMetaData}
@@ -11,7 +13,7 @@ class UtilSpec extends TestSpec {
     "return the right COS MetaData" in {
       val ts = Timestamp().withSeconds(3L).withNanos(2)
       val revisionNumber = 2
-      val data = Map("foo" -> "bar")
+      val data = Map("foo" -> Any.pack(Empty.defaultInstance))
 
       val lagomMetaData = LagompbMetaData()
         .withRevisionNumber(revisionNumber)
