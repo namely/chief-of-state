@@ -1,8 +1,8 @@
 package com.namely.chiefofstate
 
-import com.namely.chiefofstate.config.HandlerSetting
 import akka.actor.ActorSystem
-import com.namely.protobuf.chiefofstate.v1.common
+import com.google.protobuf.any.Any
+import com.namely.chiefofstate.config.HandlerSetting
 import com.namely.protobuf.chiefofstate.v1.writeside.{
   HandleEventRequest,
   HandleEventResponse,
@@ -11,8 +11,6 @@ import com.namely.protobuf.chiefofstate.v1.writeside.{
 import io.superflat.lagompb.EventHandler
 import io.superflat.lagompb.protobuf.v1.core.MetaData
 import org.slf4j.{Logger, LoggerFactory}
-import scalapb.GeneratedMessage
-import com.google.protobuf.any.Any
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
@@ -38,8 +36,8 @@ class AggregateEventHandler(
       writeSideHandlerServiceClient.handleEvent(
         HandleEventRequest()
           .withEvent(event)
-          .withCurrentState(priorState)
-          .withMeta(Util.toCosMetaData(eventMeta))
+          .withPriorState(priorState)
+          .withEventMeta(Util.toCosMetaData(eventMeta))
       )
     ) match {
 
@@ -52,13 +50,14 @@ class AggregateEventHandler(
         } match {
           case Failure(exception) => throw new Exception(exception.getMessage)
           case Success(handleEventResponse: HandleEventResponse) =>
-
             val stateFQN: String = Util.getProtoFullyQualifiedName(handleEventResponse.getResultingState)
             log.debug(s"[ChiefOfState]: received event handler state $stateFQN")
 
             // if enabled, validate the state type url returned by event handler
             if (handlerSetting.enableProtoValidations && !handlerSetting.stateFQNs.contains(stateFQN)) {
-              log.error(s"[ChiefOfState]: command handler state to persist $stateFQN is not configured. Failing request")
+              log.error(
+                s"[ChiefOfState]: command handler state to persist $stateFQN is not configured. Failing request"
+              )
               throw new Exception(s"received unknown state $stateFQN")
             }
 
