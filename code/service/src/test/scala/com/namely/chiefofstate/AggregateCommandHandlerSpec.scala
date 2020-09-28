@@ -182,8 +182,8 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
         .expects(
           HandleCommandRequest()
             .withCommand(cmd.getCommand)
-            .withCurrentState(currentState)
-            .withMeta(Util.toCosMetaData(currentMeta))
+            .withPriorState(currentState)
+            .withPriorEventMeta(Util.toCosMetaData(currentMeta))
         )
         .returning(
           Future.successful(
@@ -254,8 +254,8 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
         .expects(
           HandleCommandRequest()
             .withCommand(innerCmd)
-            .withCurrentState(priorState)
-            .withMeta(Util.toCosMetaData(priorEventMeta))
+            .withPriorState(priorState)
+            .withPriorEventMeta(Util.toCosMetaData(priorEventMeta))
         )
         .returning(
           Future.successful(

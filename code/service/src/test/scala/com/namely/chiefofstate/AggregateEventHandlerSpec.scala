@@ -51,8 +51,8 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
         .expects(
           HandleEventRequest()
             .withEvent(Any.pack(event))
-            .withCurrentState(priorState)
-            .withMeta(Util.toCosMetaData(eventMeta))
+            .withPriorState(priorState)
+            .withEventMeta(Util.toCosMetaData(eventMeta))
         )
         .returning(
           Future.successful(
@@ -95,8 +95,8 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
         .expects(
           HandleEventRequest()
             .withEvent(Any.pack(event))
-            .withCurrentState(priorState)
-            .withMeta(Util.toCosMetaData(eventMeta))
+            .withPriorState(priorState)
+            .withEventMeta(Util.toCosMetaData(eventMeta))
         )
         .returning(
           Future.successful(
@@ -136,8 +136,8 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
         .expects(
           HandleEventRequest()
             .withEvent(Any.pack(event))
-            .withCurrentState(priorState)
-            .withMeta(Util.toCosMetaData(eventMeta))
+            .withPriorState(priorState)
+            .withEventMeta(Util.toCosMetaData(eventMeta))
         )
         .returning(
           Future.successful(
@@ -176,8 +176,8 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
         .expects(
           HandleEventRequest()
             .withEvent(Any.pack(event))
-            .withCurrentState(priorState)
-            .withMeta(Util.toCosMetaData(eventMeta))
+            .withPriorState(priorState)
+            .withEventMeta(Util.toCosMetaData(eventMeta))
         )
         .returning(
           Future.successful(
@@ -217,8 +217,8 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
         .expects(
           HandleEventRequest()
             .withEvent(Any.pack(event))
-            .withCurrentState(priorState)
-            .withMeta(Util.toCosMetaData(eventMeta))
+            .withPriorState(priorState)
+            .withEventMeta(Util.toCosMetaData(eventMeta))
         )
         .returning(Future.failed(new GrpcServiceException(Status.INTERNAL)))
 
@@ -252,8 +252,8 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
         .expects(
           HandleEventRequest()
             .withEvent(Any.pack(event))
-            .withCurrentState(priorState)
-            .withMeta(Util.toCosMetaData(eventMeta))
+            .withPriorState(priorState)
+            .withEventMeta(Util.toCosMetaData(eventMeta))
         )
         .throws(new RuntimeException("broken"))
 

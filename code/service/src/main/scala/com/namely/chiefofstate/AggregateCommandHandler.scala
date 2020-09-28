@@ -39,14 +39,14 @@ class AggregateCommandHandler(
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   /**
-    * entrypoint command handler that unpacks the command proto and calls
-    * the typed parameter
-    *
-    * @param command
-    * @param priorState
-    * @param priorEventMeta
-    * @return
-    */
+   * entrypoint command handler that unpacks the command proto and calls
+   * the typed parameter
+   *
+   * @param command
+   * @param priorState
+   * @param priorEventMeta
+   * @return
+   */
   final def handle(command: Any, priorState: Any, priorEventMeta: MetaData): Try[CommandHandlerResponse] = {
     ProtosRegistry.unpackAny(command) match {
       case Failure(exception) =>
@@ -69,7 +69,10 @@ class AggregateCommandHandler(
    * @param priorEventMeta the priorEventMeta
    * @return
    */
-  def handleTyped(command: scalapb.GeneratedMessage, priorState: Any, priorEventMeta: MetaData): Try[CommandHandlerResponse] = {
+  def handleTyped(command: scalapb.GeneratedMessage,
+                  priorState: Any,
+                  priorEventMeta: MetaData
+  ): Try[CommandHandlerResponse] = {
     command match {
       // handle get requests locally
       case getStateRequest: GetStateRequest => Try(handleGetCommand(getStateRequest, priorEventMeta))
@@ -88,9 +91,7 @@ class AggregateCommandHandler(
    * @param priorEventMeta the prior event meta
    * @return a command handler response indicating Reply or failure
    */
-  def handleGetCommand(command: GetStateRequest,
-                       priorEventMeta: MetaData
-  ): CommandHandlerResponse = {
+  def handleGetCommand(command: GetStateRequest, priorEventMeta: MetaData): CommandHandlerResponse = {
     log.debug("[ChiefOfState] handling GetStateRequest")
 
     // use revision number to determine if there was a prior state
@@ -122,9 +123,9 @@ class AggregateCommandHandler(
     val responseAttempt: Try[HandleCommandResponse] = Try {
       // construct the request message
       val handleCommandRequest =
-        HandleCommandRequest(command=remoteCommand.command)
-          .withCurrentState(priorState)
-          .withMeta(Util.toCosMetaData(priorEventMeta))
+        HandleCommandRequest(command = remoteCommand.command)
+          .withPriorState(priorState)
+          .withPriorEventMeta(Util.toCosMetaData(priorEventMeta))
 
       // create an akka gRPC request builder
       val futureResponse: Future[HandleCommandResponse] =
@@ -164,7 +165,6 @@ class AggregateCommandHandler(
   def handleRemoteResponseSuccess(response: HandleCommandResponse): CommandHandlerResponse = {
     response.event match {
       case Some(event) =>
-
         log.debug("[ChiefOfState] command handler return successfully. An event will be persisted...")
 
         val eventFQN: String = Util.getProtoFullyQualifiedName(event)
@@ -178,8 +178,8 @@ class AggregateCommandHandler(
             )
         } else {
           log.debug(s"[ChiefOfState] command handler event to persist $eventFQN is valid.")
-            CommandHandlerResponse()
-              .withEvent(event)
+          CommandHandlerResponse()
+            .withEvent(event)
         }
 
       case None =>
