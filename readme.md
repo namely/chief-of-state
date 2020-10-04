@@ -89,6 +89,7 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 | COS_READ_SIDE_OFFSET_DB_PASSWORD | readside offset storage password | changeme |
 | COS_READ_SIDE_OFFSET_DB_SCHEMA | readside offset storage db scheme | postgres |
 | COS_READ_SIDE_OFFSET_DB | readside offset storage db name | postgres |
+| COS_READ_SIDE_OFFSET_STORE_TABLE | readside offset storage table name | AKKA_PROJECTION_OFFSET_STORE |
 | COS_ENCRYPTION_CLASS | java class to use for encryption | <none> |
 | WRITE_SIDE_HANDLER_SERVICE_HOST | address of the gRPC writeSide handler service | <none> |
 | WRITE_SIDE_HANDLER_SERVICE_PORT | port for the gRPC writeSide handler service | <none> |
