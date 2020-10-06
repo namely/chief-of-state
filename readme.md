@@ -101,6 +101,7 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 | TRACE_PORT | Jaeger collector/agent port | 14268 |
 | COS_WRITE_PROPAGATED_HEADERS | CSV of gRPC headers to propagate to write side handler | <none> |
 | COS_WRITE_PERSISTED_HEADERS | CSV of gRPC headers to persist to journal (experimental) | <none> |
+| COS_JOURNAL_LOGICAL_DELETION | Event deletion is triggered after saving a new snapshot. Old events would be deleted prior to old snapshots being deleted. | false |
 
 ### Read side configurations
 
