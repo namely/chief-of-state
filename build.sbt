@@ -11,9 +11,9 @@ lazy val root: Project = project
 lazy val `chiefofstate`: Project = project
   .in(file("code/service"))
   .enablePlugins(LagomScala)
-  .enablePlugins(JavaAppPackaging, JavaAgent)
   .enablePlugins(PlayAkkaHttp2Support)
   .enablePlugins(BuildSettings)
+  .enablePlugins(DockerSettings)
   .settings(name := "chiefofstate", javaAgents += Dependencies.Compile.KanelaAgent)
   .dependsOn(protogen)
 

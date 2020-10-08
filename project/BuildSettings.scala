@@ -1,6 +1,4 @@
 import com.lightbend.sbt.javaagent.JavaAgent.JavaAgentKeys.javaAgents
-
-import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.{dockerBaseImage, dockerRepository, dockerUsername}
 import sbt.{plugins, AutoPlugin, Plugins}
 import sbt.Keys.{dependencyOverrides, libraryDependencies}
 
@@ -9,9 +7,6 @@ object BuildSettings extends AutoPlugin {
 
   override def projectSettings =
     Seq(
-      dockerBaseImage := "openjdk:11",
-      dockerRepository := Some("registry.namely.land"),
-      dockerUsername := Some("namely"),
       javaAgents += Dependencies.Compile.KanelaAgent,
       libraryDependencies ++= Seq(
         Dependencies.Compile.Lagompb,
