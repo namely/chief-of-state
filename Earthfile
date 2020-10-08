@@ -55,7 +55,7 @@ docker-stage:
     # https://www.scala-sbt.org/sbt-native-packager/formats/debian.html
     RUN sbt docker:stage
     RUN chmod -R u=rX,g=rX code/service/target/docker/stage
-    SAVE ARTIFACT code/service/target/docker/stage/0/opt/docker /
+    SAVE ARTIFACT code/service/target/docker/stage/0/opt/docker /target
 
 docker-build:
     # bundle into a slimmer, runnable container
@@ -70,7 +70,7 @@ docker-build:
 
     # copy over files
     WORKDIR /opt/docker
-    COPY --chown cos:root +docker-stage/ .
+    COPY --chown cos:root +docker-stage/target .
 
     # set runtime user to cos
     USER cos
