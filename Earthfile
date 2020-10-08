@@ -8,30 +8,58 @@ all:
 code:
     # copy relevant files in, save as a base image
     FROM +sbt
+
+    # create user & working dir for sbt
+    ARG BUILD_DIR="/build"
+    ARG BUILD_USR="builder"
+
+    USER root
+
+    RUN mkdir $BUILD_DIR && \
+        chmod 777 /$BUILD_DIR && \
+        useradd -s /bin/bash -d $BUILD_DIR $BUILD_USR && \
+        chown -R $BUILD_USR:root $BUILD_DIR
+
+    WORKDIR $BUILD_DIR
+    USER $BUILD_USR
+
     # copy configurations
-    COPY -dir project .scalafmt.conf build.sbt .
-    # copy proto definitions
-    COPY -dir proto .
+    COPY --chown $BUILD_USR:root .scalafmt.conf build.sbt .
+    COPY --chown $BUILD_USR:root -dir \
+        project/build.properties \
+        project/BuildSettings.scala \
+        project/Common.scala \
+        project/Dependencies.scala \
+        project/DockerSettings.scala \
+        project/plugins.sbt \
+        project/ProtocRuntime.scala \
+        ./project/
+
+    # clean & install dependencies
+    RUN sbt clean cleanFiles update
+
+    # copy proto definitions & generate
+    COPY --chown $BUILD_USR:root -dir proto .
+    RUN sbt protocGenerate
+
     # copy code
-    COPY code/service/src ./code/service/src
-    # clean and get dependencies
-    RUN sbt clean cleanFiles update protocGenerate
+    COPY --chown $BUILD_USR:root code/service/src ./code/service/src
+
     # save base image for use downstream
     SAVE IMAGE
 
-docker-prep:
+docker-stage:
     # package the jars/executables
     FROM +code
-    ARG VERSION=dev
     # TODO: use a simpler linux packager
     # https://www.scala-sbt.org/sbt-native-packager/formats/debian.html
     RUN sbt docker:stage
     RUN chmod -R u=rX,g=rX code/service/target/docker/stage
-    SAVE ARTIFACT code/service/target/docker/stage
+    SAVE ARTIFACT code/service/target/docker/stage/0/opt/docker /target
 
 docker-build:
     # bundle into a slimmer, runnable container
-    FROM openjdk:8-jre-slim
+    FROM openjdk:11-jre-slim
 
     ARG VERSION=dev
 
@@ -42,12 +70,12 @@ docker-build:
 
     # copy over files
     WORKDIR /opt/docker
-    COPY --chown cos:root --dir +docker-prep/stage/opt +docker-prep/stage/1/opt +docker-prep/stage/2/opt /
+    COPY --chown cos:root +docker-stage/target .
 
     # set runtime user to cos
     USER cos
 
-    ENTRYPOINT ["/opt/docker/bin/chiefofstate"]
+    ENTRYPOINT /opt/docker/bin/entrypoint
     CMD []
 
     # build the image and push remotely (if all steps are successful)
@@ -72,15 +100,9 @@ test-all:
     BUILD +test-local
     BUILD +codecov
 
-it-test:
-    # use the image from +docker-build for IT test if desired
-    FROM docker:19.03.7-dind
-    # DOCKER LOAD +docker-build img
-    # RUN --with-docker docker run img ...
-
 sbt:
     # TODO: move this to a central image
-    FROM openjdk:8u232-jdk-stretch
+    FROM openjdk:11-jdk-stretch
 
     # Install sbt
     ARG SBT_VERSION=1.3.6
