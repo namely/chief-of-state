@@ -12,8 +12,8 @@ import io.superflat.lagompb.EventHandler
 import io.superflat.lagompb.protobuf.v1.core.MetaData
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -28,6 +28,13 @@ class AggregateEventHandler(
   writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
   handlerSetting: HandlerSetting
 ) extends EventHandler {
+
+  /**
+   * this will invoke the custom dispatcher to help send the request to
+   * the event handler without disrupting the free-flow of the aggregate
+   */
+  implicit val executionContext: ExecutionContextExecutor =
+    actorSystem.dispatchers.lookup(handlerSetting.eventHandlerDispatcher)
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 

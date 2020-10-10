@@ -7,7 +7,14 @@ import com.typesafe.config.{Config, ConfigException}
  * This class need to be kick started on boot. When the configuration variables are not set
  * an exception should be thrown forcing the implementor to set the appropriate value
  */
-case class HandlerSetting(enableProtoValidations: Boolean, stateFQNs: Seq[String], eventFQNs: Seq[String])
+case class HandlerSetting(
+  enableProtoValidations: Boolean,
+  stateFQNs: Seq[String],
+  eventFQNs: Seq[String],
+  commandHandlerDispatcher: String,
+  eventHandlerDispatcher: String,
+  readHandlerDispatcher: String
+)
 
 object HandlerSetting {
 
@@ -43,6 +50,16 @@ object HandlerSetting {
         throw new RuntimeException("[ChiefOfState] handler service settings not properly set.")
     }
 
-    new HandlerSetting(enableProtoValidations, stateProtos, eventProtos)
+    val commandHandlerDispatcher = "chief-of-state.handlers-settings.command-handler-dispatcher"
+    val eventHandlerDispatcher = "chief-of-state.handlers-settings.event-handler-dispatcher"
+    val readHandlerDispatcher = "chief-of-state.handlers-settings.read-handler-dispatcher"
+
+    new HandlerSetting(enableProtoValidations,
+                       stateProtos,
+                       eventProtos,
+                       commandHandlerDispatcher,
+                       eventHandlerDispatcher,
+                       readHandlerDispatcher
+    )
   }
 }

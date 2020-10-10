@@ -3,6 +3,7 @@ package com.namely.chiefofstate
 import akka.actor.ActorSystem
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
+import com.namely.chiefofstate.config.HandlerSetting
 import com.namely.protobuf.chiefofstate.v1.common.{MetaData => _}
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service.GetStateRequest
@@ -11,14 +12,13 @@ import com.namely.protobuf.chiefofstate.v1.writeside.{
   HandleCommandResponse,
   WriteSideHandlerServiceClient
 }
-import com.namely.chiefofstate.config.HandlerSetting
 import io.grpc.{Status, StatusRuntimeException}
-import io.superflat.lagompb.{CommandHandler, ProtosRegistry}
 import io.superflat.lagompb.protobuf.v1.core._
+import io.superflat.lagompb.{CommandHandler, ProtosRegistry}
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -34,6 +34,13 @@ class AggregateCommandHandler(
   handlerSetting: HandlerSetting
 ) extends CommandHandler {
 
+  /**
+   * this will invoke the custom dispatcher to help send the request to
+   * the command handler without disrupting the free-flow of the aggregate
+   */
+  implicit val commandHandlerExecutionContext: ExecutionContextExecutor =
+    actorSystem.dispatchers.lookup(handlerSetting.commandHandlerDispatcher)
+
   import AggregateCommandHandler.GRPC_FAILED_VALIDATION_STATUSES
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -42,23 +49,21 @@ class AggregateCommandHandler(
    * entrypoint command handler that unpacks the command proto and calls
    * the typed parameter
    *
-   * @param command
-   * @param priorState
-   * @param priorEventMeta
-   * @return
+   * @param command the command to handle
+   * @param priorState the priorState before the handled command
+   * @param priorEventMeta the priorEventMeta before the handled command
+   * @return a command handler response
    */
   final def handle(command: Any, priorState: Any, priorEventMeta: MetaData): Try[CommandHandlerResponse] = {
-    ProtosRegistry.unpackAny(command) match {
-      case Failure(exception) =>
-        Failure(exception)
-
-      case Success(innerCommand) =>
+    ProtosRegistry
+      .unpackAny(command)
+      .flatMap(innerCommand => {
         handleTyped(
           command = innerCommand,
           priorState = priorState,
           priorEventMeta = priorEventMeta
         )
-    }
+      })
   }
 
   /**
@@ -67,7 +72,7 @@ class AggregateCommandHandler(
    * @param command the actual command to handle
    * @param priorState the priorState
    * @param priorEventMeta the priorEventMeta
-   * @return
+   * @return a command handler response
    */
   def handleTyped(command: scalapb.GeneratedMessage,
                   priorState: Any,
@@ -145,7 +150,7 @@ class AggregateCommandHandler(
           )
           .invoke(handleCommandRequest)
 
-      // await response and return
+      // await response and return since grpc calls do timeout
       Await.result(futureResponse, Duration.Inf)
     }
 

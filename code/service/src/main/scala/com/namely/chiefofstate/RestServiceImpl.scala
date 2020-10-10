@@ -1,25 +1,20 @@
 package com.namely.chiefofstate
 
 import akka.NotUsed
-import akka.actor.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
-import com.lightbend.lagom.scaladsl.api.ServiceCall
-import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
-import com.lightbend.lagom.scaladsl.api.{Descriptor, ServiceCall}
 import com.lightbend.lagom.scaladsl.api.Service.restCall
 import com.lightbend.lagom.scaladsl.api.transport.Method
-import com.google.protobuf.any.Any
-import io.superflat.lagompb.{AggregateRoot, BaseServiceImpl}
-import io.superflat.lagompb.BaseService
-import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
+import com.lightbend.lagom.scaladsl.api.{Descriptor, ServiceCall}
+import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
+import io.superflat.lagompb.{AggregateRoot, BaseService, BaseServiceImpl}
+
 import scala.concurrent.{ExecutionContext, Future}
 
 class RestServiceImpl(
-  actorSystem: ActorSystem,
   clusterSharding: ClusterSharding,
   persistentEntityRegistry: PersistentEntityRegistry,
   aggregateRoot: AggregateRoot
-)
+)(implicit executionContext: ExecutionContext)
     extends BaseServiceImpl(clusterSharding, persistentEntityRegistry, aggregateRoot)
     with ChiefOfStateService {
 
@@ -27,9 +22,6 @@ class RestServiceImpl(
     ServiceCall { _ =>
       Future.successful("Welcome to Chief Of State. The gRPC distributed event sourcing application!!!")
     }
-
-  // TODO: Deprecate this!
-  def aggregateStateCompanion: GeneratedMessageCompanion[_ <: scalapb.GeneratedMessage] = Any
 }
 
 trait ChiefOfStateService extends BaseService {
