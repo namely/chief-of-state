@@ -69,10 +69,6 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
 
   if (config.getBoolean("chief-of-state.read-model.enabled")) {
 
-    /**
-     * this will invoke the custom dispatcher to help send the request to
-     * the command handler without disrupting the free-flow of the aggregate
-     */
     implicit val readHandlerExecutionContext: ExecutionContextExecutor =
       actorSystem.toTyped.dispatchers.lookup(
         DispatcherSelector.fromConfig(handlerSetting.readHandlerDispatcher)
