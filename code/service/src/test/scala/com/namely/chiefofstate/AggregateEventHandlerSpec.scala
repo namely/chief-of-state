@@ -2,10 +2,12 @@ package com.namely.chiefofstate
 
 import java.util.UUID
 
+import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.adapter._
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
 import com.namely.chiefofstate.config.HandlerSetting
-import com.namely.chiefofstate.test.helpers.TestSpec
+import com.namely.chiefofstate.test.helpers.CustomActorTestkit
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened}
 import com.namely.protobuf.chiefofstate.v1.writeside.{
   HandleEventRequest,
@@ -18,7 +20,12 @@ import org.scalamock.scalatest.MockFactory
 
 import scala.concurrent.Future
 
-class AggregateEventHandlerSpec extends TestSpec with MockFactory {
+class AggregateEventHandlerSpec extends CustomActorTestkit("application.conf") with MockFactory {
+
+  val actorSystem: ActorSystem = testKit.system.toClassic
+  val commandHandlerDispatcher = "chief-of-state.handlers-settings.command-handler-dispatcher"
+  val eventHandlerDispatcher = "chief-of-state.handlers-settings.event-handler-dispatcher"
+  val readHandlerDispatcher = "chief-of-state.handlers-settings.read-handler-dispatcher"
 
   "Chief-Of-State Event Handler" should {
 
@@ -32,7 +39,14 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
       val eventsProtos: Seq[String] =
         Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting =
+        HandlerSetting(enableProtoValidations = true,
+                       stateProto,
+                       eventsProtos,
+                       commandHandlerDispatcher,
+                       eventHandlerDispatcher,
+                       readHandlerDispatcher
+        )
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -61,7 +75,7 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
           )
         )
 
-      val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
+      val eventHandler: AggregateEventHandler = new AggregateEventHandler(actorSystem, mockGrpcClient, handlerSetting)
       val result: Any = eventHandler.handle(Any.pack(event), priorState, eventMeta)
       result shouldBe (Any.pack(resultingState))
       result.unpack[Account] shouldBe resultingState
@@ -76,7 +90,14 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
       val stateProto: Seq[String] = Seq("namely.rogue.state")
       val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(priorState))
 
-      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting =
+        HandlerSetting(enableProtoValidations = true,
+                       stateProto,
+                       eventsProtos,
+                       commandHandlerDispatcher,
+                       eventHandlerDispatcher,
+                       readHandlerDispatcher
+        )
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -105,7 +126,7 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
           )
         )
 
-      val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
+      val eventHandler: AggregateEventHandler = new AggregateEventHandler(actorSystem, mockGrpcClient, handlerSetting)
       a[Exception] shouldBe thrownBy(
         eventHandler.handle(Any.pack(event), priorState, eventMeta)
       )
@@ -117,7 +138,14 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = false, Seq.empty, Seq.empty)
+      val handlerSetting: HandlerSetting =
+        HandlerSetting(enableProtoValidations = false,
+                       Seq.empty,
+                       Seq.empty,
+                       commandHandlerDispatcher,
+                       eventHandlerDispatcher,
+                       readHandlerDispatcher
+        )
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -146,7 +174,7 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
           )
         )
 
-      val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
+      val eventHandler: AggregateEventHandler = new AggregateEventHandler(actorSystem, mockGrpcClient, handlerSetting)
 
       noException shouldBe thrownBy(eventHandler.handle(Any.pack(event), priorState, eventMeta))
     }
@@ -157,7 +185,14 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
       val accouuntId: String = UUID.randomUUID.toString
       val accountNumber: String = "123445"
 
-      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, Seq.empty, Seq.empty)
+      val handlerSetting: HandlerSetting =
+        HandlerSetting(enableProtoValidations = true,
+                       Seq.empty,
+                       Seq.empty,
+                       commandHandlerDispatcher,
+                       eventHandlerDispatcher,
+                       readHandlerDispatcher
+        )
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -186,7 +221,7 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
           )
         )
 
-      val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
+      val eventHandler: AggregateEventHandler = new AggregateEventHandler(actorSystem, mockGrpcClient, handlerSetting)
 
       a[Exception] shouldBe thrownBy(
         eventHandler.handle(Any.pack(event), priorState, eventMeta)
@@ -203,7 +238,14 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
       val eventsProtos: Seq[String] =
         Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting =
+        HandlerSetting(enableProtoValidations = true,
+                       stateProto,
+                       eventsProtos,
+                       commandHandlerDispatcher,
+                       eventHandlerDispatcher,
+                       readHandlerDispatcher
+        )
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -222,7 +264,7 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
         )
         .returning(Future.failed(new GrpcServiceException(Status.INTERNAL)))
 
-      val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
+      val eventHandler: AggregateEventHandler = new AggregateEventHandler(actorSystem, mockGrpcClient, handlerSetting)
       a[Exception] shouldBe thrownBy(
         eventHandler.handle(Any.pack(event), priorState, eventMeta)
       )
@@ -238,7 +280,14 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
       val eventsProtos: Seq[String] =
         Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
 
-      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting =
+        HandlerSetting(enableProtoValidations = true,
+                       stateProto,
+                       eventsProtos,
+                       commandHandlerDispatcher,
+                       eventHandlerDispatcher,
+                       readHandlerDispatcher
+        )
 
       val event = AccountOpened()
         .withAccountNumber(accountNumber)
@@ -257,7 +306,7 @@ class AggregateEventHandlerSpec extends TestSpec with MockFactory {
         )
         .throws(new RuntimeException("broken"))
 
-      val eventHandler: AggregateEventHandler = new AggregateEventHandler(null, mockGrpcClient, handlerSetting)
+      val eventHandler: AggregateEventHandler = new AggregateEventHandler(actorSystem, mockGrpcClient, handlerSetting)
       a[Exception] shouldBe thrownBy(
         eventHandler.handle(Any.pack(event), priorState, eventMeta)
       )

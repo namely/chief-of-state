@@ -23,7 +23,7 @@ abstract class CustomActorTestkit(testKit: ActorTestKit)
     with ScalaFutures {
 
   /**
-   * Config loaded from `application-test.conf` if that exists, otherwise
+   * Config loaded from `application.conf` if that exists, otherwise
    * using default configuration from the lagompb.conf resources that ship with the Akka libraries.
    * The application.conf of your project is not used in this case.
    */
@@ -36,7 +36,7 @@ abstract class CustomActorTestkit(testKit: ActorTestKit)
     this(
       ActorTestKit(
         ActorTestKitBase.testNameFromCallStack(),
-        ConfigFactory.parseString(config)
+        ConfigFactory.load(config).resolve()
       )
     )
 

@@ -2,21 +2,7 @@ package com.namely.chiefofstate.config
 
 import com.namely.chiefofstate.test.helpers.{CustomActorTestkit, EnvironmentHelper}
 
-class ReadSideSettingSpec extends CustomActorTestkit(s"""
-    akka {
-      actor {
-        serialize-messages = on
-        serializers {
-          proto = "akka.remote.serialization.ProtobufSerializer"
-         cmdSerializer = "io.superflat.lagompb.CommandSerializer"
-        }
-        serialization-bindings {
-          "scalapb.GeneratedMessage" = proto
-         "io.superflat.lagompb.Command" = cmdSerializer
-        }
-      }
-    }
-    """) {
+class ReadSideSettingSpec extends CustomActorTestkit("application.conf") {
 
   override def beforeEach(): Unit = {
     super.beforeEach()

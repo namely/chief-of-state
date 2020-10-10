@@ -8,14 +8,13 @@ import com.lightbend.lagom.scaladsl.api.{Descriptor, ServiceCall}
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
 import io.superflat.lagompb.{AggregateRoot, BaseService, BaseServiceImpl}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class RestServiceImpl(
   clusterSharding: ClusterSharding,
   persistentEntityRegistry: PersistentEntityRegistry,
   aggregateRoot: AggregateRoot
-)(implicit executionContext: ExecutionContext)
-    extends BaseServiceImpl(clusterSharding, persistentEntityRegistry, aggregateRoot)
+) extends BaseServiceImpl(clusterSharding, persistentEntityRegistry, aggregateRoot)
     with ChiefOfStateService {
 
   override def handleCommand(): ServiceCall[NotUsed, String] =
