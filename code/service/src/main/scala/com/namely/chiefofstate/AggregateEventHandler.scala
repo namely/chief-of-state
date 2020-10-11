@@ -1,6 +1,6 @@
 package com.namely.chiefofstate
 
-import akka.actor.ActorSystem
+import com.github.ghik.silencer.silent
 import com.google.protobuf.any.Any
 import com.namely.chiefofstate.config.HandlerSetting
 import com.namely.protobuf.chiefofstate.v1.writeside.{
@@ -13,28 +13,22 @@ import io.superflat.lagompb.protobuf.v1.core.MetaData
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContextExecutor, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 /**
  * ChiefOfStateEventHandler
  *
- * @param actorSystem                   the actor system
+ * @param executionContext                   the execution context
  * @param writeSideHandlerServiceClient the gRpcClient used to connect to the actual event handler
  * @param handlerSetting                the event handler setting
  */
+@silent
 class AggregateEventHandler(
-  actorSystem: ActorSystem,
   writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
   handlerSetting: HandlerSetting
-) extends EventHandler {
-
-  /**
-   * this will invoke the custom dispatcher to help send the request to
-   * the event handler without disrupting the free-flow of the aggregate
-   */
-  implicit val executionContext: ExecutionContextExecutor =
-    actorSystem.dispatchers.lookup(handlerSetting.eventHandlerDispatcher)
+)(implicit executionContext: ExecutionContext)
+    extends EventHandler {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 

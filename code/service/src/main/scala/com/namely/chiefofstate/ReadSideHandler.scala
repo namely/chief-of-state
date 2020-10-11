@@ -30,9 +30,9 @@ class ReadSideHandler(
   encryptionAdapter: EncryptionAdapter,
   actorSystem: ActorSystem,
   readSideHandlerServiceClient: ReadSideHandlerServiceClient,
-  handlerSetting: HandlerSetting,
-  ec: ExecutionContext
-) extends ReadSideProcessor(encryptionAdapter)(ec, actorSystem.toTyped) {
+  handlerSetting: HandlerSetting
+)(implicit ec: ExecutionContext)
+    extends ReadSideProcessor(encryptionAdapter)(ec, actorSystem.toTyped) {
 
   override def projectionName: String =
     s"${grpcReadSideConfig.processorId}-${ConfigReader.serviceName}-readside-projection"
@@ -41,8 +41,8 @@ class ReadSideHandler(
   private val COS_ENTITY_ID_HEADER = "x-cos-entity-id"
 
   override def handle(readSideEvent: ReadSideEvent): DBIO[Done] = {
-    Try(
-      readSideHandlerServiceClient
+    val eventualResponse: Try[HandleReadSideResponse] = Try {
+      val futureResponse: Future[HandleReadSideResponse] = readSideHandlerServiceClient
         .handleReadSide()
         .addHeader(COS_ENTITY_ID_HEADER, readSideEvent.metaData.entityId)
         .addHeader(COS_EVENT_TAG_HEADER, readSideEvent.eventTag)
@@ -52,31 +52,27 @@ class ReadSideHandler(
             .withState(readSideEvent.state)
             .withMeta(Util.toCosMetaData(readSideEvent.metaData))
         )
-    ) match {
+
+      Await.result(futureResponse, Duration.Inf)
+    }
+
+    eventualResponse match {
       case Failure(exception) =>
         log.error(
           s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - unable to retrieve command handler response due to ${exception.getMessage}"
         )
-        DBIOAction.failed(throw new Exception(exception.getMessage))
-      case Success(eventualReadSideResponse: Future[HandleReadSideResponse]) =>
-        Try {
-          Await.result(eventualReadSideResponse, Duration.Inf)
-        } match {
-          case Failure(exception) =>
-            DBIOAction.failed(
-              throw new Exception(
-                s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - ${exception.getMessage}"
-              )
-            )
-          case Success(value) =>
-            if (value.successful) DBIOAction.successful(Done)
-            else
-              DBIOAction.failed(
-                throw new Exception(
-                  s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - unable to handle readSide"
-                )
-              )
-        }
+        DBIOAction.failed(exception)
+      case Success(value) => handleSuccessfulResponse(value)
     }
+  }
+
+  private[this] def handleSuccessfulResponse(readSideResponse: HandleReadSideResponse) = {
+    if (readSideResponse.successful) DBIOAction.successful(Done)
+    else
+      DBIOAction.failed(
+        new Exception(
+          s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - unable to handle readSide"
+        )
+      )
   }
 }

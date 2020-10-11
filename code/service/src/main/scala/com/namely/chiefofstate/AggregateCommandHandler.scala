@@ -1,7 +1,7 @@
 package com.namely.chiefofstate
 
-import akka.actor.ActorSystem
 import akka.grpc.GrpcServiceException
+import com.github.ghik.silencer.silent
 import com.google.protobuf.any.Any
 import com.namely.chiefofstate.config.HandlerSetting
 import com.namely.protobuf.chiefofstate.v1.common.{MetaData => _}
@@ -18,28 +18,22 @@ import io.superflat.lagompb.{CommandHandler, ProtosRegistry}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContextExecutor, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 /**
  * ChiefOfStateCommandHandler
  *
- * @param actorSystem                   the actor system
  * @param writeSideHandlerServiceClient the gRpcClient used to connect to the actual command handler
  * @param handlerSetting                the command handler setting
+ * @param executionContext the execution context
  */
+@silent
 class AggregateCommandHandler(
-  actorSystem: ActorSystem,
   writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
   handlerSetting: HandlerSetting
-) extends CommandHandler {
-
-  /**
-   * this will invoke the custom dispatcher to help send the request to
-   * the command handler without disrupting the free-flow of the aggregate
-   */
-  implicit val commandHandlerExecutionContext: ExecutionContextExecutor =
-    actorSystem.dispatchers.lookup(handlerSetting.commandHandlerDispatcher)
+)(implicit executionContext: ExecutionContext)
+    extends CommandHandler {
 
   import AggregateCommandHandler.GRPC_FAILED_VALIDATION_STATUSES
 

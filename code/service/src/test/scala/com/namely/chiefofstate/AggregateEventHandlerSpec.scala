@@ -23,9 +23,9 @@ import scala.concurrent.Future
 class AggregateEventHandlerSpec extends CustomActorTestkit("application.conf") with MockFactory {
 
   val actorSystem: ActorSystem = testKit.system.toClassic
-  val commandHandlerDispatcher = "chief-of-state.handlers-settings.command-handler-dispatcher"
-  val eventHandlerDispatcher = "chief-of-state.handlers-settings.event-handler-dispatcher"
-  val readHandlerDispatcher = "chief-of-state.handlers-settings.read-handler-dispatcher"
+  implicit val ec = actorSystem.dispatcher
+  val commandHandlerDispatcher = "chief-of-state.handlers-settings.writeside-dispatcher"
+  val readHandlerDispatcher = "chief-of-state.handlers-settings.readside-dispatcher"
 
   "Chief-Of-State Event Handler" should {
 
@@ -44,7 +44,6 @@ class AggregateEventHandlerSpec extends CustomActorTestkit("application.conf") w
                        stateProto,
                        eventsProtos,
                        commandHandlerDispatcher,
-                       eventHandlerDispatcher,
                        readHandlerDispatcher
         )
 
@@ -75,7 +74,7 @@ class AggregateEventHandlerSpec extends CustomActorTestkit("application.conf") w
           )
         )
 
-      val eventHandler: AggregateEventHandler = new AggregateEventHandler(actorSystem, mockGrpcClient, handlerSetting)
+      val eventHandler: AggregateEventHandler = new AggregateEventHandler(mockGrpcClient, handlerSetting)
       val result: Any = eventHandler.handle(Any.pack(event), priorState, eventMeta)
       result shouldBe (Any.pack(resultingState))
       result.unpack[Account] shouldBe resultingState
@@ -95,7 +94,6 @@ class AggregateEventHandlerSpec extends CustomActorTestkit("application.conf") w
                        stateProto,
                        eventsProtos,
                        commandHandlerDispatcher,
-                       eventHandlerDispatcher,
                        readHandlerDispatcher
         )
 
@@ -126,7 +124,7 @@ class AggregateEventHandlerSpec extends CustomActorTestkit("application.conf") w
           )
         )
 
-      val eventHandler: AggregateEventHandler = new AggregateEventHandler(actorSystem, mockGrpcClient, handlerSetting)
+      val eventHandler: AggregateEventHandler = new AggregateEventHandler(mockGrpcClient, handlerSetting)
       a[Exception] shouldBe thrownBy(
         eventHandler.handle(Any.pack(event), priorState, eventMeta)
       )
@@ -143,7 +141,6 @@ class AggregateEventHandlerSpec extends CustomActorTestkit("application.conf") w
                        Seq.empty,
                        Seq.empty,
                        commandHandlerDispatcher,
-                       eventHandlerDispatcher,
                        readHandlerDispatcher
         )
 
@@ -174,7 +171,7 @@ class AggregateEventHandlerSpec extends CustomActorTestkit("application.conf") w
           )
         )
 
-      val eventHandler: AggregateEventHandler = new AggregateEventHandler(actorSystem, mockGrpcClient, handlerSetting)
+      val eventHandler: AggregateEventHandler = new AggregateEventHandler(mockGrpcClient, handlerSetting)
 
       noException shouldBe thrownBy(eventHandler.handle(Any.pack(event), priorState, eventMeta))
     }
@@ -190,7 +187,6 @@ class AggregateEventHandlerSpec extends CustomActorTestkit("application.conf") w
                        Seq.empty,
                        Seq.empty,
                        commandHandlerDispatcher,
-                       eventHandlerDispatcher,
                        readHandlerDispatcher
         )
 
@@ -221,7 +217,7 @@ class AggregateEventHandlerSpec extends CustomActorTestkit("application.conf") w
           )
         )
 
-      val eventHandler: AggregateEventHandler = new AggregateEventHandler(actorSystem, mockGrpcClient, handlerSetting)
+      val eventHandler: AggregateEventHandler = new AggregateEventHandler(mockGrpcClient, handlerSetting)
 
       a[Exception] shouldBe thrownBy(
         eventHandler.handle(Any.pack(event), priorState, eventMeta)
@@ -243,7 +239,6 @@ class AggregateEventHandlerSpec extends CustomActorTestkit("application.conf") w
                        stateProto,
                        eventsProtos,
                        commandHandlerDispatcher,
-                       eventHandlerDispatcher,
                        readHandlerDispatcher
         )
 
@@ -264,7 +259,7 @@ class AggregateEventHandlerSpec extends CustomActorTestkit("application.conf") w
         )
         .returning(Future.failed(new GrpcServiceException(Status.INTERNAL)))
 
-      val eventHandler: AggregateEventHandler = new AggregateEventHandler(actorSystem, mockGrpcClient, handlerSetting)
+      val eventHandler: AggregateEventHandler = new AggregateEventHandler(mockGrpcClient, handlerSetting)
       a[Exception] shouldBe thrownBy(
         eventHandler.handle(Any.pack(event), priorState, eventMeta)
       )
@@ -285,7 +280,6 @@ class AggregateEventHandlerSpec extends CustomActorTestkit("application.conf") w
                        stateProto,
                        eventsProtos,
                        commandHandlerDispatcher,
-                       eventHandlerDispatcher,
                        readHandlerDispatcher
         )
 
@@ -306,7 +300,7 @@ class AggregateEventHandlerSpec extends CustomActorTestkit("application.conf") w
         )
         .throws(new RuntimeException("broken"))
 
-      val eventHandler: AggregateEventHandler = new AggregateEventHandler(actorSystem, mockGrpcClient, handlerSetting)
+      val eventHandler: AggregateEventHandler = new AggregateEventHandler(mockGrpcClient, handlerSetting)
       a[Exception] shouldBe thrownBy(
         eventHandler.handle(Any.pack(event), priorState, eventMeta)
       )

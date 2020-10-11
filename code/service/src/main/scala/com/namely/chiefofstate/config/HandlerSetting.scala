@@ -11,15 +11,14 @@ case class HandlerSetting(
   enableProtoValidations: Boolean,
   stateFQNs: Seq[String],
   eventFQNs: Seq[String],
-  commandHandlerDispatcher: String,
-  eventHandlerDispatcher: String,
-  readHandlerDispatcher: String
+  writeSideDispatcher: String,
+  readSideDispatcher: String
 )
 
 object HandlerSetting {
 
   /**
-   * Help build the [[com.namely.chiefofstate.HandlerSetting]]
+   * Help build the [[com.namely.chiefofstate.config.HandlerSetting]]
    * This code will break if the env variable are not properly set which will halt the
    * application bootstrap.
    *
@@ -50,16 +49,9 @@ object HandlerSetting {
         throw new RuntimeException("[ChiefOfState] handler service settings not properly set.")
     }
 
-    val commandHandlerDispatcher = "chief-of-state.handlers-settings.command-handler-dispatcher"
-    val eventHandlerDispatcher = "chief-of-state.handlers-settings.event-handler-dispatcher"
-    val readHandlerDispatcher = "chief-of-state.handlers-settings.read-handler-dispatcher"
+    val writeSideDispatcher = "chief-of-state.handlers-settings.writeside-dispatcher"
+    val readSideDispatcher = "chief-of-state.handlers-settings.readside-dispatcher"
 
-    new HandlerSetting(enableProtoValidations,
-                       stateProtos,
-                       eventProtos,
-                       commandHandlerDispatcher,
-                       eventHandlerDispatcher,
-                       readHandlerDispatcher
-    )
+    new HandlerSetting(enableProtoValidations, stateProtos, eventProtos, writeSideDispatcher, readSideDispatcher)
   }
 }

@@ -1,8 +1,7 @@
 package com.namely.chiefofstate
 
-import akka.actor.typed.DispatcherSelector
-import akka.actor.typed.scaladsl.adapter.ClassicActorSystemOps
 import akka.actor.{ActorSystem, CoordinatedShutdown}
+import akka.dispatch.MessageDispatcher
 import akka.grpc.GrpcClientSettings
 import com.lightbend.lagom.scaladsl.akka.discovery.AkkaDiscoveryComponents
 import com.lightbend.lagom.scaladsl.api.Descriptor
@@ -15,13 +14,11 @@ import com.lightbend.lagom.scaladsl.server.{
 }
 import com.namely.chiefofstate.config.{EncryptionSetting, HandlerSetting, ReadSideSetting, SendCommandSettings}
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceClient
-import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceClient
+import com.namely.protobuf.chiefofstate.v1.writeside.{WriteSideHandlerService, WriteSideHandlerServiceClient}
 import com.softwaremill.macwire.wire
 import io.superflat.lagompb.encryption.ProtoEncryption
 import io.superflat.lagompb.{AggregateRoot, BaseApplication, CommandHandler, EventHandler}
 import kamon.Kamon
-
-import scala.concurrent.ExecutionContextExecutor
 
 /**
  * ChiefOfState application
@@ -36,17 +33,16 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
   // reflect encryption from config
   override def protoEncryption: Option[ProtoEncryption] = EncryptionSetting(config).encryption
 
-  // making an implicit actor system provider for the generated clients
-  implicit lazy val sys: ActorSystem = actorSystem
-
-  // wiring up the grpc for the writeSide client
-  lazy val writeSideHandlerServiceClient: WriteSideHandlerServiceClient = WriteSideHandlerServiceClient(
-    GrpcClientSettings.fromConfig("chief_of_state.v1.WriteSideHandlerService")
-  )
-
   // let us wire up the handler settings
   // this will break the application bootstrapping if the handler settings env variables are not set
   lazy val handlerSetting: HandlerSetting = HandlerSetting(config)
+
+  val sys: ActorSystem = actorSystem
+  val writeSideExecutionContext: MessageDispatcher = sys.dispatchers.lookup(handlerSetting.writeSideDispatcher)
+  val writeClientSettings: GrpcClientSettings = GrpcClientSettings.fromConfig(WriteSideHandlerService.name)(sys)
+  lazy val writeSideHandlerServiceClient: WriteSideHandlerServiceClient = WriteSideHandlerServiceClient(
+    writeClientSettings
+  )(sys)
 
   //  Register a shutdown task to release resources of the client
   coordinatedShutdown
@@ -58,8 +54,12 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
   lazy val sendCommandSettings: SendCommandSettings = SendCommandSettings(config)
 
   // wire up the various event and command handler
-  lazy val eventHandler: EventHandler = wire[AggregateEventHandler]
-  lazy val commandHandler: CommandHandler = wire[AggregateCommandHandler]
+  lazy val eventHandler: EventHandler = new AggregateEventHandler(writeSideHandlerServiceClient, handlerSetting)(
+    writeSideExecutionContext
+  )
+  lazy val commandHandler: CommandHandler = new AggregateCommandHandler(writeSideHandlerServiceClient, handlerSetting)(
+    writeSideExecutionContext
+  )
 
   override lazy val aggregateRoot: AggregateRoot = wire[Aggregate]
 
@@ -69,15 +69,13 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
 
   if (config.getBoolean("chief-of-state.read-model.enabled")) {
 
-    implicit val readHandlerExecutionContext: ExecutionContextExecutor =
-      actorSystem.toTyped.dispatchers.lookup(
-        DispatcherSelector.fromConfig(handlerSetting.readHandlerDispatcher)
-      )
+    val readSideSys = actorSystem
+    val readSideExecutionContext = readSideSys.dispatchers.lookup(handlerSetting.readSideDispatcher)
 
     // wiring up the grpc for the readSide client
     ReadSideSetting.getReadSideSettings.foreach { config =>
       lazy val readSideHandlerServiceClient: ReadSideHandlerServiceClient =
-        ReadSideHandlerServiceClient(config.getGrpcClientSettings(actorSystem))
+        ReadSideHandlerServiceClient(config.getGrpcClientSettings(readSideSys))(readSideSys)
 
       coordinatedShutdown.addTask(
         CoordinatedShutdown.PhaseServiceUnbind,
@@ -88,12 +86,8 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
 
       // explicit initialization so that we can pass the desired execution context
       lazy val chiefOfStateReadProcessor =
-        new ReadSideHandler(config,
-                            encryptionAdapter,
-                            actorSystem,
-                            readSideHandlerServiceClient,
-                            handlerSetting,
-                            readHandlerExecutionContext
+        new ReadSideHandler(config, encryptionAdapter, actorSystem, readSideHandlerServiceClient, handlerSetting)(
+          readSideExecutionContext
         )
       chiefOfStateReadProcessor.init()
     }
