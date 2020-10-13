@@ -32,10 +32,6 @@ class AggregateCommandHandler(
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
-  log.info(s"debug 2020.10.13")
-  log.info(s"writeSideHandlerServiceClient: $writeSideHandlerServiceClient")
-  log.info(s"writeSideHandlerServiceClient.handleCommand(): ${writeSideHandlerServiceClient.handleCommand()}")
-
   /**
    * entrypoint command handler that unpacks the command proto and calls
    * the typed parameter
@@ -122,11 +118,6 @@ class AggregateCommandHandler(
         HandleCommandRequest(command = remoteCommand.command)
           .withPriorState(priorState)
           .withPriorEventMeta(Util.toCosMetaData(priorEventMeta))
-
-      log.info(s"debug 2020.10.13")
-      log.info(s"remoteCommand.headers: ${remoteCommand.headers}")
-      log.info(s"writeSideHandlerServiceClient: $writeSideHandlerServiceClient")
-      log.info(s"writeSideHandlerServiceClient.handleCommand(): ${writeSideHandlerServiceClient.handleCommand()}")
 
       // create an akka gRPC request builder
       val futureResponse: Future[HandleCommandResponse] =

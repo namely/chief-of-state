@@ -11,8 +11,8 @@ import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Hea
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service._
 import io.grpc.Status
-import io.superflat.lagompb.protobuf.v1.core.StateWrapper
 import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl}
+import io.superflat.lagompb.protobuf.v1.core.StateWrapper
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -41,10 +41,6 @@ class GrpcServiceImpl(sys: ActorSystem,
    * @return future with the command response
    */
   override def processCommand(in: ProcessCommandRequest, metadata: Metadata): Future[ProcessCommandResponse] = {
-
-    log.info("debug 2020.10.13")
-    log.info(s"sendCommandSettings: $sendCommandSettings")
-
     if (in.entityId.isEmpty) {
       log.error(s"request missing entity id")
       Future.fromTry(
