@@ -21,13 +21,17 @@ import scala.util.Failure
 class GrpcServiceImpl(sys: ActorSystem,
                       val clusterSharding: ClusterSharding,
                       val aggregateRoot: AggregateRoot,
-                      sendCommandSettings: SendCommandSettings
+                      val sendCommandSettings: SendCommandSettings
 )(implicit
   ec: ExecutionContext
 ) extends AbstractChiefOfStateServicePowerApiRouter(sys)
     with BaseGrpcServiceImpl {
 
   private val log: Logger = LoggerFactory.getLogger(getClass)
+
+  log.info("debug 2020.10.13")
+  log.info(s"sendCommandSettings: $sendCommandSettings")
+  log.info(s"sendCommandSettings.propagatedHeaders: ${sendCommandSettings.propagatedHeaders}")
 
   /**
    * gRPC ProcessCommand implementation
@@ -37,6 +41,9 @@ class GrpcServiceImpl(sys: ActorSystem,
    * @return future with the command response
    */
   override def processCommand(in: ProcessCommandRequest, metadata: Metadata): Future[ProcessCommandResponse] = {
+
+    log.info("debug 2020.10.13")
+    log.info(s"sendCommandSettings: $sendCommandSettings")
 
     if (in.entityId.isEmpty) {
       log.error(s"request missing entity id")

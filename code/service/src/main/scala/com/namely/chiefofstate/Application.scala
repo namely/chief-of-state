@@ -15,7 +15,6 @@ import com.lightbend.lagom.scaladsl.server.{
 }
 import com.namely.chiefofstate.config.{EncryptionSetting, HandlerSetting, ReadSideSetting, SendCommandSettings}
 import com.namely.chiefofstate.grpc.client.{ReadSideHandlerServiceClient, WriteSideHandlerServiceClient}
-import com.softwaremill.macwire.wire
 import io.superflat.lagompb.{AggregateRoot, BaseApplication, CommandHandler, EventHandler}
 import io.superflat.lagompb.encryption.ProtoEncryption
 import kamon.Kamon
@@ -40,12 +39,13 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
   // this will break the application bootstrapping if the handler settings env variables are not set
   lazy val handlerSetting: HandlerSetting = HandlerSetting(config)
 
-  val loggingAdapter: LoggingAdapter = akka.event.Logging(actorSystem.classicSystem, this.getClass)
+  lazy val loggingAdapter: LoggingAdapter = akka.event.Logging(actorSystem.classicSystem, this.getClass)
 
-  val (aggregateRoot, sendCommandSettings) = {
-      // let us wire up the writeSide executor context
+  lazy val aggregateRoot = {
+    // let us wire up the writeSide executor context
     val writeSideHandlerServiceClient: WriteSideHandlerServiceClient = {
-      val writeSideExecutionContext: MessageDispatcher = actorSystem.dispatchers.lookup(handlerSetting.writeSideDispatcher)
+      val writeSideExecutionContext: MessageDispatcher =
+        actorSystem.dispatchers.lookup(handlerSetting.writeSideDispatcher)
 
       val writeClientSettings: GrpcClientSettings =
         GrpcClientSettings.fromConfig("chief_of_state.v1.WriteSideHandlerService")(actorSystem)
@@ -53,36 +53,38 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
       WriteSideHandlerServiceClient(writeClientSettings)(writeSideExecutionContext, loggingAdapter)
     }
 
-    applog.info(s"debug 2020.10.13")
-    applog.info(s"writeSideHandlerServiceClient: $writeSideHandlerServiceClient")
-
     //  Register a shutdown task to release resources of the client
     coordinatedShutdown
       .addTask(CoordinatedShutdown.PhaseServiceUnbind, "shutdown-writeSidehandler-service-client") { () =>
         writeSideHandlerServiceClient.close()
       }
 
-    // get the SendCommandSettings for the GrpcServiceImpl
-    lazy val sendCommandSettings: SendCommandSettings = SendCommandSettings(config)
-
     // wire up the various event and command handler
     val eventHandler: EventHandler = new AggregateEventHandler(writeSideHandlerServiceClient, handlerSetting)
     val commandHandler: CommandHandler = new AggregateCommandHandler(writeSideHandlerServiceClient, handlerSetting)
 
-    val aggregateRoot = new Aggregate(
+    new Aggregate(
       actorSystem,
       config,
       commandHandler,
       eventHandler,
       encryptionAdapter
     )
-
-    (aggregateRoot, sendCommandSettings)
   }
 
-  override lazy val server: LagomServer =
-    serverFor[ChiefOfStateService](wire[RestServiceImpl])
-      .additionalRouter(wire[GrpcServiceImpl])
+  lazy val server: LagomServer = {
+    // get the SendCommandSettings for the GrpcServiceImpl
+    val sendCommandSettings: SendCommandSettings = SendCommandSettings(config)
+
+    val restService: RestServiceImpl =
+      new RestServiceImpl(clusterSharding, persistentEntityRegistry, aggregateRoot)
+
+    val grpcService: GrpcServiceImpl =
+      new GrpcServiceImpl(actorSystem, clusterSharding, aggregateRoot, sendCommandSettings)
+
+    serverFor[ChiefOfStateService](restService)
+      .additionalRouter(grpcService)
+  }
 
   if (config.getBoolean("chief-of-state.read-model.enabled")) {
     val readSideExecutionContext = actorSystem.dispatchers.lookup(handlerSetting.readSideDispatcher)
@@ -109,6 +111,8 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
       readSideHandler.init()
     }
   }
+
+  this.startAggregateRootCluster()
 }
 
 /**
