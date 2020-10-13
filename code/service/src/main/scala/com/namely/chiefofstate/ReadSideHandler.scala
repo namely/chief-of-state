@@ -4,7 +4,7 @@ import akka.Done
 import akka.actor.ActorSystem
 import akka.actor.typed.scaladsl.adapter._
 import com.namely.chiefofstate.config.{HandlerSetting, ReadSideSetting}
-import com.namely.protobuf.chiefofstate.v1.client.ReadSideHandlerServiceClient
+import com.namely.chiefofstate.grpc.client.ReadSideHandlerServiceClient
 import com.namely.protobuf.chiefofstate.v1.readside.{HandleReadSideRequest, HandleReadSideResponse}
 import io.superflat.lagompb.ConfigReader
 import io.superflat.lagompb.encryption.EncryptionAdapter

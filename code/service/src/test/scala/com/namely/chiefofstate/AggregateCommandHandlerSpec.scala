@@ -10,8 +10,8 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
 import com.google.protobuf.wrappers.StringValue
 import com.namely.chiefofstate.config.HandlerSetting
+import com.namely.chiefofstate.grpc.client.WriteSideHandlerServiceClient
 import com.namely.chiefofstate.test.helpers.CustomActorTestkit
-import com.namely.protobuf.chiefofstate.v1.client.WriteSideHandlerServiceClient
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service.GetStateRequest
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened, OpenAccount}

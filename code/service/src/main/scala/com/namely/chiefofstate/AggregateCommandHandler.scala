@@ -3,7 +3,7 @@ package com.namely.chiefofstate
 import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
 import com.namely.chiefofstate.config.HandlerSetting
-import com.namely.protobuf.chiefofstate.v1.client.WriteSideHandlerServiceClient
+import com.namely.chiefofstate.grpc.client.WriteSideHandlerServiceClient
 import com.namely.protobuf.chiefofstate.v1.common.{MetaData => _}
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service.GetStateRequest

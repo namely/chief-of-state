@@ -14,7 +14,7 @@ import com.lightbend.lagom.scaladsl.server.{
   LagomServer
 }
 import com.namely.chiefofstate.config.{EncryptionSetting, HandlerSetting, ReadSideSetting, SendCommandSettings}
-import com.namely.protobuf.chiefofstate.v1.client.{ReadSideHandlerServiceClient, WriteSideHandlerServiceClient}
+import com.namely.chiefofstate.grpc.client.{ReadSideHandlerServiceClient, WriteSideHandlerServiceClient}
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerService
 import com.softwaremill.macwire.wire
 import io.superflat.lagompb.{AggregateRoot, BaseApplication, CommandHandler, EventHandler}

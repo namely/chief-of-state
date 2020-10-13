@@ -2,7 +2,7 @@ package com.namely.chiefofstate
 
 import com.google.protobuf.any.Any
 import com.namely.chiefofstate.config.HandlerSetting
-import com.namely.protobuf.chiefofstate.v1.client.WriteSideHandlerServiceClient
+import com.namely.chiefofstate.grpc.client.WriteSideHandlerServiceClient
 import com.namely.protobuf.chiefofstate.v1.writeside.{HandleEventRequest, HandleEventResponse}
 import io.superflat.lagompb.EventHandler
 import io.superflat.lagompb.protobuf.v1.core.MetaData

@@ -1,4 +1,4 @@
-package com.namely.protobuf.chiefofstate.v1.client
+package com.namely.chiefofstate.grpc.client
 
 import akka.event.LoggingAdapter
 import akka.grpc.GrpcClientSettings
