@@ -8,12 +8,9 @@ import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
 import com.namely.chiefofstate.config.HandlerSetting
 import com.namely.chiefofstate.test.helpers.CustomActorTestkit
+import com.namely.protobuf.chiefofstate.v1.client.WriteSideHandlerServiceClient
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened}
-import com.namely.protobuf.chiefofstate.v1.writeside.{
-  HandleEventRequest,
-  HandleEventResponse,
-  WriteSideHandlerServiceClient
-}
+import com.namely.protobuf.chiefofstate.v1.writeside.{HandleEventRequest, HandleEventResponse}
 import io.grpc.Status
 import io.superflat.lagompb.protobuf.v1.core.MetaData
 import org.scalamock.scalatest.MockFactory

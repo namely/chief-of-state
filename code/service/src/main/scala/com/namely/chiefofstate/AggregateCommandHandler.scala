@@ -1,24 +1,20 @@
 package com.namely.chiefofstate
 
 import akka.grpc.GrpcServiceException
-import com.github.ghik.silencer.silent
 import com.google.protobuf.any.Any
 import com.namely.chiefofstate.config.HandlerSetting
+import com.namely.protobuf.chiefofstate.v1.client.WriteSideHandlerServiceClient
 import com.namely.protobuf.chiefofstate.v1.common.{MetaData => _}
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service.GetStateRequest
-import com.namely.protobuf.chiefofstate.v1.writeside.{
-  HandleCommandRequest,
-  HandleCommandResponse,
-  WriteSideHandlerServiceClient
-}
+import com.namely.protobuf.chiefofstate.v1.writeside.{HandleCommandRequest, HandleCommandResponse}
 import io.grpc.{Status, StatusRuntimeException}
-import io.superflat.lagompb.protobuf.v1.core._
 import io.superflat.lagompb.{CommandHandler, ProtosRegistry}
+import io.superflat.lagompb.protobuf.v1.core._
 import org.slf4j.{Logger, LoggerFactory}
 
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -26,14 +22,11 @@ import scala.util.{Failure, Success, Try}
  *
  * @param writeSideHandlerServiceClient the gRpcClient used to connect to the actual command handler
  * @param handlerSetting                the command handler setting
- * @param executionContext the execution context
  */
-@silent
 class AggregateCommandHandler(
   writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
   handlerSetting: HandlerSetting
-)(implicit executionContext: ExecutionContext)
-    extends CommandHandler {
+) extends CommandHandler {
 
   import AggregateCommandHandler.GRPC_FAILED_VALIDATION_STATUSES
 
