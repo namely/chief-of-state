@@ -15,7 +15,6 @@ import com.lightbend.lagom.scaladsl.server.{
 }
 import com.namely.chiefofstate.config.{EncryptionSetting, HandlerSetting, ReadSideSetting, SendCommandSettings}
 import com.namely.chiefofstate.grpc.client.{ReadSideHandlerServiceClient, WriteSideHandlerServiceClient}
-import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerService
 import com.softwaremill.macwire.wire
 import io.superflat.lagompb.{AggregateRoot, BaseApplication, CommandHandler, EventHandler}
 import io.superflat.lagompb.encryption.ProtoEncryption
@@ -42,8 +41,9 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
 
   // let us wire up the writeSide executor context
   val writeSideExecutionContext: MessageDispatcher = actorSystem.dispatchers.lookup(handlerSetting.writeSideDispatcher)
-  val writeClientSettings: GrpcClientSettings = GrpcClientSettings.fromConfig(WriteSideHandlerService.name)(actorSystem)
-  lazy val writeSideHandlerServiceClient: WriteSideHandlerServiceClient = WriteSideHandlerServiceClient(
+  val writeClientSettings: GrpcClientSettings =
+    GrpcClientSettings.fromConfig("chief_of_state.v1.WriteSideHandlerService")(actorSystem)
+  val writeSideHandlerServiceClient: WriteSideHandlerServiceClient = WriteSideHandlerServiceClient(
     writeClientSettings
   )(writeSideExecutionContext, loggingAdapter)
 
@@ -70,7 +70,7 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
 
     // wiring up the grpc for the readSide client
     ReadSideSetting.getReadSideSettings.foreach { config =>
-      lazy val readSideHandlerServiceClient: ReadSideHandlerServiceClient =
+      val readSideHandlerServiceClient: ReadSideHandlerServiceClient =
         ReadSideHandlerServiceClient(config.getGrpcClientSettings(actorSystem))(readSideExecutionContext,
                                                                                 loggingAdapter
         )
