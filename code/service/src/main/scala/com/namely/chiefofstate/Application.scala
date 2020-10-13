@@ -19,6 +19,7 @@ import com.softwaremill.macwire.wire
 import io.superflat.lagompb.{AggregateRoot, BaseApplication, CommandHandler, EventHandler}
 import io.superflat.lagompb.encryption.ProtoEncryption
 import kamon.Kamon
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
  * ChiefOfState application
@@ -26,6 +27,8 @@ import kamon.Kamon
  * @param context the application context
  */
 abstract class Application(context: LagomApplicationContext) extends BaseApplication(context) {
+
+  lazy val applog: Logger = LoggerFactory.getLogger(getClass)
 
   // start kamon
   Kamon.init()
@@ -39,27 +42,43 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
 
   val loggingAdapter: LoggingAdapter = akka.event.Logging(actorSystem.classicSystem, this.getClass)
 
-  // let us wire up the writeSide executor context
-  val writeSideExecutionContext: MessageDispatcher = actorSystem.dispatchers.lookup(handlerSetting.writeSideDispatcher)
-  val writeClientSettings: GrpcClientSettings =
-    GrpcClientSettings.fromConfig("chief_of_state.v1.WriteSideHandlerService")(actorSystem)
-  val writeSideHandlerServiceClient: WriteSideHandlerServiceClient = WriteSideHandlerServiceClient(
-    writeClientSettings
-  )(writeSideExecutionContext, loggingAdapter)
+  val (aggregateRoot, sendCommandSettings) = {
+      // let us wire up the writeSide executor context
+    val writeSideHandlerServiceClient: WriteSideHandlerServiceClient = {
+      val writeSideExecutionContext: MessageDispatcher = actorSystem.dispatchers.lookup(handlerSetting.writeSideDispatcher)
 
-  //  Register a shutdown task to release resources of the client
-  coordinatedShutdown
-    .addTask(CoordinatedShutdown.PhaseServiceUnbind, "shutdown-writeSidehandler-service-client") { () =>
-      writeSideHandlerServiceClient.close()
+      val writeClientSettings: GrpcClientSettings =
+        GrpcClientSettings.fromConfig("chief_of_state.v1.WriteSideHandlerService")(actorSystem)
+
+      WriteSideHandlerServiceClient(writeClientSettings)(writeSideExecutionContext, loggingAdapter)
     }
 
-  // get the SendCommandSettings for the GrpcServiceImpl
-  lazy val sendCommandSettings: SendCommandSettings = SendCommandSettings(config)
+    applog.info(s"debug 2020.10.13")
+    applog.info(s"writeSideHandlerServiceClient: $writeSideHandlerServiceClient")
 
-  // wire up the various event and command handler
-  lazy val eventHandler: EventHandler = new AggregateEventHandler(writeSideHandlerServiceClient, handlerSetting)
-  lazy val commandHandler: CommandHandler = new AggregateCommandHandler(writeSideHandlerServiceClient, handlerSetting)
-  override lazy val aggregateRoot: AggregateRoot = wire[Aggregate]
+    //  Register a shutdown task to release resources of the client
+    coordinatedShutdown
+      .addTask(CoordinatedShutdown.PhaseServiceUnbind, "shutdown-writeSidehandler-service-client") { () =>
+        writeSideHandlerServiceClient.close()
+      }
+
+    // get the SendCommandSettings for the GrpcServiceImpl
+    lazy val sendCommandSettings: SendCommandSettings = SendCommandSettings(config)
+
+    // wire up the various event and command handler
+    val eventHandler: EventHandler = new AggregateEventHandler(writeSideHandlerServiceClient, handlerSetting)
+    val commandHandler: CommandHandler = new AggregateCommandHandler(writeSideHandlerServiceClient, handlerSetting)
+
+    val aggregateRoot = new Aggregate(
+      actorSystem,
+      config,
+      commandHandler,
+      eventHandler,
+      encryptionAdapter
+    )
+
+    (aggregateRoot, sendCommandSettings)
+  }
 
   override lazy val server: LagomServer =
     serverFor[ChiefOfStateService](wire[RestServiceImpl])

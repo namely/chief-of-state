@@ -24,13 +24,17 @@ import scala.util.{Failure, Success, Try}
  * @param handlerSetting                the command handler setting
  */
 class AggregateCommandHandler(
-  writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
+  val writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
   handlerSetting: HandlerSetting
 ) extends CommandHandler {
 
   import AggregateCommandHandler.GRPC_FAILED_VALIDATION_STATUSES
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
+
+  log.info(s"debug 2020.10.13")
+  log.info(s"writeSideHandlerServiceClient: $writeSideHandlerServiceClient")
+  log.info(s"writeSideHandlerServiceClient.handleCommand(): ${writeSideHandlerServiceClient.handleCommand()}")
 
   /**
    * entrypoint command handler that unpacks the command proto and calls
@@ -118,6 +122,11 @@ class AggregateCommandHandler(
         HandleCommandRequest(command = remoteCommand.command)
           .withPriorState(priorState)
           .withPriorEventMeta(Util.toCosMetaData(priorEventMeta))
+
+      log.info(s"debug 2020.10.13")
+      log.info(s"remoteCommand.headers: ${remoteCommand.headers}")
+      log.info(s"writeSideHandlerServiceClient: $writeSideHandlerServiceClient")
+      log.info(s"writeSideHandlerServiceClient.handleCommand(): ${writeSideHandlerServiceClient.handleCommand()}")
 
       // create an akka gRPC request builder
       val futureResponse: Future[HandleCommandResponse] =
