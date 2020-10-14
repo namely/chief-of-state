@@ -3,18 +3,12 @@ package com.namely.chiefofstate
 import akka.Done
 import akka.actor.ActorSystem
 import akka.actor.typed.scaladsl.adapter._
-import com.namely.protobuf.chiefofstate.v1.common
-import com.namely.protobuf.chiefofstate.v1.readside.{
-  HandleReadSideRequest,
-  HandleReadSideResponse,
-  ReadSideHandlerServiceClient
-}
 import com.namely.chiefofstate.config.{HandlerSetting, ReadSideSetting}
+import com.namely.chiefofstate.grpc.client.ReadSideHandlerServiceClient
+import com.namely.protobuf.chiefofstate.v1.readside.{HandleReadSideRequest, HandleReadSideResponse}
 import io.superflat.lagompb.ConfigReader
 import io.superflat.lagompb.encryption.EncryptionAdapter
-import com.namely.chiefofstate.Util
 import io.superflat.lagompb.readside.{ReadSideEvent, ReadSideProcessor}
-import scalapb.GeneratedMessageCompanion
 import slick.dbio.{DBIO, DBIOAction}
 
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -44,42 +38,38 @@ class ReadSideHandler(
   private val COS_ENTITY_ID_HEADER = "x-cos-entity-id"
 
   override def handle(readSideEvent: ReadSideEvent): DBIO[Done] = {
-      Try(
-        readSideHandlerServiceClient
-          .handleReadSide()
-          .addHeader(COS_ENTITY_ID_HEADER, readSideEvent.metaData.entityId)
-          .addHeader(COS_EVENT_TAG_HEADER, readSideEvent.eventTag)
-          .invoke(
-            HandleReadSideRequest()
-              .withEvent(readSideEvent.event)
-              .withState(readSideEvent.state)
-              .withMeta(Util.toCosMetaData(readSideEvent.metaData))
-          )
-      ) match {
-        case Failure(exception) =>
-          log.error(
-            s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - unable to retrieve command handler response due to ${exception.getMessage}"
-          )
-          DBIOAction.failed(throw new Exception(exception.getMessage))
-        case Success(eventualReadSideResponse: Future[HandleReadSideResponse]) =>
-          Try {
-            Await.result(eventualReadSideResponse, Duration.Inf)
-          } match {
-            case Failure(exception) =>
-              DBIOAction.failed(
-                throw new Exception(
-                  s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - ${exception.getMessage}"
-                )
-              )
-            case Success(value) =>
-              if (value.successful) DBIOAction.successful(Done)
-              else
-                DBIOAction.failed(
-                  throw new Exception(
-                    s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - unable to handle readSide"
-                  )
-                )
-          }
-      }
+    val eventualResponse: Try[HandleReadSideResponse] = Try {
+      val futureResponse: Future[HandleReadSideResponse] = readSideHandlerServiceClient
+        .handleReadSide()
+        .addHeader(COS_ENTITY_ID_HEADER, readSideEvent.metaData.entityId)
+        .addHeader(COS_EVENT_TAG_HEADER, readSideEvent.eventTag)
+        .invoke(
+          HandleReadSideRequest()
+            .withEvent(readSideEvent.event)
+            .withState(readSideEvent.state)
+            .withMeta(Util.toCosMetaData(readSideEvent.metaData))
+        )
+
+      Await.result(futureResponse, Duration.Inf)
+    }
+
+    eventualResponse match {
+      case Failure(exception) =>
+        log.error(
+          s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - unable to retrieve command handler response due to ${exception.getMessage}"
+        )
+        DBIOAction.failed(exception)
+      case Success(value) => handleSuccessfulResponse(value)
+    }
+  }
+
+  private[this] def handleSuccessfulResponse(readSideResponse: HandleReadSideResponse) = {
+    if (readSideResponse.successful) DBIOAction.successful(Done)
+    else
+      DBIOAction.failed(
+        new Exception(
+          s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - unable to handle readSide"
+        )
+      )
   }
 }

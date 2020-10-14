@@ -1,6 +1,8 @@
 package com.namely.chiefofstate
 
 import akka.actor.CoordinatedShutdown
+import akka.dispatch.MessageDispatcher
+import akka.event.LoggingAdapter
 import akka.grpc.GrpcClientSettings
 import com.lightbend.lagom.scaladsl.akka.discovery.AkkaDiscoveryComponents
 import com.lightbend.lagom.scaladsl.api.Descriptor
@@ -12,12 +14,11 @@ import com.lightbend.lagom.scaladsl.server.{
   LagomServer
 }
 import com.namely.chiefofstate.config.{EncryptionSetting, HandlerSetting, ReadSideSetting, SendCommandSettings}
-import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceClient
-import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceClient
-import com.softwaremill.macwire.wire
+import com.namely.chiefofstate.grpc.client.{ReadSideHandlerServiceClient, WriteSideHandlerServiceClient}
 import io.superflat.lagompb.{AggregateRoot, BaseApplication, CommandHandler, EventHandler}
 import io.superflat.lagompb.encryption.ProtoEncryption
 import kamon.Kamon
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
  * ChiefOfState application
@@ -26,49 +27,74 @@ import kamon.Kamon
  */
 abstract class Application(context: LagomApplicationContext) extends BaseApplication(context) {
 
+  lazy val applog: Logger = LoggerFactory.getLogger(getClass)
+
   // start kamon
   Kamon.init()
 
   // reflect encryption from config
   override def protoEncryption: Option[ProtoEncryption] = EncryptionSetting(config).encryption
 
-  // making an implicit actor system provider for the generated clients
-  implicit lazy val sys = actorSystem
-
-  // wiring up the grpc for the writeSide client
-  lazy val writeSideHandlerServiceClient: WriteSideHandlerServiceClient = WriteSideHandlerServiceClient(
-    GrpcClientSettings.fromConfig("chief_of_state.v1.WriteSideHandlerService")
-  )
-
   // let us wire up the handler settings
   // this will break the application bootstrapping if the handler settings env variables are not set
   lazy val handlerSetting: HandlerSetting = HandlerSetting(config)
 
-  //  Register a shutdown task to release resources of the client
-  coordinatedShutdown
-    .addTask(CoordinatedShutdown.PhaseServiceUnbind, "shutdown-writeSidehandler-service-client") { () =>
-      writeSideHandlerServiceClient.close()
+  lazy val loggingAdapter: LoggingAdapter = akka.event.Logging(actorSystem.classicSystem, this.getClass)
+
+  lazy val aggregateRoot = {
+    // let us wire up the writeSide executor context
+    val writeSideHandlerServiceClient: WriteSideHandlerServiceClient = {
+      val writeSideExecutionContext: MessageDispatcher =
+        actorSystem.dispatchers.lookup(handlerSetting.writeSideDispatcher)
+
+      val writeClientSettings: GrpcClientSettings =
+        GrpcClientSettings.fromConfig("chief_of_state.v1.WriteSideHandlerService")(actorSystem)
+
+      WriteSideHandlerServiceClient(writeClientSettings)(writeSideExecutionContext, loggingAdapter)
     }
 
-  // get the SendCommandSettings for the GrpcServiceImpl
-  lazy val sendCommandSettings: SendCommandSettings = SendCommandSettings(config)
+    //  Register a shutdown task to release resources of the client
+    coordinatedShutdown
+      .addTask(CoordinatedShutdown.PhaseServiceUnbind, "shutdown-writeSidehandler-service-client") { () =>
+        writeSideHandlerServiceClient.close()
+      }
 
-  // wire up the various event and command handler
-  lazy val eventHandler: EventHandler = wire[AggregateEventHandler]
-  lazy val commandHandler: CommandHandler = wire[AggregateCommandHandler]
+    // wire up the various event and command handler
+    val eventHandler: EventHandler = new AggregateEventHandler(writeSideHandlerServiceClient, handlerSetting)
+    val commandHandler: CommandHandler = new AggregateCommandHandler(writeSideHandlerServiceClient, handlerSetting)
 
-  override lazy val aggregateRoot: AggregateRoot = wire[Aggregate]
+    new Aggregate(
+      actorSystem,
+      config,
+      commandHandler,
+      eventHandler,
+      encryptionAdapter
+    )
+  }
 
-  override lazy val server: LagomServer =
-    serverFor[ChiefOfStateService](wire[RestServiceImpl])
-      .additionalRouter(wire[GrpcServiceImpl])
+  lazy val server: LagomServer = {
+    // get the SendCommandSettings for the GrpcServiceImpl
+    val sendCommandSettings: SendCommandSettings = SendCommandSettings(config)
+
+    val restService: RestServiceImpl =
+      new RestServiceImpl(clusterSharding, persistentEntityRegistry, aggregateRoot)
+
+    val grpcService: GrpcServiceImpl =
+      new GrpcServiceImpl(actorSystem, clusterSharding, aggregateRoot, sendCommandSettings)
+
+    serverFor[ChiefOfStateService](restService)
+      .additionalRouter(grpcService)
+  }
 
   if (config.getBoolean("chief-of-state.read-model.enabled")) {
+    val readSideExecutionContext = actorSystem.dispatchers.lookup(handlerSetting.readSideDispatcher)
 
     // wiring up the grpc for the readSide client
     ReadSideSetting.getReadSideSettings.foreach { config =>
-      lazy val readSideHandlerServiceClient: ReadSideHandlerServiceClient =
-        ReadSideHandlerServiceClient(config.getGrpcClientSettings(actorSystem))
+      val readSideHandlerServiceClient: ReadSideHandlerServiceClient =
+        ReadSideHandlerServiceClient(config.getGrpcClientSettings(actorSystem))(readSideExecutionContext,
+                                                                                loggingAdapter
+        )
 
       coordinatedShutdown.addTask(
         CoordinatedShutdown.PhaseServiceUnbind,
@@ -77,10 +103,16 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
         readSideHandlerServiceClient.close()
       }
 
-      lazy val chiefOfStateReadProcessor: ReadSideHandler = wire[ReadSideHandler]
-      chiefOfStateReadProcessor.init()
+      // explicit initialization so that we can pass the desired execution context
+      lazy val readSideHandler: ReadSideHandler =
+        new ReadSideHandler(config, encryptionAdapter, actorSystem, readSideHandlerServiceClient, handlerSetting)(
+          readSideExecutionContext
+        )
+      readSideHandler.init()
     }
   }
+
+  this.startAggregateRootCluster()
 }
 
 /**

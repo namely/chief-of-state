@@ -1,4 +1,4 @@
-import play.grpc.gen.scaladsl.{PlayScalaClientCodeGenerator, PlayScalaServerCodeGenerator}
+import play.grpc.gen.scaladsl.PlayScalaServerCodeGenerator
 
 enablePlugins(DockerComposePlugin)
 dockerImageCreationTask := (Docker / publishLocal in `chiefofstate`).value
@@ -42,7 +42,7 @@ lazy val protogen: Project = project
     // Using Scala
     akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Scala),
     akkaGrpcExtraGenerators in Compile += PlayScalaServerCodeGenerator,
-    akkaGrpcExtraGenerators in Compile += PlayScalaClientCodeGenerator,
+    akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server),
     akkaGrpcCodeGeneratorSettings += "server_power_apis",
     akkaGrpcCodeGeneratorSettings := akkaGrpcCodeGeneratorSettings.value.filterNot(_ == "flat_package")
   )
