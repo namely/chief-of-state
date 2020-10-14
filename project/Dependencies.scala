@@ -10,7 +10,7 @@ object Dependencies {
     val SilencerVersion: String = "1.6.0"
     val KamonAkkaGrpcVersion: String = "0.0.9"
     val AkkaVersion: String = "2.6.9"
-    val KamonVersion: String = "2.1.6"
+    val KamonVersion: String = "2.1.8"
     val JaninoVersion: String = "3.1.2"
     val LogstashLogbackVersion = "6.3"
   }
@@ -21,6 +21,7 @@ object Dependencies {
     val KamonBundle: ModuleID = "io.kamon" %% "kamon-bundle" % Versions.KamonVersion
     val KamonPrometheus: ModuleID = "io.kamon" %% "kamon-prometheus" % Versions.KamonVersion
     val KamonJaeger: ModuleID = "io.kamon" %% "kamon-jaeger" % Versions.KamonVersion
+    val KamonZipkin: ModuleID = "io.kamon" %% "kamon-zipkin" % Versions.KamonVersion
     val KanelaAgent: ModuleID = "io.kamon" % "kanela-agent" % Versions.KanelaAgentVersion
     val KamonAkkaGrpc: ModuleID =
       ("com.github.nezasa" %% "kamon-akka-grpc" % Versions.KamonAkkaGrpcVersion).intransitive()
