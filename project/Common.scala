@@ -4,8 +4,8 @@ import com.lightbend.lagom.sbt.LagomPlugin.autoImport.{
   lagomServiceGatewayAddress,
   lagomServiceLocatorAddress
 }
-import sbt.Keys.{credentials, isSnapshot, resolvers, _}
 import sbt.{compilerPlugin, plugins, url, AutoPlugin, Credentials, CrossVersion, Developer, Plugins, Resolver, _}
+import sbt.Keys.{credentials, isSnapshot, resolvers, _}
 import scoverage.ScoverageKeys.{coverageExcludedPackages, coverageFailOnMinimum, coverageMinimum}
 import Dependencies.Versions
 
@@ -91,6 +91,7 @@ object Common extends AutoPlugin {
         "com.namely.chiefofstate.ReadSideHandler;" +
         "com.namely.chiefofstate.ApplicationLoader;" +
         "com.namely.chiefofstate.Application;" +
-        "com.namely.chiefofstate.Aggregate;"
+        "com.namely.chiefofstate.Aggregate;" +
+        "com.namely.chiefofstate.grpc.client.*;"
     )
 }

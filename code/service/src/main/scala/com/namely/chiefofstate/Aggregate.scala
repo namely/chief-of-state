@@ -3,9 +3,8 @@ package com.namely.chiefofstate
 import akka.actor.ActorSystem
 import com.google.protobuf.empty.Empty
 import com.typesafe.config.Config
-import io.superflat.lagompb.{AggregateRoot, CommandHandler, EventHandler}
 import io.superflat.lagompb.encryption.EncryptionAdapter
-import scalapb.GeneratedMessageCompanion
+import io.superflat.lagompb.{AggregateRoot, CommandHandler, EventHandler}
 
 /**
  * ChiefOfStateAggregate

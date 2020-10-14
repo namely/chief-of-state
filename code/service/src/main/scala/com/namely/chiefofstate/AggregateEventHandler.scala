@@ -1,13 +1,9 @@
 package com.namely.chiefofstate
 
-import akka.actor.ActorSystem
 import com.google.protobuf.any.Any
 import com.namely.chiefofstate.config.HandlerSetting
-import com.namely.protobuf.chiefofstate.v1.writeside.{
-  HandleEventRequest,
-  HandleEventResponse,
-  WriteSideHandlerServiceClient
-}
+import com.namely.chiefofstate.grpc.client.WriteSideHandlerServiceClient
+import com.namely.protobuf.chiefofstate.v1.writeside.{HandleEventRequest, HandleEventResponse}
 import io.superflat.lagompb.EventHandler
 import io.superflat.lagompb.protobuf.v1.core.MetaData
 import org.slf4j.{Logger, LoggerFactory}
@@ -19,12 +15,10 @@ import scala.util.{Failure, Success, Try}
 /**
  * ChiefOfStateEventHandler
  *
- * @param actorSystem                   the actor system
  * @param writeSideHandlerServiceClient the gRpcClient used to connect to the actual event handler
  * @param handlerSetting                the event handler setting
  */
 class AggregateEventHandler(
-  actorSystem: ActorSystem,
   writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
   handlerSetting: HandlerSetting
 ) extends EventHandler {

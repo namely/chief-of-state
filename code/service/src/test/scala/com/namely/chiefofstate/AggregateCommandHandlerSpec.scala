@@ -2,13 +2,16 @@ package com.namely.chiefofstate
 
 import java.util.UUID
 
+import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.adapter._
 import akka.grpc.GrpcServiceException
 import akka.grpc.scaladsl.SingleResponseRequestBuilder
-import com.google.protobuf.any.Any
 import com.google.protobuf.ByteString
+import com.google.protobuf.any.Any
 import com.google.protobuf.wrappers.StringValue
 import com.namely.chiefofstate.config.HandlerSetting
-import com.namely.chiefofstate.test.helpers.TestSpec
+import com.namely.chiefofstate.grpc.client.WriteSideHandlerServiceClient
+import com.namely.chiefofstate.test.helpers.CustomActorTestkit
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service.GetStateRequest
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened, OpenAccount}
@@ -21,7 +24,7 @@ import org.scalamock.scalatest.MockFactory
 import scala.concurrent.Future
 import scala.util.{Success, Try}
 
-class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
+class AggregateCommandHandlerSpec extends CustomActorTestkit("application.conf") with MockFactory {
 
   /**
    * helper to return a mock request builder
@@ -51,10 +54,20 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
     mockGrpcClient
   }
 
+  val actorSystem: ActorSystem = testKit.system.toClassic
+  implicit val ec = actorSystem.dispatcher
+  val commandHandlerDispatcher = "chief-of-state.handlers-settings.writeside-dispatcher"
+  val readHandlerDispatcher = "chief-of-state.handlers-settings.readside-dispatcher"
+
   val testHandlerSetting: HandlerSetting = {
     val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
     val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-    HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
+    HandlerSetting(enableProtoValidations = true,
+                   stateProto,
+                   eventsProtos,
+                   commandHandlerDispatcher,
+                   readHandlerDispatcher
+    )
   }
 
   "main commandHandler" should {
@@ -65,7 +78,7 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
       val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
         .withRevisionNumber(1)
 
-      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, testHandlerSetting)
       val result: Try[CommandHandlerResponse] = cmdhandler.handle(cmd, priorState, priorEventMeta)
 
       result shouldBe Success(
@@ -79,7 +92,7 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
       val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
         .withRevisionNumber(1)
 
-      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, testHandlerSetting)
       val result: Try[CommandHandlerResponse] = cmdhandler.handleTyped(cmd, priorState, priorEventMeta)
 
       result shouldBe Success(
@@ -104,7 +117,7 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
       // let us create a mock instance of the handler service client
       val mockGrpcClient = getMockClient(requestBuilder)
 
-      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, testHandlerSetting)
+      val cmdhandler = new AggregateCommandHandler(mockGrpcClient, testHandlerSetting)
 
       val result: Try[CommandHandlerResponse] = cmdhandler.handleTyped(cmd, priorState, priorEventMeta)
 
@@ -121,7 +134,7 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
       val cmd = Any.pack(StringValue("oops"))
       val priorState: Any = Any.pack(Account.defaultInstance)
       val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
-      val cmdhandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val cmdhandler = new AggregateCommandHandler(null, testHandlerSetting)
       val actual = cmdhandler.handle(cmd, priorState, priorEventMeta)
       actual.failed.get.getMessage.contains("unhandled command type")
     }
@@ -130,7 +143,7 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
       val cmd = Any.pack(StringValue("oops"))
       val priorState: Any = Any.pack(Account.defaultInstance)
       val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
-      val cmdhandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val cmdhandler = new AggregateCommandHandler(null, testHandlerSetting)
       val actual = cmdhandler.handleTyped(cmd, priorState, priorEventMeta)
       actual.failed.get.getMessage.contains("unhandled command type")
     }
@@ -192,7 +205,7 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
           )
         )
 
-      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, testHandlerSetting)
+      val cmdhandler = new AggregateCommandHandler(mockGrpcClient, testHandlerSetting)
 
       val result: CommandHandlerResponse = cmdhandler.handleRemoteCommand(
         cmd,
@@ -222,7 +235,7 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
       val mockRequestBuilder = getMockRequestBuilder
       val mockGrpcClient = getMockClient(mockRequestBuilder)
 
-      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, testHandlerSetting)
+      val cmdhandler = new AggregateCommandHandler(mockGrpcClient, testHandlerSetting)
 
       val result: CommandHandlerResponse =
         cmdhandler.handleRemoteCommand(cmd, priorState, priorEventMeta)
@@ -265,7 +278,7 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
         )
 
       // let us execute the request
-      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, testHandlerSetting)
+      val cmdhandler = new AggregateCommandHandler(mockGrpcClient, testHandlerSetting)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteCommand(cmd, priorState, priorEventMeta)
 
       result shouldBe CommandHandlerResponse().withEvent(event)
@@ -279,7 +292,7 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
         .withAccountUuid(UUID.randomUUID.toString)
 
       val response = HandleCommandResponse().withEvent(Any.pack(event))
-      val cmdhandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val cmdhandler = new AggregateCommandHandler(null, testHandlerSetting)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseSuccess(response)
 
       result shouldBe CommandHandlerResponse().withEvent(Any.pack(event))
@@ -291,8 +304,9 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
           .withEvent(Any.pack(AccountOpened.defaultInstance))
 
       // let us execute the request
-      val badHandlerSettings: HandlerSetting = HandlerSetting(enableProtoValidations = true, Seq(), Seq())
-      val cmdhandler = new AggregateCommandHandler(null, null, badHandlerSettings)
+      val badHandlerSettings: HandlerSetting =
+        HandlerSetting(enableProtoValidations = true, Seq(), Seq(), commandHandlerDispatcher, readHandlerDispatcher)
+      val cmdhandler = new AggregateCommandHandler(null, badHandlerSettings)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseSuccess(badResponse)
 
       result shouldBe CommandHandlerResponse()
@@ -312,8 +326,9 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
       val response = HandleCommandResponse().withEvent(Any.pack(event))
 
       // set enableProtoValidations to false and not provide event and state protos
-      val handlerSettings: HandlerSetting = HandlerSetting(enableProtoValidations = false, Seq(), Seq())
-      val cmdhandler = new AggregateCommandHandler(null, null, handlerSettings)
+      val handlerSettings: HandlerSetting =
+        HandlerSetting(enableProtoValidations = false, Seq(), Seq(), commandHandlerDispatcher, readHandlerDispatcher)
+      val cmdhandler = new AggregateCommandHandler(null, handlerSettings)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseSuccess(response)
 
       result shouldBe CommandHandlerResponse().withEvent(Any.pack(event))
@@ -321,7 +336,7 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
 
     "handle command successfully as expected with no event to persist" in {
       // let us execute the request
-      val cmdhandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val cmdhandler = new AggregateCommandHandler(null, testHandlerSetting)
       val response = HandleCommandResponse()
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseSuccess(response)
 
@@ -332,7 +347,7 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
   "handleRemoteResponseFailure" should {
 
     "handle failed response as expected" in {
-      val cmdhandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val cmdhandler = new AggregateCommandHandler(null, testHandlerSetting)
       val exception = new StatusRuntimeException(Status.ABORTED)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
       result.getFailure.failureType.isCritical shouldBe (true)
@@ -342,7 +357,7 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
       val msg: String = "very invalid"
       val badStatus: Status = Status.INVALID_ARGUMENT.withDescription(msg)
       val exception: StatusRuntimeException = new StatusRuntimeException(badStatus)
-      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, testHandlerSetting)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
       result shouldBe (CommandHandlerResponse().withFailure(FailureResponse().withValidation(msg)))
     }
@@ -351,7 +366,7 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
       val msg: String = "super broken"
       val badStatus: Status = Status.INTERNAL.withDescription(msg)
       val exception: StatusRuntimeException = new StatusRuntimeException(badStatus)
-      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, testHandlerSetting)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
       result shouldBe (CommandHandlerResponse().withFailure(FailureResponse().withCritical(msg)))
     }
@@ -360,7 +375,7 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
       val msg: String = "grpc broken"
       val badStatus: Status = Status.INTERNAL.withDescription(msg)
       val exception: GrpcServiceException = new GrpcServiceException(status = badStatus)
-      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, testHandlerSetting)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
       result shouldBe (CommandHandlerResponse().withFailure(FailureResponse().withCritical(msg)))
     }
@@ -368,7 +383,7 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
     "handles a critical grpc failure" in {
       val msg = "broken"
       val exception: RuntimeException = new RuntimeException(msg)
-      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, null, testHandlerSetting)
+      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, testHandlerSetting)
       val actual: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
       val expected = CommandHandlerResponse()
         .withFailure(
@@ -385,9 +400,15 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
       // create a CommandHandler with a mock client
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting =
+        HandlerSetting(enableProtoValidations = true,
+                       stateProto,
+                       eventsProtos,
+                       commandHandlerDispatcher,
+                       readHandlerDispatcher
+        )
       val mockGrpcClient = mock[WriteSideHandlerServiceClient]
-      val cmdhandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
+      val cmdhandler = new AggregateCommandHandler(mockGrpcClient, handlerSetting)
 
       val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance.withRevisionNumber(1)
 
@@ -402,9 +423,15 @@ class AggregateCommandHandlerSpec extends TestSpec with MockFactory {
       // create a CommandHandler with a mock client
       val stateProto: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(Account.defaultInstance)))
       val eventsProtos: Seq[String] = Seq(Util.getProtoFullyQualifiedName(Any.pack(AccountOpened.defaultInstance)))
-      val handlerSetting: HandlerSetting = HandlerSetting(enableProtoValidations = true, stateProto, eventsProtos)
+      val handlerSetting: HandlerSetting =
+        HandlerSetting(enableProtoValidations = true,
+                       stateProto,
+                       eventsProtos,
+                       commandHandlerDispatcher,
+                       readHandlerDispatcher
+        )
       val mockGrpcClient: WriteSideHandlerServiceClient = mock[WriteSideHandlerServiceClient]
-      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, mockGrpcClient, handlerSetting)
+      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(mockGrpcClient, handlerSetting)
       val priorEventMeta: LagompbMetaData = LagompbMetaData.defaultInstance
       val cmd = GetStateRequest(entityId = "x")
       val actual: CommandHandlerResponse = cmdhandler.handleGetCommand(cmd, priorEventMeta)
