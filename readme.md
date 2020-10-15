@@ -97,8 +97,14 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 | HANDLER_SERVICE_STATES_PROTOS | handler service states proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`.  This will be a comma separated list of values | <none> |
 | HANDLER_SERVICE_EVENTS_PROTOS | handler service events proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`. This will be a comma separated list of values | <none> |
 | COS_SERVICE_NAME | service name | chiefofstate |
-| TRACE_HOST | Jaeger collector/agent host | localhost |
-| TRACE_PORT | Jaeger collector/agent port | 14268 |
+| JAEGER_ENABLED | Enable the Jaeger collector | false |
+| JAEGER_HOST | Jaeger collector/agent host | localhost |
+| JAEGER_PORT | Jaeger collector/agent port | 14268 |
+| JAEGER_URL | Jaeger URL override (instead of host/port) | 14268 |
+| ZIPKIN_ENABLED | Enable the Zipkin collector | false |
+| ZIPKIN_HOST | Zipkin collector/agent host | localhost |
+| ZIPKIN_PORT | Zipkin collector/agent port | 14268 |
+| ZIPKIN_URL | Zipkin URL override (instead of host/port) | 14268 |
 | COS_WRITE_PROPAGATED_HEADERS | CSV of gRPC headers to propagate to write side handler | <none> |
 | COS_WRITE_PERSISTED_HEADERS | CSV of gRPC headers to persist to journal (experimental) | <none> |
 | COS_JOURNAL_LOGICAL_DELETION | Event deletion is triggered after saving a new snapshot. Old events would be deleted prior to old snapshots being deleted. | false |
