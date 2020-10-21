@@ -22,14 +22,28 @@ object Util {
   /**
    * Converts the lagom-pb MetaData class to the chief-of-state MetaData
    *
-   * @param metaData
-   * @return
+   * @param metaData lagom-pb MetaData
+   * @return chief-of-state MetaData instance
    */
   def toCosMetaData(metaData: MetaData): CosMetaData = {
     CosMetaData(
       entityId = metaData.entityId,
-      // TODO: remove .toInt
-      revisionNumber = metaData.revisionNumber.toInt,
+      revisionNumber = metaData.revisionNumber,
+      revisionDate = metaData.revisionDate,
+      data = metaData.data
+    )
+  }
+
+  /**
+   * Converts chief-of-state MetaData to lagom-pb MetaData
+   *
+   * @param metaData COS meta data
+   * @return Lagom-pb MetaData instance
+   */
+  def toLagompbMetaData(metaData: CosMetaData): MetaData = {
+    MetaData(
+      entityId = metaData.entityId,
+      revisionNumber = metaData.revisionNumber,
       revisionDate = metaData.revisionDate,
       data = metaData.data
     )

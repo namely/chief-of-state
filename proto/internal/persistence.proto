@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package chief_of_state.v1;
+
+option java_package = "com.namely.protobuf.chiefofstate.v1";
+option java_multiple_files = true;
+option java_outer_classname = "CosPersistenceProto";
+
+import "chief_of_state/v1/common.proto";
+import "google/protobuf/any.proto";
+
+// These protos are used by akka persistence to write to disk. They will
+// likely be offered as part of the open-source protos repo, but until
+// they are concrete/finalized, we are keeping them here.
+
+// Wrap the aggregate state and the meta data.
+message StateWrapper {
+  // the entity state
+  google.protobuf.Any state = 1;
+  // metadata from the event that made this state
+  chief_of_state.v1.MetaData meta = 3;
+}
+
+// EventWrapper is an event wrapper that holds both the
+// event and the corresponding aggregate root state.
+message EventWrapper {
+  // the event emitted
+  google.protobuf.Any event = 1;
+  // the state obtained from processing the event
+  google.protobuf.Any resulting_state = 2;
+  // meta data
+  chief_of_state.v1.MetaData meta = 3;
+}
