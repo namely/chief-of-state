@@ -59,6 +59,7 @@ code:
 
     # copy code
     COPY --chown $BUILD_USR:root code/service/src ./code/service/src
+    COPY --chown $BUILD_USR:root code/plugin/src ./code/plugin/src
 
     # save base image for use downstream
     SAVE IMAGE
