@@ -5,7 +5,7 @@ import akka.grpc.scaladsl.{BytesEntry, Metadata, StringEntry}
 import com.google.protobuf.ByteString
 import com.namely.chiefofstate.config.SendCommandSettings
 import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Header, Headers}
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 
 object PersistHeaders extends PluginBase {
   override val pluginId: String = "persisted_headers.v1"
@@ -31,7 +31,6 @@ object PersistHeaders extends PluginBase {
             .withBytesValue(ByteString.copyFrom(value.toArray))
       })
 
-    Some(
-      com.google.protobuf.any.Any.pack(Headers().withHeaders(persistedHeaders)))
+    Some(com.google.protobuf.any.Any.pack(Headers().withHeaders(persistedHeaders)))
   }
 }
