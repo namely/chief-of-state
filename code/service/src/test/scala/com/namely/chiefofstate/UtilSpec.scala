@@ -30,4 +30,26 @@ class UtilSpec extends TestSpec {
       actual shouldBe (expected)
     }
   }
+
+  "toLagompbMetaData" should {
+    "return the right lagom-pb MetaData" in {
+      val ts = Timestamp().withSeconds(3L).withNanos(2)
+      val revisionNumber = 2
+      val data = Map("foo" -> Any.pack(Empty.defaultInstance))
+
+      val lagomMetaData = LagompbMetaData()
+        .withRevisionNumber(revisionNumber)
+        .withRevisionDate(ts)
+        .withData(data)
+
+      val cosMetaData = CosMetaData()
+        .withRevisionNumber(revisionNumber)
+        .withRevisionDate(ts)
+        .withData(data)
+
+      val actual = Util.toLagompbMetaData(cosMetaData)
+
+      actual shouldBe (lagomMetaData)
+    }
+  }
 }

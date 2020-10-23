@@ -59,10 +59,10 @@ object Common extends AutoPlugin {
       "com.namely.chiefofstate.RestServiceImpl;" +
       "com.namely.chiefofstate.api.*;" +
       "com.namely.chiefofstate.GrpcServiceImpl;" +
-      "com.namely.chiefofstate.ReadSideHandler;" +
       "com.namely.chiefofstate.ApplicationLoader;" +
       "com.namely.chiefofstate.Application;" +
       "com.namely.chiefofstate.Aggregate;" +
+      "com.namely.chiefofstate.readside.*;" +
       "com.namely.chiefofstate.grpc.client.*;"
   )
 }

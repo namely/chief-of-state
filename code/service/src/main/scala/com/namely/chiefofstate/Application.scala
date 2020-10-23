@@ -15,7 +15,8 @@ import com.lightbend.lagom.scaladsl.server.{
 }
 import com.namely.chiefofstate.config.{EncryptionSetting, HandlerSetting, ReadSideSetting, SendCommandSettings}
 import com.namely.chiefofstate.grpc.client.{ReadSideHandlerServiceClient, WriteSideHandlerServiceClient}
-import io.superflat.lagompb.{AggregateRoot, BaseApplication, CommandHandler, EventHandler}
+import com.namely.chiefofstate.readside.ReadProcessor
+import io.superflat.lagompb.{BaseApplication, CommandHandler, EventHandler}
 import io.superflat.lagompb.encryption.ProtoEncryption
 import kamon.Kamon
 import org.slf4j.{Logger, LoggerFactory}
@@ -104,11 +105,11 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
       }
 
       // explicit initialization so that we can pass the desired execution context
-      lazy val readSideHandler: ReadSideHandler =
-        new ReadSideHandler(config, encryptionAdapter, actorSystem, readSideHandlerServiceClient, handlerSetting)(
+      lazy val readSideProcessor: ReadProcessor =
+        new ReadProcessor(config, encryptionAdapter, actorSystem, readSideHandlerServiceClient)(
           readSideExecutionContext
         )
-      readSideHandler.init()
+      readSideProcessor.start()
     }
   }
 
