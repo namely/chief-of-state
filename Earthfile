@@ -4,6 +4,18 @@ all:
     # target running it all
     BUILD +test-all
     BUILD +docker-build
+    BUILD +sbt-publish
+
+sbt-publish:
+    FROM +code
+
+    ARG VERSION=dev
+
+    # sbt publish
+    RUN --push \
+        --secret JFROG_USERNAME=+secrets/JFROG_USERNAME \
+        --secret JFROG_PASSWORD=+secrets/JFROG_PASSWORD \
+        sbt publish
 
 code:
     # copy relevant files in, save as a base image

@@ -7,7 +7,7 @@ import akka.grpc.scaladsl.{BytesEntry, Metadata, StringEntry}
 import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
 import com.namely.chiefofstate.config.SendCommandSettings
-import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Header, Headers}
+import com.namely.chiefofstate.plugins.ActivePlugins
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service._
 import io.grpc.Status
@@ -16,7 +16,7 @@ import io.superflat.lagompb.protobuf.v1.core.StateWrapper
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Failure
+import scala.util.{Failure, Success, Try}
 
 class GrpcServiceImpl(sys: ActorSystem,
                       val clusterSharding: ClusterSharding,
@@ -48,24 +48,16 @@ class GrpcServiceImpl(sys: ActorSystem,
       )
     } else {
 
-      // TODO: move this to a general plugin architecture
-      val persistedHeaders: Seq[Header] = metadata.asList
-        .filter({ case (k, _) => sendCommandSettings.propagatedHeaders.contains(k) })
-        .map({
-          case (k, StringEntry(value)) =>
-            com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers
-              .Header()
-              .withKey(k)
-              .withStringValue(value)
+      val meta: Map[String, Any] = ActivePlugins.plugins.foldLeft(Map[String, Any]())((metaMap, plugin) => {
+        val pluginRun: Try[Map[String, Any]] = plugin.run(metadata)
 
-          case (k, BytesEntry(value)) =>
-            com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers
-              .Header()
-              .withKey(k)
-              .withBytesValue(ByteString.copyFrom(value.toArray))
-        })
-
-      val meta = Map("persisted_headers.v1" -> Any.pack(Headers().withHeaders(persistedHeaders)))
+        pluginRun match {
+          case Success(m) => metaMap ++ m
+          case Failure(e) =>
+            //TODO Throw or return some sort of error
+            Map[String, Any]()
+        }
+      })
 
       // get the headers to forward
       val propagatedHeaders: Seq[RemoteCommand.Header] = metadata.asList
