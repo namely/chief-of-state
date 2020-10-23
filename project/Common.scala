@@ -27,7 +27,7 @@ object Common extends AutoPlugin {
         url("https://github.com/namely/chief-of-state/graphs/contributors")
       ),
       description := "Chief of State",
-      coverageMinimum := 70,
+      coverageMinimum := 80,
       coverageFailOnMinimum := true
     )
 
@@ -91,6 +91,7 @@ object Common extends AutoPlugin {
         "com.namely.chiefofstate.ApplicationLoader;" +
         "com.namely.chiefofstate.Application;" +
         "com.namely.chiefofstate.Aggregate;" +
+        "com.namely.chiefofstate.readside.*;" +
         "com.namely.chiefofstate.grpc.client.*;"
     )
 }
