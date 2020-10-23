@@ -12,7 +12,7 @@ object PersistHeaders extends PluginBase {
 
   val sendCommandSettings: SendCommandSettings = SendCommandSettings(ConfigFactory.load())
 
-  override protected def makeMeta(any: Any): Option[com.google.protobuf.any.Any] = {
+  override def makeMeta(any: Any): Option[com.google.protobuf.any.Any] = {
     val persistedHeaders: Seq[Header] = any.asInstanceOf[Metadata].asList
       .filter({ case (k, _) => sendCommandSettings.propagatedHeaders.contains(k) })
       .map({

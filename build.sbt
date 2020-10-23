@@ -14,7 +14,7 @@ lazy val `chiefofstate`: Project = project
   .enablePlugins(PlayAkkaHttp2Support)
   .enablePlugins(BuildSettings)
   .enablePlugins(DockerSettings)
-//  .enablePlugins(COSServiceSettings)
+  .enablePlugins(NoPublish)
   .settings(name := "chiefofstate", javaAgents += Dependencies.Compile.KanelaAgent)
   .dependsOn(protogen, `chiefofstateplugins`)
 
@@ -30,6 +30,7 @@ lazy val protogen: Project = project
   .in(file("code/.protogen"))
   .enablePlugins(AkkaGrpcPlugin)
   .enablePlugins(ProtocRuntime)
+  .enablePlugins(NoPublish)
   .settings(name := "protogen")
   .settings(
     inConfig(Compile)(

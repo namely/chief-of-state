@@ -9,7 +9,7 @@ object COSPluginSettings extends AutoPlugin {
   override def trigger: PluginTrigger = allRequirements
 
   override def globalSettings = Seq(
-    name := "chief-of-state-plugins",
+    name := "chiefofstateplugins",
     description := "Chief of State Plugins"
   )
 
