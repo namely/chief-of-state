@@ -13,14 +13,23 @@ case class ActivePlugins(plugins: Seq[PluginBase])
  */
 object ActivePlugins {
 
+  final val ENV_VAR: String = "COS_PLUGIN_PACKAGES"
+
+  /**
+   * Default COS Plugins
+   */
+  final val DEFAULT_PLUGINS: Seq[String] = Seq(
+    "com.namely.chiefofstate.plugin.PersistHeaders"
+  )
+
   /** Given a sequence of plugin packages strings, reflects the packages and packs the results
    * into a sequence of PluginBase.
    *
    * @param plugins Sequence of plugin package strings
    * @return Sequence of PluginBase
    */
-  def reflectPlugins(plugins: Seq[String]): Seq[PluginBase] = {
-    plugins.map(className => {
+  def reflectPlugins(plugins: Seq[String] = Seq()): Seq[PluginBase] = {
+    (DEFAULT_PLUGINS ++ plugins).map(className => {
 
       val runtimeMirror: universe.Mirror = universe.runtimeMirror(getClass.getClassLoader)
       val module: universe.ModuleSymbol = runtimeMirror.staticModule(className)
@@ -37,11 +46,18 @@ object ActivePlugins {
    * @return Sequence of PluginBase
    */
   def getPlugins: ActivePlugins = {
-    val plugins: Seq[PluginBase] = sys.env.get("COS_PLUGIN_PACKAGES") match {
-      case Some(s) =>reflectPlugins(s.split(",").map(_.trim))
-      case None => Seq()
-    }
+    val plugins: Seq[String] = sys
+      .env
+      .get(ENV_VAR)
+      .map(_.split(",")
+        .map(_.trim)
+        .toSeq
+        .filter(_ != "")
+      )
+      .getOrElse(Seq())
 
-    new ActivePlugins(plugins)
+    val reflectedPlugins: Seq[PluginBase] = reflectPlugins(plugins)
+
+    new ActivePlugins(reflectedPlugins)
   }
 }

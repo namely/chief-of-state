@@ -7,7 +7,7 @@ import akka.grpc.scaladsl.{BytesEntry, Metadata, StringEntry}
 import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
 import com.namely.chiefofstate.config.SendCommandSettings
-import com.namely.chiefofstate.plugin.ActivePlugins
+import com.namely.chiefofstate.plugin.{ActivePlugins, PluginBase}
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service._
 import io.grpc.Status
@@ -21,7 +21,8 @@ import scala.util.{Failure, Success, Try}
 class GrpcServiceImpl(sys: ActorSystem,
                       val clusterSharding: ClusterSharding,
                       val aggregateRoot: AggregateRoot,
-                      val sendCommandSettings: SendCommandSettings
+                      val sendCommandSettings: SendCommandSettings,
+                      plugins: Seq[PluginBase] = Seq()
 )(implicit
   ec: ExecutionContext
 ) extends AbstractChiefOfStateServicePowerApiRouter(sys)
@@ -48,7 +49,7 @@ class GrpcServiceImpl(sys: ActorSystem,
       )
     } else {
 
-      val meta: Map[String, Any] = ActivePlugins.plugins.foldLeft(Map[String, Any]())((metaMap, plugin) => {
+      val meta: Map[String, Any] = plugins.foldLeft(Map[String, Any]())((metaMap, plugin) => {
         val pluginRun: Try[Map[String, Any]] = plugin.run(metadata)
 
         pluginRun match {

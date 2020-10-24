@@ -7,14 +7,10 @@ import akka.grpc.GrpcClientSettings
 import com.lightbend.lagom.scaladsl.akka.discovery.AkkaDiscoveryComponents
 import com.lightbend.lagom.scaladsl.api.Descriptor
 import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
-import com.lightbend.lagom.scaladsl.server.{
-  LagomApplication,
-  LagomApplicationContext,
-  LagomApplicationLoader,
-  LagomServer
-}
+import com.lightbend.lagom.scaladsl.server.{LagomApplication, LagomApplicationContext, LagomApplicationLoader, LagomServer}
 import com.namely.chiefofstate.config.{EncryptionSetting, HandlerSetting, ReadSideSetting, SendCommandSettings}
 import com.namely.chiefofstate.grpc.client.{ReadSideHandlerServiceClient, WriteSideHandlerServiceClient}
+import com.namely.chiefofstate.plugin.{ActivePlugins, PluginBase}
 import com.namely.chiefofstate.readside.ReadProcessor
 import io.superflat.lagompb.{BaseApplication, CommandHandler, EventHandler}
 import io.superflat.lagompb.encryption.ProtoEncryption
@@ -30,6 +26,8 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
 
   lazy val applog: Logger = LoggerFactory.getLogger(getClass)
 
+  final val plugins: Seq[PluginBase] = ActivePlugins.getPlugins.plugins
+
   // start kamon
   Kamon.init()
 
@@ -42,7 +40,7 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
 
   lazy val loggingAdapter: LoggingAdapter = akka.event.Logging(actorSystem.classicSystem, this.getClass)
 
-  lazy val aggregateRoot = {
+  lazy val aggregateRoot: Aggregate = {
     // let us wire up the writeSide executor context
     val writeSideHandlerServiceClient: WriteSideHandlerServiceClient = {
       val writeSideExecutionContext: MessageDispatcher =
@@ -81,7 +79,7 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
       new RestServiceImpl(clusterSharding, persistentEntityRegistry, aggregateRoot)
 
     val grpcService: GrpcServiceImpl =
-      new GrpcServiceImpl(actorSystem, clusterSharding, aggregateRoot, sendCommandSettings)
+      new GrpcServiceImpl(actorSystem, clusterSharding, aggregateRoot, sendCommandSettings, plugins)
 
     serverFor[ChiefOfStateService](restService)
       .additionalRouter(grpcService)
