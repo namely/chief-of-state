@@ -19,7 +19,8 @@ object BuildSettings extends AutoPlugin {
         Dependencies.Compile.Janino,
         Dependencies.Compile.LogstashLogback,
         Dependencies.Runtime.LagompbRuntime,
-        Dependencies.Test.AkkaGrpcTestkit
+        Dependencies.Test.AkkaGrpcTestkit,
+        Dependencies.Test.Mockito
       ),
       dependencyOverrides ++= Dependencies.AkkaOverrideDeps
     )

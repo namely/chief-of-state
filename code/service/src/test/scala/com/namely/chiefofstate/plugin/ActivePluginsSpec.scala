@@ -75,7 +75,7 @@ class ActivePluginsSpec extends TestSpec {
 
 object ActivePluginsSpecCompanion extends Matchers {
 
-  /** Compares the ACtivePlugins payload of that of the expected Plugins
+  /** Compares the ActivePlugins payload of that of the expected Plugins
    *
    * @param actual Sequence of ActivePlugin instances
    * @param expected Sequence of Package Names
@@ -87,5 +87,11 @@ object ActivePluginsSpecCompanion extends Matchers {
       contain theSameElementsInOrderAs expected
   }
 
+  /** Makes a fully qualified package name based on a prefix and suffix
+   *
+   * @param prefix Prefix of package
+   * @param suffix Suffix of package
+   * @return Fully qualified packange name as a String
+   */
   def makeFullyQuailifiedName(prefix: String, suffix: String): String = s"$prefix.$suffix"
 }
