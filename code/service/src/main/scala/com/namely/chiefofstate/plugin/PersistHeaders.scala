@@ -1,4 +1,4 @@
-package com.namely.chiefofstate.plugins
+package com.namely.chiefofstate.plugin
 
 // TODO: Use a generalized Metadata for GRPC
 import akka.grpc.scaladsl.{BytesEntry, Metadata, StringEntry}

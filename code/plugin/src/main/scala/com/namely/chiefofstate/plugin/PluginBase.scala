@@ -1,4 +1,4 @@
-package com.namely.chiefofstate.plugins
+package com.namely.chiefofstate.plugin
 
 import scala.util.Try
 

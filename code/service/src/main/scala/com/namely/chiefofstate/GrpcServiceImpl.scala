@@ -7,7 +7,7 @@ import akka.grpc.scaladsl.{BytesEntry, Metadata, StringEntry}
 import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
 import com.namely.chiefofstate.config.SendCommandSettings
-import com.namely.chiefofstate.plugins.ActivePlugins
+import com.namely.chiefofstate.plugin.ActivePlugins
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service._
 import io.grpc.Status

@@ -1,4 +1,4 @@
-package com.namely.chiefofstate.plugins
+package com.namely.chiefofstate.plugin
 
 import com.google.protobuf.wrappers.BoolValue
 import org.mockito.Mockito
