@@ -24,7 +24,7 @@ class PersistedHeadersSpec extends TestSpec {
     val baz: String = "baz"
     val bazStringValue: StringValue = StringValue.apply(baz)
     val bazHeader: Header = Header.apply(baz, bazStringValue)
-    
+
     val metadata: Metadata = Mockito.mock(classOf[Metadata])
     Mockito.when(metadata.getText(foo)).thenReturn(Some(foo))
     Mockito.when(metadata.getBinary(foo)).thenReturn(Some(fooByteString))

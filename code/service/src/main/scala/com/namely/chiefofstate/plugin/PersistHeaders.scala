@@ -27,7 +27,6 @@ object PersistHeaders extends PluginBase {
             .Header()
             .withKey(k)
             .withBytesValue(ByteString.copyFrom(value.toArray))
-
       })
 
     Some(com.google.protobuf.any.Any.pack(Headers().withHeaders(persistedHeaders)))
