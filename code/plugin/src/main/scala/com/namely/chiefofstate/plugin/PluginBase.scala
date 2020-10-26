@@ -15,7 +15,7 @@ trait PluginBase {
    */
   final def run(any: Any): Try[Map[String, com.google.protobuf.any.Any]] = {
     Try {
-      makeMeta(any) match {
+      makeAny(any) match {
         case Some(value) => Map(pluginId -> value)
         case None => Map.empty[String, com.google.protobuf.any.Any]
       }
@@ -28,5 +28,5 @@ trait PluginBase {
    * @param any Any
    * @return Option[com.google.protobuf.any.Any]
    */
-  def makeMeta(any: Any): Option[com.google.protobuf.any.Any]
+  def makeAny(any: Any): Option[com.google.protobuf.any.Any]
 }

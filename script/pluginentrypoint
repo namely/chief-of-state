@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+export CLASSPATH=$(ls -1 -d /mnt/plugins | grep -i \.jar$ | xargs | sed -e 's/ /:/g')
+
+/opt/docker/bin/entrypoint "$@"

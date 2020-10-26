@@ -1,5 +1,7 @@
 package com.namely.chiefofstate.plugin
 
+import com.typesafe.config.Config
+
 import scala.reflect.runtime.universe
 
 /**
@@ -14,7 +16,7 @@ case class PluginManager(plugins: Seq[PluginBase])
  */
 object PluginManager {
 
-  final val ENV_VAR: String = "COS_PLUGIN_PACKAGES"
+  final val HOCON_PATH: String = "chief-of-state.plugin-settings.enabled-plugins"
 
   /**
    * Default COS Plugins
@@ -46,18 +48,16 @@ object PluginManager {
    * does not exist, returns a empty Sequence. Otherwise, calls the reflectPlugins method to return
    * a Sequence of PluginBase
    *
+   * @param config HOCON Configurations
    * @return Sequence of PluginBase
    */
-  def getPlugins: PluginManager = {
-    val plugins: Seq[String] = sys
-      .env
-      .get(ENV_VAR)
-      .map(_.split(",")
-        .map(_.trim)
-        .toSeq
-        .filter(_ != "")
-      )
-      .getOrElse(Seq())
+  def getPlugins(config: Config): PluginManager = {
+    val plugins: Seq[String] = config
+      .getString(HOCON_PATH)
+      .split(",")
+      .toSeq
+      .map(_.trim)
+      .filter(_.nonEmpty)
 
     val reflectedPlugins: Seq[PluginBase] = reflectPlugins(plugins)
 

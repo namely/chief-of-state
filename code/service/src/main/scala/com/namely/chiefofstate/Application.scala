@@ -26,7 +26,7 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
 
   lazy val applog: Logger = LoggerFactory.getLogger(getClass)
 
-  final val plugins: Seq[PluginBase] = PluginManager.getPlugins.plugins
+  final val plugins: Seq[PluginBase] = PluginManager.getPlugins(config).plugins
 
   // start kamon
   Kamon.init()

@@ -10,12 +10,11 @@ import com.typesafe.config.ConfigFactory
 object PersistHeaders extends PluginBase {
   override val pluginId: String = "persisted_headers.v1"
 
-  // TODO: Where do I load this from?
-  val sendCommandSettings: SendCommandSettings = SendCommandSettings(ConfigFactory.load())
+  val getSendCommandSettings: SendCommandSettings = SendCommandSettings(ConfigFactory.load())
 
-  override def makeMeta(any: Any): Option[com.google.protobuf.any.Any] = {
+  override def makeAny(any: Any): Option[com.google.protobuf.any.Any] = {
     val persistedHeaders: Seq[Header] = any.asInstanceOf[Metadata].asList
-      .filter({ case (k, _) => sendCommandSettings.propagatedHeaders.contains(k) })
+      .filter({ case (k, _) => getSendCommandSettings.propagatedHeaders.contains(k) })
       .map({
         case (k, StringEntry(value)) =>
           com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers

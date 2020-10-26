@@ -1,26 +1,27 @@
 package com.namely.chiefofstate.plugin
 
 import com.namely.chiefofstate.test.helpers.{EnvironmentHelper, TestSpec}
+import com.typesafe.config.{Config, ConfigFactory, ConfigValue, ConfigValueFactory}
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 
 private[this] object MockPluginBase1 extends PluginBase {
   override val pluginId: String = "MockPluginBase"
 
-  override def makeMeta(any: Any): Option[com.google.protobuf.any.Any] = None
+  override def makeAny(any: Any): Option[com.google.protobuf.any.Any] = None
 }
 
 private[this] object MockPluginBase2 extends PluginBase {
   override val pluginId: String = "MockPluginBase"
 
-  override def makeMeta(any: Any): Option[com.google.protobuf.any.Any] = None
+  override def makeAny(any: Any): Option[com.google.protobuf.any.Any] = None
 }
 
-class ActivePluginsSpec extends TestSpec {
+class PluginManagerSpec extends TestSpec {
 
   val packagePrefix: String = this.getClass.getPackage.getName
-  val classPackage1: String = ActivePluginsSpecCompanion.makeFullyQuailifiedName(packagePrefix, "MockPluginBase1")
-  val classPackage2: String = ActivePluginsSpecCompanion.makeFullyQuailifiedName(packagePrefix, "MockPluginBase2")
+  val classPackage1: String = PluginManagerSpecCompanion.makeFullyQuailifiedName(packagePrefix, "MockPluginBase1")
+  val classPackage2: String = PluginManagerSpecCompanion.makeFullyQuailifiedName(packagePrefix, "MockPluginBase2")
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -35,11 +36,11 @@ class ActivePluginsSpec extends TestSpec {
         val actual: Seq[PluginBase] = PluginManager.reflectPlugins(plugins)
         val expected: Seq[String] = PluginManager.DEFAULT_PLUGINS ++ plugins
 
-        ActivePluginsSpecCompanion.compare(actual, expected)
+        PluginManagerSpecCompanion.compare(actual, expected)
       }
       "return the default plugins in order" in {
         val actual: Seq[PluginBase] = PluginManager.reflectPlugins()
-        ActivePluginsSpecCompanion.compare(actual, PluginManager.DEFAULT_PLUGINS)
+        PluginManagerSpecCompanion.compare(actual, PluginManager.DEFAULT_PLUGINS)
       }
       "throw on a bad path" in {
         val plugins: Seq[String] = Seq(classPackage1, classPackage2, "not-a-package")
@@ -48,32 +49,34 @@ class ActivePluginsSpec extends TestSpec {
       }
     }
     "getPlugins" should {
-      "return the default plugins if the env does not exist" in {
-        val actual: PluginManager = PluginManager.getPlugins
-        ActivePluginsSpecCompanion.compare(actual.plugins, PluginManager.DEFAULT_PLUGINS)
-      }
-      "return the default plugins if the env is an empty string" in {
-        EnvironmentHelper.setEnv(PluginManager.ENV_VAR, "")
-        val actual: PluginManager = PluginManager.getPlugins
-        ActivePluginsSpecCompanion.compare(actual.plugins, PluginManager.DEFAULT_PLUGINS)
+      "return the default plugins if there are no defined plugins" in {
+        val configValue: ConfigValue = ConfigValueFactory.fromAnyRef("")
+        val config: Config = ConfigFactory.load().withValue(PluginManager.HOCON_PATH, configValue)
+
+        val actual: PluginManager = PluginManager.getPlugins(config)
+        PluginManagerSpecCompanion.compare(actual.plugins, PluginManager.DEFAULT_PLUGINS)
       }
       "throw an error if a class cannot be parsed" in {
         val plugins: Seq[String] = Seq(classPackage1, classPackage2, "not-a-package")
-        EnvironmentHelper.setEnv(PluginManager.ENV_VAR, plugins.mkString(","))
-        intercept[ScalaReflectionException](PluginManager.getPlugins)
+        val configValue: ConfigValue = ConfigValueFactory.fromAnyRef(plugins.mkString(","))
+        val config: Config = ConfigFactory.load().withValue(PluginManager.HOCON_PATH, configValue)
+
+        intercept[ScalaReflectionException](PluginManager.getPlugins(config))
       }
       "return the plugins" in {
         val plugins: Seq[String] = Seq(classPackage1, classPackage2)
-        EnvironmentHelper.setEnv(PluginManager.ENV_VAR, plugins.mkString(","))
-        val actual: PluginManager = PluginManager.getPlugins
+        val configValue: ConfigValue = ConfigValueFactory.fromAnyRef(plugins.mkString(","))
+        val config: Config = ConfigFactory.load().withValue(PluginManager.HOCON_PATH, configValue)
+
+        val actual: PluginManager = PluginManager.getPlugins(config)
         val expected: Seq[String] = PluginManager.DEFAULT_PLUGINS ++ plugins
-        ActivePluginsSpecCompanion.compare(actual.plugins, expected)
+        PluginManagerSpecCompanion.compare(actual.plugins, expected)
       }
     }
   }
 }
 
-object ActivePluginsSpecCompanion extends Matchers {
+object PluginManagerSpecCompanion extends Matchers {
 
   /**
    * Compares the ActivePlugins payload of that of the expected Plugins

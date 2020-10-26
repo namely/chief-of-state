@@ -49,46 +49,49 @@ class GrpcServiceImpl(sys: ActorSystem,
       )
     } else {
 
-      val meta: Map[String, Any] = plugins.foldLeft(Map[String, Any]())((metaMap, plugin) => {
+      val meta: Try[Map[String, Any]] = plugins.foldLeft(Try(Map[String, Any]()))((metaMap, plugin) => {
         val pluginRun: Try[Map[String, Any]] = plugin.run(metadata)
 
         pluginRun match {
-          case Success(m) => metaMap ++ m
-          case Failure(e) =>
-            //TODO Throw or return some sort of error
-            Map[String, Any]()
+          case Success(m) => Try(metaMap.get ++ m)
+          case Failure(e) => throw new GrpcServiceException(status = Status.ABORTED.withDescription(e.getMessage))
         }
       })
 
-      // get the headers to forward
-      val propagatedHeaders: Seq[RemoteCommand.Header] = metadata.asList
-        // filter to relevant headers
-        .filter({ case (k, _) => sendCommandSettings.propagatedHeaders.contains(k) })
-        .map({
-          case (k, StringEntry(value)) =>
-            RemoteCommand
-              .Header()
-              .withKey(k)
-              .withStringValue(value)
 
-          case (k, BytesEntry(value)) =>
-            RemoteCommand
-              .Header()
-              .withKey(k)
-              .withBytesValue(ByteString.copyFrom(value.toArray))
-        })
+      meta match {
+        case Success(m) =>
+          // get the headers to forward
+          val propagatedHeaders: Seq[RemoteCommand.Header] = metadata.asList
+            // filter to relevant headers
+            .filter({ case (k, _) => sendCommandSettings.propagatedHeaders.contains(k) })
+            .map({
+              case (k, StringEntry(value)) =>
+                RemoteCommand
+                  .Header()
+                  .withKey(k)
+                  .withStringValue(value)
 
-      val remoteCommand: RemoteCommand = RemoteCommand()
-        .withCommand(in.getCommand)
-        .withHeaders(propagatedHeaders)
+              case (k, BytesEntry(value)) =>
+                RemoteCommand
+                  .Header()
+                  .withKey(k)
+                  .withBytesValue(ByteString.copyFrom(value.toArray))
+            })
 
-      sendCommand(in.entityId, remoteCommand, meta)
-        .map((stateWrapper: StateWrapper) => {
-          ProcessCommandResponse(
-            state = stateWrapper.state,
-            meta = stateWrapper.meta.map(Util.toCosMetaData)
-          )
-        })
+          val remoteCommand: RemoteCommand = RemoteCommand()
+            .withCommand(in.getCommand)
+            .withHeaders(propagatedHeaders)
+
+          sendCommand(in.entityId, remoteCommand, m)
+            .map((stateWrapper: StateWrapper) => {
+              ProcessCommandResponse(
+                state = stateWrapper.state,
+                meta = stateWrapper.meta.map(Util.toCosMetaData)
+              )
+            })
+        case Failure(e) => Future.fromTry(Failure(e))
+      }
     }
   }
 
