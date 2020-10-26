@@ -32,41 +32,41 @@ class ActivePluginsSpec extends TestSpec {
       "return all plugin instances" in {
         val plugins: Seq[String] = Seq(classPackage1, classPackage2)
 
-        val actual: Seq[PluginBase] = ActivePlugins.reflectPlugins(plugins)
-        val expected: Seq[String] = ActivePlugins.DEFAULT_PLUGINS ++ plugins
+        val actual: Seq[PluginBase] = PluginManager.reflectPlugins(plugins)
+        val expected: Seq[String] = PluginManager.DEFAULT_PLUGINS ++ plugins
 
         ActivePluginsSpecCompanion.compare(actual, expected)
       }
       "return the default plugins in order" in {
-        val actual: Seq[PluginBase] = ActivePlugins.reflectPlugins()
-        ActivePluginsSpecCompanion.compare(actual, ActivePlugins.DEFAULT_PLUGINS)
+        val actual: Seq[PluginBase] = PluginManager.reflectPlugins()
+        ActivePluginsSpecCompanion.compare(actual, PluginManager.DEFAULT_PLUGINS)
       }
       "throw on a bad path" in {
         val plugins: Seq[String] = Seq(classPackage1, classPackage2, "not-a-package")
 
-        intercept[ScalaReflectionException](ActivePlugins.reflectPlugins(plugins))
+        intercept[ScalaReflectionException](PluginManager.reflectPlugins(plugins))
       }
     }
     "getPlugins" should {
       "return the default plugins if the env does not exist" in {
-        val actual: ActivePlugins = ActivePlugins.getPlugins
-        ActivePluginsSpecCompanion.compare(actual.plugins, ActivePlugins.DEFAULT_PLUGINS)
+        val actual: PluginManager = PluginManager.getPlugins
+        ActivePluginsSpecCompanion.compare(actual.plugins, PluginManager.DEFAULT_PLUGINS)
       }
       "return the default plugins if the env is an empty string" in {
-        EnvironmentHelper.setEnv(ActivePlugins.ENV_VAR, "")
-        val actual: ActivePlugins = ActivePlugins.getPlugins
-        ActivePluginsSpecCompanion.compare(actual.plugins, ActivePlugins.DEFAULT_PLUGINS)
+        EnvironmentHelper.setEnv(PluginManager.ENV_VAR, "")
+        val actual: PluginManager = PluginManager.getPlugins
+        ActivePluginsSpecCompanion.compare(actual.plugins, PluginManager.DEFAULT_PLUGINS)
       }
       "throw an error if a class cannot be parsed" in {
         val plugins: Seq[String] = Seq(classPackage1, classPackage2, "not-a-package")
-        EnvironmentHelper.setEnv(ActivePlugins.ENV_VAR, plugins.mkString(","))
-        intercept[ScalaReflectionException](ActivePlugins.getPlugins)
+        EnvironmentHelper.setEnv(PluginManager.ENV_VAR, plugins.mkString(","))
+        intercept[ScalaReflectionException](PluginManager.getPlugins)
       }
       "return the plugins" in {
         val plugins: Seq[String] = Seq(classPackage1, classPackage2)
-        EnvironmentHelper.setEnv(ActivePlugins.ENV_VAR, plugins.mkString(","))
-        val actual: ActivePlugins = ActivePlugins.getPlugins
-        val expected: Seq[String] = ActivePlugins.DEFAULT_PLUGINS ++ plugins
+        EnvironmentHelper.setEnv(PluginManager.ENV_VAR, plugins.mkString(","))
+        val actual: PluginManager = PluginManager.getPlugins
+        val expected: Seq[String] = PluginManager.DEFAULT_PLUGINS ++ plugins
         ActivePluginsSpecCompanion.compare(actual.plugins, expected)
       }
     }

@@ -10,7 +10,7 @@ import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
 import com.lightbend.lagom.scaladsl.server.{LagomApplication, LagomApplicationContext, LagomApplicationLoader, LagomServer}
 import com.namely.chiefofstate.config.{EncryptionSetting, HandlerSetting, ReadSideSetting, SendCommandSettings}
 import com.namely.chiefofstate.grpc.client.{ReadSideHandlerServiceClient, WriteSideHandlerServiceClient}
-import com.namely.chiefofstate.plugin.{ActivePlugins, PluginBase}
+import com.namely.chiefofstate.plugin.{PluginManager, PluginBase}
 import com.namely.chiefofstate.readside.ReadProcessor
 import io.superflat.lagompb.{BaseApplication, CommandHandler, EventHandler}
 import io.superflat.lagompb.encryption.ProtoEncryption
@@ -26,7 +26,7 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
 
   lazy val applog: Logger = LoggerFactory.getLogger(getClass)
 
-  final val plugins: Seq[PluginBase] = ActivePlugins.getPlugins.plugins
+  final val plugins: Seq[PluginBase] = PluginManager.getPlugins.plugins
 
   // start kamon
   Kamon.init()

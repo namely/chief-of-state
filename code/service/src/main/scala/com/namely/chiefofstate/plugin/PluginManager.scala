@@ -7,12 +7,12 @@ import scala.reflect.runtime.universe
  *
  * @param plugins Sequence of PluginBase
  */
-case class ActivePlugins(plugins: Seq[PluginBase])
+case class PluginManager(plugins: Seq[PluginBase])
 
 /**
  * Companion object for Active Plugins
  */
-object ActivePlugins {
+object PluginManager {
 
   final val ENV_VAR: String = "COS_PLUGIN_PACKAGES"
 
@@ -48,7 +48,7 @@ object ActivePlugins {
    *
    * @return Sequence of PluginBase
    */
-  def getPlugins: ActivePlugins = {
+  def getPlugins: PluginManager = {
     val plugins: Seq[String] = sys
       .env
       .get(ENV_VAR)
@@ -61,6 +61,6 @@ object ActivePlugins {
 
     val reflectedPlugins: Seq[PluginBase] = reflectPlugins(plugins)
 
-    new ActivePlugins(reflectedPlugins)
+    new PluginManager(reflectedPlugins)
   }
 }
