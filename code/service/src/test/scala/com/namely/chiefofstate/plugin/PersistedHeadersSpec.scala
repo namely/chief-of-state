@@ -37,10 +37,7 @@ class PersistedHeadersSpec extends TestSpec with MockFactory {
         .unpack[com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Headers]
 
       val expected: Headers = Headers.apply(Vector(fooHeader, barHeader))
-
-      println(actual)
-      println(expected)
-
+      
       actual should be (expected)
     }
   }
