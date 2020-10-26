@@ -2,7 +2,8 @@ package com.namely.chiefofstate.plugin
 
 import scala.reflect.runtime.universe
 
-/** Active Plugins class to house an instance of plugins
+/**
+ * Active Plugins class to house an instance of plugins
  *
  * @param plugins Sequence of PluginBase
  */
@@ -22,7 +23,8 @@ object ActivePlugins {
     "com.namely.chiefofstate.plugin.PersistHeaders"
   )
 
-  /** Given a sequence of plugin packages strings, reflects the packages and packs the results
+  /**
+   * Given a sequence of plugin packages strings, reflects the packages and packs the results
    * into a sequence of PluginBase.
    *
    * @param plugins Sequence of plugin package strings
@@ -39,7 +41,8 @@ object ActivePlugins {
     })
   }
 
-  /** Inspects the environment variable and splits the result by commas. If the environment variable
+  /**
+   * Inspects the environment variable and splits the result by commas. If the environment variable
    * does not exist, returns a empty Sequence. Otherwise, calls the reflectPlugins method to return
    * a Sequence of PluginBase
    *
