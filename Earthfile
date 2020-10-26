@@ -87,7 +87,7 @@ docker-build:
     # copy over files
     WORKDIR /opt/docker
     COPY --chown cos:root +docker-stage/target .
-    COPY --chown cos:root -dir script/pluginentrypoint.sh /opt/docker/bin/
+    COPY --chown cos:root -dir script/pluginentrypoint /opt/docker/bin/
     RUN chmod +x /opt/docker/bin/pluginentrypoint
 
     # set runtime user to cos
