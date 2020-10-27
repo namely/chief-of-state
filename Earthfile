@@ -87,13 +87,11 @@ docker-build:
     # copy over files
     WORKDIR /opt/docker
     COPY --chown cos:root +docker-stage/target .
-    COPY --chown cos:root -dir script/pluginentrypoint /opt/docker/bin/
-    RUN chmod +x /opt/docker/bin/pluginentrypoint
 
     # set runtime user to cos
     USER cos
 
-    ENTRYPOINT /opt/docker/bin/pluginentrypoint
+    ENTRYPOINT /opt/docker/bin/entrypoint
     CMD []
 
     # build the image and push remotely (if all steps are successful)
