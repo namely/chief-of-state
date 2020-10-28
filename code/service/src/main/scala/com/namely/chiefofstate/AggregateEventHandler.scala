@@ -36,13 +36,16 @@ class AggregateEventHandler(
     ) match {
 
       case Failure(e) =>
-        throw new Exception(e.getMessage)
+        throw e
 
       case Success(eventualEventResponse: Future[HandleEventResponse]) =>
         Try {
           Await.result(eventualEventResponse, Duration.Inf)
         } match {
-          case Failure(exception) => throw new Exception(exception.getMessage)
+          case Failure(exception) =>
+            log.error(s"event handler failed", exception)
+            throw exception
+
           case Success(handleEventResponse: HandleEventResponse) =>
             val stateFQN: String = Util.getProtoFullyQualifiedName(handleEventResponse.getResultingState)
             log.debug(s"[ChiefOfState]: received event handler state $stateFQN")
