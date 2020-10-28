@@ -216,8 +216,7 @@ class AggregateCommandHandler(
    * @return a CommandHandlerResponse packaging that failure Status as an Any
    */
   def handleGrpcResponseFailure(status: Status): CommandHandlerResponse = {
-    val rpcStatus: RpcStatus = com.google.rpc.status
-      .Status()
+    val rpcStatus: RpcStatus = RpcStatus()
       .withCode(status.getCode.value)
       .withMessage(status.getDescription)
 
