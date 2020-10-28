@@ -20,6 +20,7 @@ import io.grpc.{Status, StatusRuntimeException}
 import io.superflat.lagompb.ProtosRegistry
 import io.superflat.lagompb.protobuf.v1.core.{CommandHandlerResponse, FailureResponse, MetaData => LagompbMetaData}
 import org.scalamock.scalatest.MockFactory
+import com.google.rpc.status.{Status => RpcStatus}
 
 import scala.concurrent.Future
 import scala.util.{Success, Try}
@@ -346,38 +347,37 @@ class AggregateCommandHandlerSpec extends CustomActorTestkit("application.conf")
 
   "handleRemoteResponseFailure" should {
 
-    "handle failed response as expected" in {
+    "handle failed gRPC status as expected" in {
+      val status: Status = Status.ABORTED.withDescription("it was aborted")
+      val exception = new StatusRuntimeException(status)
       val cmdhandler = new AggregateCommandHandler(null, testHandlerSetting)
-      val exception = new StatusRuntimeException(Status.ABORTED)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
-      result.getFailure.failureType.isCritical shouldBe (true)
+      result.getFailure.failureType.isCustom shouldBe (true)
+      val actual = result.getFailure.getCustom.unpack(RpcStatus)
+      actual.code shouldBe(status.getCode.value)
+      actual.message shouldBe(status.getDescription())
     }
 
     "handle failed validations sent by command handler" in {
-      val msg: String = "very invalid"
-      val badStatus: Status = Status.INVALID_ARGUMENT.withDescription(msg)
+      val badStatus: Status = Status.INVALID_ARGUMENT.withDescription("very invalid")
       val exception: StatusRuntimeException = new StatusRuntimeException(badStatus)
       val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, testHandlerSetting)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
-      result shouldBe (CommandHandlerResponse().withFailure(FailureResponse().withValidation(msg)))
-    }
-
-    "handle gRPC internal errors from command handler" in {
-      val msg: String = "super broken"
-      val badStatus: Status = Status.INTERNAL.withDescription(msg)
-      val exception: StatusRuntimeException = new StatusRuntimeException(badStatus)
-      val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, testHandlerSetting)
-      val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
-      result shouldBe (CommandHandlerResponse().withFailure(FailureResponse().withCritical(msg)))
+      result.getFailure.failureType.isCustom shouldBe (true)
+      val actual = result.getFailure.getCustom.unpack(RpcStatus)
+      actual.code shouldBe(badStatus.getCode.value)
+      actual.message shouldBe(badStatus.getDescription())
     }
 
     "handle akka gRPC exceptions" in {
-      val msg: String = "grpc broken"
-      val badStatus: Status = Status.INTERNAL.withDescription(msg)
+      val badStatus: Status = Status.INTERNAL.withDescription("grpc broken")
       val exception: GrpcServiceException = new GrpcServiceException(status = badStatus)
       val cmdhandler: AggregateCommandHandler = new AggregateCommandHandler(null, testHandlerSetting)
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
-      result shouldBe (CommandHandlerResponse().withFailure(FailureResponse().withCritical(msg)))
+      result.getFailure.failureType.isCustom shouldBe (true)
+      val actual = result.getFailure.getCustom.unpack(RpcStatus)
+      actual.code shouldBe(badStatus.getCode.value)
+      actual.message shouldBe(badStatus.getDescription())
     }
 
     "handles a critical grpc failure" in {
