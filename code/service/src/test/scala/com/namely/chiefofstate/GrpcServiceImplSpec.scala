@@ -24,12 +24,12 @@ class GrpcServiceImplSpec extends CustomActorTestkit("application.conf") with Mo
       val failureResponse: FailureResponse = FailureResponse()
         .withCustom(Any.pack(rpcStatus))
 
-      val actual: GrpcServiceException = intercept[GrpcServiceException]{
+      val actual: GrpcServiceException = intercept[GrpcServiceException] {
         throw impl.transformFailedReply(failureResponse).get
       }
 
-      actual.getStatus.getCode.value shouldBe(rpcStatus.code)
-      actual.getStatus.getDescription shouldBe(rpcStatus.message)
+      actual.getStatus.getCode.value shouldBe (rpcStatus.code)
+      actual.getStatus.getDescription shouldBe (rpcStatus.message)
 
     }
     "call parent for other errors" in {
@@ -38,11 +38,11 @@ class GrpcServiceImplSpec extends CustomActorTestkit("application.conf") with Mo
 
       val failureResponse: FailureResponse = FailureResponse()
 
-      val actual: GrpcServiceException = intercept[GrpcServiceException]{
+      val actual: GrpcServiceException = intercept[GrpcServiceException] {
         throw impl.transformFailedReply(failureResponse).get
       }
 
-      actual.getStatus.getCode.value shouldBe(Code.INTERNAL.value())
+      actual.getStatus.getCode.value shouldBe (Code.INTERNAL.value())
     }
   }
 }

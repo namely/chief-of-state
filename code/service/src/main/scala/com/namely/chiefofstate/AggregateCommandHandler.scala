@@ -209,14 +209,15 @@ class AggregateCommandHandler(
   }
 
   /**
-    * packages gRPC error statuses as a custom lagom-pb failure
-    * for use in the API layer
-    *
-    * @param status a Grpc status for a failure
-    * @return a CommandHandlerResponse packaging that failure Status as an Any
-    */
+   * packages gRPC error statuses as a custom lagom-pb failure
+   * for use in the API layer
+   *
+   * @param status a Grpc status for a failure
+   * @return a CommandHandlerResponse packaging that failure Status as an Any
+   */
   def handleGrpcResponseFailure(status: Status): CommandHandlerResponse = {
-    val rpcStatus: RpcStatus = com.google.rpc.status.Status()
+    val rpcStatus: RpcStatus = com.google.rpc.status
+      .Status()
       .withCode(status.getCode.value)
       .withMessage(status.getDescription)
 

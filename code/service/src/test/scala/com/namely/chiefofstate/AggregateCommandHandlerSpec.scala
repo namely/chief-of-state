@@ -354,8 +354,8 @@ class AggregateCommandHandlerSpec extends CustomActorTestkit("application.conf")
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
       result.getFailure.failureType.isCustom shouldBe (true)
       val actual = result.getFailure.getCustom.unpack(RpcStatus)
-      actual.code shouldBe(status.getCode.value)
-      actual.message shouldBe(status.getDescription())
+      actual.code shouldBe (status.getCode.value)
+      actual.message shouldBe (status.getDescription())
     }
 
     "handle failed validations sent by command handler" in {
@@ -365,8 +365,8 @@ class AggregateCommandHandlerSpec extends CustomActorTestkit("application.conf")
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
       result.getFailure.failureType.isCustom shouldBe (true)
       val actual = result.getFailure.getCustom.unpack(RpcStatus)
-      actual.code shouldBe(badStatus.getCode.value)
-      actual.message shouldBe(badStatus.getDescription())
+      actual.code shouldBe (badStatus.getCode.value)
+      actual.message shouldBe (badStatus.getDescription())
     }
 
     "handle akka gRPC exceptions" in {
@@ -376,8 +376,8 @@ class AggregateCommandHandlerSpec extends CustomActorTestkit("application.conf")
       val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
       result.getFailure.failureType.isCustom shouldBe (true)
       val actual = result.getFailure.getCustom.unpack(RpcStatus)
-      actual.code shouldBe(badStatus.getCode.value)
-      actual.message shouldBe(badStatus.getDescription())
+      actual.code shouldBe (badStatus.getCode.value)
+      actual.message shouldBe (badStatus.getDescription())
     }
 
     "handles a critical grpc failure" in {

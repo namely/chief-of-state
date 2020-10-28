@@ -124,11 +124,11 @@ class GrpcServiceImpl(sys: ActorSystem,
   }
 
   /**
-    * override lagom-pb custom error handling
-    *
-    * @param failureResponse a lagom-pb failure response from send command
-    * @return a failure
-    */
+   * override lagom-pb custom error handling
+   *
+   * @param failureResponse a lagom-pb failure response from send command
+   * @return a failure
+   */
   override def transformFailedReply(failureResponse: FailureResponse): Failure[Throwable] = {
     val statusTypeUrl = RpcStatus.scalaDescriptor.fullName.split("/").last
 
