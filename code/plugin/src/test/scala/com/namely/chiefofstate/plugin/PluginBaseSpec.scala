@@ -1,8 +1,10 @@
 package com.namely.chiefofstate.plugin
 
-import com.google.protobuf.wrappers.BoolValue
+import com.google.protobuf.ByteString
+import com.google.protobuf.wrappers.StringValue
+import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
+import io.grpc.Metadata
 import org.mockito.Mockito
-import org.scalamock.matchers.MockParameter
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.TestSuite
 import org.scalatest.matchers.should.Matchers
@@ -17,30 +19,38 @@ class PluginBaseSpec
     with MockFactory {
 
   "PluginBase" should {
+    val foo: String = "foo"
+    val pluginId: String = "pluginId"
+
+    val processCommandRequest: ProcessCommandRequest = ProcessCommandRequest.defaultInstance
+
+    val metadataKey: Metadata.Key[String] = Metadata.Key.of(foo, Metadata.ASCII_STRING_MARSHALLER)
+    val metadata: Metadata = new Metadata()
+    metadata.put(metadataKey, foo)
+
     "return the Option of the String packed as a proto Any" in {
-      val pluginId: String = "pluginId"
-      val bool: Any = true
-      val anyProto: com.google.protobuf.any.Any = PluginBaseSpecCompanion.makeAny(bool)
+
+      val anyProto: com.google.protobuf.any.Any = com.google.protobuf.any.Any.pack(StringValue(foo))
 
       val mockPluginBase: PluginBase = Mockito.mock(classOf[PluginBase])
       Mockito.when(mockPluginBase.pluginId).thenReturn(pluginId)
-      Mockito.when(mockPluginBase.makeAny(bool)).thenReturn(Some(anyProto))
-      Mockito.when(mockPluginBase.run(bool)).thenCallRealMethod()
+      Mockito.when(mockPluginBase.makeAny(processCommandRequest, metadata)).thenReturn(Some(anyProto))
+      Mockito.when(mockPluginBase.run(processCommandRequest, metadata)).thenCallRealMethod()
 
-      val result: Try[Map[String, com.google.protobuf.any.Any]] = mockPluginBase.run(bool)
+      val result: Try[Map[String, com.google.protobuf.any.Any]] = mockPluginBase.run(processCommandRequest, metadata)
 
       result.isSuccess should be (true)
       result.get.keySet.size should be (1)
       result.get.keySet.contains(pluginId) should be (true)
-      result.get(pluginId).value should be (PluginBaseSpecCompanion.makeAny(bool).value)
+      result.get(pluginId).unpack[StringValue] should be (StringValue(foo))
     }
 
     "return None" in {
       val mockPluginBase: PluginBase = Mockito.mock(classOf[PluginBase])
-      Mockito.when(mockPluginBase.makeAny()).thenReturn(None)
-      Mockito.when(mockPluginBase.run()).thenCallRealMethod()
+      Mockito.when(mockPluginBase.makeAny(processCommandRequest, metadata)).thenReturn(None)
+      Mockito.when(mockPluginBase.run(processCommandRequest, metadata)).thenCallRealMethod()
 
-      val result: Try[Map[String, com.google.protobuf.any.Any]] = mockPluginBase.run()
+      val result: Try[Map[String, com.google.protobuf.any.Any]] = mockPluginBase.run(processCommandRequest, metadata)
 
       result.isSuccess should be (true)
       result.get.keySet.size should be (0)
@@ -48,18 +58,9 @@ class PluginBaseSpec
 
     "return a failure" in {
       val mockPluginBase: PluginBase = Mockito.mock(classOf[PluginBase])
-      Mockito.when(mockPluginBase.makeAny()).thenThrow(new RuntimeException("test"))
-      Mockito.when(mockPluginBase.run()).thenCallRealMethod()
-      mockPluginBase.run().isFailure should be (true)
+      Mockito.when(mockPluginBase.makeAny(processCommandRequest, metadata)).thenThrow(new RuntimeException("test"))
+      Mockito.when(mockPluginBase.run(processCommandRequest, metadata)).thenCallRealMethod()
+      mockPluginBase.run(processCommandRequest, metadata).isFailure should be (true)
     }
-  }
-}
-
-object PluginBaseSpecCompanion {
-  def makeAny(b: Any): com.google.protobuf.any.Any = {
-    require(b.isInstanceOf[Boolean])
-
-    val boolValue: BoolValue = BoolValue(b.asInstanceOf[Boolean])
-    com.google.protobuf.any.Any.pack(boolValue)
   }
 }

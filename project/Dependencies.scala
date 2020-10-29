@@ -26,8 +26,9 @@ object Dependencies {
     val KanelaAgent: ModuleID = "io.kamon" % "kanela-agent" % Versions.KanelaAgentVersion
     val KamonAkkaGrpc: ModuleID =
       ("com.github.nezasa" %% "kamon-akka-grpc" % Versions.KamonAkkaGrpcVersion).intransitive()
-    val Janino = "org.codehaus.janino" % "janino" % Versions.JaninoVersion
-    val LogstashLogback = "net.logstash.logback" % "logstash-logback-encoder" % Versions.LogstashLogbackVersion
+    val Janino: ModuleID = "org.codehaus.janino" % "janino" % Versions.JaninoVersion
+    val LogstashLogback: ModuleID = "net.logstash.logback" % "logstash-logback-encoder" % Versions.LogstashLogbackVersion
+    val GrpcIo: ModuleID = "io.grpc" % "grpc-core" % "1.33.0"
   }
 
   object Runtime {

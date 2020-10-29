@@ -8,6 +8,7 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
 import com.namely.chiefofstate.config.SendCommandSettings
 import com.namely.chiefofstate.plugin.PluginBase
+import com.namely.chiefofstate.util.MetadataUtil
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service._
 import io.grpc.Status
@@ -50,14 +51,13 @@ class GrpcServiceImpl(sys: ActorSystem,
     } else {
 
       val meta: Try[Map[String, Any]] = plugins.foldLeft(Try(Map[String, Any]()))((metaMap, plugin) => {
-        val pluginRun: Try[Map[String, Any]] = plugin.run(metadata)
+        val pluginRun: Try[Map[String, Any]] = plugin.run(in, MetadataUtil.makeMeta(metadata))
 
         pluginRun match {
           case Success(m) => Try(metaMap.get ++ m)
           case Failure(e) => throw new GrpcServiceException(status = Status.ABORTED.withDescription(e.getMessage))
         }
       })
-
 
       meta match {
         case Success(m) =>

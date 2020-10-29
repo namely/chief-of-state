@@ -1,20 +1,23 @@
 package com.namely.chiefofstate.plugin
 
+import com.google.protobuf.any
 import com.namely.chiefofstate.test.helpers.{EnvironmentHelper, TestSpec}
+import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
 import com.typesafe.config.{Config, ConfigFactory, ConfigValue, ConfigValueFactory}
+import io.grpc.Metadata
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 
 private[this] object MockPluginBase1 extends PluginBase {
   override val pluginId: String = "MockPluginBase"
 
-  override def makeAny(any: Any): Option[com.google.protobuf.any.Any] = None
+  override def makeAny(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Option[any.Any] = None
 }
 
 private[this] object MockPluginBase2 extends PluginBase {
   override val pluginId: String = "MockPluginBase"
 
-  override def makeAny(any: Any): Option[com.google.protobuf.any.Any] = None
+  override def makeAny(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Option[any.Any] = None
 }
 
 class PluginManagerSpec extends TestSpec {

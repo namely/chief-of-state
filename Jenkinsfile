@@ -53,6 +53,9 @@ node(NODE_TAG) {
                     passwordVariable: 'JFROG_PASSWORD'
             )
         ]) {
+            earthRunner.addSecret("JFROG_USERNAME")
+            earthRunner.addSecret("JFROG_PASSWORD")
+
             // run the earthly command that was built
             sh earthRunner.getCommand("+all")
         }

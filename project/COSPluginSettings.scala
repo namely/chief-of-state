@@ -14,6 +14,9 @@ object COSPluginSettings extends AutoPlugin {
   )
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    libraryDependencies += Dependencies.Test.Mockito
+    libraryDependencies ++= Seq(
+      Dependencies.Compile.GrpcIo,
+      Dependencies.Test.Mockito
+    )
   )
 }

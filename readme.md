@@ -109,7 +109,7 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 | COS_WRITE_PERSISTED_HEADERS | CSV of gRPC headers to persist to journal (experimental) | <none> |
 | COS_JOURNAL_LOGICAL_DELETION | Event deletion is triggered after saving a new snapshot. Old events would be deleted prior to old snapshots being deleted. | false |
 | COS_COMMAND_HANDLER_TIMEOUT | Timeout required for the Aggregate to process command and reply. The value is in seconds. | 5 |
-| COS_ENABLED_PLUGINS | Comma separated package classes for plugins. Will apply plugins in order to the GrpcServiceImpl. | <none> |
+| COS_ENABLE_PLUGINS | Comma separated package classes for plugins. Will apply plugins in order to the GrpcServiceImpl. | <none> |
 
 ### Read side configurations
 
