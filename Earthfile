@@ -41,7 +41,6 @@ code:
         project/build.properties \
         project/BuildSettings.scala \
         project/Common.scala \
-        project/COSPluginSettings.scala \
         project/Dependencies.scala \
         project/DockerSettings.scala \
         project/JFrog.scala \
