@@ -14,7 +14,31 @@ import scala.util.{Failure, Success, Try}
  *
  * @param plugins Sequence of PluginBase
  */
-case class PluginManager(plugins: Seq[PluginBase])
+case class PluginManager(plugins: Seq[PluginBase]) {
+  /**
+   * Given a PluginManager instance, a ProcessCommandRequest instance and io.grpc.Metadata instance, folds left
+   * throughout all the plugins and runs them one at a time. The results are mapped into a Map of pluginId -> protoAny.
+   * On the failure case, returns a GrpcServiceException.
+   *
+   * @param processCommandRequest ProcessCommandRequest instance
+   * @param metadata io.grpc.Metadata instance
+   * @return Try of a Map[String, Any]
+   */
+  def run(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Try[Map[String, Any]] = {
+    plugins.foldLeft(Try(Map[String, Any]()))((metaMap, plugin) => {
+      val pluginRun: Try[Map[String, Any]] = Try {
+        plugin.run(processCommandRequest, metadata) match {
+          case Some(value) => Map(plugin.pluginId -> value)
+          case None => Map.empty[String, com.google.protobuf.any.Any]
+        }
+      }
+      pluginRun match {
+        case Success(m) => Try(metaMap.get ++ m)
+        case Failure(e) => Failure(new GrpcServiceException(status = Status.ABORTED.withDescription(e.getMessage)))
+      }
+    })
+  }
+}
 
 /**
  * Companion object for Active Plugins
@@ -67,32 +91,5 @@ object PluginManager {
     val reflectedPlugins: Seq[PluginBase] = reflectPlugins(plugins)
 
     new PluginManager(reflectedPlugins)
-  }
-
-  /**
-   * Given a PluginManager instance, a ProcessCommandRequest instance and io.grpc.Metadata instance, folds left
-   * throughout all the plugins and runs them one at a time. The results are mapped into a Map of pluginId -> protoAny.
-   * On the failure case, returns a GrpcServiceException.
-   *
-   * @param pluginsManager PluginManager instance
-   * @param processCommandRequest ProcessCommandRequest instance
-   * @param metadata io.grpc.Metadata instance
-   * @return Try of a Map[String, Any]
-   */
-  def run(pluginsManager: PluginManager, processCommandRequest: ProcessCommandRequest, metadata: Metadata): Try[Map[String, Any]] = {
-    val plugins: Seq[PluginBase] = pluginsManager.plugins
-
-    plugins.foldLeft(Try(Map[String, Any]()))((metaMap, plugin) => {
-      val pluginRun: Try[Map[String, Any]] = Try {
-        plugin.run(processCommandRequest, metadata) match {
-          case Some(value) => Map(plugin.pluginId -> value)
-          case None => Map.empty[String, com.google.protobuf.any.Any]
-        }
-      }
-      pluginRun match {
-        case Success(m) => Try(metaMap.get ++ m)
-        case Failure(e) => Failure(new GrpcServiceException(status = Status.ABORTED.withDescription(e.getMessage)))
-      }
-    })
   }
 }

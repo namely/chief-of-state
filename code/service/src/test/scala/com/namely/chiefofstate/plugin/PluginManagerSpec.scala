@@ -105,7 +105,7 @@ class PluginManagerSpec extends TestSpec {
         (mockPluginBase.run _).expects(processCommandRequest, metadata).returning(Some(anyProto))
         val pluginManager: PluginManager = new PluginManager(Seq(mockPluginBase))
 
-        val result: Try[Map[String, com.google.protobuf.any.Any]] = PluginManager.run(pluginManager, processCommandRequest, metadata)
+        val result: Try[Map[String, com.google.protobuf.any.Any]] = pluginManager.run(processCommandRequest, metadata)
         result.isSuccess should be(true)
         result.get.keySet.size should be(1)
         result.get.keySet.contains(pluginId) should be(true)
@@ -117,7 +117,7 @@ class PluginManagerSpec extends TestSpec {
         (mockPluginBase.run _).expects(processCommandRequest, metadata).returning(None)
         val pluginManager: PluginManager = new PluginManager(Seq(mockPluginBase))
 
-        val result: Try[Map[String, com.google.protobuf.any.Any]] = PluginManager.run(pluginManager, processCommandRequest, metadata)
+        val result: Try[Map[String, com.google.protobuf.any.Any]] = pluginManager.run(processCommandRequest, metadata)
         result.isSuccess should be(true)
         result.get.keySet.size should be(0)
       }
@@ -127,7 +127,7 @@ class PluginManagerSpec extends TestSpec {
         (mockPluginBase.run _).expects(processCommandRequest, metadata).throws(new RuntimeException("test"))
 
         val pluginManager: PluginManager = new PluginManager(Seq(mockPluginBase))
-        intercept[GrpcServiceException](PluginManager.run(pluginManager, processCommandRequest, metadata).get)
+        intercept[GrpcServiceException](pluginManager.run(processCommandRequest, metadata).get)
       }
     }
   }
