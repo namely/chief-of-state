@@ -9,7 +9,6 @@ object BuildSettings extends AutoPlugin {
     Seq(
       javaAgents += Dependencies.Compile.KanelaAgent,
       libraryDependencies ++= Seq(
-        Dependencies.Compile.GrpcIo,
         Dependencies.Compile.Lagompb,
         Dependencies.Compile.LagompbReadSide,
         Dependencies.Compile.KamonAkkaGrpc,

@@ -12,10 +12,4 @@ object COSPluginSettings extends AutoPlugin {
     name := "chiefofstateplugins",
     description := "Chief of State Plugins"
   )
-
-  override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    libraryDependencies ++= Seq(
-      Dependencies.Compile.GrpcIo
-    )
-  )
 }

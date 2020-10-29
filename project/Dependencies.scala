@@ -28,7 +28,6 @@ object Dependencies {
       ("com.github.nezasa" %% "kamon-akka-grpc" % Versions.KamonAkkaGrpcVersion).intransitive()
     val Janino: ModuleID = "org.codehaus.janino" % "janino" % Versions.JaninoVersion
     val LogstashLogback: ModuleID = "net.logstash.logback" % "logstash-logback-encoder" % Versions.LogstashLogbackVersion
-    val GrpcIo: ModuleID = "io.grpc" % "grpc-core" % "1.33.0"
   }
 
   object Runtime {

@@ -1,20 +1,14 @@
 package com.namely.chiefofstate.plugin
 
 import com.google.protobuf.wrappers.StringValue
+import com.namely.chiefofstate.test.helpers.TestSpec
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
 import io.grpc.Metadata
-import org.scalamock.scalatest.MockFactory
-import org.scalatest.TestSuite
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpecLike
+import PluginRunner.PluginBaseImplicits
 
 import scala.util.Try
 
-class PluginBaseSpec
-  extends AnyWordSpecLike
-    with Matchers
-    with TestSuite
-    with MockFactory {
+class PluginRunnerSpec extends TestSpec {
 
   "PluginBase" should {
     val foo: String = "foo"

@@ -19,6 +19,7 @@ import org.slf4j.{Logger, LoggerFactory}
 
 import com.namely.chiefofstate.config.SendCommandSettings
 import com.namely.chiefofstate.plugin.PluginBase
+import com.namely.chiefofstate.plugin.PluginRunner.PluginBaseImplicits
 import com.namely.chiefofstate.plugin.utils.MetadataUtil
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service._
