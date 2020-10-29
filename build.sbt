@@ -25,8 +25,11 @@ lazy val `chiefofstateplugins` = project
   .in(file("code/plugin"))
   .enablePlugins(Common)
   .enablePlugins(LagomScala)
-  .enablePlugins(COSPluginSettings)
   .enablePlugins(Publish)
+  .settings(
+    name := "chiefofstateplugins",
+    description := "Chief of State Plugins"
+  )
   .dependsOn(protogen)
 
 lazy val protogen: Project = project
