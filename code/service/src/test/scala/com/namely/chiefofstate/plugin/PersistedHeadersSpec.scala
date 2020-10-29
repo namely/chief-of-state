@@ -41,7 +41,7 @@ class PersistedHeadersSpec extends TestSpec with MockFactory {
     "return the a string and byte header" in {
       val actual: Headers = PersistHeaders
         .apply()
-        .makeAny(processCommandRequest, metadata)
+        .run(processCommandRequest, metadata)
         .get
         .unpack[com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Headers]
 

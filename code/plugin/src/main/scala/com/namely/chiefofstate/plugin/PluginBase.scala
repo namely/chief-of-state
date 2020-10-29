@@ -17,7 +17,7 @@ trait PluginBase {
    * @param metadata Grpc Metadata
    * @return Option[com.google.protobuf.any.Any]
    */
-  def makeAny(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Option[com.google.protobuf.any.Any]
+  def run(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Option[com.google.protobuf.any.Any]
 }
 
 /**

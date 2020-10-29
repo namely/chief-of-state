@@ -13,7 +13,7 @@ private[this] class PersistHeaders() extends PluginBase {
 
   val getSendCommandSettings: SendCommandSettings = SendCommandSettings(ConfigFactory.load())
 
-  override def makeAny(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Option[com.google.protobuf.any.Any] = {
+  override def run(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Option[com.google.protobuf.any.Any] = {
     val headers: Seq[Header] = getSendCommandSettings.propagatedHeaders.flatMap(header => {
       if(header.endsWith("-bin")) {
         val bytesKey: Metadata.Key[Array[Byte]] = Metadata.Key.of(header, Metadata.BINARY_BYTE_MARSHALLER)

@@ -3,27 +3,20 @@ package com.namely.chiefofstate
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-
 import io.grpc.Status
-
 import akka.actor.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.GrpcServiceException
 import akka.grpc.scaladsl.{BytesEntry, Metadata, StringEntry}
-
 import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
 import com.google.rpc.status.{Status => RpcStatus}
-
 import org.slf4j.{Logger, LoggerFactory}
-
 import com.namely.chiefofstate.config.SendCommandSettings
-import com.namely.chiefofstate.plugin.PluginBase
-import com.namely.chiefofstate.plugin.PluginRunner.PluginBaseImplicits
+import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.plugin.utils.MetadataUtil
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service._
-
 import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl}
 import io.superflat.lagompb.protobuf.v1.core.StateWrapper
 import io.superflat.lagompb.protobuf.v1.core.FailureResponse
@@ -33,7 +26,7 @@ class GrpcServiceImpl(sys: ActorSystem,
                       val clusterSharding: ClusterSharding,
                       val aggregateRoot: AggregateRoot,
                       val sendCommandSettings: SendCommandSettings,
-                      plugins: Seq[PluginBase] = Seq()
+                      pluginManager: PluginManager
 )(implicit
   ec: ExecutionContext
 ) extends AbstractChiefOfStateServicePowerApiRouter(sys)
@@ -56,14 +49,7 @@ class GrpcServiceImpl(sys: ActorSystem,
       )
     } else {
 
-      val meta: Try[Map[String, Any]] = plugins.foldLeft(Try(Map[String, Any]()))((metaMap, plugin) => {
-        val pluginRun: Try[Map[String, Any]] = plugin.run(in, MetadataUtil.makeMeta(metadata))
-
-        pluginRun match {
-          case Success(m) => Try(metaMap.get ++ m)
-          case Failure(e) => throw new GrpcServiceException(status = Status.ABORTED.withDescription(e.getMessage))
-        }
-      })
+      val meta: Try[Map[String, Any]] = PluginManager.run(pluginManager, in, MetadataUtil.makeMeta(metadata))
 
       meta match {
         case Success(m) =>

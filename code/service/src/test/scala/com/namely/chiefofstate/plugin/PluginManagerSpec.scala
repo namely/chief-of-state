@@ -1,6 +1,8 @@
 package com.namely.chiefofstate.plugin
 
+import akka.grpc.GrpcServiceException
 import com.google.protobuf.any
+import com.google.protobuf.wrappers.StringValue
 import com.namely.chiefofstate.test.helpers.{EnvironmentHelper, TestSpec}
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
 import com.typesafe.config.{Config, ConfigFactory, ConfigValue, ConfigValueFactory}
@@ -8,10 +10,12 @@ import io.grpc.Metadata
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 
+import scala.util.Try
+
 private[this] class MockPlugin1() extends PluginBase {
   override val pluginId: String = "MockPluginBase"
 
-  override def makeAny(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Option[any.Any] = None
+  override def run(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Option[any.Any] = None
 }
 
 private[this] object MockPlugin1 extends PluginFactory {
@@ -21,7 +25,7 @@ private[this] object MockPlugin1 extends PluginFactory {
 private[this] class MockPlugin2() extends PluginBase {
   override val pluginId: String = "MockPluginBase"
 
-  override def makeAny(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Option[any.Any] = None
+  override def run(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Option[any.Any] = None
 }
 
 private[this] object MockPlugin2 extends PluginFactory {
@@ -82,6 +86,48 @@ class PluginManagerSpec extends TestSpec {
         val actual: PluginManager = PluginManager.getPlugins(config)
         val expected: Seq[String] = PluginManager.DEFAULT_PLUGINS ++ plugins
         PluginManagerSpecCompanion.compare(actual.plugins, expected)
+      }
+    }
+    "run" should {
+      val foo: String = "foo"
+      val pluginId: String = "pluginId"
+      val processCommandRequest: ProcessCommandRequest = ProcessCommandRequest.defaultInstance
+      val metadataKey: Metadata.Key[String] = Metadata.Key.of(foo, Metadata.ASCII_STRING_MARSHALLER)
+      val metadata: Metadata = new Metadata()
+      metadata.put(metadataKey, foo)
+
+      "return the Option of the String packed as a proto Any" in {
+
+        val anyProto: com.google.protobuf.any.Any = com.google.protobuf.any.Any.pack(StringValue(foo))
+
+        val mockPluginBase: PluginBase = mock[PluginBase]
+        (mockPluginBase.pluginId _).expects().returning(pluginId)
+        (mockPluginBase.run _).expects(processCommandRequest, metadata).returning(Some(anyProto))
+        val pluginManager: PluginManager = new PluginManager(Seq(mockPluginBase))
+
+        val result: Try[Map[String, com.google.protobuf.any.Any]] = PluginManager.run(pluginManager, processCommandRequest, metadata)
+        result.isSuccess should be(true)
+        result.get.keySet.size should be(1)
+        result.get.keySet.contains(pluginId) should be(true)
+        result.get(pluginId).unpack[StringValue] should be(StringValue(foo))
+      }
+
+      "return None" in {
+        val mockPluginBase: PluginBase = mock[PluginBase]
+        (mockPluginBase.run _).expects(processCommandRequest, metadata).returning(None)
+        val pluginManager: PluginManager = new PluginManager(Seq(mockPluginBase))
+
+        val result: Try[Map[String, com.google.protobuf.any.Any]] = PluginManager.run(pluginManager, processCommandRequest, metadata)
+        result.isSuccess should be(true)
+        result.get.keySet.size should be(0)
+      }
+
+      "return a failure" in {
+        val mockPluginBase: PluginBase = mock[PluginBase]
+        (mockPluginBase.run _).expects(processCommandRequest, metadata).throws(new RuntimeException("test"))
+
+        val pluginManager: PluginManager = new PluginManager(Seq(mockPluginBase))
+        intercept[GrpcServiceException](PluginManager.run(pluginManager, processCommandRequest, metadata).get)
       }
     }
   }

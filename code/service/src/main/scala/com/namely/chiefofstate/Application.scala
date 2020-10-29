@@ -26,7 +26,7 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
 
   lazy val applog: Logger = LoggerFactory.getLogger(getClass)
 
-  final val plugins: Seq[PluginBase] = PluginManager.getPlugins(config).plugins
+  final val pluginManager: PluginManager = PluginManager.getPlugins(config)
 
   // start kamon
   Kamon.init()
@@ -79,7 +79,7 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
       new RestServiceImpl(clusterSharding, persistentEntityRegistry, aggregateRoot)
 
     val grpcService: GrpcServiceImpl =
-      new GrpcServiceImpl(actorSystem, clusterSharding, aggregateRoot, sendCommandSettings, plugins)
+      new GrpcServiceImpl(actorSystem, clusterSharding, aggregateRoot, sendCommandSettings, pluginManager)
 
     serverFor[ChiefOfStateService](restService)
       .additionalRouter(grpcService)

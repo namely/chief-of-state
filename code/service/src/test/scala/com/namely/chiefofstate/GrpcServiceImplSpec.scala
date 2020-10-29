@@ -15,7 +15,7 @@ class GrpcServiceImplSpec extends CustomActorTestkit("application.conf") with Mo
   ".transformFailedReply" should {
     "handle custom errors" in {
       val actorSystem: ActorSystem = testKit.system.toClassic
-      val impl = new GrpcServiceImpl(actorSystem, null, null, null)(null)
+      val impl = new GrpcServiceImpl(actorSystem, null, null, null, null)(null)
 
       val rpcStatus: RpcStatus = RpcStatus()
         .withCode(Code.DATA_LOSS.value())
@@ -34,7 +34,7 @@ class GrpcServiceImplSpec extends CustomActorTestkit("application.conf") with Mo
     }
     "call parent for other errors" in {
       val actorSystem: ActorSystem = testKit.system.toClassic
-      val impl = new GrpcServiceImpl(actorSystem, null, null, null)(null)
+      val impl = new GrpcServiceImpl(actorSystem, null, null, null, null)(null)
 
       val failureResponse: FailureResponse = FailureResponse()
 
