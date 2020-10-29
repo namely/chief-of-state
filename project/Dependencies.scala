@@ -39,7 +39,6 @@ object Dependencies {
     final val Test: Configuration = sbt.Test
     val AkkaGrpcTestkit: ModuleID = "com.lightbend.play" %% "lagom-scaladsl-grpc-testkit" % "0.8.2" % "test"
     val ScalaTest: ModuleID = "org.scalatest" %% "scalatest" % "3.2.2" % "test"
-    val Mockito: ModuleID = "org.mockito" %% "mockito-scala" % "1.16.0"
   }
 
   val AkkaOverrideDeps = Seq(

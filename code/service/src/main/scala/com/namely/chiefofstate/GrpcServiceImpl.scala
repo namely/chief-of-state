@@ -8,7 +8,7 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
 import com.namely.chiefofstate.config.SendCommandSettings
 import com.namely.chiefofstate.plugin.PluginBase
-import com.namely.chiefofstate.util.MetadataUtil
+import com.namely.chiefofstate.plugin.utils.MetadataUtil
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service._
 import io.grpc.Status

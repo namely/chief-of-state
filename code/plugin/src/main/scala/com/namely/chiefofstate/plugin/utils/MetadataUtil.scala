@@ -1,8 +1,8 @@
-package com.namely.chiefofstate.util
+package com.namely.chiefofstate.plugin.utils
 
+import io.grpc
 import akka.grpc.scaladsl
 import akka.util.ByteString
-import io.grpc
 
 import scala.jdk.CollectionConverters._
 
