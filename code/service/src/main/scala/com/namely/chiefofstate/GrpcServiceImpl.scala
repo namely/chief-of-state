@@ -1,23 +1,32 @@
 package com.namely.chiefofstate
 
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
+
+import io.grpc.Status
+
 import akka.actor.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.GrpcServiceException
 import akka.grpc.scaladsl.{BytesEntry, Metadata, StringEntry}
+
 import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
+import com.google.rpc.status.{Status => RpcStatus}
+
+import org.slf4j.{Logger, LoggerFactory}
+
 import com.namely.chiefofstate.config.SendCommandSettings
 import com.namely.chiefofstate.plugin.PluginBase
 import com.namely.chiefofstate.plugin.utils.MetadataUtil
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service._
-import io.grpc.Status
+
 import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl}
 import io.superflat.lagompb.protobuf.v1.core.StateWrapper
-import org.slf4j.{Logger, LoggerFactory}
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import io.superflat.lagompb.protobuf.v1.core.FailureResponse
+import io.superflat.lagompb.protobuf.v1.core.FailureResponse.FailureType.Custom
 
 class GrpcServiceImpl(sys: ActorSystem,
                       val clusterSharding: ClusterSharding,
@@ -30,10 +39,6 @@ class GrpcServiceImpl(sys: ActorSystem,
     with BaseGrpcServiceImpl {
 
   private val log: Logger = LoggerFactory.getLogger(getClass)
-
-  log.info("debug 2020.10.13")
-  log.info(s"sendCommandSettings: $sendCommandSettings")
-  log.info(s"sendCommandSettings.propagatedHeaders: ${sendCommandSettings.propagatedHeaders}")
 
   /**
    * gRPC ProcessCommand implementation
@@ -116,6 +121,30 @@ class GrpcServiceImpl(sys: ActorSystem,
             meta = stateWrapper.meta.map(Util.toCosMetaData)
           )
         })
+    }
+  }
+
+  /**
+   * override lagom-pb custom error handling
+   *
+   * @param failureResponse a lagom-pb failure response from send command
+   * @return a failure
+   */
+  override def transformFailedReply(failureResponse: FailureResponse): Failure[Throwable] = {
+    val statusTypeUrl = RpcStatus.scalaDescriptor.fullName.split("/").last
+
+    failureResponse.failureType match {
+      case Custom(value) if value.typeUrl.split("/").last == statusTypeUrl =>
+        val rpcStatus = value.unpack(RpcStatus)
+
+        val status = Status
+          .fromCodeValue(rpcStatus.code)
+          .withDescription(rpcStatus.message)
+
+        Failure(new GrpcServiceException(status = status))
+
+      case _ =>
+        super.transformFailedReply(failureResponse)
     }
   }
 }

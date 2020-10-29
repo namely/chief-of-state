@@ -9,6 +9,7 @@ import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service.GetStateRequest
 import com.namely.protobuf.chiefofstate.v1.writeside.{HandleCommandRequest, HandleCommandResponse}
 import io.grpc.{Status, StatusRuntimeException}
+import com.google.rpc.status.{Status => RpcStatus}
 import io.superflat.lagompb.{CommandHandler, ProtosRegistry}
 import io.superflat.lagompb.protobuf.v1.core._
 import org.slf4j.{Logger, LoggerFactory}
@@ -27,8 +28,6 @@ class AggregateCommandHandler(
   val writeSideHandlerServiceClient: WriteSideHandlerServiceClient,
   handlerSetting: HandlerSetting
 ) extends CommandHandler {
-
-  import AggregateCommandHandler.GRPC_FAILED_VALIDATION_STATUSES
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -191,25 +190,13 @@ class AggregateCommandHandler(
     throwable match {
       case e: StatusRuntimeException =>
         val status: Status = e.getStatus
-        val reason: String = s"command failed (${status.getCode.name}) ${status.getDescription}"
-        log.error(s"[ChiefOfState] $reason")
-
-        // handle specific gRPC error statuses
-        val failureResponse =
-          if (GRPC_FAILED_VALIDATION_STATUSES.contains(status.getCode)) {
-            FailureResponse().withValidation(status.getDescription)
-          } else {
-            FailureResponse().withCritical(status.getDescription)
-          }
-
-        CommandHandlerResponse().withFailure(failureResponse)
+        log.error(s"[ChiefOfState] command failed (${status.getCode.name}) ${status.getDescription}", e)
+        handleGrpcResponseFailure(status)
 
       case e: GrpcServiceException =>
-        log.error(s"[ChiefOfState] handler gRPC failed with ${e.status.toString}", e)
-        CommandHandlerResponse()
-          .withFailure(
-            FailureResponse().withCritical(e.getStatus.getDescription)
-          )
+        val status: Status = e.getStatus
+        log.error(s"[ChiefOfState] command failed (${status.getCode.name}) ${status.getDescription}", e)
+        handleGrpcResponseFailure(status)
 
       case e: Throwable =>
         log.error(s"[ChiefOfState] gRPC handler critical failure", e)
@@ -220,20 +207,22 @@ class AggregateCommandHandler(
           )
     }
   }
-}
 
-/**
- * companion object
- */
-object AggregateCommandHandler {
+  /**
+   * packages gRPC error statuses as a custom lagom-pb failure
+   * for use in the API layer
+   *
+   * @param status a Grpc status for a failure
+   * @return a CommandHandlerResponse packaging that failure Status as an Any
+   */
+  def handleGrpcResponseFailure(status: Status): CommandHandlerResponse = {
+    val rpcStatus: RpcStatus = RpcStatus()
+      .withCode(status.getCode.value)
+      .withMessage(status.getDescription)
 
-  // statuses that should be considered validation errors
-  // in the command handler
-  val GRPC_FAILED_VALIDATION_STATUSES: Set[Status.Code] = Set(
-    Status.Code.INVALID_ARGUMENT,
-    Status.Code.ALREADY_EXISTS,
-    Status.Code.FAILED_PRECONDITION,
-    Status.Code.OUT_OF_RANGE,
-    Status.Code.PERMISSION_DENIED
-  )
+    val failureResponse = FailureResponse()
+      .withCustom(Any.pack(rpcStatus))
+
+    CommandHandlerResponse().withFailure(failureResponse)
+  }
 }
