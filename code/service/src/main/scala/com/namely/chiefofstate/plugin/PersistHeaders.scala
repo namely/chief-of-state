@@ -8,7 +8,7 @@ import com.typesafe.config.ConfigFactory
 import io.grpc.Metadata
 import scala.jdk.CollectionConverters._
 
-object PersistHeaders extends PluginBase {
+private[this] class PersistHeaders() extends PluginBase {
   override val pluginId: String = "persisted_headers.v1"
 
   val getSendCommandSettings: SendCommandSettings = SendCommandSettings(ConfigFactory.load())
@@ -28,4 +28,8 @@ object PersistHeaders extends PluginBase {
 
     Some(com.google.protobuf.any.Any.pack(Headers().withHeaders(headers)))
   }
+}
+
+object PersistHeaders extends PluginFactory {
+  override def apply(): PluginBase = new PersistHeaders()
 }

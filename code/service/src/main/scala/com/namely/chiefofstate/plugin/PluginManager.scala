@@ -39,7 +39,7 @@ object PluginManager {
       val module: universe.ModuleSymbol = runtimeMirror.staticModule(className)
       val obj: universe.ModuleMirror = runtimeMirror.reflectModule(module)
 
-      obj.instance.asInstanceOf[PluginBase]
+      obj.instance.asInstanceOf[PluginFactory].apply()
     })
   }
 

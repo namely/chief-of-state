@@ -8,23 +8,31 @@ import io.grpc.Metadata
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 
-private[this] object MockPluginBase1 extends PluginBase {
+private[this] class MockPlugin1() extends PluginBase {
   override val pluginId: String = "MockPluginBase"
 
   override def makeAny(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Option[any.Any] = None
 }
 
-private[this] object MockPluginBase2 extends PluginBase {
+private[this] object MockPlugin1 extends PluginFactory {
+  override def apply(): PluginBase = new MockPlugin1()
+}
+
+private[this] class MockPlugin2() extends PluginBase {
   override val pluginId: String = "MockPluginBase"
 
   override def makeAny(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Option[any.Any] = None
+}
+
+private[this] object MockPlugin2 extends PluginFactory {
+  override def apply(): PluginBase = new MockPlugin2()
 }
 
 class PluginManagerSpec extends TestSpec {
 
   val packagePrefix: String = this.getClass.getPackage.getName
-  val classPackage1: String = PluginManagerSpecCompanion.makeFullyQuailifiedName(packagePrefix, "MockPluginBase1")
-  val classPackage2: String = PluginManagerSpecCompanion.makeFullyQuailifiedName(packagePrefix, "MockPluginBase2")
+  val classPackage1: String = PluginManagerSpecCompanion.makeFullyQuailifiedName(packagePrefix, "MockPlugin1")
+  val classPackage2: String = PluginManagerSpecCompanion.makeFullyQuailifiedName(packagePrefix, "MockPlugin2")
 
   override def beforeEach(): Unit = {
     super.beforeEach()

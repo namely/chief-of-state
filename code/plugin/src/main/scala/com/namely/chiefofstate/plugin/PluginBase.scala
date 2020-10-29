@@ -5,6 +5,9 @@ import io.grpc.Metadata
 
 import scala.util.Try
 
+/**
+ * Interface for the Chief-of-state plugins
+ */
 trait PluginBase {
 
   def pluginId: String
@@ -34,4 +37,18 @@ trait PluginBase {
    * @return Option[com.google.protobuf.any.Any]
    */
   def makeAny(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Option[com.google.protobuf.any.Any]
+}
+
+/**
+ * Factory of PluginBase
+ */
+trait PluginFactory {
+
+  /**
+   * Returns a PluginBase
+   *
+   * @return PluginBase instance
+   */
+  def apply(): PluginBase
+
 }
