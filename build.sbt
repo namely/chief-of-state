@@ -17,8 +17,7 @@ lazy val `chiefofstate`: Project = project
   .enablePlugins(NoPublish)
   .settings(
     name := "chiefofstate",
-    javaAgents += Dependencies.Compile.KanelaAgent,
-    unmanagedJars in Compile += file("/mnt/plugins")
+    javaAgents += Dependencies.Compile.KanelaAgent
   )
   .dependsOn(protogen, `chiefofstateplugins`)
 
