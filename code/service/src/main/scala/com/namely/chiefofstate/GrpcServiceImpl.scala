@@ -49,7 +49,7 @@ class GrpcServiceImpl(sys: ActorSystem,
       )
     } else {
 
-      val meta: Try[Map[String, Any]] = PluginManager.run(pluginManager, in, MetadataUtil.makeMeta(metadata))
+      val meta: Try[Map[String, Any]] = pluginManager.run(in, MetadataUtil.makeMeta(metadata))
 
       meta match {
         case Success(m) =>
