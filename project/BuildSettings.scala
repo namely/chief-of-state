@@ -1,5 +1,5 @@
 import com.lightbend.sbt.javaagent.JavaAgent.JavaAgentKeys.javaAgents
-import sbt.{plugins, AutoPlugin, Plugins}
+import sbt.{AutoPlugin, Plugins, plugins}
 import sbt.Keys.{dependencyOverrides, libraryDependencies}
 
 object BuildSettings extends AutoPlugin {

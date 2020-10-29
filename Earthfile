@@ -4,6 +4,18 @@ all:
     # target running it all
     BUILD +test-all
     BUILD +docker-build
+    BUILD +sbt-publish
+
+sbt-publish:
+    FROM +code
+
+    ARG VERSION=dev
+
+    # sbt publish
+    RUN --push \
+        --secret JFROG_USERNAME=+secrets/JFROG_USERNAME \
+        --secret JFROG_PASSWORD=+secrets/JFROG_PASSWORD \
+        sbt publish
 
 code:
     # copy relevant files in, save as a base image
@@ -31,8 +43,10 @@ code:
         project/Common.scala \
         project/Dependencies.scala \
         project/DockerSettings.scala \
+        project/JFrog.scala \
         project/plugins.sbt \
         project/ProtocRuntime.scala \
+        project/Publish.scala \
         ./project/
 
     # clean & install dependencies
@@ -44,6 +58,7 @@ code:
 
     # copy code
     COPY --chown $BUILD_USR:root code/service/src ./code/service/src
+    COPY --chown $BUILD_USR:root code/plugin/src ./code/plugin/src
 
     # save base image for use downstream
     SAVE IMAGE

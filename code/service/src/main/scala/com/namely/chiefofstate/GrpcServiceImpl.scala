@@ -1,31 +1,32 @@
 package com.namely.chiefofstate
 
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
+import io.grpc.Status
 import akka.actor.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.GrpcServiceException
 import akka.grpc.scaladsl.{BytesEntry, Metadata, StringEntry}
 import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
+import com.google.rpc.status.{Status => RpcStatus}
+import org.slf4j.{Logger, LoggerFactory}
 import com.namely.chiefofstate.config.SendCommandSettings
-import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Header, Headers}
+import com.namely.chiefofstate.plugin.PluginManager
+import com.namely.chiefofstate.plugin.utils.MetadataUtil
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service._
-import io.grpc.Status
-import com.google.rpc.status.{Status => RpcStatus}
 import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl}
 import io.superflat.lagompb.protobuf.v1.core.StateWrapper
-import org.slf4j.{Logger, LoggerFactory}
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Failure
 import io.superflat.lagompb.protobuf.v1.core.FailureResponse
 import io.superflat.lagompb.protobuf.v1.core.FailureResponse.FailureType.Custom
-import io.grpc.Status.Code
 
 class GrpcServiceImpl(sys: ActorSystem,
                       val clusterSharding: ClusterSharding,
                       val aggregateRoot: AggregateRoot,
-                      val sendCommandSettings: SendCommandSettings
+                      val sendCommandSettings: SendCommandSettings,
+                      pluginManager: PluginManager
 )(implicit
   ec: ExecutionContext
 ) extends AbstractChiefOfStateServicePowerApiRouter(sys)
@@ -48,54 +49,41 @@ class GrpcServiceImpl(sys: ActorSystem,
       )
     } else {
 
-      // TODO: move this to a general plugin architecture
-      val persistedHeaders: Seq[Header] = metadata.asList
-        .filter({ case (k, _) => sendCommandSettings.propagatedHeaders.contains(k) })
-        .map({
-          case (k, StringEntry(value)) =>
-            com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers
-              .Header()
-              .withKey(k)
-              .withStringValue(value)
+      val meta: Try[Map[String, Any]] = pluginManager.run(in, MetadataUtil.makeMeta(metadata))
 
-          case (k, BytesEntry(value)) =>
-            com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers
-              .Header()
-              .withKey(k)
-              .withBytesValue(ByteString.copyFrom(value.toArray))
-        })
+      meta match {
+        case Success(m) =>
+          // get the headers to forward
+          val propagatedHeaders: Seq[RemoteCommand.Header] = metadata.asList
+            // filter to relevant headers
+            .filter({ case (k, _) => sendCommandSettings.propagatedHeaders.contains(k) })
+            .map({
+              case (k, StringEntry(value)) =>
+                RemoteCommand
+                  .Header()
+                  .withKey(k)
+                  .withStringValue(value)
 
-      val meta = Map("persisted_headers.v1" -> Any.pack(Headers().withHeaders(persistedHeaders)))
+              case (k, BytesEntry(value)) =>
+                RemoteCommand
+                  .Header()
+                  .withKey(k)
+                  .withBytesValue(ByteString.copyFrom(value.toArray))
+            })
 
-      // get the headers to forward
-      val propagatedHeaders: Seq[RemoteCommand.Header] = metadata.asList
-        // filter to relevant headers
-        .filter({ case (k, _) => sendCommandSettings.propagatedHeaders.contains(k) })
-        .map({
-          case (k, StringEntry(value)) =>
-            RemoteCommand
-              .Header()
-              .withKey(k)
-              .withStringValue(value)
+          val remoteCommand: RemoteCommand = RemoteCommand()
+            .withCommand(in.getCommand)
+            .withHeaders(propagatedHeaders)
 
-          case (k, BytesEntry(value)) =>
-            RemoteCommand
-              .Header()
-              .withKey(k)
-              .withBytesValue(ByteString.copyFrom(value.toArray))
-        })
-
-      val remoteCommand: RemoteCommand = RemoteCommand()
-        .withCommand(in.getCommand)
-        .withHeaders(propagatedHeaders)
-
-      sendCommand(in.entityId, remoteCommand, meta)
-        .map((stateWrapper: StateWrapper) => {
-          ProcessCommandResponse(
-            state = stateWrapper.state,
-            meta = stateWrapper.meta.map(Util.toCosMetaData)
-          )
-        })
+          sendCommand(in.entityId, remoteCommand, m)
+            .map((stateWrapper: StateWrapper) => {
+              ProcessCommandResponse(
+                state = stateWrapper.state,
+                meta = stateWrapper.meta.map(Util.toCosMetaData)
+              )
+            })
+        case Failure(e) => Future.fromTry(Failure(e))
+      }
     }
   }
 

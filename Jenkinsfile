@@ -46,7 +46,18 @@ node(NODE_TAG) {
             earthRunner.addArg("--no-output")
         }
 
-         // run the earthly command that was built
-        sh earthRunner.getCommand("+all")
+        withCredentials([
+            usernamePassword(
+                    credentialsId: 'jfrog-ci-user',
+                    usernameVariable: 'JFROG_USERNAME',
+                    passwordVariable: 'JFROG_PASSWORD'
+            )
+        ]) {
+            earthRunner.addSecret("JFROG_USERNAME")
+            earthRunner.addSecret("JFROG_PASSWORD")
+
+            // run the earthly command that was built
+            sh earthRunner.getCommand("+all")
+        }
     }
 }
