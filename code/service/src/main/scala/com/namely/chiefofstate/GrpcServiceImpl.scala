@@ -11,12 +11,16 @@ import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Hea
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.service._
 import io.grpc.Status
+import com.google.rpc.status.{Status => RpcStatus}
 import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl}
 import io.superflat.lagompb.protobuf.v1.core.StateWrapper
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
+import io.superflat.lagompb.protobuf.v1.core.FailureResponse
+import io.superflat.lagompb.protobuf.v1.core.FailureResponse.FailureType.Custom
+import io.grpc.Status.Code
 
 class GrpcServiceImpl(sys: ActorSystem,
                       val clusterSharding: ClusterSharding,
@@ -28,10 +32,6 @@ class GrpcServiceImpl(sys: ActorSystem,
     with BaseGrpcServiceImpl {
 
   private val log: Logger = LoggerFactory.getLogger(getClass)
-
-  log.info("debug 2020.10.13")
-  log.info(s"sendCommandSettings: $sendCommandSettings")
-  log.info(s"sendCommandSettings.propagatedHeaders: ${sendCommandSettings.propagatedHeaders}")
 
   /**
    * gRPC ProcessCommand implementation
@@ -120,6 +120,30 @@ class GrpcServiceImpl(sys: ActorSystem,
             meta = stateWrapper.meta.map(Util.toCosMetaData)
           )
         })
+    }
+  }
+
+  /**
+   * override lagom-pb custom error handling
+   *
+   * @param failureResponse a lagom-pb failure response from send command
+   * @return a failure
+   */
+  override def transformFailedReply(failureResponse: FailureResponse): Failure[Throwable] = {
+    val statusTypeUrl = RpcStatus.scalaDescriptor.fullName.split("/").last
+
+    failureResponse.failureType match {
+      case Custom(value) if value.typeUrl.split("/").last == statusTypeUrl =>
+        val rpcStatus = value.unpack(RpcStatus)
+
+        val status = Status
+          .fromCodeValue(rpcStatus.code)
+          .withDescription(rpcStatus.message)
+
+        Failure(new GrpcServiceException(status = status))
+
+      case _ =>
+        super.transformFailedReply(failureResponse)
     }
   }
 }
