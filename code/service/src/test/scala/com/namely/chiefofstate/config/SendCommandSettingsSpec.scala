@@ -10,43 +10,22 @@ class SendCommandSettingsSpec extends TestSpec {
   "Chief-Of-State send-command settings" should {
 
     "fail to load settings due to missing setting key" in {
-      an[RuntimeException] shouldBe thrownBy(
-        SendCommandSettings(
-          ConfigFactory
-            .empty()
-            .withValue(
-              SendCommandSettings.PERSISTED_HEADERS_KEY,
-              ConfigValueFactory.fromAnyRef("x")
-            )
-        )
-      )
-
-      an[RuntimeException] shouldBe thrownBy(
-        SendCommandSettings(
-          ConfigFactory
-            .empty()
-            .withValue(
-              SendCommandSettings.PROPAGATED_HEADERS_KEY,
-              ConfigValueFactory.fromAnyRef("x")
-            )
-        )
-      )
+      an[RuntimeException] shouldBe thrownBy(SendCommandSettings(ConfigFactory.empty()))
     }
 
     "defaults to None when no headers set" in {
       val config: Config = ConfigFactory
         .empty()
-        .withValue(SendCommandSettings.PERSISTED_HEADERS_KEY, ConfigValueFactory.fromAnyRef(""))
         .withValue(SendCommandSettings.PROPAGATED_HEADERS_KEY, ConfigValueFactory.fromAnyRef(""))
 
-      SendCommandSettings(config) shouldBe SendCommandSettings(propagatedHeaders = Set(), persistedHeaders = Set())
+      SendCommandSettings(config) shouldBe SendCommandSettings(propagatedHeaders = Set())
     }
 
     "parse csv string" in {
       val config: Config = ConfigFactory
         .empty()
         .withValue(
-          SendCommandSettings.PERSISTED_HEADERS_KEY,
+          SendCommandSettings.PROPAGATED_HEADERS_KEY,
           ConfigValueFactory.fromAnyRef("foo,bar,baz")
         )
 
@@ -54,7 +33,7 @@ class SendCommandSettingsSpec extends TestSpec {
         SendCommandSettings
           .getCsvSetting(
             config,
-            SendCommandSettings.PERSISTED_HEADERS_KEY
+            SendCommandSettings.PROPAGATED_HEADERS_KEY
           )
       )
 

@@ -6,11 +6,9 @@ import com.typesafe.config.Config
  * Contains the configurations for COS send command
  *
  * @param propagatedHeaders headers to pass to the write side handler
- * @param persistedHeaders: headers to persist to the journal
  */
 case class SendCommandSettings(
-  propagatedHeaders: Set[String],
-  persistedHeaders: Set[String]
+  propagatedHeaders: Set[String]
 )
 
 /**
@@ -19,8 +17,6 @@ case class SendCommandSettings(
 object SendCommandSettings {
   // setting key for propagated headers
   val PROPAGATED_HEADERS_KEY: String = "chief-of-state.send-command.propagated-headers"
-  // setting key for persisted headers
-  val PERSISTED_HEADERS_KEY: String = "chief-of-state.send-command.persisted-headers"
 
   /**
    * Companion constructor for [[com.namely.chiefofstate.SendCommandSettings]]
@@ -32,8 +28,7 @@ object SendCommandSettings {
    */
   def apply(config: Config): SendCommandSettings = {
     SendCommandSettings(
-      propagatedHeaders = getCsvSetting(config, PROPAGATED_HEADERS_KEY),
-      persistedHeaders = getCsvSetting(config, PERSISTED_HEADERS_KEY)
+      propagatedHeaders = getCsvSetting(config, PROPAGATED_HEADERS_KEY)
     )
   }
 
