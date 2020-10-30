@@ -3,12 +3,13 @@ package com.namely.chiefofstate.plugin
 import org.scalamock.scalatest.MockFactory
 import com.google.protobuf.ByteString
 import io.grpc.Metadata
-import com.namely.chiefofstate.test.helpers.TestSpec
+import com.namely.chiefofstate.test.helpers.{EnvironmentHelper, TestSpec}
 import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Header.Value.{BytesValue, StringValue}
 import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Header, Headers}
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
 
 class PersistedHeadersSpec extends TestSpec with MockFactory {
+
   "Persistedheaders" should {
     val fooKeyName: String = "foo"
     val fooKey: Metadata.Key[String] = Metadata.Key.of(fooKeyName, Metadata.ASCII_STRING_MARSHALLER)
@@ -39,6 +40,8 @@ class PersistedHeadersSpec extends TestSpec with MockFactory {
     metadata.put(bazKey, baz)
 
     "return the a string and byte header" in {
+      EnvironmentHelper.setEnv(PersistHeaders.envName, "foo,bar-bin")
+
       val actual: Headers = PersistHeaders
         .apply()
         .run(processCommandRequest, metadata)
