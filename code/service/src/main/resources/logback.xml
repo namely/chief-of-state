@@ -39,7 +39,7 @@
     <!-- Turn down Slick noise-->
     <logger name="scala.slick" level="ERROR"/>
     <!-- Turn down kamon -->
-    <logger name="kamon.jaeger" level="WARN">
+    <logger name="kamon.jaeger" level="WARN"/>
 
     <root level="${LOG_LEVEL}">
         <appender-ref ref="ASYNCJSON"/>
