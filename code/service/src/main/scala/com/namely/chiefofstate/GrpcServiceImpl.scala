@@ -49,11 +49,9 @@ class GrpcServiceImpl(sys: ActorSystem,
       )
     } else {
 
-      val meta: Try[Map[String, Any]] = pluginManager.run(in, MetadataUtil.makeMeta(metadata))
-
-      meta match {
-        case Success(m) =>
-          // get the headers to forward
+      Future
+        .fromTry(pluginManager.run(in, MetadataUtil.makeMeta(metadata)))
+        .flatMap(meta => {
           val propagatedHeaders: Seq[RemoteCommand.Header] = metadata.asList
             // filter to relevant headers
             .filter({ case (k, _) => sendCommandSettings.propagatedHeaders.contains(k) })
@@ -75,15 +73,14 @@ class GrpcServiceImpl(sys: ActorSystem,
             .withCommand(in.getCommand)
             .withHeaders(propagatedHeaders)
 
-          sendCommand(in.entityId, remoteCommand, m)
+          sendCommand(in.entityId, remoteCommand, meta)
             .map((stateWrapper: StateWrapper) => {
               ProcessCommandResponse(
                 state = stateWrapper.state,
                 meta = stateWrapper.meta.map(Util.toCosMetaData)
               )
             })
-        case Failure(e) => Future.fromTry(Failure(e))
-      }
+        })
     }
   }
 
