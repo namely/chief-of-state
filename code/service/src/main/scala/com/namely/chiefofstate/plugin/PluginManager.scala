@@ -45,7 +45,7 @@ case class PluginManager(plugins: Seq[PluginBase]) {
  */
 object PluginManager {
 
-  final val HOCON_PATH: String = "chief-of-state.plugin-settings.enabled-plugins"
+  final val HOCON_PATH: String = "chief-of-state.plugin-settings.enable-plugins"
 
   /**
    * Default COS Plugins
