@@ -1,134 +1,119 @@
 package com.namely.chiefofstate
 
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
-import io.grpc.Status
-import akka.actor.ActorSystem
-import akka.cluster.sharding.typed.scaladsl.ClusterSharding
-import akka.grpc.GrpcServiceException
-import akka.grpc.scaladsl.{BytesEntry, Metadata, StringEntry}
-import com.google.protobuf.ByteString
-import com.google.protobuf.any.Any
-import com.google.rpc.status.{Status => RpcStatus}
+import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
+import akka.util.Timeout
+import com.github.ghik.silencer.silent
+import com.namely.protobuf.chiefofstate.v1.internal._
+import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
+import com.namely.protobuf.chiefofstate.v1.internal.FailureResponse.FailureType
+import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
+import com.namely.protobuf.chiefofstate.v1.service.{
+  GetStateRequest,
+  GetStateResponse,
+  ProcessCommandRequest,
+  ProcessCommandResponse
+}
+import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
+import io.grpc.{Status, StatusException}
 import org.slf4j.{Logger, LoggerFactory}
-import com.namely.chiefofstate.config.SendCommandSettings
-import com.namely.chiefofstate.plugin.PluginManager
-import com.namely.chiefofstate.plugin.utils.MetadataUtil
-import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
-import com.namely.protobuf.chiefofstate.v1.service._
-import io.superflat.lagompb.{AggregateRoot, BaseGrpcServiceImpl}
-import io.superflat.lagompb.protobuf.v1.core.StateWrapper
-import io.superflat.lagompb.protobuf.v1.core.FailureResponse
-import io.superflat.lagompb.protobuf.v1.core.FailureResponse.FailureType.Custom
 
-class GrpcServiceImpl(sys: ActorSystem,
-                      val clusterSharding: ClusterSharding,
-                      val aggregateRoot: AggregateRoot,
-                      val sendCommandSettings: SendCommandSettings,
-                      pluginManager: PluginManager
-)(implicit
-  ec: ExecutionContext
-) extends AbstractChiefOfStateServicePowerApiRouter(sys)
-    with BaseGrpcServiceImpl {
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
 
-  private val log: Logger = LoggerFactory.getLogger(getClass)
+@silent
+class GrpcServiceImpl(clusterSharding: ClusterSharding)(implicit val askTimeout: Timeout) extends ChiefOfStateService {
+
+  final val log: Logger = LoggerFactory.getLogger(getClass)
 
   /**
-   * gRPC ProcessCommand implementation
-   *
-   * @param in the ProcessCommandRequest
-   * @param metadata akka gRPC metadata
-   * @return future with the command response
+   * Used to process command sent by an application
    */
-  override def processCommand(in: ProcessCommandRequest, metadata: Metadata): Future[ProcessCommandResponse] = {
-    if (in.entityId.isEmpty) {
-      log.error(s"request missing entity id")
-      Future.fromTry(
-        Failure(new GrpcServiceException(status = Status.INVALID_ARGUMENT.withDescription("empty entity ID")))
+  override def processCommand(request: ProcessCommandRequest): Future[ProcessCommandResponse] = {
+    val requestHeaders: GrpcHeader = GrpcHeadersInterceptor.REQUEST_META.get()
+    val entityId: String = request.entityId
+    val entityRef: EntityRef[AggregateCommand] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
+
+    val reply: Future[CommandReply] =
+      entityRef ? (replyTo =>
+        AggregateCommand(
+          SendCommand().withHandleCommand(
+            HandleCommand().withCommand(request.getCommand).withEntityId(entityId)
+          ),
+          replyTo,
+          Map.empty
+        )
       )
-    } else {
 
-      Future
-        .fromTry(pluginManager.run(in, MetadataUtil.makeMeta(metadata)))
-        .flatMap(meta => {
-          val propagatedHeaders: Seq[RemoteCommand.Header] = metadata.asList
-            // filter to relevant headers
-            .filter({ case (k, _) => sendCommandSettings.propagatedHeaders.contains(k) })
-            .map({
-              case (k, StringEntry(value)) =>
-                RemoteCommand
-                  .Header()
-                  .withKey(k)
-                  .withStringValue(value)
-
-              case (k, BytesEntry(value)) =>
-                RemoteCommand
-                  .Header()
-                  .withKey(k)
-                  .withBytesValue(ByteString.copyFrom(value.toArray))
-            })
-
-          val remoteCommand: RemoteCommand = RemoteCommand()
-            .withCommand(in.getCommand)
-            .withHeaders(propagatedHeaders)
-
-          sendCommand(in.entityId, remoteCommand, meta)
-            .map((stateWrapper: StateWrapper) => {
-              ProcessCommandResponse(
-                state = stateWrapper.state,
-                meta = stateWrapper.meta.map(Util.toCosMetaData)
-              )
-            })
-        })
-    }
+    reply
+      .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
+      .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
   }
 
   /**
-   * gRPC GetState implementation
-   *
-   * @param in GetStateRequest
-   * @param metadata akka gRPC metadata
-   * @return future of GetStateResponse
+   * Used to get the current state of that entity
    */
-  override def getState(in: GetStateRequest, metadata: Metadata): Future[GetStateResponse] = {
-    if (in.entityId.isEmpty) {
-      log.error(s"request missing entity id")
-      Future.fromTry(
-        Failure(new GrpcServiceException(status = Status.INVALID_ARGUMENT.withDescription("empty entity ID")))
+  override def getState(request: GetStateRequest): Future[GetStateResponse] = {
+    val requestHeaders: GrpcHeader = GrpcHeadersInterceptor.REQUEST_META.get()
+    val entityId: String = request.entityId
+    val entityRef: EntityRef[AggregateCommand] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
+    val reply: Future[CommandReply] =
+      entityRef ? (replyTo =>
+        AggregateCommand(
+          SendCommand().withGetStateCommand(GetStateCommand().withEntityId(entityId)),
+          replyTo,
+          Map.empty
+        )
       )
-    } else {
-      sendCommand(in.entityId, in, Map.empty[String, Any])
-        .map((stateWrapper: StateWrapper) => {
-          GetStateResponse(
-            state = stateWrapper.state,
-            meta = stateWrapper.meta.map(Util.toCosMetaData)
-          )
-        })
-    }
+
+    reply
+      .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
+      .map(c => GetStateResponse().withState(c.getState).withMeta(c.getMeta))
   }
 
-  /**
-   * override lagom-pb custom error handling
-   *
-   * @param failureResponse a lagom-pb failure response from send command
-   * @return a failure
-   */
-  override def transformFailedReply(failureResponse: FailureResponse): Failure[Throwable] = {
-    val statusTypeUrl = RpcStatus.scalaDescriptor.fullName.split("/").last
-
+  private[this] def transformFailure(failureResponse: FailureResponse): Failure[Throwable] = {
     failureResponse.failureType match {
-      case Custom(value) if value.typeUrl.split("/").last == statusTypeUrl =>
-        val rpcStatus = value.unpack(RpcStatus)
+      case FailureType.Critical(value) =>
+        Failure(
+          new StatusException(Status.INTERNAL.withDescription(value))
+        )
 
-        val status = Status
-          .fromCodeValue(rpcStatus.code)
-          .withDescription(rpcStatus.message)
+      case FailureType.Custom(value) =>
+        Failure(
+          new StatusException(Status.INTERNAL.withDescription(s"unhandled custom error: ${value.typeUrl}"))
+        )
 
-        Failure(new GrpcServiceException(status = status))
+      case FailureType.Validation(value) =>
+        Failure(
+          new StatusException(Status.INVALID_ARGUMENT.withDescription(value))
+        )
 
-      case _ =>
-        super.transformFailedReply(failureResponse)
+      case FailureType.NotFound(value) =>
+        Failure(
+          new StatusException(
+            Status.NOT_FOUND.withDescription(value)
+          )
+        )
+
+      case FailureType.Empty =>
+        Failure(
+          new StatusException(
+            Status.INTERNAL.withDescription("unknown failure type")
+          )
+        )
+    }
+  }
+
+  private[this] def handleCommandReply(commandReply: CommandReply): Try[StateWrapper] = {
+    commandReply.reply match {
+      case Reply.Empty =>
+        Failure(
+          new StatusException(
+            Status.INTERNAL.withDescription(s"unknown CommandReply ${commandReply.reply.getClass.getName}")
+          )
+        )
+      case Reply.State(value: StateWrapper) => Success(value)
+      case Reply.Failure(value)             => transformFailure(value).asInstanceOf[Try[StateWrapper]]
     }
   }
 }

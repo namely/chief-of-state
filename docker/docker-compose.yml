@@ -58,24 +58,25 @@ services:
       - 5266:5266
     environment:
       LOG_LEVEL: DEBUG
-      COS_ADDRESS: "0.0.0.0"
-      COS_PORT: 9000
+      GRPC_PORT: 9000
       WRITE_SIDE_HANDLER_SERVICE_HOST: host.docker.internal
       WRITE_SIDE_HANDLER_SERVICE_PORT: 50052
+      GRPC_CALLS_TIMEOUT: 5000
       TRACE_HOST: tracer
       TRACE_PORT: 14268
       COS_SERVICE_NAME: "chiefofstate"
-      NAMELY_ENV: "dev"
-      TEAM_NAME: "data"
       COS_POSTGRES_USER: "postgres"
       COS_POSTGRES_PASSWORD: "changeme"
       COS_POSTGRES_HOST: "postgres"
       COS_POSTGRES_PORT: 5432
       COS_POSTGRES_DB: "postgres"
       COS_POSTGRES_SCHEMA: "public"
+      COS_NUM_SHARDS: 10
       COS_EVENTS_BATCH_THRESHOLD: 2
       COS_NUM_SNAPSHOTS_TO_RETAIN: 2
       COS_READ_SIDE_ENABLED: "true"
+      COS_READ_SIDE_OFFSET_STORE_AUTO_CREATE: "true"
+      COS_READ_SIDE_OFFSET_STORE_TABLE: "read_side_offsets"
       COS_READ_SIDE_OFFSET_DB_HOST: "postgres"
       COS_READ_SIDE_OFFSET_DB_PORT: 5432
       COS_READ_SIDE_OFFSET_DB_USER: "postgres"
@@ -84,4 +85,4 @@ services:
       COS_READ_SIDE_OFFSET_DB_SCHEMA: "public"
       COS_READ_SIDE_CONFIG__HOST__RS1: host.docker.internal
       COS_READ_SIDE_CONFIG__PORT__RS1: 50053
-      JAVA_OPTS: "-Dconfig.resource=docker.conf"
+      JAVA_OPTS: "-Dconfig.resource=docker.conf -XX:+UseG1GC"

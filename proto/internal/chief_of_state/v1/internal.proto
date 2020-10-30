@@ -1,0 +1,124 @@
+syntax = "proto3";
+
+package chief_of_state.v1;
+
+option java_package = "com.namely.protobuf.chiefofstate.v1";
+option java_multiple_files = true;
+option java_outer_classname = "CosInternalProto";
+
+import "google/protobuf/any.proto";
+import "chief_of_state/v1/persistence.proto";
+import "google/protobuf/wrappers.proto";
+
+// THESE ARE INTERNAL MESSAGES FOR THE COS SERVICE
+
+// a wrapper message for forwarding headers to the remote writeside handler
+message RemoteCommand {
+  // a helper messsage for gRPC metadata
+  message Header {
+    string key = 1;
+
+    oneof value {
+      string stringValue = 2;
+      bytes bytesValue = 3;
+    };
+  }
+
+  // the message to send
+  google.protobuf.Any command = 1;
+
+  // the grpc headers/metadata
+  repeated Header headers = 2;
+}
+
+// SendCommand is the type of commands received by the
+// AggregateRoot(aka persistence entity to handle)
+// There are internally used
+message SendCommand {
+  oneof type {
+    HandleCommand handle_command = 1;
+    GetStateCommand get_state_command = 2;
+  }
+}
+
+// HandleCommand handles a given command and return an event upon success.
+message HandleCommand {
+  // the entity unique id
+  string entity_id = 1;
+  // the command to process
+  google.protobuf.Any command = 2;
+}
+
+// GetStateCommand returns the current state of a
+// persistence entity
+message GetStateCommand {
+  // the entity unique id
+  string entity_id = 1;
+}
+
+//  Helper protobuf for serializing the command and akka actor reference
+//    during command serde between actors. This is needed to design lagom
+//    commands with proto, since the actorRef is not a proto-serializable
+//    type by default. During serialization, the AggregateCommand case class
+//    is converted into this protobuf and sent between actors as a
+//    bytearray
+//
+message CommandWrapper {
+  // the actual command
+  google.protobuf.Any command = 1;
+  // the actor ref
+  bytes actor_ref = 2;
+  // additional data to be added to the state meta
+  map<string, google.protobuf.Any> data = 3;
+}
+
+// FailureResponse. This response type is returned by the
+// Commands Handler
+message FailureResponse {
+  // the failure type
+  oneof failure_type {
+    // Critical failure will result into an 13-INTERNAL for a gRPC call and
+    // 500-Internal Server Error for a HTTP/Json call
+    google.protobuf.StringValue critical = 1;
+    // Custom error details will be handled by the implementor.
+    // A error handler must be implemented to handle this type of errors.
+    // When an cutom error is sent and there is no error handler then the error
+    // will be handled as if it were a critical failure type
+    google.protobuf.Any custom = 2;
+    // Validation failure type will result into 3-INVALID_ARGUMENT for a gRPC
+    // call and 400-Bad Request for an HTTP/Json call
+    google.protobuf.StringValue validation = 3;
+    // Not found failure type will result into 5-NOT_FOUND for a gRPC call and
+    // a 404-Not Found for an HTTP/Json call
+    google.protobuf.StringValue not_found = 4;
+  }
+}
+
+// For returning a command reply whether it is successful or failed
+// This is used internally by lagom-pb
+message CommandReply {
+  // the actual command reply
+  oneof reply {
+    // actual state is wrapped with meta data
+    StateWrapper state = 1;
+    // failed command reply
+    FailureResponse failure = 2;
+  }
+}
+
+// Header represents the gRPC request header
+message Header {
+  // the header key
+  string key = 1;
+  // the header value
+  oneof value {
+    string stringValue = 2;
+    bytes bytesValue = 3;
+  };
+}
+
+// GrpcHeader holds the request headers
+message GrpcHeader {
+  // list of grpc headers
+  repeated Header headers = 1;
+}

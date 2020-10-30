@@ -1,67 +1,64 @@
-import sbt._
-import scalapb.compiler.Version.scalapbVersion
+import sbt.{Test, _}
+import scalapb.compiler.Version.{grpcJavaVersion, scalapbVersion}
 
 object Dependencies {
 
   // Package versions
   object Versions {
-    val Scala213: String = "2.13.1"
-    val LagomPbVersion: String = "1.0.2+4-ccd75b98-SNAPSHOT"
+    val ScalaVersion: String = "2.13.3"
+    val AkkaVersion: String = "2.6.10"
+    val SilencerVersion: String = "1.7.0"
+    val LogbackVersion: String = "1.2.3"
+    val ScalapbCommonProtoVersion: String = "1.18.0-0"
+    val ScalapbValidationVersion: String = "0.1.4"
+    val ScalaTestVersion: String = "3.2.2"
+    val AkkaManagementVersion: String = "1.0.9"
+    val AkkaProjectionVersion: String = "1.0.0"
+    val PostgresDriverVersion: String = "42.2.18"
+    val SlickVersion: String = "3.3.2"
+    val AkkaPersistenceJdbcVersion: String = "4.0.0"
+
     val KanelaAgentVersion: String = "1.0.6"
-    val SilencerVersion: String = "1.6.0"
     val KamonAkkaGrpcVersion: String = "0.0.9"
-    val AkkaVersion: String = "2.6.9"
     val KamonVersion: String = "2.1.8"
     val JaninoVersion: String = "3.1.2"
-    val LogstashLogbackVersion = "6.3"
+    val LogstashLogbackVersion: String = "6.3"
   }
 
-  object Compile {
-    val Lagompb: ModuleID = "io.superflat" %% "lagompb-core" % Versions.LagomPbVersion
-    val LagompbReadSide = "io.superflat" %% "lagompb-readside" % Versions.LagomPbVersion
-    val KamonBundle: ModuleID = "io.kamon" %% "kamon-bundle" % Versions.KamonVersion
-    val KamonPrometheus: ModuleID = "io.kamon" %% "kamon-prometheus" % Versions.KamonVersion
-    val KamonJaeger: ModuleID = "io.kamon" %% "kamon-jaeger" % Versions.KamonVersion
-    val KamonZipkin: ModuleID = "io.kamon" %% "kamon-zipkin" % Versions.KamonVersion
-    val KanelaAgent: ModuleID = "io.kamon" % "kanela-agent" % Versions.KanelaAgentVersion
-    val KamonAkkaGrpc: ModuleID =
-      ("com.github.nezasa" %% "kamon-akka-grpc" % Versions.KamonAkkaGrpcVersion).intransitive()
-    val Janino: ModuleID = "org.codehaus.janino" % "janino" % Versions.JaninoVersion
-    val LogstashLogback: ModuleID = "net.logstash.logback" % "logstash-logback-encoder" % Versions.LogstashLogbackVersion
-  }
+  import Dependencies.Versions._
 
-  object Runtime {
-    val LagompbRuntime: ModuleID = "io.superflat" %% "lagompb-core" % Versions.LagomPbVersion % "protobuf"
-  }
-
-  object Test {
-    final val Test: Configuration = sbt.Test
-    val AkkaGrpcTestkit: ModuleID = "com.lightbend.play" %% "lagom-scaladsl-grpc-testkit" % "0.8.2" % "test"
-    val ScalaTest: ModuleID = "org.scalatest" %% "scalatest" % "3.2.2" % "test"
-  }
-
-  val AkkaOverrideDeps = Seq(
-    "com.typesafe.akka" %% "akka-actor" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-remote" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-cluster" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-cluster-sharding" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-cluster-sharding-typed" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-cluster-tools" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-cluster-typed" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-coordination" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-discovery" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-distributed-data" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-serialization-jackson" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-persistence" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-persistence-query" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-slf4j" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-stream" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-protobuf-v3" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-actor-typed" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-persistence-typed" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-multi-node-testkit" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-testkit" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-stream-testkit" % Versions.AkkaVersion,
-    "com.typesafe.akka" %% "akka-actor-testkit-typed" % Versions.AkkaVersion
+  val jars: Seq[ModuleID] = Seq(
+    "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.10" % ScalapbCommonProtoVersion,
+    "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf",
+    "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % scalapbVersion,
+    "com.thesamet.scalapb" %% "scalapb-validate-core" % scalapb.validate.compiler.BuildInfo.version % "protobuf",
+    "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.10" % ScalapbCommonProtoVersion % "protobuf",
+    "io.grpc" % "grpc-netty" % grpcJavaVersion,
+    "com.typesafe.akka" %% "akka-persistence-typed" % AkkaVersion,
+    "com.typesafe.akka" %% "akka-serialization-jackson" % AkkaVersion,
+    "com.typesafe.akka" %% "akka-cluster-sharding-typed" % AkkaVersion,
+    "ch.qos.logback" % "logback-classic" % LogbackVersion,
+    "com.typesafe.akka" %% "akka-cluster-typed" % AkkaVersion,
+    "com.typesafe.akka" %% "akka-stream-typed" % AkkaVersion,
+    "com.typesafe.akka" %% "akka-discovery" % AkkaVersion,
+    "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % AkkaManagementVersion,
+    "com.lightbend.akka" %% "akka-projection-core" % AkkaProjectionVersion,
+    "com.lightbend.akka" %% "akka-projection-slick" % AkkaProjectionVersion,
+    "com.lightbend.akka" %% "akka-projection-kafka" % AkkaProjectionVersion,
+    "com.lightbend.akka" %% "akka-projection-eventsourced" % Versions.AkkaProjectionVersion,
+    "com.typesafe.akka" %% "akka-persistence-typed" % AkkaVersion,
+    "org.postgresql" % "postgresql" % Versions.PostgresDriverVersion,
+    "com.lightbend.akka" %% "akka-persistence-jdbc" % AkkaPersistenceJdbcVersion,
+    "com.typesafe.akka" %% "akka-persistence-query" % AkkaVersion,
+    "com.typesafe.slick" %% "slick" % SlickVersion,
+    "com.typesafe.slick" %% "slick-hikaricp" % SlickVersion,
+    "net.logstash.logback" % "logstash-logback-encoder" % Versions.LogstashLogbackVersion,
+    "org.codehaus.janino" % "janino" % Versions.JaninoVersion
   )
+
+  val testJars: Seq[ModuleID] = Seq(
+    "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % Test,
+    "org.scalatest" %% "scalatest" % ScalaTestVersion % Test
+  )
+
 }
