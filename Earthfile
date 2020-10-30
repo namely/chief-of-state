@@ -43,7 +43,6 @@ code:
         project/Common.scala \
         project/Dependencies.scala \
         project/DockerSettings.scala \
-        project/JFrog.scala \
         project/plugins.sbt \
         project/ProtocRuntime.scala \
         project/Publish.scala \

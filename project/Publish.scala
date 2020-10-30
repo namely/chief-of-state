@@ -10,7 +10,6 @@ object Publish extends AutoPlugin {
   override def trigger = allRequirements
 
   override def projectSettings = Seq(
-    publishTo := JFrog.getPublishTo(isSnapshot.value),
     publishArtifact := true,
     Test / publishArtifact := false
   )

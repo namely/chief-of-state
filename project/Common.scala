@@ -34,7 +34,6 @@ object Common extends AutoPlugin {
       "-P:silencer:globalFilters=Unused import;deprecated",
       "-P:silencer:globalFilters=Marked as deprecated in proto file;The Materializer now has all methods the ActorMaterializer used to have;Could not find any member to link;unbalanced or unclosed heading"
     ),
-    credentials ++= JFrog.credentials,
     version := sys.env.getOrElse("VERSION", "development"),
     isSnapshot := !version.value.matches("^\\d+\\.\\d+\\.\\d+$"),
     resolvers ++= Seq(
@@ -44,7 +43,6 @@ object Common extends AutoPlugin {
       Resolver.sonatypeRepo("snapshots"),
       "Sonatype OSS Snapshots".at("https://oss.sonatype.org/content/repositories/snapshots")
     ),
-    resolvers ++= JFrog.getResolvers(isSnapshot.value),
     libraryDependencies ++= Seq(
       compilerPlugin(
         ("com.github.ghik" % "silencer-plugin" % Versions.SilencerVersion)

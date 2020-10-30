@@ -25,7 +25,7 @@ lazy val `chiefofstateplugins` = project
   .in(file("code/plugin"))
   .enablePlugins(Common)
   .enablePlugins(LagomScala)
-  .enablePlugins(Publish)
+  .enablePlugins(NoPublish)
   .settings(
     name := "chiefofstateplugins",
     description := "Chief of State Plugins"

@@ -26,13 +26,14 @@ abstract class Application(context: LagomApplicationContext) extends BaseApplica
 
   lazy val applog: Logger = LoggerFactory.getLogger(getClass)
 
-  final val pluginManager: PluginManager = PluginManager.getPlugins(config)
-
   // start kamon
   Kamon.init()
 
   // reflect encryption from config
   override def protoEncryption: Option[ProtoEncryption] = EncryptionSetting(config).encryption
+
+  // Initialize Plugin Manager
+  lazy val pluginManager: PluginManager = PluginManager.getPlugins(config)
 
   // let us wire up the handler settings
   // this will break the application bootstrapping if the handler settings env variables are not set
