@@ -35,7 +35,7 @@ object PersistHeaders extends PluginFactory {
 
   val envName: String = "COS_WRITE_PERSISTED_HEADERS"
 
-  lazy val persistedHeaders: Seq[String] = sys.env.get(envName)
+  def persistedHeaders: Seq[String] = sys.env.get(envName)
     .map(_.split(",").map(_.trim).toSeq)
     .getOrElse(Seq.empty[String])
 

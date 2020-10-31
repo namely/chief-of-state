@@ -8,7 +8,12 @@ import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Head
 import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Header, Headers}
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
 
-class PersistedHeadersSpec extends TestSpec with MockFactory {
+class PersistHeadersSpec extends TestSpec with MockFactory {
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    EnvironmentHelper.clearEnv()
+  }
 
   "Persistedheaders" should {
     val fooKeyName: String = "foo"
@@ -49,6 +54,20 @@ class PersistedHeadersSpec extends TestSpec with MockFactory {
         .unpack[com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Headers]
 
       val expected: Headers = Headers(Vector(fooHeader1, fooHeader2, barHeader))
+
+      actual should be (expected)
+    }
+
+    "return an empty header" in {
+      EnvironmentHelper.setEnv(PersistHeaders.envName, "not-a-key")
+
+      val actual: Headers = PersistHeaders
+        .apply()
+        .run(processCommandRequest, metadata)
+        .get
+        .unpack[com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Headers]
+
+      val expected: Headers = Headers(Vector.empty[Header])
 
       actual should be (expected)
     }
