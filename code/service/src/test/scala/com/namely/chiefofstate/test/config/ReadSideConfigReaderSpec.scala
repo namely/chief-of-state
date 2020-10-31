@@ -34,6 +34,11 @@ class ReadSideConfigReaderSpec extends BaseSpec {
       actual should contain theSameElementsAs (expected)
     }
 
+    "throw an exception when there is no setting" in {
+      val exception: Exception = intercept[Exception](ReadSideConfigReader.getReadSideSettings)
+      exception.getMessage shouldBe ("No readSide configuration is set...")
+    }
+
     "throw an exception if one or more of the read side configurations is invalid" in {
       EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__HOST__", "not-a-valid-config")
       EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__PORT__", "0")
