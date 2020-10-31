@@ -7,7 +7,7 @@ import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
-import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigFactory}
+import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
@@ -115,8 +115,8 @@ object Application extends App {
   ClusterBootstrap(actorSystem).start()
 
   // read side settings
-  if (cosConfig.enableReadSide && ReadSideConfigFactory.getReadSideSettings.nonEmpty) {
-    ReadSideConfigFactory.getReadSideSettings.foreach(rsconfig => {
+  if (cosConfig.enableReadSide && ReadSideConfigReader.getReadSideSettings.nonEmpty) {
+    ReadSideConfigReader.getReadSideSettings.foreach(rsconfig => {
       val channel: ManagedChannel =
         NettyChannelBuilder
           .forAddress(rsconfig.host.get, rsconfig.port.get)

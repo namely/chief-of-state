@@ -1,6 +1,6 @@
 import sbt.{compilerPlugin, plugins, url, AutoPlugin, CrossVersion, Developer, Plugins, Resolver, _}
 import sbt.Keys.{resolvers, _}
-import scoverage.ScoverageKeys.{coverageFailOnMinimum, coverageMinimum}
+import scoverage.ScoverageKeys.{coverageExcludedPackages, coverageFailOnMinimum, coverageMinimum}
 import Dependencies.Versions
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport.scalafmtOnCompile
 
@@ -48,6 +48,7 @@ object Common extends AutoPlugin {
       scalafmtOnCompile := true,
       // show full stack traces and test case durations
       testOptions in Test += Tests.Argument("-oDF"),
-      logBuffered in Test := false
+      logBuffered in Test := false,
+      coverageExcludedPackages := "<empty>;com.namely.protobuf.*;"
     )
 }
