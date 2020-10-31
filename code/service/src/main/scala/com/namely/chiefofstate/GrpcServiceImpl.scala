@@ -3,18 +3,18 @@ package com.namely.chiefofstate
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
 import akka.util.Timeout
 import com.github.ghik.silencer.silent
-import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
 import com.namely.protobuf.chiefofstate.v1.internal.FailureResponse.FailureType
+import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
+import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.service.{
   GetStateRequest,
   GetStateResponse,
   ProcessCommandRequest,
   ProcessCommandResponse
 }
-import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
-import io.grpc.{Status, StatusException}
+import io.grpc.{Metadata, Status, StatusException}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -30,7 +30,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding)(implicit val askTimeout:
    * Used to process command sent by an application
    */
   override def processCommand(request: ProcessCommandRequest): Future[ProcessCommandResponse] = {
-    val requestHeaders: GrpcHeader = GrpcHeadersInterceptor.REQUEST_META.get()
+    val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
     val entityId: String = request.entityId
     val entityRef: EntityRef[AggregateCommand] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
 
@@ -54,7 +54,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding)(implicit val askTimeout:
    * Used to get the current state of that entity
    */
   override def getState(request: GetStateRequest): Future[GetStateResponse] = {
-    val requestHeaders: GrpcHeader = GrpcHeadersInterceptor.REQUEST_META.get()
+    val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
     val entityId: String = request.entityId
     val entityRef: EntityRef[AggregateCommand] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
     val reply: Future[CommandReply] =

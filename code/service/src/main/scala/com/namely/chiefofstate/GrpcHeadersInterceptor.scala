@@ -1,6 +1,5 @@
 package com.namely.chiefofstate
 
-import com.namely.protobuf.chiefofstate.v1.internal.GrpcHeader
 import io.grpc._
 
 /**
@@ -8,7 +7,7 @@ import io.grpc._
  */
 object GrpcHeadersInterceptor extends ServerInterceptor {
 
-  val REQUEST_META: Context.Key[GrpcHeader] = Context.key[GrpcHeader]("metadata")
+  val REQUEST_META: Context.Key[Metadata] = Context.key[Metadata]("metadata")
 
   /**
    * intercepts the request headers
@@ -25,7 +24,7 @@ object GrpcHeadersInterceptor extends ServerInterceptor {
     headers: Metadata,
     next: ServerCallHandler[ReqT, RespT]
   ): ServerCall.Listener[ReqT] = {
-    val context: Context = Context.current().withValue(REQUEST_META, GrpcHeaderTransformer.transform(headers))
+    val context: Context = Context.current().withValue(REQUEST_META, headers)
     Contexts.interceptCall(context, call, headers, next)
   }
 }

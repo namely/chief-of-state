@@ -54,7 +54,8 @@ object Dependencies {
     "com.typesafe.slick" %% "slick" % SlickVersion,
     "com.typesafe.slick" %% "slick-hikaricp" % SlickVersion,
     "net.logstash.logback" % "logstash-logback-encoder" % Versions.LogstashLogbackVersion,
-    "org.codehaus.janino" % "janino" % Versions.JaninoVersion
+    "org.codehaus.janino" % "janino" % Versions.JaninoVersion,
+    "org.scala-lang" % "scala-reflect" % Versions.ScalaVersion
   )
 
   val testJars: Seq[ModuleID] = Seq(

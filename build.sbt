@@ -4,7 +4,7 @@ dockerImageCreationTask := (Docker / publishLocal in `chiefofstate`).value
 lazy val root: Project = project
   .in(file("."))
   .enablePlugins(NoPublish)
-  .aggregate(protogen, `chiefofstate`)
+  .aggregate(protogen, `chiefofstate`, `chiefofstateplugins`)
 
 lazy val `chiefofstate`: Project = project
   .in(file("code/service"))
@@ -14,6 +14,18 @@ lazy val `chiefofstate`: Project = project
   .enablePlugins(NoPublish)
   .settings(
     name := "chiefofstate"
+  )
+  .dependsOn(protogen, `chiefofstateplugins`)
+
+lazy val `chiefofstateplugins` = project
+  .in(file("code/plugin"))
+  .enablePlugins(Common)
+  .enablePlugins(BuildSettings)
+  .enablePlugins(DockerSettings)
+  .enablePlugins(NoPublish)
+  .settings(
+    name := "chiefofstate-plugins",
+    description := "Chief of State Plugins"
   )
   .dependsOn(protogen)
 

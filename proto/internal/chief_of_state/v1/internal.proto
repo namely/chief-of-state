@@ -105,20 +105,3 @@ message CommandReply {
     FailureResponse failure = 2;
   }
 }
-
-// Header represents the gRPC request header
-message Header {
-  // the header key
-  string key = 1;
-  // the header value
-  oneof value {
-    string stringValue = 2;
-    bytes bytesValue = 3;
-  };
-}
-
-// GrpcHeader holds the request headers
-message GrpcHeader {
-  // list of grpc headers
-  repeated Header headers = 1;
-}
