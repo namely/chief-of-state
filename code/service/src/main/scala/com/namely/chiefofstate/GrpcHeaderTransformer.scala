@@ -15,22 +15,26 @@ object GrpcHeaderTransformer {
    * @return GrpcHeader
    */
   def transform(headers: Metadata): GrpcHeader = {
-
-    val rpcHeaders: Seq[Header] = Seq.empty
-    val keys: Seq[String] = headers.keys().asScala.toSeq
-
-    keys.foreach(k => {
-      if (k.endsWith(BINARY_SUFFIX)) {
-        val key: Metadata.Key[Array[Byte]] = Metadata.Key.of(k, Metadata.BINARY_BYTE_MARSHALLER)
-        val values: Iterable[Array[Byte]] = headers.getAll(key).asScala
-        values.foreach(v => rpcHeaders :+ Header().withKey(k).withBytesValue(ByteString.copyFrom(v)))
-      } else {
-        val key: Metadata.Key[String] = Metadata.Key.of(k, Metadata.ASCII_STRING_MARSHALLER)
-        val values: Iterable[String] = headers.getAll(key).asScala
-        values.foreach(v => rpcHeaders :+ Header().withKey(k).withStringValue(v))
-      }
-    })
-
-    GrpcHeader().withHeaders(rpcHeaders)
+    GrpcHeader().withHeaders(
+      headers
+        .keys()
+        .asScala
+        .toSeq
+        .flatMap(k => {
+          if (k.endsWith(BINARY_SUFFIX)) {
+            headers
+              .getAll(Metadata.Key.of(k, Metadata.BINARY_BYTE_MARSHALLER))
+              .asScala
+              .map(v => {
+                Header().withKey(k).withBytesValue(ByteString.copyFrom(v))
+              })
+          } else {
+            headers
+              .getAll(Metadata.Key.of(k, Metadata.ASCII_STRING_MARSHALLER))
+              .asScala
+              .map(v => Header().withKey(k).withStringValue(v))
+          }
+        })
+    )
   }
 }
