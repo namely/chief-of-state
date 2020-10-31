@@ -27,6 +27,8 @@ case class PluginManager(plugins: Seq[PluginBase]) {
    * @return Try of a Map[String, Any]
    */
   def run(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Try[Map[String, Any]] = {
+    logger.warn(s"Metadata: $metadata")
+
     plugins.foldLeft(Try(Map[String, Any]()))((metaMap, plugin) => {
       val pluginRun: Try[Map[String, Any]] = Try {
         plugin.run(processCommandRequest, metadata) match {
@@ -37,10 +39,10 @@ case class PluginManager(plugins: Seq[PluginBase]) {
       pluginRun match {
         case Success(m) => Try(metaMap.get ++ m)
         case Failure(e: GrpcServiceException) =>
-          logger.error(s"plugin '${plugin.pluginId}' failed with ${e.getStatus.toString}")
+          logger.error(s"plugin '${plugin.pluginId}' failed with ${e.getClass.getName}: ${e.getStatus.toString}")
           Failure(e)
         case Failure(e: Throwable) =>
-          val errMsg = s"plugin '' failed due to ${e.getMessage}"
+          val errMsg = s"plugin ${plugin.pluginId} failed due to ${e.getClass.getName}: ${e.getMessage}"
           logger.error(errMsg)
           val status = Status.INTERNAL.withDescription(e.getMessage)
           val err = new GrpcServiceException(status=status)
