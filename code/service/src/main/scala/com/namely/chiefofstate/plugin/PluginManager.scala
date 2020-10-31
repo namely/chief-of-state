@@ -27,8 +27,6 @@ case class PluginManager(plugins: Seq[PluginBase]) {
    * @return Try of a Map[String, Any]
    */
   def run(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Try[Map[String, Any]] = {
-    logger.warn(s"Metadata: $metadata")
-
     plugins.foldLeft(Try(Map[String, Any]()))((metaMap, plugin) => {
       val pluginRun: Try[Map[String, Any]] = Try {
         plugin.run(processCommandRequest, metadata) match {
