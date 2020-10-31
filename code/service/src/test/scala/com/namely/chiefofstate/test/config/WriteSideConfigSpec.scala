@@ -2,7 +2,7 @@ package com.namely.chiefofstate.test.config
 
 import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.test.helper.BaseSpec
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{Config, ConfigException, ConfigFactory}
 
 class WriteSideConfigSpec extends BaseSpec {
   "Loading write side config" should {
@@ -33,7 +33,7 @@ class WriteSideConfigSpec extends BaseSpec {
               }
             }
           """)
-      an[RuntimeException] shouldBe thrownBy(WriteSideConfig(config))
+      an[ConfigException] shouldBe thrownBy(WriteSideConfig(config))
     }
   }
 }
