@@ -66,7 +66,7 @@ class PluginManagerSpec extends BaseSpec {
     "getPlugins" should {
       "return the default plugins if there are no defined plugins" in {
         val configValue: ConfigValue = ConfigValueFactory.fromAnyRef("")
-        val config: Config = ConfigFactory.load().withValue(PluginManager.HOCON_PATH, configValue)
+        val config: Config = ConfigFactory.load().withValue(PluginManager.EnabledPluginsKey, configValue)
 
         val actual: PluginManager = PluginManager.getPlugins(config)
         PluginManagerSpecCompanion.compare(actual.plugins, PluginManager.DEFAULT_PLUGINS)
@@ -74,14 +74,14 @@ class PluginManagerSpec extends BaseSpec {
       "throw an error if a class cannot be parsed" in {
         val plugins: Seq[String] = Seq(classPackage1, classPackage2, "not-a-package")
         val configValue: ConfigValue = ConfigValueFactory.fromAnyRef(plugins.mkString(","))
-        val config: Config = ConfigFactory.load().withValue(PluginManager.HOCON_PATH, configValue)
+        val config: Config = ConfigFactory.load().withValue(PluginManager.EnabledPluginsKey, configValue)
 
         intercept[ScalaReflectionException](PluginManager.getPlugins(config))
       }
       "return the plugins" in {
         val plugins: Seq[String] = Seq(classPackage1, classPackage2)
         val configValue: ConfigValue = ConfigValueFactory.fromAnyRef(plugins.mkString(","))
-        val config: Config = ConfigFactory.load().withValue(PluginManager.HOCON_PATH, configValue)
+        val config: Config = ConfigFactory.load().withValue(PluginManager.EnabledPluginsKey, configValue)
 
         val actual: PluginManager = PluginManager.getPlugins(config)
         val expected: Seq[String] = PluginManager.DEFAULT_PLUGINS ++ plugins

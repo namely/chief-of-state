@@ -46,7 +46,7 @@ case class PluginManager(plugins: Seq[PluginBase]) {
  */
 object PluginManager {
 
-  final val HOCON_PATH: String = "chief-of-state.plugin-settings.enable-plugins"
+  final val EnabledPluginsKey: String = "chief-of-state.plugin-settings.enabled-plugins"
 
   /**
    * Default COS Plugins
@@ -83,7 +83,7 @@ object PluginManager {
    */
   def getPlugins(config: Config): PluginManager = {
     val plugins: Seq[String] = config
-      .getString(HOCON_PATH)
+      .getString(EnabledPluginsKey)
       .split(",")
       .toSeq
       .map(_.trim)

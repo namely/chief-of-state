@@ -1,24 +1,25 @@
 package com.namely.chiefofstate
 
-import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
+import com.namely.chiefofstate.plugins.PluginManager
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.typesafe.config.{Config, ConfigFactory}
-import io.grpc.{ManagedChannel, Server, ServerInterceptors}
 import io.grpc.netty.{NettyChannelBuilder, NettyServerBuilder}
+import io.grpc.{ManagedChannel, Server, ServerInterceptors}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext
 
-class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig) {
+class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, pluginManager: PluginManager) {
   self =>
   private[this] var server: Server = null
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -33,7 +34,7 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig) {
       .forPort(cosConfig.grpcConfig.server.port)
       .addService(
         ServerInterceptors.intercept(
-          ChiefOfStateService.bindService(new GrpcServiceImpl(clusterSharding), ExecutionContext.global),
+          ChiefOfStateService.bindService(new GrpcServiceImpl(clusterSharding, pluginManager), ExecutionContext.global),
           GrpcHeadersInterceptor
         )
       )
@@ -67,6 +68,9 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig) {
 object Application extends App {
   // Application config
   val config: Config = ConfigFactory.load().resolve()
+
+  // Initialize Plugin Manager
+  val pluginManager: PluginManager = PluginManager.getPlugins(config)
 
   // load the main application config
   val cosConfig: CosConfig = CosConfig(config)
@@ -133,7 +137,7 @@ object Application extends App {
   }
 
   // start the gRPC server
-  val server: Application = new Application(sharding, cosConfig)
+  val server: Application = new Application(sharding, cosConfig, pluginManager)
   server.start()
   server.blockUntilShutdown()
 }

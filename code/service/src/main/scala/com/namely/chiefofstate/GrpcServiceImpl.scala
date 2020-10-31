@@ -3,6 +3,7 @@ package com.namely.chiefofstate
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
 import akka.util.Timeout
 import com.github.ghik.silencer.silent
+import com.namely.chiefofstate.plugins.PluginManager
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
 import com.namely.protobuf.chiefofstate.v1.internal.FailureResponse.FailureType
 import com.namely.protobuf.chiefofstate.v1.internal._
@@ -22,7 +23,8 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 @silent
-class GrpcServiceImpl(clusterSharding: ClusterSharding)(implicit val askTimeout: Timeout) extends ChiefOfStateService {
+class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager)(implicit val askTimeout: Timeout)
+    extends ChiefOfStateService {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
