@@ -72,7 +72,9 @@ object Application extends App {
   val cosConfig: CosConfig = CosConfig(config)
 
   // instance of eventsAndStatesProtoValidation
-  val eventsAndStateProtoValidation: EventsAndStateProtosValidation = EventsAndStateProtosValidation(cosConfig)
+  val eventsAndStateProtoValidation: EventsAndStateProtosValidation = EventsAndStateProtosValidation(
+    cosConfig.writeSideConfig
+  )
 
   // boot the actor system
   val actorSystem: ActorSystem[Nothing] =

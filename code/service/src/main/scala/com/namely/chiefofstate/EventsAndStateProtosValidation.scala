@@ -1,18 +1,18 @@
 package com.namely.chiefofstate
 
-import com.namely.chiefofstate.config.CosConfig
+import com.namely.chiefofstate.config.WriteSideConfig
 
 /**
  * Validates the events and states emitted by both the command and events handler
  * in case proto validation is enabled
  *
- * @param cosConfig the main configuration
+ * @param writeSideConfig the write side configuration
  */
-case class EventsAndStateProtosValidation(cosConfig: CosConfig) {
+case class EventsAndStateProtosValidation(writeSideConfig: WriteSideConfig) {
 
-  private val isValidationEnabled: Boolean = cosConfig.writeSideConfig.enableProtoValidation
-  private val validEventsProtos: Seq[String] = cosConfig.writeSideConfig.eventsProtos
-  private val validStatesProtos: Seq[String] = cosConfig.writeSideConfig.statesProtos
+  private val isValidationEnabled: Boolean = writeSideConfig.enableProtoValidation
+  private val validEventsProtos: Seq[String] = writeSideConfig.eventsProtos
+  private val validStatesProtos: Seq[String] = writeSideConfig.statesProtos
 
   /**
    * validates an event proto message and return true when it is valid or false when it is not
@@ -22,7 +22,7 @@ case class EventsAndStateProtosValidation(cosConfig: CosConfig) {
    */
   def validateEvent(event: com.google.protobuf.any.Any): Boolean = {
     if (isValidationEnabled) {
-      isValidationEnabled && !validStatesProtos.contains(Util.getProtoFullyQualifiedName(event))
+      isValidationEnabled && validEventsProtos.contains(Util.getProtoFullyQualifiedName(event))
     } else {
       true
     }
@@ -36,7 +36,7 @@ case class EventsAndStateProtosValidation(cosConfig: CosConfig) {
    */
   def validateState(state: com.google.protobuf.any.Any): Boolean = {
     if (isValidationEnabled) {
-      isValidationEnabled && !validEventsProtos.contains(Util.getProtoFullyQualifiedName(state))
+      isValidationEnabled && validStatesProtos.contains(Util.getProtoFullyQualifiedName(state))
     } else {
       true
     }
