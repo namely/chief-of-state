@@ -15,11 +15,12 @@ object Dependencies {
     val AkkaManagementVersion: String = "1.0.9"
     val AkkaProjectionVersion: String = "1.0.0"
     val PostgresDriverVersion: String = "42.2.18"
-    val SlickVersion: String = "3.3.2"
+    val SlickVersion: String = "3.3.3"
     val AkkaPersistenceJdbcVersion: String = "4.0.0"
+    val ScalaMockVersion: String = "4.4.0"
+    val GrpcMockVersion: String = "0.3.4"
 
     val KanelaAgentVersion: String = "1.0.6"
-    val KamonAkkaGrpcVersion: String = "0.0.9"
     val KamonVersion: String = "2.1.8"
     val JaninoVersion: String = "3.1.2"
     val LogstashLogbackVersion: String = "6.3"
@@ -58,7 +59,9 @@ object Dependencies {
 
   val testJars: Seq[ModuleID] = Seq(
     "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % Test,
-    "org.scalatest" %% "scalatest" % ScalaTestVersion % Test
+    "org.scalatest" %% "scalatest" % ScalaTestVersion % Test,
+    "org.scalamock" %% "scalamock" % ScalaMockVersion % Test,
+    "org.grpcmock" % "grpcmock-core" % GrpcMockVersion % Test
   )
 
 }

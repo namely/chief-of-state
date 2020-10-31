@@ -1,7 +1,8 @@
-package com.namely.cos
+package com.namely.chiefofstate
 
 import java.time.{Instant, LocalDate, ZoneId}
 
+import com.google.protobuf.any.Any
 import com.google.protobuf.timestamp.Timestamp
 
 object Util {
@@ -51,5 +52,15 @@ object Util {
       Timestamp()
         .withNanos(instant.getNano)
         .withSeconds(instant.getEpochSecond)
+  }
+
+  /**
+   * Extracts the proto message package name
+   *
+   * @param proto the protocol buffer message
+   * @return the proto package name
+   */
+  def getProtoFullyQualifiedName(proto: Any): String = {
+    proto.typeUrl.split('/').lastOption.getOrElse("")
   }
 }

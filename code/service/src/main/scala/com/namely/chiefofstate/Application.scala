@@ -65,12 +65,14 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig) {
 }
 
 object Application extends App {
-
   // Application config
   val config: Config = ConfigFactory.load().resolve()
 
   // load the main application config
   val cosConfig: CosConfig = CosConfig(config)
+
+  // instance of eventsAndStatesProtoValidation
+  val eventsAndStateProtoValidation: EventsAndStateProtosValidation = EventsAndStateProtosValidation(cosConfig)
 
   // boot the actor system
   val actorSystem: ActorSystem[Nothing] =
@@ -99,7 +101,8 @@ object Application extends App {
       shardIndex,
       cosConfig,
       remoteCommandHandler,
-      remoteEventHandler
+      remoteEventHandler,
+      eventsAndStateProtoValidation
     )
   })
 

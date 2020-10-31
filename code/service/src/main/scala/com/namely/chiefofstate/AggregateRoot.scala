@@ -10,7 +10,7 @@ import akka.persistence.typed.scaladsl._
 import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate.config.{CosConfig, EventsConfig, SnapshotConfig}
-import com.namely.cos.Util.Instants
+import com.namely.chiefofstate.Util.Instants
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, FailureResponse, HandleCommand}
 import com.namely.protobuf.chiefofstate.v1.internal.SendCommand.Type
@@ -48,7 +48,8 @@ object AggregateRoot {
     shardIndex: Int,
     cosConfig: CosConfig,
     commandHandler: RemoteCommandHandler,
-    eventHandler: RemoteEventHandler
+    eventHandler: RemoteEventHandler,
+    eventsAndStateProtoValidation: EventsAndStateProtosValidation
   ): Behavior[AggregateCommand] = {
     Behaviors.setup { context =>
       {
@@ -60,7 +61,8 @@ object AggregateRoot {
                 MetaData.defaultInstance.withEntityId(getEntityId(persistenceId))
               )
               .withState(any.Any.pack(Empty.defaultInstance)),
-            (state, command) => handleCommand(context, state, command, commandHandler, eventHandler),
+            (state, command) =>
+              handleCommand(context, state, command, commandHandler, eventHandler, eventsAndStateProtoValidation),
             (state, event) => handleEvent(state, event)
           )
           .withTagger(_ => Set(tags(cosConfig.eventsConfig)(shardIndex)))
@@ -85,7 +87,8 @@ object AggregateRoot {
     aggregateState: StateWrapper,
     aggregateCommand: AggregateCommand,
     commandHandler: RemoteCommandHandler,
-    eventHandler: RemoteEventHandler
+    eventHandler: RemoteEventHandler,
+    eventsAndStateProtoValidation: EventsAndStateProtosValidation
   ): ReplyEffect[EventWrapper, StateWrapper] = {
 
     aggregateCommand.command.`type` match {
@@ -118,26 +121,52 @@ object AggregateRoot {
                   s"[ChiefOfState] command handler return successfully. The event ${actualEvent.typeUrl} will be persisted..."
                 )
 
-                val eventHandlerResponseAttempt: Try[HandleEventResponse] =
-                  eventHandler.handleEvent(actualEvent, aggregateState)
+                if (eventsAndStateProtoValidation.validateEvent(actualEvent)) {
+                  val eventHandlerResponseAttempt: Try[HandleEventResponse] =
+                    eventHandler.handleEvent(actualEvent, aggregateState)
 
-                eventHandlerResponseAttempt match {
-                  case Failure(exception) =>
-                    Effect.reply(aggregateCommand.replyTo)(
-                      CommandReply().withFailure(
-                        FailureResponse().withCritical(s"[ChiefOfState] event handler failure: ${exception.getMessage}")
+                  eventHandlerResponseAttempt match {
+                    case Failure(exception) =>
+                      Effect.reply(aggregateCommand.replyTo)(
+                        CommandReply().withFailure(
+                          FailureResponse().withCritical(
+                            s"[ChiefOfState] event handler failure: ${exception.getMessage}"
+                          )
+                        )
+                      )
+
+                    case Success(handleEventResponse: HandleEventResponse) =>
+                      if (eventsAndStateProtoValidation.validateState(handleEventResponse.getResultingState)) {
+                        // let us persist the event now
+                        persistEventAndReply(
+                          handleCommandResponse.getEvent,
+                          handleEventResponse.getResultingState,
+                          aggregateState,
+                          aggregateCommand.data,
+                          aggregateCommand.replyTo
+                        )
+                      } else {
+                        log.error(
+                          s"[ChiefOfState] event handler returned unknown event type, ${handleEventResponse.getResultingState.typeUrl}"
+                        )
+                        Effect.reply(aggregateCommand.replyTo)(
+                          CommandReply().withFailure(
+                            FailureResponse().withCritical(
+                              s"[ChiefOfState] received unknown state type: ${handleEventResponse.getResultingState.typeUrl}"
+                            )
+                          )
+                        )
+                      }
+                  }
+                } else {
+                  log.error(s"[ChiefOfState] command handler returned unknown event type, ${actualEvent.typeUrl}")
+                  Effect.reply(aggregateCommand.replyTo)(
+                    CommandReply().withFailure(
+                      FailureResponse().withCritical(
+                        s"[ChiefOfState] received unknown event type: ${actualEvent.typeUrl}"
                       )
                     )
-
-                  case Success(handleEventResponse: HandleEventResponse) =>
-                    // let us persist the event now
-                    persistEventAndReply(
-                      handleCommandResponse.getEvent,
-                      handleEventResponse.getResultingState,
-                      aggregateState,
-                      aggregateCommand.data,
-                      aggregateCommand.replyTo
-                    )
+                  )
                 }
 
               case None =>
@@ -151,12 +180,21 @@ object AggregateRoot {
                   )
             }
         }
-      case Type.GetStateCommand(_) =>
-        Effect
-          .reply(aggregateCommand.replyTo)(
-            CommandReply()
-              .withState(aggregateState)
+      case Type.GetStateCommand(getStateCommand) =>
+        if (aggregateState.getMeta.revisionNumber > 0) {
+          log.debug(s"[ChiefOfState] found state for entity ${getStateCommand.entityId}")
+          Effect
+            .reply(aggregateCommand.replyTo)(
+              CommandReply()
+                .withState(aggregateState)
+            )
+        } else {
+          Effect.reply(aggregateCommand.replyTo)(
+            CommandReply().withFailure(
+              FailureResponse().withNotFound(s"[ChiefOfState] entity: ${getStateCommand.entityId} not found")
+            )
           )
+        }
     }
   }
 
