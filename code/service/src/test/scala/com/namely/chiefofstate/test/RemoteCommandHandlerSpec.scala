@@ -5,7 +5,7 @@ import com.namely.chiefofstate.config.{GrpcClient, GrpcConfig, GrpcServer}
 import com.namely.chiefofstate.test.helper.BaseSpec
 import com.namely.chiefofstate.RemoteCommandHandler
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
-import com.namely.protobuf.chiefofstate.v1.tests.{AccountOpened, OpenAccount}
+import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened, OpenAccount}
 import com.namely.protobuf.chiefofstate.v1.writeside.{
   HandleCommandRequest,
   HandleCommandResponse,
@@ -22,7 +22,7 @@ import scala.util.Try
 class RemoteCommandHandlerSpec extends BaseSpec {
 
   var serverChannel: ManagedChannel = null
-  val grpcConfig: GrpcConfig = GrpcConfig(GrpcClient(5000), GrpcServer(5051))
+  val grpcConfig: GrpcConfig = GrpcConfig(GrpcClient(5000), GrpcServer(5052))
 
   override def beforeAll(): Unit = {
     GrpcMock.configureFor(grpcMock(grpcConfig.server.port).build().start())
@@ -42,7 +42,8 @@ class RemoteCommandHandlerSpec extends BaseSpec {
 
   "RemoteCommandHandler" should {
     "handle command successful" in {
-      val stateWrapper: StateWrapper = StateWrapper()
+      val state = Account().withAccountUuid("123")
+      val stateWrapper: StateWrapper = StateWrapper().withState(com.google.protobuf.any.Any.pack(state))
       val command: Any = Any.pack(OpenAccount())
 
       val event: AccountOpened = AccountOpened()
@@ -65,8 +66,9 @@ class RemoteCommandHandlerSpec extends BaseSpec {
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
       val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(grpcConfig, writeHandlerServicetub)
-      val handleCommandResponse: Try[HandleCommandResponse] = remoteCommandHandler.handleCommand(command, stateWrapper)
-      handleCommandResponse.success.value shouldBe (expected)
+      val triedHandleCommandResponse: Try[HandleCommandResponse] =
+        remoteCommandHandler.handleCommand(command, stateWrapper)
+      triedHandleCommandResponse.success.value shouldBe (expected)
     }
 
     "handle command when there is an exception" in {
@@ -90,8 +92,9 @@ class RemoteCommandHandlerSpec extends BaseSpec {
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
       val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(grpcConfig, writeHandlerServicetub)
-      val handleCommandResponse: Try[HandleCommandResponse] = remoteCommandHandler.handleCommand(command, stateWrapper)
-      (handleCommandResponse.failure.exception should have).message("INTERNAL")
+      val triedHandleCommandResponse: Try[HandleCommandResponse] =
+        remoteCommandHandler.handleCommand(command, stateWrapper)
+      (triedHandleCommandResponse.failure.exception should have).message("INTERNAL")
     }
   }
 }

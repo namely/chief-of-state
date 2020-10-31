@@ -30,7 +30,7 @@ case class RemoteEventHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: Wr
   def handleEvent(event: com.google.protobuf.any.Any, priorState: StateWrapper): Try[HandleEventResponse] = {
     Try {
       log.debug(
-        s"sending request to the event handler to handle the given event ${event.typeUrl}"
+        s"[ChiefOfState] sending request to the event handler to handle the given event ${event.typeUrl}"
       )
       writeHandlerServicetub
         .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
