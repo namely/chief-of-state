@@ -19,7 +19,7 @@ case class PluginManager(plugins: Seq[PluginBase]) {
   /**
    * Given a PluginManager instance, a ProcessCommandRequest instance and io.grpc.Metadata instance, folds left
    * throughout all the plugins and runs them one at a time. The results are mapped into a Map of pluginId -> protoAny.
-   * On the failure case, returns a GrpcServiceException.
+   * On the failure case, returns a StatusException.
    *
    * @param processCommandRequest ProcessCommandRequest instance
    * @param metadata io.grpc.Metadata instance
