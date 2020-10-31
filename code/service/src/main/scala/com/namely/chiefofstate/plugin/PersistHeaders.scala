@@ -27,7 +27,11 @@ private[this] class PersistHeaders(persistedHeaders: Seq[String]) extends Plugin
       }
     })
 
-    Some(com.google.protobuf.any.Any.pack(Headers().withHeaders(headers)))
+    if(headers.nonEmpty) {
+      Some(com.google.protobuf.any.Any.pack(Headers().withHeaders(headers)))
+    } else {
+      None
+    }
   }
 }
 

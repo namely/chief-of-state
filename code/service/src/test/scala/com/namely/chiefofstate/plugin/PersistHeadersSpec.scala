@@ -61,15 +61,11 @@ class PersistHeadersSpec extends TestSpec with MockFactory {
     "return an empty header" in {
       EnvironmentHelper.setEnv(PersistHeaders.envName, "not-a-key")
 
-      val actual: Headers = PersistHeaders
+      val actual: Option[com.google.protobuf.any.Any] = PersistHeaders
         .apply()
         .run(processCommandRequest, metadata)
-        .get
-        .unpack[com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Headers]
 
-      val expected: Headers = Headers(Vector.empty[Header])
-
-      actual should be (expected)
+      actual should be (None)
     }
   }
 }
