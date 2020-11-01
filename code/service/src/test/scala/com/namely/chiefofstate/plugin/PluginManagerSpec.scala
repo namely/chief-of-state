@@ -11,6 +11,7 @@ import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 
 import scala.util.Try
+import io.grpc.Status
 
 private[this] class MockPlugin1() extends PluginBase {
   override val pluginId: String = "MockPluginBase"
@@ -124,10 +125,22 @@ class PluginManagerSpec extends TestSpec {
 
       "return a failure" in {
         val mockPluginBase: PluginBase = mock[PluginBase]
-        (mockPluginBase.run _).expects(processCommandRequest, metadata).throws(new RuntimeException("test"))
+
+        (mockPluginBase.run _)
+          .expects(processCommandRequest, metadata)
+          .throws(new RuntimeException("test"))
+
+        (() => mockPluginBase.pluginId)
+          .expects()
+          .returning("some-plugin-id")
 
         val pluginManager: PluginManager = new PluginManager(Seq(mockPluginBase))
-        intercept[GrpcServiceException](pluginManager.run(processCommandRequest, metadata).get)
+
+        val actual = pluginManager.run(processCommandRequest, metadata)
+        val actualError = intercept[GrpcServiceException](actual.get)
+
+        actualError.getStatus.getCode shouldBe(Status.Code.INTERNAL)
+        actualError.getStatus.getDescription() shouldBe("test")
       }
     }
   }

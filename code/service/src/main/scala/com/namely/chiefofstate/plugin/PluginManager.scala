@@ -5,7 +5,7 @@ import com.google.protobuf.any.Any
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
 import com.typesafe.config.Config
 import io.grpc.{Metadata, Status}
-
+import org.slf4j.{Logger, LoggerFactory}
 import scala.reflect.runtime.universe
 import scala.util.{Failure, Success, Try}
 
@@ -15,6 +15,8 @@ import scala.util.{Failure, Success, Try}
  * @param plugins Sequence of PluginBase
  */
 case class PluginManager(plugins: Seq[PluginBase]) {
+  import PluginManager.logger
+
   /**
    * Given a PluginManager instance, a ProcessCommandRequest instance and io.grpc.Metadata instance, folds left
    * throughout all the plugins and runs them one at a time. The results are mapped into a Map of pluginId -> protoAny.
@@ -34,7 +36,15 @@ case class PluginManager(plugins: Seq[PluginBase]) {
       }
       pluginRun match {
         case Success(m) => Try(metaMap.get ++ m)
-        case Failure(e) => Failure(new GrpcServiceException(status = Status.ABORTED.withDescription(e.getMessage)))
+        case Failure(e: GrpcServiceException) =>
+          logger.error(s"plugin '${plugin.pluginId}' failed with ${e.getClass.getName}: ${e.getStatus.toString}")
+          Failure(e)
+        case Failure(e: Throwable) =>
+          val errMsg = s"plugin ${plugin.pluginId} failed due to ${e.getClass.getName}: ${e.getMessage}"
+          logger.error(errMsg)
+          val status = Status.INTERNAL.withDescription(e.getMessage)
+          val err = new GrpcServiceException(status=status)
+          Failure(err)
       }
     })
   }
@@ -46,6 +56,8 @@ case class PluginManager(plugins: Seq[PluginBase]) {
 object PluginManager {
 
   final val HOCON_PATH: String = "chief-of-state.plugin-settings.enable-plugins"
+
+  lazy val logger: Logger = LoggerFactory.getLogger(getClass)
 
   /**
    * Default COS Plugins
