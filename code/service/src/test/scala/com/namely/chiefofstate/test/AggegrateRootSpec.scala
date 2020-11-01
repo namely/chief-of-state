@@ -495,5 +495,447 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
         case _ => fail("unexpected message type")
       }
     }
+    "return a failure when an invalid event is received" in {
+      val config: Config = ConfigFactory.parseString(s"""
+            akka.cluster.sharding.number-of-shards = 1
+            chiefofstate {
+             	service-name = "chiefofstate"
+              ask-timeout = 5
+              snapshot-criteria {
+                disable-snapshot = false
+                retention-frequency = 1
+                retention-number = 1
+                delete-events-on-snapshot = false
+              }
+              events {
+                tagname: "cos"
+              }
+              grpc {
+                client {
+                  deadline-timeout = 3000
+                }
+                server {
+                  port = 9000
+                }
+              }
+              write-side {
+                host = "localhost"
+                port = 6000
+                enable-protos-validation = true
+                states-protos = ""
+                events-protos = ""
+                propagated-headers = ""
+              }
+              read-side {
+                create-stores {
+                  auto = true
+                }
+                # set this value to true whenever a readSide config is set
+                enabled = false
+              }
+            }
+          """)
+      val mainConfig = CosConfig(config)
+
+      val aggregateId: String = UUID.randomUUID().toString
+      val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
+      val stateWrapper: StateWrapper = StateWrapper()
+        .withState(any.Any.pack(Empty.defaultInstance))
+        .withMeta(
+          MetaData.defaultInstance.withEntityId(getEntityId(persistenceId))
+        )
+      val command: Any = Any.pack(OpenAccount())
+      val event: AccountOpened = AccountOpened()
+      val state: Account = Account().withAccountUuid(aggregateId)
+      val resultingState = com.google.protobuf.any.Any.pack(state.withBalance(200))
+      stubFor(
+        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
+          .withRequest(
+            HandleCommandRequest()
+              .withCommand(command)
+              .withPriorState(stateWrapper.getState)
+              .withPriorEventMeta(stateWrapper.getMeta)
+          )
+          .withHeader("header-1", "header-value-1")
+          .willReturn(
+            response(HandleCommandResponse().withEvent(Any.pack(event)))
+          )
+      )
+
+      stubFor(
+        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_EVENT)
+          .withRequest(
+            HandleEventRequest()
+              .withPriorState(stateWrapper.getState)
+              .withEventMeta(stateWrapper.getMeta)
+              .withEvent(Any.pack(event))
+          )
+          .willReturn(
+            response(HandleEventResponse().withResultingState(resultingState))
+          )
+      )
+
+      val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
+        new WriteSideHandlerServiceBlockingStub(serverChannel)
+
+      // Let us create the sender of commands
+      val commandSender: TestProbe[CommandReply] =
+        createTestProbe[CommandReply]()
+
+      val remoteCommandHandler: RemoteCommandHandler =
+        RemoteCommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+      val shardIndex = 0
+      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
+        EventsAndStateProtosValidation(mainConfig.writeSideConfig)
+
+      val aggregateRoot = AggregateRoot(persistenceId,
+                                        shardIndex,
+                                        mainConfig,
+                                        remoteCommandHandler,
+                                        remoteEventHandler,
+                                        eventsAndStateProtosValidation
+      )
+
+      val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
+
+      aggregateRef ! AggregateCommand(
+        SendCommand().withHandleCommand(
+          HandleCommand()
+            .withCommand(
+              RemoteCommand()
+                .withCommand(command)
+                .withHeaders(
+                  Seq(
+                    RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")
+                  )
+                )
+            )
+            .withEntityId(aggregateId)
+        ),
+        commandSender.ref,
+        Map.empty[String, Any]
+      )
+
+      commandSender.receiveMessage(replyTimeout) match {
+        case CommandReply(reply, _) =>
+          reply match {
+            case Reply.Empty    => fail("unexpected message state")
+            case Reply.State(_) => fail("unexpected message state")
+            case Reply.Failure(failureResponse) =>
+              failureResponse shouldBe FailureResponse().withCritical(
+                "[ChiefOfState] received unknown event type: type.googleapis.com/chief_of_state.v1.AccountOpened"
+              )
+          }
+        case _ => fail("unexpected message type")
+      }
+
+    }
+    "return a failure when an invalid state is received" in {
+      val config: Config = ConfigFactory.parseString(s"""
+            akka.cluster.sharding.number-of-shards = 1
+            chiefofstate {
+             	service-name = "chiefofstate"
+              ask-timeout = 5
+              snapshot-criteria {
+                disable-snapshot = false
+                retention-frequency = 1
+                retention-number = 1
+                delete-events-on-snapshot = false
+              }
+              events {
+                tagname: "cos"
+              }
+              grpc {
+                client {
+                  deadline-timeout = 3000
+                }
+                server {
+                  port = 9000
+                }
+              }
+              write-side {
+                host = "localhost"
+                port = 6000
+                enable-protos-validation = true
+                states-protos = ""
+                events-protos = "chief_of_state.v1.AccountOpened"
+                propagated-headers = ""
+              }
+              read-side {
+                create-stores {
+                  auto = true
+                }
+                # set this value to true whenever a readSide config is set
+                enabled = false
+              }
+            }
+          """)
+      val mainConfig = CosConfig(config)
+
+      val aggregateId: String = UUID.randomUUID().toString
+      val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
+      val stateWrapper: StateWrapper = StateWrapper()
+        .withState(any.Any.pack(Empty.defaultInstance))
+        .withMeta(
+          MetaData.defaultInstance.withEntityId(getEntityId(persistenceId))
+        )
+      val command: Any = Any.pack(OpenAccount())
+      val event: AccountOpened = AccountOpened()
+      val state: Account = Account().withAccountUuid(aggregateId)
+      val resultingState = com.google.protobuf.any.Any.pack(state.withBalance(200))
+      stubFor(
+        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
+          .withRequest(
+            HandleCommandRequest()
+              .withCommand(command)
+              .withPriorState(stateWrapper.getState)
+              .withPriorEventMeta(stateWrapper.getMeta)
+          )
+          .withHeader("header-1", "header-value-1")
+          .willReturn(
+            response(HandleCommandResponse().withEvent(Any.pack(event)))
+          )
+      )
+
+      stubFor(
+        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_EVENT)
+          .withRequest(
+            HandleEventRequest()
+              .withPriorState(stateWrapper.getState)
+              .withEventMeta(stateWrapper.getMeta)
+              .withEvent(Any.pack(event))
+          )
+          .willReturn(
+            response(HandleEventResponse().withResultingState(resultingState))
+          )
+      )
+
+      val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
+        new WriteSideHandlerServiceBlockingStub(serverChannel)
+
+      // Let us create the sender of commands
+      val commandSender: TestProbe[CommandReply] =
+        createTestProbe[CommandReply]()
+
+      val remoteCommandHandler: RemoteCommandHandler =
+        RemoteCommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+      val shardIndex = 0
+      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
+        EventsAndStateProtosValidation(mainConfig.writeSideConfig)
+
+      val aggregateRoot = AggregateRoot(persistenceId,
+                                        shardIndex,
+                                        mainConfig,
+                                        remoteCommandHandler,
+                                        remoteEventHandler,
+                                        eventsAndStateProtosValidation
+      )
+
+      val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
+
+      aggregateRef ! AggregateCommand(
+        SendCommand().withHandleCommand(
+          HandleCommand()
+            .withCommand(
+              RemoteCommand()
+                .withCommand(command)
+                .withHeaders(
+                  Seq(
+                    RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")
+                  )
+                )
+            )
+            .withEntityId(aggregateId)
+        ),
+        commandSender.ref,
+        Map.empty[String, Any]
+      )
+
+      commandSender.receiveMessage(replyTimeout) match {
+        case CommandReply(reply, _) =>
+          reply match {
+            case Reply.Empty    => fail("unexpected message state")
+            case Reply.State(_) => fail("unexpected message state")
+            case Reply.Failure(failureResponse) =>
+              failureResponse shouldBe FailureResponse().withCritical(
+                "[ChiefOfState] received unknown state type: type.googleapis.com/chief_of_state.v1.Account"
+              )
+          }
+        case _ => fail("unexpected message type")
+      }
+
+    }
+  }
+
+  ".getStateCommand" should {
+    "return as expected" in {
+      val aggregateId: String = UUID.randomUUID().toString
+      val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
+      val state: Account = Account().withAccountUuid(aggregateId)
+      val stateWrapper: StateWrapper = StateWrapper()
+        .withState(any.Any.pack(Empty.defaultInstance))
+        .withMeta(
+          MetaData.defaultInstance
+            .withEntityId(getEntityId(persistenceId))
+        )
+      val command: Any = Any.pack(OpenAccount())
+      val event: AccountOpened = AccountOpened()
+
+      val resultingState = com.google.protobuf.any.Any.pack(state.withBalance(200))
+      stubFor(
+        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
+          .withRequest(
+            HandleCommandRequest()
+              .withCommand(command)
+              .withPriorState(stateWrapper.getState)
+              .withPriorEventMeta(stateWrapper.getMeta)
+          )
+          .withHeader("header-1", "header-value-1")
+          .willReturn(
+            response(HandleCommandResponse().withEvent(Any.pack(event)))
+          )
+      )
+
+      stubFor(
+        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_EVENT)
+          .withRequest(
+            HandleEventRequest()
+              .withPriorState(stateWrapper.getState)
+              .withEventMeta(stateWrapper.getMeta)
+              .withEvent(Any.pack(event))
+          )
+          .willReturn(
+            response(HandleEventResponse().withResultingState(resultingState))
+          )
+      )
+
+      val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
+        new WriteSideHandlerServiceBlockingStub(serverChannel)
+      // Let us create the sender of commands
+      val commandSender: TestProbe[CommandReply] =
+        createTestProbe[CommandReply]()
+
+      val remoteCommandHandler: RemoteCommandHandler =
+        RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val shardIndex = 0
+      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
+        EventsAndStateProtosValidation(cosConfig.writeSideConfig)
+
+      val aggregateRoot = AggregateRoot(persistenceId,
+                                        shardIndex,
+                                        cosConfig,
+                                        remoteCommandHandler,
+                                        remoteEventHandler,
+                                        eventsAndStateProtosValidation
+      )
+      val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
+
+      aggregateRef ! AggregateCommand(
+        SendCommand()
+          .withHandleCommand(
+            HandleCommand()
+              .withCommand(
+                RemoteCommand()
+                  .withCommand(command)
+                  .withHeaders(
+                    Seq(
+                      RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")
+                    )
+                  )
+              )
+              .withEntityId(aggregateId)
+          ),
+        commandSender.ref,
+        Map.empty[String, Any]
+      )
+      commandSender.receiveMessage(replyTimeout) match {
+        case CommandReply(reply, _) =>
+          reply match {
+            case Reply.Empty => fail("unexpected message state")
+            case Reply.State(value: StateWrapper) =>
+              val account: Account = value.getState.unpack[Account]
+              account.accountUuid shouldBe aggregateId
+              account.balance shouldBe 200
+              value.getMeta.revisionNumber shouldBe 1
+              value.getMeta.entityId shouldBe aggregateId
+            case Reply.Failure(failureResponse: FailureResponse) => fail(s"unexpected message state $failureResponse")
+          }
+        case _ => fail("unexpected message type")
+      }
+      aggregateRef ! AggregateCommand(
+        SendCommand().withGetStateCommand(
+          GetStateCommand()
+            .withEntityId(aggregateId)
+        ),
+        commandSender.ref,
+        Map.empty[String, Any]
+      )
+
+      commandSender.receiveMessage(replyTimeout) match {
+        case CommandReply(reply, _) =>
+          reply match {
+            case Reply.Empty => fail("unexpected message state")
+            case Reply.State(value: StateWrapper) =>
+              val account: Account = value.getState.unpack[Account]
+              account.accountUuid shouldBe aggregateId
+              account.balance shouldBe 200
+              value.getMeta.revisionNumber shouldBe 1
+              value.getMeta.entityId shouldBe aggregateId
+            case Reply.Failure(failureResponse: FailureResponse) => fail(s"unexpected message state $failureResponse")
+          }
+        case _ => fail("unexpected message type")
+      }
+    }
+    "return a failure when there is no entity as expected" in {
+      val aggregateId: String = UUID.randomUUID().toString
+      val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
+
+      val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
+        new WriteSideHandlerServiceBlockingStub(serverChannel)
+      // Let us create the sender of commands
+      val commandSender: TestProbe[CommandReply] =
+        createTestProbe[CommandReply]()
+
+      val remoteCommandHandler: RemoteCommandHandler =
+        RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val shardIndex = 0
+      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
+        EventsAndStateProtosValidation(cosConfig.writeSideConfig)
+
+      val aggregateRoot = AggregateRoot(persistenceId,
+                                        shardIndex,
+                                        cosConfig,
+                                        remoteCommandHandler,
+                                        remoteEventHandler,
+                                        eventsAndStateProtosValidation
+      )
+      val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
+
+      aggregateRef ! AggregateCommand(
+        SendCommand().withGetStateCommand(
+          GetStateCommand()
+            .withEntityId(aggregateId)
+        ),
+        commandSender.ref,
+        Map.empty[String, Any]
+      )
+
+      commandSender.receiveMessage(replyTimeout) match {
+        case CommandReply(reply, _) =>
+          reply match {
+            case Reply.Empty    => fail("unexpected message state")
+            case Reply.State(_) => fail("unexpected message state")
+            case Reply.Failure(failureResponse) =>
+              failureResponse shouldBe FailureResponse().withNotFound(
+                s"[ChiefOfState] entity: ${aggregateId} not found"
+              )
+          }
+        case _ => fail("unexpected message type")
+      }
+    }
   }
 }

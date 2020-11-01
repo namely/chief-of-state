@@ -50,6 +50,7 @@ object Common extends AutoPlugin {
       coverageExcludedPackages := "<empty>;com.namely.protobuf.*;" +
         "com.namely.chiefofstate.ReadSideEventsConsumer;" +
         "com.namely.chiefofstate.ReadSideProcessor;" +
-        "com.namely.chiefofstate.GrpcHeadersInterceptor;"
+        "com.namely.chiefofstate.GrpcHeadersInterceptor;" +
+        "com.namely.chiefofstate.Application;"
     )
 }
