@@ -1,20 +1,21 @@
 package com.namely.chiefofstate.test
 
 import com.google.protobuf.any.Any
+import com.google.protobuf.ByteString
 import com.namely.chiefofstate.RemoteCommandHandler
 import com.namely.chiefofstate.config.{GrpcClient, GrpcConfig, GrpcServer}
 import com.namely.chiefofstate.test.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened, OpenAccount}
-import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.writeside.{
   HandleCommandRequest,
   HandleCommandResponse,
   WriteSideHandlerServiceGrpc
 }
+import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
+import io.grpc.{ManagedChannel, Metadata, Status}
 import io.grpc.netty.NettyChannelBuilder
-import io.grpc.{ManagedChannel, Status}
 import org.grpcmock.GrpcMock
 import org.grpcmock.GrpcMock._
 
@@ -94,6 +95,7 @@ class RemoteCommandHandlerSpec extends BaseSpec {
         unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
           .withRequest(request)
           .withHeader("header-1", "header-value-1")
+          .withHeader(Metadata.Key.of("header-2-bin", Metadata.BINARY_BYTE_MARSHALLER), "header-value-2".getBytes)
           .willReturn(
             statusException(Status.INTERNAL)
           )
@@ -106,7 +108,11 @@ class RemoteCommandHandlerSpec extends BaseSpec {
         .withCommand(command)
         .withHeaders(
           Seq(
-            RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")
+            RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"),
+            RemoteCommand
+              .Header()
+              .withKey("header-2-bin")
+              .withBytesValue(ByteString.copyFrom("header-value-2".getBytes))
           )
         )
 

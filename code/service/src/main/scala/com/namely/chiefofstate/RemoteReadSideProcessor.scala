@@ -3,10 +3,14 @@ package com.namely.chiefofstate
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.readside.{HandleReadSideRequest, HandleReadSideResponse}
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
+import io.grpc.Metadata
+import io.grpc.stub.MetadataUtils
 
 import scala.util.Try
 
 class RemoteReadSideProcessor(readSideHandlerServiceBlockingStub: ReadSideHandlerServiceBlockingStub) {
+  private val COS_EVENT_TAG_HEADER = "x-cos-event-tag"
+  private val COS_ENTITY_ID_HEADER = "x-cos-entity-id"
 
   /**
    * Processes events read from the Journal
@@ -24,12 +28,18 @@ class RemoteReadSideProcessor(readSideHandlerServiceBlockingStub: ReadSideHandle
     meta: MetaData
   ): Try[HandleReadSideResponse] = {
     Try {
-      readSideHandlerServiceBlockingStub.handleReadSide(
-        HandleReadSideRequest()
-          .withEvent(event)
-          .withState(resultingState)
-          .withMeta(meta)
-      )
+      val headers = new Metadata()
+      headers.put(Metadata.Key.of(COS_ENTITY_ID_HEADER, Metadata.ASCII_STRING_MARSHALLER), meta.entityId)
+      headers.put(Metadata.Key.of(COS_EVENT_TAG_HEADER, Metadata.ASCII_STRING_MARSHALLER), eventTag)
+
+      MetadataUtils
+        .attachHeaders(readSideHandlerServiceBlockingStub, headers)
+        .handleReadSide(
+          HandleReadSideRequest()
+            .withEvent(event)
+            .withState(resultingState)
+            .withMeta(meta)
+        )
     }
   }
 }

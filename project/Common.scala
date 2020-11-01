@@ -49,6 +49,9 @@ object Common extends AutoPlugin {
       // show full stack traces and test case durations
       testOptions in Test += Tests.Argument("-oDF"),
       logBuffered in Test := false,
-      coverageExcludedPackages := "<empty>;com.namely.protobuf.*;"
+      coverageExcludedPackages := "<empty>;com.namely.protobuf.*;" +
+        "com.namely.chiefofstate.ReadSideEventsConsumer;" +
+        "com.namely.chiefofstate.ReadSideProcessor;" +
+        "com.namely.chiefofstate.GrpcHeadersInterceptor;"
     )
 }
