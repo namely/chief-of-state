@@ -51,6 +51,7 @@ object Common extends AutoPlugin {
         "com.namely.chiefofstate.ReadSideEventsConsumer;" +
         "com.namely.chiefofstate.ReadSideProcessor;" +
         "com.namely.chiefofstate.GrpcHeadersInterceptor;" +
-        "com.namely.chiefofstate.Application;"
+        "com.namely.chiefofstate.Application;" +
+        "com.namely.chiefofstate.GrpcServiceImpl;"
     )
 }
