@@ -1,6 +1,6 @@
 import sbt.{compilerPlugin, plugins, url, AutoPlugin, CrossVersion, Developer, Plugins, Resolver, _}
 import sbt.Keys.{resolvers, _}
-import scoverage.ScoverageKeys.{coverageExcludedPackages, coverageFailOnMinimum, coverageMinimum}
+import scoverage.ScoverageKeys.coverageExcludedPackages
 import Dependencies.Versions
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport.scalafmtOnCompile
 
@@ -20,9 +20,7 @@ object Common extends AutoPlugin {
         "Contributors",
         "",
         url("https://github.com/namely/chief-of-state/graphs/contributors")
-      ),
-      coverageMinimum := 80,
-      coverageFailOnMinimum := true
+      )
     )
 
   override def projectSettings =
