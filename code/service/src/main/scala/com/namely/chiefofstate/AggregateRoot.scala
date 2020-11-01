@@ -21,6 +21,9 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
+import io.grpc.Status
+import io.grpc.StatusException
+import io.grpc.StatusRuntimeException
 
 /**
  *  This is an event sourced actor.
@@ -204,6 +207,48 @@ object AggregateRoot {
             .withNotFound(s"[ChiefOfState] entity: ${cmd.entityId} not found")
         )
       )
+    }
+  }
+
+  def handleRemoteCommand(context: ActorContext[AggregateCommand],
+                          state: StateWrapper,
+                          command: RemoteCommand,
+                          replyTo: ActorRef[CommandReply],
+                          commandHandler: RemoteCommandHandler,
+                          eventHandler: RemoteEventHandler,
+                          eventsAndStateProtoValidation: EventsAndStateProtosValidation
+  ): ReplyEffect[EventWrapper, StateWrapper] = {
+
+    // val cmdResult: Try[HandleCommandResponse] = commandHandler
+    //   .handleCommand(command, state)
+    //   .recoverWith(makeFailedStatusPf)
+
+    ???
+  }
+
+  /**
+   * helper to transform Try failures into status exceptions
+   */
+  def makeFailedStatusPf[U]: PartialFunction[Throwable, Try[U]] = {
+    case e: Throwable => Failure(makeStatusException(e))
+  }
+
+  /**
+   * helper method to transform throwables into StatusExceptions
+   *
+   * @param exception
+   * @return
+   */
+  def makeStatusException(exception: Throwable): Throwable = {
+    exception match {
+      case _: StatusException =>
+        exception
+
+      case _: StatusRuntimeException =>
+        exception
+
+      case e: Throwable =>
+        new StatusException(Status.INTERNAL.withDescription(e.getMessage()))
     }
   }
 

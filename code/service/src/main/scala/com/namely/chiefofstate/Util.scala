@@ -74,7 +74,8 @@ object Util {
   /**
    * transforms a gRPC metadata to a RemoteCommand.Header
    *
-   * @param headers the gRPC metadata
+   * @param metadata the gRPC metadata
+   * @param keys the header keys to look for
    * @return the list RemoteCommand.Header
    */
   def transformMetadataToRemoteCommandHeader(metadata: Metadata, keys: Seq[String]): Seq[Header] = {

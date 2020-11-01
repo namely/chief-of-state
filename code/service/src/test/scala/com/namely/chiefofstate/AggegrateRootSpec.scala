@@ -203,7 +203,6 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(reply, _) =>
           reply match {
-            case Reply.Empty => fail("unexpected message state")
             case Reply.State(value: StateWrapper) =>
               val account: Account = value.getState.unpack[Account]
               account.accountUuid shouldBe aggregateId
@@ -211,6 +210,7 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
               value.getMeta.revisionNumber shouldBe 1
               value.getMeta.entityId shouldBe aggregateId
             case Reply.Failure(failureResponse: FailureResponse) => fail(s"unexpected message state $failureResponse")
+            case _                                               => fail("unexpected message state")
           }
         case _ => fail("unexpected message type")
       }
@@ -277,12 +277,12 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(reply, _) =>
           reply match {
-            case Reply.Empty => fail("unexpected message state")
             case Reply.State(value: StateWrapper) =>
               value.getState shouldBe Any.pack(Empty.defaultInstance)
               value.getMeta.revisionNumber shouldBe 0
               value.getMeta.entityId shouldBe aggregateId
             case Reply.Failure(failureResponse: FailureResponse) => fail(s"unexpected message state $failureResponse")
+            case _                                               => fail("unexpected message state")
           }
         case _ => fail("unexpected message type")
       }
@@ -361,10 +361,10 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(reply, _) =>
           reply match {
-            case Reply.Empty    => fail("unexpected message state")
             case Reply.State(_) => fail("unexpected message state")
             case Reply.Failure(failureResponse) =>
               failureResponse shouldBe FailureResponse().withCritical("something really bad happens...")
+            case _ => fail("unexpected message state")
           }
         case _ => fail("unexpected message type")
       }
@@ -449,12 +449,12 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(reply, _) =>
           reply match {
-            case Reply.Empty    => fail("unexpected message state")
             case Reply.State(_) => fail("unexpected message state")
             case Reply.Failure(failureResponse) =>
               failureResponse shouldBe FailureResponse().withCritical(
                 "[ChiefOfState] command handler failure: INTERNAL"
               )
+            case _ => fail("unexpected message state")
           }
         case _ => fail("unexpected message type")
       }
@@ -535,12 +535,12 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(reply, _) =>
           reply match {
-            case Reply.Empty    => fail("unexpected message state")
             case Reply.State(_) => fail("unexpected message state")
             case Reply.Failure(failureResponse) =>
               failureResponse shouldBe FailureResponse().withCritical(
                 "[ChiefOfState] event handler failure: UNKNOWN"
               )
+            case _ => fail("unexpected message state")
           }
         case _ => fail("unexpected message type")
       }
@@ -663,12 +663,12 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(reply, _) =>
           reply match {
-            case Reply.Empty    => fail("unexpected message state")
             case Reply.State(_) => fail("unexpected message state")
             case Reply.Failure(failureResponse) =>
               failureResponse shouldBe FailureResponse().withCritical(
                 "[ChiefOfState] received unknown event type: type.googleapis.com/chief_of_state.v1.AccountOpened"
               )
+            case _ => fail("unexpected message state")
           }
         case _ => fail("unexpected message type")
       }
@@ -792,12 +792,12 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(reply, _) =>
           reply match {
-            case Reply.Empty    => fail("unexpected message state")
             case Reply.State(_) => fail("unexpected message state")
             case Reply.Failure(failureResponse) =>
               failureResponse shouldBe FailureResponse().withCritical(
                 "[ChiefOfState] received unknown state type: type.googleapis.com/chief_of_state.v1.Account"
               )
+            case _ => fail("unexpected message state")
           }
         case _ => fail("unexpected message type")
       }
@@ -882,7 +882,6 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(reply, _) =>
           reply match {
-            case Reply.Empty => fail("unexpected message state")
             case Reply.State(value: StateWrapper) =>
               val account: Account = value.getState.unpack[Account]
               account.accountUuid shouldBe aggregateId
@@ -890,6 +889,7 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
               value.getMeta.revisionNumber shouldBe 1
               value.getMeta.entityId shouldBe aggregateId
             case Reply.Failure(failureResponse: FailureResponse) => fail(s"unexpected message state $failureResponse")
+            case _                                               => fail("unexpected message state")
           }
         case _ => fail("unexpected message type")
       }
@@ -905,7 +905,6 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(reply, _) =>
           reply match {
-            case Reply.Empty => fail("unexpected message state")
             case Reply.State(value: StateWrapper) =>
               val account: Account = value.getState.unpack[Account]
               account.accountUuid shouldBe aggregateId
@@ -913,6 +912,7 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
               value.getMeta.revisionNumber shouldBe 1
               value.getMeta.entityId shouldBe aggregateId
             case Reply.Failure(failureResponse: FailureResponse) => fail(s"unexpected message state $failureResponse")
+            case _                                               => fail("unexpected message state")
           }
         case _ => fail("unexpected message type")
       }
@@ -955,12 +955,12 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(reply, _) =>
           reply match {
-            case Reply.Empty    => fail("unexpected message state")
             case Reply.State(_) => fail("unexpected message state")
             case Reply.Failure(failureResponse) =>
               failureResponse shouldBe FailureResponse().withNotFound(
                 s"[ChiefOfState] entity: ${aggregateId} not found"
               )
+            case _ => fail("unexpected message state")
           }
         case _ => fail("unexpected message type")
       }

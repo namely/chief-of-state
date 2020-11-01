@@ -9,6 +9,7 @@ option java_outer_classname = "CosInternalProto";
 import "google/protobuf/any.proto";
 import "chief_of_state/v1/persistence.proto";
 import "google/protobuf/wrappers.proto";
+import "google/rpc/status.proto";
 
 // THESE ARE INTERNAL MESSAGES FOR THE COS SERVICE
 
@@ -67,6 +68,9 @@ message CommandWrapper {
   map<string, google.protobuf.Any> data = 3;
 }
 
+// ********************************************************
+// TODO: REMOVE THIS ONCE ALL FAILURES ARE gRPC STATUSES
+// ********************************************************
 // FailureResponse. This response type is returned by the
 // Commands Handler
 message FailureResponse {
@@ -88,6 +92,8 @@ message FailureResponse {
     google.protobuf.StringValue not_found = 4;
   }
 }
+// ********************************************************
+// ********************************************************
 
 // For returning a command reply whether it is successful or failed
 // This is used internally by lagom-pb
@@ -98,5 +104,7 @@ message CommandReply {
     StateWrapper state = 1;
     // failed command reply
     FailureResponse failure = 2;
+    // gRPC failure
+    google.rpc.Status error = 3;
   }
 }
