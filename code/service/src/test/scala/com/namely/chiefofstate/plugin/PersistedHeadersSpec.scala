@@ -8,14 +8,14 @@ import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Head
 import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Header, Headers}
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
 
-class PersistHeadersSpec extends BaseSpec with MockFactory {
+class PersistedHeadersSpec extends BaseSpec with MockFactory {
 
   override def beforeEach(): Unit = {
     super.beforeEach()
     EnvironmentHelper.clearEnv()
   }
 
-  "Persistedheaders" should {
+  "PersistedHeaders" should {
     val fooKeyName: String = "foo"
     val fooKey: Metadata.Key[String] = Metadata.Key.of(fooKeyName, Metadata.ASCII_STRING_MARSHALLER)
 
@@ -45,9 +45,9 @@ class PersistHeadersSpec extends BaseSpec with MockFactory {
     metadata.put(bazKey, baz)
 
     "return the a string and byte header" in {
-      EnvironmentHelper.setEnv(PersistHeaders.envName, "foo,bar-bin,not-a-key")
+      EnvironmentHelper.setEnv(PersistedHeaders.envName, "foo,bar-bin,not-a-key")
 
-      val actual: Headers = PersistHeaders
+      val actual: Headers = PersistedHeaders
         .apply()
         .run(processCommandRequest, metadata)
         .get
@@ -59,9 +59,9 @@ class PersistHeadersSpec extends BaseSpec with MockFactory {
     }
 
     "return an empty header" in {
-      EnvironmentHelper.setEnv(PersistHeaders.envName, "not-a-key,not-a-key-bin")
+      EnvironmentHelper.setEnv(PersistedHeaders.envName, "not-a-key,not-a-key-bin")
 
-      val actual: Option[com.google.protobuf.any.Any] = PersistHeaders
+      val actual: Option[com.google.protobuf.any.Any] = PersistedHeaders
         .apply()
         .run(processCommandRequest, metadata)
 

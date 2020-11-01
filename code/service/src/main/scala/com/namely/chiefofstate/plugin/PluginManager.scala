@@ -69,7 +69,7 @@ object PluginManager {
    * Default COS Plugins
    */
   final val DEFAULT_PLUGINS: Seq[String] = Seq(
-    "com.namely.chiefofstate.plugin.PersistHeaders"
+    "com.namely.chiefofstate.plugin.PersistedHeaders"
   )
 
   /**

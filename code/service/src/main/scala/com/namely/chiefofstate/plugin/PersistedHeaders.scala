@@ -9,9 +9,9 @@ import scala.jdk.CollectionConverters._
 import scala.collection.mutable
 import org.slf4j.{Logger, LoggerFactory}
 
-private[this] class PersistHeaders(persistedHeaders: Seq[String]) extends PluginBase {
+private[this] class PersistedHeaders(persistedHeaders: Seq[String]) extends PluginBase {
 
-  import PersistHeaders.logger
+  import PersistedHeaders.logger
 
   override val pluginId: String = "persisted_headers.v1"
 
@@ -54,7 +54,7 @@ private[this] class PersistHeaders(persistedHeaders: Seq[String]) extends Plugin
   }
 }
 
-object PersistHeaders extends PluginFactory {
+object PersistedHeaders extends PluginFactory {
 
   val envName: String = "COS_WRITE_PERSISTED_HEADERS"
 
@@ -66,5 +66,5 @@ object PersistHeaders extends PluginFactory {
       .map(_.split(",").map(_.trim).toSeq)
       .getOrElse(Seq.empty[String])
 
-  override def apply(): PluginBase = new PersistHeaders(persistedHeaders)
+  override def apply(): PluginBase = new PersistedHeaders(persistedHeaders)
 }
