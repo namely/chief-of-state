@@ -46,13 +46,12 @@ class RemoteEventHandlerSpec extends BaseSpec {
 
       val stateWrapper: StateWrapper = StateWrapper().withState(com.google.protobuf.any.Any.pack(state))
 
-      val resultingState: StateWrapper =
-        StateWrapper().withState(com.google.protobuf.any.Any.pack(state.withBalance(200)))
+      val resultingState = com.google.protobuf.any.Any.pack(state.withBalance(200))
 
       val event: any.Any = com.google.protobuf.any.Any.pack(AccountOpened())
 
       val expected: HandleEventResponse =
-        HandleEventResponse().withResultingState(com.google.protobuf.any.Any.pack(resultingState))
+        HandleEventResponse().withResultingState(resultingState)
 
       val request: HandleEventRequest = HandleEventRequest()
         .withPriorState(stateWrapper.getState)

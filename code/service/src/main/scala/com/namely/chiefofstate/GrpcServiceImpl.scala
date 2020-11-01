@@ -6,17 +6,17 @@ import com.github.ghik.silencer.silent
 import com.google.protobuf.any
 import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.plugins.PluginManager
+import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
 import com.namely.protobuf.chiefofstate.v1.internal.FailureResponse.FailureType
-import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
-import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.service.{
   GetStateRequest,
   GetStateResponse,
   ProcessCommandRequest,
   ProcessCommandResponse
 }
+import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import io.grpc.{Metadata, Status, StatusException}
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -41,14 +41,14 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
     requireEntityId(entityId)
 
     // fetch the gRPC metadata
-    val metadata = GrpcHeadersInterceptor.REQUEST_META.get()
+    val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
 
     // let us get the remote command
     val meta: Try[Map[String, any.Any]] = pluginManager.run(request, metadata)
     meta match {
       case Failure(exception: Throwable) => Future.failed(exception)
       case Success(data: Map[String, any.Any]) =>
-        val remoteCommand = getRemoteCommand(writeSideConfig, request, metadata)
+        val remoteCommand: RemoteCommand = getRemoteCommand(writeSideConfig, request, metadata)
         val entityRef: EntityRef[AggregateCommand] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
 
         val reply: Future[CommandReply] =

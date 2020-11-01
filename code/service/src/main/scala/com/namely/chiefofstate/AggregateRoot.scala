@@ -56,11 +56,7 @@ object AggregateRoot {
         EventSourcedBehavior
           .withEnforcedReplies[AggregateCommand, EventWrapper, StateWrapper](
             persistenceId,
-            emptyState = StateWrapper.defaultInstance
-              .withMeta(
-                MetaData.defaultInstance.withEntityId(getEntityId(persistenceId))
-              )
-              .withState(any.Any.pack(Empty.defaultInstance)),
+            emptyState = initialState(persistenceId),
             (state, command) =>
               handleCommand(context, state, command, commandHandler, eventHandler, eventsAndStateProtoValidation),
             (state, event) => handleEvent(state, event)
@@ -82,7 +78,7 @@ object AggregateRoot {
    * @param eventHandler the remote events handler
    * @return a side effect
    */
-  private[this] def handleCommand(
+  private[chiefofstate] def handleCommand(
     context: ActorContext[AggregateCommand],
     aggregateState: StateWrapper,
     aggregateCommand: AggregateCommand,
@@ -206,7 +202,7 @@ object AggregateRoot {
    * @param event the event to handle
    * @return the resulting state
    */
-  private[this] def handleEvent(
+  private[chiefofstate] def handleEvent(
     state: StateWrapper,
     event: EventWrapper
   ): StateWrapper = {
@@ -219,7 +215,7 @@ object AggregateRoot {
    * @param snapshotConfig the snapshot configt
    * @return the snapshot retention criteria
    */
-  private[this] def setSnapshotRetentionCriteria(snapshotConfig: SnapshotConfig): RetentionCriteria = {
+  private[chiefofstate] def setSnapshotRetentionCriteria(snapshotConfig: SnapshotConfig): RetentionCriteria = {
     if (snapshotConfig.disableSnapshot) RetentionCriteria.disabled
     else {
       // journal/snapshot retention criteria
@@ -252,7 +248,7 @@ object AggregateRoot {
    * @param persistenceId the persistence ID
    * @return the actual entity ID
    */
-  private[this] def getEntityId(persistenceId: PersistenceId): String = {
+  private[chiefofstate] def getEntityId(persistenceId: PersistenceId): String = {
     val splitter: Char = PersistenceId.DefaultSeparator(0)
     persistenceId.id.split(splitter).lastOption.getOrElse("")
   }
@@ -267,7 +263,7 @@ object AggregateRoot {
    * @param replyTo the caller ref receiving the reply when persistence is successful
    * @return a reply effect
    */
-  private[this] def persistEventAndReply(
+  private[chiefofstate] def persistEventAndReply(
     event: any.Any,
     resultingState: any.Any,
     priorState: StateWrapper,
@@ -288,5 +284,19 @@ object AggregateRoot {
           .withMeta(meta)
       )
       .thenReply(replyTo)((updatedState: StateWrapper) => CommandReply().withState(updatedState))
+  }
+
+  /**
+   * creates the initial state of the aggregate
+   *
+   * @param persistenceId the persistence ID
+   * @return the initial state
+   */
+  private[chiefofstate] def initialState(persistenceId: PersistenceId): StateWrapper = {
+    StateWrapper.defaultInstance
+      .withMeta(
+        MetaData.defaultInstance.withEntityId(getEntityId(persistenceId))
+      )
+      .withState(any.Any.pack(Empty.defaultInstance))
   }
 }

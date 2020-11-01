@@ -1,3 +1,4 @@
+parallelExecution in test := false
 enablePlugins(DockerComposePlugin)
 dockerImageCreationTask := (Docker / publishLocal in `chiefofstate`).value
 
