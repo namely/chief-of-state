@@ -45,7 +45,7 @@ class PersistHeadersSpec extends TestSpec with MockFactory {
     metadata.put(bazKey, baz)
 
     "return the a string and byte header" in {
-      EnvironmentHelper.setEnv(PersistHeaders.envName, "foo,bar-bin")
+      EnvironmentHelper.setEnv(PersistHeaders.envName, "foo,bar-bin,not-a-key")
 
       val actual: Headers = PersistHeaders
         .apply()
@@ -59,7 +59,7 @@ class PersistHeadersSpec extends TestSpec with MockFactory {
     }
 
     "return an empty header" in {
-      EnvironmentHelper.setEnv(PersistHeaders.envName, "not-a-key")
+      EnvironmentHelper.setEnv(PersistHeaders.envName, "not-a-key,not-a-key-bin")
 
       val actual: Option[com.google.protobuf.any.Any] = PersistHeaders
         .apply()
