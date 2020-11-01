@@ -46,7 +46,7 @@ case class PluginManager(plugins: Seq[PluginBase]) {
  */
 object PluginManager {
 
-  final val EnabledPluginsKey: String = "chief-of-state.plugin-settings.enabled-plugins"
+  final val EnabledPluginsKey: String = "chiefofstate.plugin-settings.enabled-plugins"
 
   /**
    * Default COS Plugins
