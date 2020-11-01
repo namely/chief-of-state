@@ -34,7 +34,10 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
       .forPort(cosConfig.grpcConfig.server.port)
       .addService(
         ServerInterceptors.intercept(
-          ChiefOfStateService.bindService(new GrpcServiceImpl(clusterSharding, pluginManager), ExecutionContext.global),
+          ChiefOfStateService.bindService(
+            new GrpcServiceImpl(clusterSharding, pluginManager, cosConfig.writeSideConfig),
+            ExecutionContext.global
+          ),
           GrpcHeadersInterceptor
         )
       )

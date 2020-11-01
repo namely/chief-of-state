@@ -3,10 +3,11 @@ package com.namely.chiefofstate.test
 import java.time.{Instant, ZoneId}
 
 import com.google.protobuf.timestamp.Timestamp
-import com.namely.chiefofstate.Util.{Instants, Timestamps}
 import com.namely.chiefofstate.Util
+import com.namely.chiefofstate.Util.{Instants, Timestamps}
 import com.namely.chiefofstate.test.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.tests.AccountOpened
+import io.grpc.Metadata
 
 class UtilSpec extends BaseSpec {
   "A protobuf Timestamp date" should {
@@ -46,6 +47,18 @@ class UtilSpec extends BaseSpec {
       val accountOpened: AccountOpened = AccountOpened()
       val packageName: String = Util.getProtoFullyQualifiedName(com.google.protobuf.any.Any.pack(accountOpened))
       packageName shouldBe ("chief_of_state.v1.AccountOpened")
+    }
+  }
+  "Transform gRPC metadata into RemoteCommand.Header" should {
+    "successfully parse gRPC headers" in {
+      val metadata: Metadata = new Metadata()
+      val stringHeaderKey: Metadata.Key[String] = Metadata.Key.of("some-header", Metadata.ASCII_STRING_MARSHALLER)
+      metadata.put(stringHeaderKey, "some header")
+      val byteHeaderKey: Metadata.Key[Array[Byte]] = Metadata.Key.of("byte-header-bin", Metadata.BINARY_BYTE_MARSHALLER)
+      metadata.put(byteHeaderKey, "".getBytes)
+
+      val transformed = Util.transformMetadataToRemoteCommandHeader(metadata)
+      transformed.size shouldBe (2)
     }
   }
 }

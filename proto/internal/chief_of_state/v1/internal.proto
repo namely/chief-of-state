@@ -46,7 +46,7 @@ message HandleCommand {
   // the entity unique id
   string entity_id = 1;
   // the command to process
-  google.protobuf.Any command = 2;
+  RemoteCommand command = 2;
 }
 
 // GetStateCommand returns the current state of a

@@ -1,9 +1,9 @@
 package com.namely.chiefofstate.test
 
 import com.google.protobuf.any.Any
+import com.namely.chiefofstate.EventsAndStateProtosValidation
 import com.namely.chiefofstate.config._
 import com.namely.chiefofstate.test.helper.BaseSpec
-import com.namely.chiefofstate.EventsAndStateProtosValidation
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened}
 import com.typesafe.config.{Config, ConfigFactory}
 
@@ -18,6 +18,7 @@ class EventsAndStateProtosValidationSpec extends BaseSpec {
                 enable-protos-validation = false
                 states-protos = ""
                 events-protos = ""
+                propagated-headers = ""
               }
             }
           """)
@@ -42,6 +43,7 @@ class EventsAndStateProtosValidationSpec extends BaseSpec {
                 enable-protos-validation = true
                 states-protos = "chief_of_state.v1.Account"
                 events-protos = "chief_of_state.v1.AccountOpened"
+                propagated-headers = ""
               }
             }
           """)
@@ -66,6 +68,7 @@ class EventsAndStateProtosValidationSpec extends BaseSpec {
                 enable-protos-validation = true
                 states-protos = ""
                 events-protos = ""
+                propagated-headers = ""
               }
             }
           """)

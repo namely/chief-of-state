@@ -1,19 +1,20 @@
 package com.namely.chiefofstate.test
 
 import com.google.protobuf.any.Any
+import com.namely.chiefofstate.RemoteCommandHandler
 import com.namely.chiefofstate.config.{GrpcClient, GrpcConfig, GrpcServer}
 import com.namely.chiefofstate.test.helper.BaseSpec
-import com.namely.chiefofstate.RemoteCommandHandler
+import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened, OpenAccount}
+import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.writeside.{
   HandleCommandRequest,
   HandleCommandResponse,
   WriteSideHandlerServiceGrpc
 }
-import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
-import io.grpc.{ManagedChannel, Status}
 import io.grpc.netty.NettyChannelBuilder
+import io.grpc.{ManagedChannel, Status}
 import org.grpcmock.GrpcMock
 import org.grpcmock.GrpcMock._
 
@@ -57,6 +58,7 @@ class RemoteCommandHandlerSpec extends BaseSpec {
       stubFor(
         unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
           .withRequest(request)
+          .withHeader("header-1", "header-value-1")
           .willReturn(
             response(expected)
           )
@@ -65,9 +67,17 @@ class RemoteCommandHandlerSpec extends BaseSpec {
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
+      val remoteCommand = RemoteCommand()
+        .withCommand(command)
+        .withHeaders(
+          Seq(
+            RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")
+          )
+        )
+
       val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(grpcConfig, writeHandlerServicetub)
       val triedHandleCommandResponse: Try[HandleCommandResponse] =
-        remoteCommandHandler.handleCommand(command, stateWrapper)
+        remoteCommandHandler.handleCommand(remoteCommand, stateWrapper)
       triedHandleCommandResponse.success.value shouldBe (expected)
     }
 
@@ -83,6 +93,7 @@ class RemoteCommandHandlerSpec extends BaseSpec {
       stubFor(
         unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
           .withRequest(request)
+          .withHeader("header-1", "header-value-1")
           .willReturn(
             statusException(Status.INTERNAL)
           )
@@ -91,9 +102,17 @@ class RemoteCommandHandlerSpec extends BaseSpec {
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
+      val remoteCommand = RemoteCommand()
+        .withCommand(command)
+        .withHeaders(
+          Seq(
+            RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")
+          )
+        )
+
       val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(grpcConfig, writeHandlerServicetub)
       val triedHandleCommandResponse: Try[HandleCommandResponse] =
-        remoteCommandHandler.handleCommand(command, stateWrapper)
+        remoteCommandHandler.handleCommand(remoteCommand, stateWrapper)
       (triedHandleCommandResponse.failure.exception should have).message("INTERNAL")
     }
   }

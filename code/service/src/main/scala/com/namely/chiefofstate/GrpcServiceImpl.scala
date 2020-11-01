@@ -3,6 +3,8 @@ package com.namely.chiefofstate
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
 import akka.util.Timeout
 import com.github.ghik.silencer.silent
+import com.google.protobuf.any
+import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.plugins.PluginManager
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
 import com.namely.protobuf.chiefofstate.v1.internal.FailureResponse.FailureType
@@ -23,8 +25,9 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 @silent
-class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager)(implicit val askTimeout: Timeout)
-    extends ChiefOfStateService {
+class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
+  implicit val askTimeout: Timeout
+) extends ChiefOfStateService {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -32,32 +35,49 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
    * Used to process command sent by an application
    */
   override def processCommand(request: ProcessCommandRequest): Future[ProcessCommandResponse] = {
-    val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
     val entityId: String = request.entityId
-    val entityRef: EntityRef[AggregateCommand] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
 
-    val reply: Future[CommandReply] =
-      entityRef ? (replyTo =>
-        AggregateCommand(
-          SendCommand().withHandleCommand(
-            HandleCommand().withCommand(request.getCommand).withEntityId(entityId)
-          ),
-          replyTo,
-          Map.empty
-        )
-      )
+    // ascertain the entity ID
+    requireEntityId(entityId)
 
-    reply
-      .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
-      .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
+    // fetch the gRPC metadata
+    val metadata = GrpcHeadersInterceptor.REQUEST_META.get()
+
+    // let us get the remote command
+    val meta: Try[Map[String, any.Any]] = pluginManager.run(request, metadata)
+    meta match {
+      case Failure(exception: Throwable) => Future.failed(exception)
+      case Success(data: Map[String, any.Any]) =>
+        val remoteCommand = getRemoteCommand(writeSideConfig, request, metadata)
+        val entityRef: EntityRef[AggregateCommand] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
+
+        val reply: Future[CommandReply] =
+          entityRef ? (replyTo =>
+            AggregateCommand(
+              SendCommand().withHandleCommand(
+                HandleCommand().withCommand(remoteCommand).withEntityId(entityId)
+              ),
+              replyTo,
+              data
+            )
+          )
+
+        reply
+          .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
+          .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
+    }
+
   }
 
   /**
    * Used to get the current state of that entity
    */
   override def getState(request: GetStateRequest): Future[GetStateResponse] = {
-    val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
     val entityId: String = request.entityId
+    requireEntityId(entityId)
+
+    val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
+
     val entityRef: EntityRef[AggregateCommand] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
     val reply: Future[CommandReply] =
       entityRef ? (replyTo =>
@@ -73,6 +93,46 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
       .map(c => GetStateResponse().withState(c.getState).withMeta(c.getMeta))
   }
 
+  /**
+   * builds the remote command to execute
+   *
+   * @param writeSideConfig the write side config instance
+   * @param processCommandRequest the initial request
+   * @param metadata the gRPC metadata
+   * @return the RemoteCommand object
+   */
+  private[this] def getRemoteCommand(writeSideConfig: WriteSideConfig,
+                                     processCommandRequest: ProcessCommandRequest,
+                                     metadata: Metadata
+  ): RemoteCommand = {
+    // get the headers to forward
+    val propagatedHeaders: Seq[RemoteCommand.Header] = Util
+      .transformMetadataToRemoteCommandHeader(metadata)
+      .filter(rc => {
+        writeSideConfig.propagatedHeaders.contains(rc.key)
+      })
+
+    RemoteCommand()
+      .withCommand(processCommandRequest.getCommand)
+      .withHeaders(propagatedHeaders)
+  }
+
+  /**
+   * checks whether an entity ID is empty or not
+   *
+   * @param entityId the entity id
+   */
+  private[this] def requireEntityId(entityId: String): Unit = {
+    if (entityId.isEmpty)
+      throw new StatusException(Status.INVALID_ARGUMENT.withDescription("empty entity ID"))
+  }
+
+  /**
+   * transforms the failure response and return a gRPC exception
+   *
+   * @param failureResponse the failure response
+   * @return the gRPC exception returned
+   */
   private[this] def transformFailure(failureResponse: FailureResponse): Failure[Throwable] = {
     failureResponse.failureType match {
       case FailureType.Critical(value) =>

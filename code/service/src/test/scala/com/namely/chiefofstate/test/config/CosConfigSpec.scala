@@ -35,6 +35,7 @@ class CosConfigSpec extends BaseSpec {
                 enable-protos-validation = false
                 states-protos = ""
                 events-protos = ""
+                propagated-headers = ""
               }
               read-side {
                 create-stores {

@@ -2,9 +2,9 @@ package com.namely.chiefofstate.test
 
 import akka.actor.testkit.typed.scaladsl.TestProbe
 import com.google.protobuf.any.Any
-import com.namely.chiefofstate.test.helper.BaseActorSpec
 import com.namely.chiefofstate.AggregateCommand
-import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, HandleCommand, SendCommand}
+import com.namely.chiefofstate.test.helper.BaseActorSpec
+import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, HandleCommand, RemoteCommand, SendCommand}
 import com.namely.protobuf.chiefofstate.v1.tests.OpenAccount
 
 class CommandSerializerSpec
@@ -33,7 +33,15 @@ class CommandSerializerSpec
         SendCommand()
           .withHandleCommand(
             HandleCommand()
-              .withCommand(Any.pack(OpenAccount()))
+              .withCommand(
+                RemoteCommand()
+                  .withCommand(Any.pack(OpenAccount()))
+                  .withHeaders(
+                    Seq(
+                      RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")
+                    )
+                  )
+              )
               .withEntityId("123")
           ),
         probe.ref,

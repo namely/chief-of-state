@@ -15,6 +15,7 @@ class WriteSideConfigSpec extends BaseSpec {
                 enable-protos-validation = false
                 states-protos = ""
                 events-protos = ""
+                propagated-headers = ""
               }
             }
           """)
