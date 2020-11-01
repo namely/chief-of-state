@@ -57,7 +57,7 @@ class UtilSpec extends BaseSpec {
       val byteHeaderKey: Metadata.Key[Array[Byte]] = Metadata.Key.of("byte-header-bin", Metadata.BINARY_BYTE_MARSHALLER)
       metadata.put(byteHeaderKey, "".getBytes)
 
-      val transformed = Util.transformMetadataToRemoteCommandHeader(metadata)
+      val transformed = Util.transformMetadataToRemoteCommandHeader(metadata, Seq("some-header", "byte-header-bin"))
       transformed.size shouldBe (2)
     }
   }

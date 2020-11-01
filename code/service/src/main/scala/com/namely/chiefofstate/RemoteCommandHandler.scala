@@ -32,13 +32,13 @@ case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: 
    * @return an eventual HandleCommandResponse
    */
   def handleCommand(remoteCommand: RemoteCommand, priorState: StateWrapper): Try[HandleCommandResponse] = {
-    Try {
-      log.debug(
-        s"[ChiefOfState] sending request to the command handler to handle the given command ${remoteCommand.getCommand.typeUrl}"
-      )
+    log.debug(
+      s"[ChiefOfState] sending request to the command handler to handle the given command ${remoteCommand.getCommand.typeUrl}"
+    )
+    // let us set the client request headers
+    val headers: Metadata = new Metadata()
 
-      // let us set the client request headers
-      val headers: Metadata = new Metadata()
+    Try {
       remoteCommand.headers.foreach(header => {
         header.value match {
           case Value.StringValue(value) =>

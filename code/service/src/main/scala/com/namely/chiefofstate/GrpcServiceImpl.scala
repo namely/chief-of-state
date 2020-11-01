@@ -52,11 +52,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
         val entityRef: EntityRef[AggregateCommand] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
 
         val sendCommand: SendCommand = SendCommand()
-          .withHandleCommand(
-            HandleCommand()
-              .withEntityId(entityId)
-              .withCommand(remoteCommand)
-          )
+          .withRemoteCommand(remoteCommand)
 
         entityRef ? (replyTo => AggregateCommand(sendCommand, replyTo, meta))
       })
@@ -102,14 +98,12 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
   ): RemoteCommand = {
     // get the headers to forward
     val propagatedHeaders: Seq[RemoteCommand.Header] = Util
-      .transformMetadataToRemoteCommandHeader(metadata)
-      .filter(rc => {
-        writeSideConfig.propagatedHeaders.contains(rc.key)
-      })
+      .transformMetadataToRemoteCommandHeader(metadata, writeSideConfig.propagatedHeaders)
 
-    RemoteCommand()
-      .withCommand(processCommandRequest.getCommand)
-      .withHeaders(propagatedHeaders)
+    RemoteCommand(
+      command = processCommandRequest.command,
+      headers = propagatedHeaders
+    )
   }
 
   /**

@@ -189,21 +189,13 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
 
       val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
 
+      val remoteCommand = RemoteCommand()
+        .withCommand(command)
+        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .withEntityId(aggregateId)
+
       aggregateRef ! AggregateCommand(
-        SendCommand()
-          .withHandleCommand(
-            HandleCommand()
-              .withCommand(
-                RemoteCommand()
-                  .withCommand(command)
-                  .withHeaders(
-                    Seq(
-                      RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")
-                    )
-                  )
-              )
-              .withEntityId(aggregateId)
-          ),
+        SendCommand().withRemoteCommand(remoteCommand),
         commandSender.ref,
         Map.empty[String, Any]
       )
@@ -271,21 +263,13 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
 
       val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
 
+      val remoteCommand = RemoteCommand()
+        .withCommand(command)
+        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .withEntityId(aggregateId)
+
       aggregateRef ! AggregateCommand(
-        SendCommand()
-          .withHandleCommand(
-            HandleCommand()
-              .withCommand(
-                RemoteCommand()
-                  .withCommand(command)
-                  .withHeaders(
-                    Seq(
-                      RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")
-                    )
-                  )
-              )
-              .withEntityId(aggregateId)
-          ),
+        SendCommand().withRemoteCommand(remoteCommand),
         commandSender.ref,
         Map.empty[String, Any]
       )
@@ -451,20 +435,13 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
 
       val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
 
+      val remoteCommand = RemoteCommand()
+        .withCommand(command)
+        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .withEntityId(aggregateId)
+
       aggregateRef ! AggregateCommand(
-        SendCommand().withHandleCommand(
-          HandleCommand()
-            .withCommand(
-              RemoteCommand()
-                .withCommand(command)
-                .withHeaders(
-                  Seq(
-                    RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")
-                  )
-                )
-            )
-            .withEntityId(aggregateId)
-        ),
+        SendCommand().withRemoteCommand(remoteCommand),
         commandSender.ref,
         Map.empty[String, Any]
       )
@@ -544,20 +521,13 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
 
       val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
 
+      val remoteCommand = RemoteCommand()
+        .withCommand(command)
+        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .withEntityId(aggregateId)
+
       aggregateRef ! AggregateCommand(
-        SendCommand().withHandleCommand(
-          HandleCommand()
-            .withCommand(
-              RemoteCommand()
-                .withCommand(command)
-                .withHeaders(
-                  Seq(
-                    RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")
-                  )
-                )
-            )
-            .withEntityId(aggregateId)
-        ),
+        SendCommand().withRemoteCommand(remoteCommand),
         commandSender.ref,
         Map.empty[String, Any]
       )
@@ -679,20 +649,13 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
 
       val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
 
+      val remoteCommand = RemoteCommand()
+        .withCommand(command)
+        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .withEntityId(aggregateId)
+
       aggregateRef ! AggregateCommand(
-        SendCommand().withHandleCommand(
-          HandleCommand()
-            .withCommand(
-              RemoteCommand()
-                .withCommand(command)
-                .withHeaders(
-                  Seq(
-                    RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")
-                  )
-                )
-            )
-            .withEntityId(aggregateId)
-        ),
+        SendCommand().withRemoteCommand(remoteCommand),
         commandSender.ref,
         Map.empty[String, Any]
       )
@@ -815,20 +778,13 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
 
       val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
 
+      val remoteCommand = RemoteCommand()
+        .withCommand(command)
+        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .withEntityId(aggregateId)
+
       aggregateRef ! AggregateCommand(
-        SendCommand().withHandleCommand(
-          HandleCommand()
-            .withCommand(
-              RemoteCommand()
-                .withCommand(command)
-                .withHeaders(
-                  Seq(
-                    RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")
-                  )
-                )
-            )
-            .withEntityId(aggregateId)
-        ),
+        SendCommand().withRemoteCommand(remoteCommand),
         commandSender.ref,
         Map.empty[String, Any]
       )
@@ -913,21 +869,13 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
       )
       val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
 
+      val remoteCommand = RemoteCommand()
+        .withCommand(command)
+        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .withEntityId(aggregateId)
+
       aggregateRef ! AggregateCommand(
-        SendCommand()
-          .withHandleCommand(
-            HandleCommand()
-              .withCommand(
-                RemoteCommand()
-                  .withCommand(command)
-                  .withHeaders(
-                    Seq(
-                      RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")
-                    )
-                  )
-              )
-              .withEntityId(aggregateId)
-          ),
+        SendCommand().withRemoteCommand(remoteCommand),
         commandSender.ref,
         Map.empty[String, Any]
       )

@@ -12,6 +12,16 @@ import "google/protobuf/wrappers.proto";
 
 // THESE ARE INTERNAL MESSAGES FOR THE COS SERVICE
 
+// SendCommand is the type of commands received by the
+// AggregateRoot(aka persistence entity to handle)
+// There are internally used
+message SendCommand {
+  oneof type {
+    RemoteCommand remote_command = 1;
+    GetStateCommand get_state_command = 2;
+  }
+}
+
 // a wrapper message for forwarding headers to the remote writeside handler
 message RemoteCommand {
   // a helper messsage for gRPC metadata
@@ -24,29 +34,14 @@ message RemoteCommand {
     };
   }
 
+  // the entity id
+  string entity_id = 1;
+
   // the message to send
-  google.protobuf.Any command = 1;
+  google.protobuf.Any command = 2;
 
   // the grpc headers/metadata
-  repeated Header headers = 2;
-}
-
-// SendCommand is the type of commands received by the
-// AggregateRoot(aka persistence entity to handle)
-// There are internally used
-message SendCommand {
-  oneof type {
-    HandleCommand handle_command = 1;
-    GetStateCommand get_state_command = 2;
-  }
-}
-
-// HandleCommand handles a given command and return an event upon success.
-message HandleCommand {
-  // the entity unique id
-  string entity_id = 1;
-  // the command to process
-  RemoteCommand command = 2;
+  repeated Header headers = 3;
 }
 
 // GetStateCommand returns the current state of a

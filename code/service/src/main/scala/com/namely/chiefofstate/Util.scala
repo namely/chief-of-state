@@ -6,7 +6,9 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
 import com.google.protobuf.timestamp.Timestamp
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
+import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand.Header
 import io.grpc.Metadata
+import scala.collection.mutable
 
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, IterableHasAsScala}
 
@@ -75,25 +77,32 @@ object Util {
    * @param headers the gRPC metadata
    * @return the list RemoteCommand.Header
    */
-  def transformMetadataToRemoteCommandHeader(headers: Metadata): Seq[RemoteCommand.Header] = {
-    headers
-      .keys()
-      .asScala
-      .toSeq
-      .flatMap(k => {
-        if (k.endsWith(io.grpc.Metadata.BINARY_HEADER_SUFFIX)) {
-          headers
-            .getAll(Metadata.Key.of(k, Metadata.BINARY_BYTE_MARSHALLER))
-            .asScala
-            .map(v => {
-              RemoteCommand.Header().withKey(k).withBytesValue(ByteString.copyFrom(v))
-            })
-        } else {
-          headers
-            .getAll(Metadata.Key.of(k, Metadata.ASCII_STRING_MARSHALLER))
-            .asScala
-            .map(v => RemoteCommand.Header().withKey(k).withStringValue(v))
+  def transformMetadataToRemoteCommandHeader(metadata: Metadata, keys: Seq[String]): Seq[Header] = {
+    val output: mutable.ListBuffer[Header] = mutable.ListBuffer.empty[Header]
+
+    keys.foreach(key => {
+      if (key.endsWith(Metadata.BINARY_HEADER_SUFFIX)) {
+        val bytesKey: Metadata.Key[Array[Byte]] = Metadata.Key.of(key, Metadata.BINARY_BYTE_MARSHALLER)
+        val byteValues = metadata.getAll[Array[Byte]](bytesKey)
+
+        if (byteValues != null) {
+          byteValues.forEach(byteArray => {
+            val byteString = ByteString.copyFrom(byteArray)
+            output.append(Header(key = key).withBytesValue(byteString))
+          })
         }
-      })
+      } else {
+        val stringKey: Metadata.Key[String] = Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER)
+        val stringValues = metadata.getAll[String](stringKey)
+
+        if (stringValues != null) {
+          stringValues.forEach(stringValue => {
+            output.append(Header(key = key).withStringValue(stringValue))
+          })
+        }
+      }
+    })
+
+    output.toSeq
   }
 }

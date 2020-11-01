@@ -12,7 +12,7 @@ import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate.config.{CosConfig, EventsConfig, SnapshotConfig}
 import com.namely.chiefofstate.Util.Instants
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
-import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, FailureResponse, HandleCommand}
+import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, FailureResponse, GetStateCommand, RemoteCommand}
 import com.namely.protobuf.chiefofstate.v1.internal.SendCommand.Type
 import com.namely.protobuf.chiefofstate.v1.persistence.{EventWrapper, StateWrapper}
 import com.namely.protobuf.chiefofstate.v1.writeside.{HandleCommandResponse, HandleEventResponse}
@@ -20,6 +20,7 @@ import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
+import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 
 /**
  *  This is an event sourced actor.
@@ -96,10 +97,10 @@ object AggregateRoot {
             )
           )
 
-      case Type.HandleCommand(handleCommand: HandleCommand) =>
+      case Type.RemoteCommand(remoteCommand: RemoteCommand) =>
         // make a call to the command handler.
         val commandHandlerResponseAttempt: Try[HandleCommandResponse] =
-          commandHandler.handleCommand(handleCommand.getCommand, aggregateState)
+          commandHandler.handleCommand(remoteCommand, aggregateState)
 
         commandHandlerResponseAttempt match {
 
@@ -177,20 +178,32 @@ object AggregateRoot {
             }
         }
       case Type.GetStateCommand(getStateCommand) =>
-        if (aggregateState.getMeta.revisionNumber > 0) {
-          log.debug(s"[ChiefOfState] found state for entity ${getStateCommand.entityId}")
-          Effect
-            .reply(aggregateCommand.replyTo)(
-              CommandReply()
-                .withState(aggregateState)
-            )
-        } else {
-          Effect.reply(aggregateCommand.replyTo)(
-            CommandReply().withFailure(
-              FailureResponse().withNotFound(s"[ChiefOfState] entity: ${getStateCommand.entityId} not found")
-            )
-          )
-        }
+        handleGetStateCommand(getStateCommand, aggregateState, aggregateCommand.replyTo)
+    }
+  }
+
+  /**
+   * handles GetStateCommand
+   *
+   * @param cmd a GetStateCommand
+   * @param state an aggregate StateWrapper
+   * @param replyTo address to reply to
+   * @return a reply effect returning the state or an error
+   */
+  def handleGetStateCommand(cmd: GetStateCommand,
+                            state: StateWrapper,
+                            replyTo: ActorRef[CommandReply]
+  ): ReplyEffect[EventWrapper, StateWrapper] = {
+    if (state.meta.map(_.revisionNumber).getOrElse(0) > 0) {
+      log.debug(s"[ChiefOfState] found state for entity ${cmd.entityId}")
+      Effect.reply(replyTo)(CommandReply().withState(state))
+    } else {
+      Effect.reply(replyTo)(
+        CommandReply().withFailure(
+          FailureResponse()
+            .withNotFound(s"[ChiefOfState] entity: ${cmd.entityId} not found")
+        )
+      )
     }
   }
 

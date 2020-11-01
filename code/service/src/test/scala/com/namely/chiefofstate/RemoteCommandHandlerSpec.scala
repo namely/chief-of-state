@@ -155,8 +155,10 @@ class RemoteCommandHandlerSpec extends BaseSpec {
         )
 
       val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(grpcConfig, writeHandlerServicetub)
+
       val triedHandleCommandResponse: Try[HandleCommandResponse] =
         remoteCommandHandler.handleCommand(remoteCommand, stateWrapper)
+
       (triedHandleCommandResponse.failure.exception should have).message("header value must be string or bytes")
     }
   }
