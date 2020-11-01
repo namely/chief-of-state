@@ -1,6 +1,6 @@
 package com.namely.chiefofstate.test
 
-import com.namely.chiefofstate.test.helper.BaseSpec
+import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.chiefofstate.RemoteReadSideProcessor
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.readside.{

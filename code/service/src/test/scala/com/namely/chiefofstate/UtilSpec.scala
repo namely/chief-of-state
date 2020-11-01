@@ -5,7 +5,7 @@ import java.time.{Instant, ZoneId}
 import com.google.protobuf.timestamp.Timestamp
 import com.namely.chiefofstate.Util
 import com.namely.chiefofstate.Util.{Instants, Timestamps}
-import com.namely.chiefofstate.test.helper.BaseSpec
+import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.tests.AccountOpened
 import io.grpc.Metadata
 

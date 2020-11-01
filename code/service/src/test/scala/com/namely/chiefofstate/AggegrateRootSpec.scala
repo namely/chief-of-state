@@ -11,7 +11,7 @@ import com.google.protobuf.any.Any
 import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate._
 import com.namely.chiefofstate.config.{CosConfig, EventsConfig}
-import com.namely.chiefofstate.test.helper.BaseActorSpec
+import com.namely.chiefofstate.helper.BaseActorSpec
 import com.namely.chiefofstate.AggregateRoot.getEntityId
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.internal._

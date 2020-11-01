@@ -14,36 +14,38 @@ private[this] class PersistHeaders(persistedHeaders: Seq[String]) extends Plugin
 
   override val pluginId: String = "persisted_headers.v1"
 
-  override def run(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Option[com.google.protobuf.any.Any] = {
+  override def run(processCommandRequest: ProcessCommandRequest,
+                   metadata: Metadata
+  ): Option[com.google.protobuf.any.Any] = {
 
     val capturedHeaders: mutable.ListBuffer[Header] = mutable.ListBuffer.empty[Header]
 
     persistedHeaders.foreach(key => {
-      if(key.endsWith(Metadata.BINARY_HEADER_SUFFIX)) {
+      if (key.endsWith(Metadata.BINARY_HEADER_SUFFIX)) {
         val bytesKey: Metadata.Key[Array[Byte]] = Metadata.Key.of(key, Metadata.BINARY_BYTE_MARSHALLER)
         val byteValues = metadata.getAll[Array[Byte]](bytesKey)
 
-        if(byteValues != null) {
+        if (byteValues != null) {
           byteValues.forEach(byteArray => {
             val byteString = ByteString.copyFrom(byteArray)
             logger.debug(s"persisting header=${key}, type=bytes")
-            capturedHeaders.addOne(Header(key=key).withBytesValue(byteString))
+            capturedHeaders.addOne(Header(key = key).withBytesValue(byteString))
           })
         }
       } else {
         val stringKey: Metadata.Key[String] = Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER)
         val stringValues = metadata.getAll[String](stringKey)
 
-        if(stringValues != null) {
+        if (stringValues != null) {
           stringValues.forEach(stringValue => {
             logger.debug(s"persisting header=$key, type=string, value=$stringValue")
-            capturedHeaders.addOne(Header(key=key).withStringValue(stringValue))
+            capturedHeaders.addOne(Header(key = key).withStringValue(stringValue))
           })
         }
       }
     })
 
-    if(capturedHeaders.nonEmpty) {
+    if (capturedHeaders.nonEmpty) {
       Some(com.google.protobuf.any.Any.pack(Headers().withHeaders(capturedHeaders.toSeq)))
     } else {
       None
@@ -57,9 +59,11 @@ object PersistHeaders extends PluginFactory {
 
   val logger: Logger = LoggerFactory.getLogger(getClass)
 
-  def persistedHeaders: Seq[String] = sys.env.get(envName)
-    .map(_.split(",").map(_.trim).toSeq)
-    .getOrElse(Seq.empty[String])
+  def persistedHeaders: Seq[String] =
+    sys.env
+      .get(envName)
+      .map(_.split(",").map(_.trim).toSeq)
+      .getOrElse(Seq.empty[String])
 
   override def apply(): PluginBase = new PersistHeaders(persistedHeaders)
 }

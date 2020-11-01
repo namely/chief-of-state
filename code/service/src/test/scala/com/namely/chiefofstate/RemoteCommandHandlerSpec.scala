@@ -4,7 +4,7 @@ import com.google.protobuf.any.Any
 import com.google.protobuf.ByteString
 import com.namely.chiefofstate.RemoteCommandHandler
 import com.namely.chiefofstate.config.{GrpcClient, GrpcConfig, GrpcServer}
-import com.namely.chiefofstate.test.helper.BaseSpec
+import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand.Header.Value
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper

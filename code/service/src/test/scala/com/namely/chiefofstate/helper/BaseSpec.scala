@@ -1,4 +1,4 @@
-package com.namely.chiefofstate.test.helper
+package com.namely.chiefofstate.helper
 
 import org.scalamock.scalatest.MockFactory
 import org.scalatest._

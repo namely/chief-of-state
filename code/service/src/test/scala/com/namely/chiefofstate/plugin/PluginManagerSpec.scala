@@ -1,17 +1,15 @@
 package com.namely.chiefofstate.plugin
 
-import akka.grpc.GrpcServiceException
 import com.google.protobuf.any
 import com.google.protobuf.wrappers.StringValue
-import com.namely.chiefofstate.test.helpers.{EnvironmentHelper, TestSpec}
+import com.namely.chiefofstate.helper.{BaseSpec, EnvironmentHelper}
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
 import com.typesafe.config.{Config, ConfigFactory, ConfigValue, ConfigValueFactory}
-import io.grpc.Metadata
+import io.grpc.{Metadata, Status, StatusException}
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 
 import scala.util.Try
-import io.grpc.Status
 
 private[this] class MockPlugin1() extends PluginBase {
   override val pluginId: String = "MockPluginBase"
@@ -33,7 +31,7 @@ private[this] object MockPlugin2 extends PluginFactory {
   override def apply(): PluginBase = new MockPlugin2()
 }
 
-class PluginManagerSpec extends TestSpec {
+class PluginManagerSpec extends BaseSpec {
 
   val packagePrefix: String = this.getClass.getPackage.getName
   val classPackage1: String = PluginManagerSpecCompanion.makeFullyQuailifiedName(packagePrefix, "MockPlugin1")
@@ -102,7 +100,7 @@ class PluginManagerSpec extends TestSpec {
         val anyProto: com.google.protobuf.any.Any = com.google.protobuf.any.Any.pack(StringValue(foo))
 
         val mockPluginBase: PluginBase = mock[PluginBase]
-        (mockPluginBase.pluginId _).expects().returning(pluginId)
+        (() => mockPluginBase.pluginId).expects().returning(pluginId)
         (mockPluginBase.run _).expects(processCommandRequest, metadata).returning(Some(anyProto))
         val pluginManager: PluginManager = new PluginManager(Seq(mockPluginBase))
 
@@ -137,10 +135,10 @@ class PluginManagerSpec extends TestSpec {
         val pluginManager: PluginManager = new PluginManager(Seq(mockPluginBase))
 
         val actual = pluginManager.run(processCommandRequest, metadata)
-        val actualError = intercept[GrpcServiceException](actual.get)
+        val actualError = intercept[StatusException](actual.get)
 
-        actualError.getStatus.getCode shouldBe(Status.Code.INTERNAL)
-        actualError.getStatus.getDescription() shouldBe("test")
+        actualError.getStatus.getCode shouldBe (Status.Code.INTERNAL)
+        actualError.getStatus.getDescription() shouldBe ("test")
       }
     }
   }
@@ -156,9 +154,9 @@ object PluginManagerSpecCompanion extends Matchers {
    * @return Assertion
    */
   def compare(actual: Seq[PluginBase], expected: Seq[String]): Assertion = {
-    actual.size should be (expected.size)
-    actual.map(x => x.getClass.getName.replace("$","")) should
-      contain theSameElementsInOrderAs expected
+    actual.size should be(expected.size)
+    (actual.map(x => x.getClass.getName.replace("$", "")) should
+      contain).theSameElementsInOrderAs(expected)
   }
 
   /**

@@ -1,14 +1,14 @@
-package com.namely.chiefofstate.test.config
+package com.namely.chiefofstate.config
 
 import com.namely.chiefofstate.config.EventsConfig
-import com.namely.chiefofstate.test.helper.BaseSpec
+import com.namely.chiefofstate.helper.BaseSpec
 import com.typesafe.config.{Config, ConfigException, ConfigFactory}
 
 class EventsConfigSpec extends BaseSpec {
   "Loading events config" should {
     "be successful when all is set" in {
       val config: Config = ConfigFactory.parseString(s"""
-            akka.cluster.sharding.number-of-shards = 2                                             
+            akka.cluster.sharding.number-of-shards = 2
             chiefofstate {
               events {
                 tagname: "cos"

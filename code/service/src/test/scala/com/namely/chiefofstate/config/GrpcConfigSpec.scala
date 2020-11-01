@@ -1,7 +1,7 @@
-package com.namely.chiefofstate.test.config
+package com.namely.chiefofstate.config
 
 import com.namely.chiefofstate.config.GrpcConfig
-import com.namely.chiefofstate.test.helper.BaseSpec
+import com.namely.chiefofstate.helper.BaseSpec
 import com.typesafe.config.{Config, ConfigException, ConfigFactory}
 
 class GrpcConfigSpec extends BaseSpec {

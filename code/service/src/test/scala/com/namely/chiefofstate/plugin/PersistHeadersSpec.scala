@@ -3,12 +3,12 @@ package com.namely.chiefofstate.plugin
 import org.scalamock.scalatest.MockFactory
 import com.google.protobuf.ByteString
 import io.grpc.Metadata
-import com.namely.chiefofstate.test.helpers.{EnvironmentHelper, TestSpec}
+import com.namely.chiefofstate.helper.{BaseSpec, EnvironmentHelper}
 import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Header.Value.{BytesValue, StringValue}
 import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Header, Headers}
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
 
-class PersistHeadersSpec extends TestSpec with MockFactory {
+class PersistHeadersSpec extends BaseSpec with MockFactory {
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -55,7 +55,7 @@ class PersistHeadersSpec extends TestSpec with MockFactory {
 
       val expected: Headers = Headers(Vector(fooHeader1, fooHeader2, barHeader))
 
-      actual should be (expected)
+      actual should be(expected)
     }
 
     "return an empty header" in {
@@ -65,7 +65,7 @@ class PersistHeadersSpec extends TestSpec with MockFactory {
         .apply()
         .run(processCommandRequest, metadata)
 
-      actual should be (None)
+      actual should be(None)
     }
   }
 }

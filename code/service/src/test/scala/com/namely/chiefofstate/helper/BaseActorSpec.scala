@@ -1,4 +1,4 @@
-package com.namely.chiefofstate.test.helper
+package com.namely.chiefofstate.helper
 
 import akka.actor.testkit.typed.scaladsl.{ActorTestKit, ActorTestKitBase}
 import akka.actor.testkit.typed.TestKitSettings

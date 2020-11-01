@@ -3,7 +3,7 @@ package com.namely.chiefofstate.test
 import akka.actor.testkit.typed.scaladsl.TestProbe
 import com.google.protobuf.any.Any
 import com.namely.chiefofstate.AggregateCommand
-import com.namely.chiefofstate.test.helper.BaseActorSpec
+import com.namely.chiefofstate.helper.BaseActorSpec
 import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, HandleCommand, RemoteCommand, SendCommand}
 import com.namely.protobuf.chiefofstate.v1.tests.OpenAccount
 

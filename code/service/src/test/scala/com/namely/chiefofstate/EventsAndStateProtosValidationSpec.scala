@@ -3,7 +3,7 @@ package com.namely.chiefofstate.test
 import com.google.protobuf.any.Any
 import com.namely.chiefofstate.EventsAndStateProtosValidation
 import com.namely.chiefofstate.config._
-import com.namely.chiefofstate.test.helper.BaseSpec
+import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened}
 import com.typesafe.config.{Config, ConfigFactory}
 

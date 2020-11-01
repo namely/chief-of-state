@@ -5,7 +5,7 @@ import akka.util.Timeout
 import com.github.ghik.silencer.silent
 import com.google.protobuf.any
 import com.namely.chiefofstate.config.WriteSideConfig
-import com.namely.chiefofstate.plugins.PluginManager
+import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
 import com.namely.protobuf.chiefofstate.v1.internal.FailureResponse.FailureType
@@ -43,30 +43,25 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
     // fetch the gRPC metadata
     val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
 
-    // let us get the remote command
-    val meta: Try[Map[String, any.Any]] = pluginManager.run(request, metadata)
-    meta match {
-      case Failure(exception: Throwable) => Future.failed(exception)
-      case Success(data: Map[String, any.Any]) =>
+    // run plugins to get meta
+    Future
+      .fromTry(pluginManager.run(request, metadata))
+      // run remote command
+      .flatMap(meta => {
         val remoteCommand: RemoteCommand = getRemoteCommand(writeSideConfig, request, metadata)
         val entityRef: EntityRef[AggregateCommand] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
 
-        val reply: Future[CommandReply] =
-          entityRef ? (replyTo =>
-            AggregateCommand(
-              SendCommand().withHandleCommand(
-                HandleCommand().withCommand(remoteCommand).withEntityId(entityId)
-              ),
-              replyTo,
-              data
-            )
+        val sendCommand: SendCommand = SendCommand()
+          .withHandleCommand(
+            HandleCommand()
+              .withEntityId(entityId)
+              .withCommand(remoteCommand)
           )
 
-        reply
-          .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
-          .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
-    }
-
+        entityRef ? (replyTo => AggregateCommand(sendCommand, replyTo, meta))
+      })
+      .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
+      .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
   }
 
   /**
