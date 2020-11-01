@@ -13,8 +13,8 @@ import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.R
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.typesafe.config.{Config, ConfigFactory}
-import io.grpc.netty.{NettyChannelBuilder, NettyServerBuilder}
 import io.grpc.{ManagedChannel, Server, ServerInterceptors}
+import io.grpc.netty.{NettyChannelBuilder, NettyServerBuilder}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext

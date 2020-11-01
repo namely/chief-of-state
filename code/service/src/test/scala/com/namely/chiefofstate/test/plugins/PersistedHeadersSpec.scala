@@ -3,8 +3,8 @@ package com.namely.chiefofstate.test.plugins
 import com.google.protobuf.ByteString
 import com.namely.chiefofstate.plugins.PersistedHeaders
 import com.namely.chiefofstate.test.helper.{BaseSpec, EnvironmentHelper}
-import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Header.Value.{BytesValue, StringValue}
 import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Header, Headers}
+import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Header.Value.{BytesValue, StringValue}
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
 import io.grpc.Metadata
 
