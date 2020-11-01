@@ -223,6 +223,86 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
         case _ => fail("unexpected message type")
       }
     }
+    "return as expected with no event to persist" in {
+      val aggregateId: String = UUID.randomUUID().toString
+      val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
+      val stateWrapper: StateWrapper = StateWrapper()
+        .withState(any.Any.pack(Empty.defaultInstance))
+        .withMeta(
+          MetaData.defaultInstance.withEntityId(getEntityId(persistenceId))
+        )
+      val command: Any = Any.pack(OpenAccount())
+
+      stubFor(
+        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
+          .withRequest(
+            HandleCommandRequest()
+              .withCommand(command)
+              .withPriorState(stateWrapper.getState)
+              .withPriorEventMeta(stateWrapper.getMeta)
+          )
+          .withHeader("header-1", "header-value-1")
+          .willReturn(
+            response(HandleCommandResponse())
+          )
+      )
+
+      val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
+        new WriteSideHandlerServiceBlockingStub(serverChannel)
+
+      // Let us create the sender of commands
+      val commandSender: TestProbe[CommandReply] =
+        createTestProbe[CommandReply]()
+
+      val remoteCommandHandler: RemoteCommandHandler =
+        RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val shardIndex = 0
+      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
+        EventsAndStateProtosValidation(cosConfig.writeSideConfig)
+
+      val aggregateRoot = AggregateRoot(persistenceId,
+                                        shardIndex,
+                                        cosConfig,
+                                        remoteCommandHandler,
+                                        remoteEventHandler,
+                                        eventsAndStateProtosValidation
+      )
+
+      val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
+
+      aggregateRef ! AggregateCommand(
+        SendCommand()
+          .withHandleCommand(
+            HandleCommand()
+              .withCommand(
+                RemoteCommand()
+                  .withCommand(command)
+                  .withHeaders(
+                    Seq(
+                      RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")
+                    )
+                  )
+              )
+              .withEntityId(aggregateId)
+          ),
+        commandSender.ref,
+        Map.empty[String, Any]
+      )
+
+      commandSender.receiveMessage(replyTimeout) match {
+        case CommandReply(reply, _) =>
+          reply match {
+            case Reply.Empty => fail("unexpected message state")
+            case Reply.State(value: StateWrapper) =>
+              value.getState shouldBe Any.pack(Empty.defaultInstance)
+              value.getMeta.revisionNumber shouldBe 0
+              value.getMeta.entityId shouldBe aggregateId
+            case Reply.Failure(failureResponse: FailureResponse) => fail(s"unexpected message state $failureResponse")
+          }
+        case _ => fail("unexpected message type")
+      }
+    }
     "return a failure when an empty command is sent" in {
       val aggregateId: String = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
@@ -505,7 +585,7 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
                 disable-snapshot = false
                 retention-frequency = 1
                 retention-number = 1
-                delete-events-on-snapshot = false
+                delete-events-on-snapshot = true
               }
               events {
                 tagname: "cos"
@@ -638,7 +718,7 @@ class AggegrateRootSpec extends BaseActorSpec(s"""
              	service-name = "chiefofstate"
               ask-timeout = 5
               snapshot-criteria {
-                disable-snapshot = false
+                disable-snapshot = true
                 retention-frequency = 1
                 retention-number = 1
                 delete-events-on-snapshot = false
