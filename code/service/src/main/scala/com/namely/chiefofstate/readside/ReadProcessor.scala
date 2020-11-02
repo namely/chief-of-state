@@ -58,8 +58,7 @@ class ReadProcessor(
 
   protected val baseTag: String = ConfigReader.eventsConfig.tagName
 
-  def projectionName: String =
-    s"${grpcReadSideConfig.processorId}-${ConfigReader.serviceName}-readside-projection"
+  protected val projectionId: String = grpcReadSideConfig.processorId
 
   private val COS_EVENT_TAG_HEADER = "x-cos-event-tag"
   private val COS_ENTITY_ID_HEADER = "x-cos-entity-id"
@@ -96,7 +95,7 @@ class ReadProcessor(
     eventualResponse match {
       case Failure(exception) =>
         log.error(
-          s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - unable to retrieve command handler response due to ${exception.getMessage}"
+          s"[ChiefOfState]: ${projectionId} - unable to retrieve command handler response due to ${exception.getMessage}"
         )
         DBIOAction.failed(exception)
       case Success(value) => handleSuccessfulResponse(value)
@@ -111,7 +110,7 @@ class ReadProcessor(
     if (ConfigReader.createOffsetStore) SlickProjection.createOffsetTableIfNotExists(offsetStoreDatabaseConfig)
 
     ShardedDaemonProcess(typedActorSys).init[ProjectionBehavior.Command](
-      name = projectionName,
+      name = projectionId,
       numberOfInstances = ConfigReader.allEventTags.size,
       behaviorFactory = n => ProjectionBehavior(exactlyOnceProjection(s"$baseTag$n")),
       settings = ShardedDaemonProcessSettings(typedActorSys),
@@ -128,7 +127,7 @@ class ReadProcessor(
   protected def exactlyOnceProjection(tagName: String): ExactlyOnceProjection[Offset, EventEnvelope[EventWrapper]] = {
     SlickProjection
       .exactlyOnce(
-        projectionId = ProjectionId(projectionName, tagName),
+        projectionId = ProjectionId(projectionId, tagName),
         sourceProvider(tagName),
         offsetStoreDatabaseConfig,
         handler = () => new EventsConsumer(tagName, encryptionAdapter, this)
@@ -151,7 +150,7 @@ class ReadProcessor(
     else
       DBIOAction.failed(
         new Exception(
-          s"[ChiefOfState]: ${grpcReadSideConfig.processorId} - unable to handle readSide"
+          s"[ChiefOfState]: ${projectionId} - unable to handle readSide"
         )
       )
   }
