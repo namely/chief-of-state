@@ -47,7 +47,7 @@ class ReadSideProcessor(
     if (cosConfig.createDataStores) SlickProjection.createOffsetTableIfNotExists(offsetStoreDatabaseConfig)
 
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
-      name = projectionId,
+      name = processorId,
       numberOfInstances = AggregateRoot.tags(cosConfig.eventsConfig).size,
       behaviorFactory = n => ProjectionBehavior(exactlyOnceProjection(s"$baseTag$n")),
       settings = ShardedDaemonProcessSettings(actorSystem),
@@ -64,7 +64,7 @@ class ReadSideProcessor(
   protected def exactlyOnceProjection(tagName: String): ExactlyOnceProjection[Offset, EventEnvelope[EventWrapper]] = {
     SlickProjection
       .exactlyOnce(
-        projectionId = ProjectionId(projectionId, tagName),
+        projectionId = ProjectionId(processorId, tagName),
         sourceProvider(tagName),
         offsetStoreDatabaseConfig,
         handler = () => new ReadSideEventsConsumer(tagName, processorId, remoteReadProcessor)
