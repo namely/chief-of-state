@@ -61,6 +61,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                   deadline-timeout = 3000
                 }
                 server {
+                  address = "0.0.0.0"
                   port = 9000
                 }
               }
@@ -562,6 +563,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                   deadline-timeout = 3000
                 }
                 server {
+                  address = "0.0.0.0"
                   port = 9000
                 }
               }
@@ -692,6 +694,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                   deadline-timeout = 3000
                 }
                 server {
+                  address = "0.0.0.0"
                   port = 9000
                 }
               }
@@ -823,6 +826,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                   deadline-timeout = 3000
                 }
                 server {
+                  address = "0.0.0.0"
                   port = 9000
                 }
               }

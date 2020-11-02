@@ -24,7 +24,7 @@ import scala.util.Try
 class RemoteCommandHandlerSpec extends BaseSpec {
 
   var serverChannel: ManagedChannel = null
-  val grpcConfig: GrpcConfig = GrpcConfig(GrpcClient(5000), GrpcServer(5052))
+  val grpcConfig: GrpcConfig = GrpcConfig(GrpcClient(5000), GrpcServer("0.0.0.0", 5052))
 
   override def beforeAll(): Unit = {
     GrpcMock.configureFor(grpcMock(grpcConfig.server.port).build().start())

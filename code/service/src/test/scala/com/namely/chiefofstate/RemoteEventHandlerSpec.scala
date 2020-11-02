@@ -21,7 +21,7 @@ import scala.util.Try
 class RemoteEventHandlerSpec extends BaseSpec {
 
   var serverChannel: ManagedChannel = null
-  val grpcConfig: GrpcConfig = GrpcConfig(GrpcClient(5000), GrpcServer(5051))
+  val grpcConfig: GrpcConfig = GrpcConfig(GrpcClient(5000), GrpcServer("0.0.0.0", 5051))
 
   override def beforeAll(): Unit = {
     GrpcMock.configureFor(grpcMock(grpcConfig.server.port).build().start())

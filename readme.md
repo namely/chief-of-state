@@ -13,8 +13,6 @@ Chief-Of-State is language agnostic, which means that services can be written in
 
 Chief-Of-State can be bundled as a sidecar to the application it is providing events and state management or run it on its own k8 pod.
 
-Chief-Of-State heavily relies on the robustness of [lagom-pb](https://github.com/super-flat/lagom-pb).
-
 ## Features
 
 - Journal and Snapshot serialization using google protocol buffer message format.

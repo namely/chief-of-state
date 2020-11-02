@@ -13,6 +13,7 @@ class GrpcConfigSpec extends BaseSpec {
                   deadline-timeout = 100
                 }
                 server {
+                  address = "0.0.0.0"
                   port = 9000
                 }
               }

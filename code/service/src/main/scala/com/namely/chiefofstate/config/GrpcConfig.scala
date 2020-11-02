@@ -12,7 +12,7 @@ case class GrpcConfig(client: GrpcClient, server: GrpcServer)
 
 case class GrpcClient(timeout: Int)
 
-case class GrpcServer(port: Int)
+case class GrpcServer(host: String, port: Int)
 
 object GrpcConfig {
 
@@ -25,7 +25,10 @@ object GrpcConfig {
   def apply(config: Config): GrpcConfig = {
     GrpcConfig(
       GrpcClient(config.getInt("chiefofstate.grpc.client.deadline-timeout")),
-      GrpcServer(config.getInt("chiefofstate.grpc.server.port"))
+      GrpcServer(
+        config.getString("chiefofstate.grpc.server.address"),
+        config.getInt("chiefofstate.grpc.server.port")
+      )
     )
   }
 }

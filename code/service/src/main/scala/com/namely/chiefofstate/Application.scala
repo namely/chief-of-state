@@ -1,5 +1,7 @@
 package com.namely.chiefofstate
 
+import java.net.InetSocketAddress
+
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
@@ -31,7 +33,7 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
    */
   private def start(): Unit = {
     server = NettyServerBuilder
-      .forPort(cosConfig.grpcConfig.server.port)
+      .forAddress(new InetSocketAddress(cosConfig.grpcConfig.server.host, cosConfig.grpcConfig.server.port))
       .addService(
         ServerInterceptors.intercept(
           ChiefOfStateService.bindService(
