@@ -5,13 +5,11 @@ import java.time.{Instant, LocalDate, ZoneId}
 import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
 import com.google.protobuf.timestamp.Timestamp
-import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand.Header
 import io.grpc.{Metadata, Status, StatusException, StatusRuntimeException}
-import scala.collection.mutable
-import scala.util.{Failure, Success, Try}
 
-import scala.jdk.CollectionConverters.{CollectionHasAsScala, IterableHasAsScala}
+import scala.collection.mutable
+import scala.util.{Failure, Try}
 
 object Util {
   implicit class Timestamps(timestamp: Timestamp) {

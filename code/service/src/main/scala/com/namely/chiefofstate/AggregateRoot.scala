@@ -11,21 +11,16 @@ import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate.config.{CosConfig, EventsConfig, SnapshotConfig}
 import com.namely.chiefofstate.Util.{makeFailedStatusPf, toRpcStatus, Instants}
+import com.namely.chiefofstate.WriteHandlerHelpers.{NewState, NoOp}
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, GetStateCommand, RemoteCommand}
 import com.namely.protobuf.chiefofstate.v1.internal.SendCommand.Type
 import com.namely.protobuf.chiefofstate.v1.persistence.{EventWrapper, StateWrapper}
-import com.namely.protobuf.chiefofstate.v1.writeside.{HandleCommandResponse, HandleEventResponse}
+import io.grpc.{Status, StatusException}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
-import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
-import io.grpc.Status
-import io.grpc.StatusException
-import io.grpc.StatusRuntimeException
-import com.namely.chiefofstate.WriteHandlerHelpers.NoOp
-import com.namely.chiefofstate.WriteHandlerHelpers.NewState
 
 /**
  *  This is an event sourced actor.
@@ -202,7 +197,7 @@ object AggregateRoot {
 
       case x =>
         // this should never happen, but here for code completeness
-        val errMsg: String = s"write handler failure, ${x.getClass()}"
+        val errMsg: String = s"write handler failure, ${x.getClass}"
         Effect.reply(replyTo)(
           CommandReply().withError(toRpcStatus(Status.INTERNAL.withDescription(errMsg)))
         )
@@ -273,7 +268,7 @@ object AggregateRoot {
    *
    * @param event the event to persist
    * @param resultingState the resulting state to persist
-   * @param priorState the prior state before the event to be persisted
+   * @param priorMeta the prior meta before the event to be persisted
    * @param data the additional data to persist
    * @param replyTo the caller ref receiving the reply when persistence is successful
    * @return a reply effect

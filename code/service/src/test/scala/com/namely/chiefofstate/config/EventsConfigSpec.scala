@@ -1,6 +1,5 @@
 package com.namely.chiefofstate.config
 
-import com.namely.chiefofstate.config.EventsConfig
 import com.namely.chiefofstate.helper.BaseSpec
 import com.typesafe.config.{Config, ConfigException, ConfigFactory}
 

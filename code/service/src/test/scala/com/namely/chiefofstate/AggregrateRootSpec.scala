@@ -1,4 +1,4 @@
-package com.namely.chiefofstate.test
+package com.namely.chiefofstate
 
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -9,7 +9,6 @@ import akka.persistence.typed.PersistenceId
 import com.google.protobuf.any
 import com.google.protobuf.any.Any
 import com.google.protobuf.empty.Empty
-import com.namely.chiefofstate._
 import com.namely.chiefofstate.config.{CosConfig, EventsConfig}
 import com.namely.chiefofstate.helper.BaseActorSpec
 import com.namely.chiefofstate.AggregateRoot.getEntityId
@@ -29,7 +28,7 @@ import org.grpcmock.GrpcMock._
 
 import scala.concurrent.duration.FiniteDuration
 
-class AggegrateRootSpec extends BaseActorSpec(s"""
+class AggregrateRootSpec extends BaseActorSpec(s"""
       akka.cluster.sharding.number-of-shards = 1
       akka.persistence.journal.plugin = "akka.persistence.journal.inmem"
       akka.persistence.snapshot-store.plugin = "akka.persistence.snapshot-store.local"

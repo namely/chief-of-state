@@ -1,7 +1,6 @@
-package com.namely.chiefofstate.test
+package com.namely.chiefofstate
 
 import com.google.protobuf.any.Any
-import com.namely.chiefofstate.EventsAndStateProtosValidation
 import com.namely.chiefofstate.config._
 import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened}

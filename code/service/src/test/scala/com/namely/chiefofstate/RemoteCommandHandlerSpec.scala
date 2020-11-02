@@ -1,8 +1,7 @@
-package com.namely.chiefofstate.test
+package com.namely.chiefofstate
 
 import com.google.protobuf.any.Any
 import com.google.protobuf.ByteString
-import com.namely.chiefofstate.RemoteCommandHandler
 import com.namely.chiefofstate.config.{GrpcClient, GrpcConfig, GrpcServer}
 import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand

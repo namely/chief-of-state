@@ -5,6 +5,7 @@ import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
 import com.typesafe.config.Config
 import io.grpc.{Metadata, Status, StatusException, StatusRuntimeException}
 import org.slf4j.{Logger, LoggerFactory}
+
 import scala.reflect.runtime.universe
 import scala.util.{Failure, Success, Try}
 

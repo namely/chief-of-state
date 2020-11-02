@@ -1,6 +1,5 @@
 package com.namely.chiefofstate.config
 
-import com.namely.chiefofstate.config.{ReadSideConfig, ReadSideConfigReader}
 import com.namely.chiefofstate.helper.{BaseSpec, EnvironmentHelper}
 
 class ReadSideConfigReaderSpec extends BaseSpec {

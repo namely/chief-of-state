@@ -1,7 +1,6 @@
-package com.namely.chiefofstate.test
+package com.namely.chiefofstate
 
 import com.namely.chiefofstate.helper.BaseSpec
-import com.namely.chiefofstate.RemoteReadSideProcessor
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.readside.{
   HandleReadSideRequest,

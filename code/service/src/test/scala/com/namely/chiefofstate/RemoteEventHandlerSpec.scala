@@ -1,9 +1,8 @@
-package com.namely.chiefofstate.test
+package com.namely.chiefofstate
 
 import com.google.protobuf.any
 import com.namely.chiefofstate.config.{GrpcClient, GrpcConfig, GrpcServer}
 import com.namely.chiefofstate.helper.BaseSpec
-import com.namely.chiefofstate.RemoteEventHandler
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened}
 import com.namely.protobuf.chiefofstate.v1.writeside.{

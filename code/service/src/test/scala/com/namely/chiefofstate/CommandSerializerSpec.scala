@@ -1,8 +1,7 @@
-package com.namely.chiefofstate.test
+package com.namely.chiefofstate
 
 import akka.actor.testkit.typed.scaladsl.TestProbe
 import com.google.protobuf.any.Any
-import com.namely.chiefofstate.AggregateCommand
 import com.namely.chiefofstate.helper.BaseActorSpec
 import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, RemoteCommand, SendCommand}
 import com.namely.protobuf.chiefofstate.v1.tests.OpenAccount

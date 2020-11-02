@@ -1,17 +1,13 @@
-package com.namely.chiefofstate.test
+package com.namely.chiefofstate
 
 import java.time.{Instant, ZoneId}
 
 import com.google.protobuf.timestamp.Timestamp
-import com.namely.chiefofstate.Util
 import com.namely.chiefofstate.Util.{Instants, Timestamps}
 import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.tests.AccountOpened
-import io.grpc.Metadata
-import io.grpc.StatusException
-import io.grpc.Status
-import io.grpc.StatusRuntimeException
-import scala.util.Try
+import io.grpc.{Metadata, Status, StatusException, StatusRuntimeException}
+
 import scala.util.Failure
 
 class UtilSpec extends BaseSpec {

@@ -1,12 +1,12 @@
 package com.namely.chiefofstate.plugin
 
-import org.scalamock.scalatest.MockFactory
 import com.google.protobuf.ByteString
-import io.grpc.Metadata
 import com.namely.chiefofstate.helper.{BaseSpec, EnvironmentHelper}
-import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Header.Value.{BytesValue, StringValue}
 import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Header, Headers}
+import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Header.Value.{BytesValue, StringValue}
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
+import io.grpc.Metadata
+import org.scalamock.scalatest.MockFactory
 
 class PersistedHeadersSpec extends BaseSpec with MockFactory {
 

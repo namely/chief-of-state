@@ -54,7 +54,7 @@ case class EventsAndStateProtosValidation(writeSideConfig: WriteSideConfig) {
   /**
    * helper to require known state types
    *
-   * @param event a state as an Any
+   * @param state a state as an Any
    */
   def requireValidState(state: com.google.protobuf.any.Any): Unit = {
     require(validateState(state), s"invalid state, ${state.typeUrl}")

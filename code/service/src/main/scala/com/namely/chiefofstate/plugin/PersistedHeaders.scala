@@ -3,11 +3,10 @@ package com.namely.chiefofstate.plugin
 import com.google.protobuf.ByteString
 import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Header, Headers}
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
-import com.namely.chiefofstate.Util
 import io.grpc.Metadata
-import scala.jdk.CollectionConverters._
-import scala.collection.mutable
 import org.slf4j.{Logger, LoggerFactory}
+
+import scala.collection.mutable
 
 private[this] class PersistedHeaders(persistedHeaders: Seq[String]) extends PluginBase {
 

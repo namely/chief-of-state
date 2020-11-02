@@ -2,8 +2,6 @@ package com.namely.chiefofstate
 
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
 import akka.util.Timeout
-import com.github.ghik.silencer.silent
-import com.google.protobuf.any
 import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.protobuf.chiefofstate.v1.internal._
@@ -23,7 +21,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-@silent
 class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
   implicit val askTimeout: Timeout
 ) extends ChiefOfStateService {
@@ -65,8 +62,6 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
 
     requireEntityId(entityId)
       .flatMap(_ => {
-        val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
-
         val entityRef: EntityRef[AggregateCommand] = clusterSharding
           .entityRefFor(AggregateRoot.TypeKey, entityId)
 
