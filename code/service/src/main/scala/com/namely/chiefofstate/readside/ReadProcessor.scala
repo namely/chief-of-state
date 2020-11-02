@@ -95,7 +95,7 @@ class ReadProcessor(
     eventualResponse match {
       case Failure(exception) =>
         log.error(
-          s"[ChiefOfState]: ${projectionId} - unable to retrieve command handler response due to ${exception.getMessage}"
+          s"[ChiefOfState]: ${projectionId} - unable to retrieve read handler response due to ${exception.getMessage}"
         )
         DBIOAction.failed(exception)
       case Success(value) => handleSuccessfulResponse(value)
