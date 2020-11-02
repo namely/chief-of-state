@@ -16,7 +16,9 @@ object ReadSideConfigReader {
       key.startsWith("COS_READ_SIDE_CONFIG__")
     })
 
-    if (envVars.isEmpty) throw new RuntimeException("No readSide configuration is set...")
+    if (envVars.isEmpty) {
+      throw new RuntimeException("No readSide configuration is set...")
+    }
 
     if (envVars.keySet.exists(v => v.split("__").length != 3)) {
       throw new RuntimeException("One or more of the read side configurations is invalid")

@@ -84,5 +84,35 @@ class EventsAndStateProtosValidationSpec extends BaseSpec {
       isValid shouldBe false
     }
 
+    "throws when an event or state is invalid" in {
+      val config: Config = ConfigFactory.parseString(s"""
+            chiefofstate {
+              write-side {
+                host = "localhost"
+                port = 1000
+                enable-protos-validation = true
+                states-protos = ""
+                events-protos = ""
+                propagated-headers = ""
+              }
+            }
+          """)
+      val writeSideConfig: WriteSideConfig = WriteSideConfig(config)
+
+      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
+        EventsAndStateProtosValidation(writeSideConfig)
+
+      val event = AccountOpened()
+      val state = Account()
+
+      assertThrows[IllegalArgumentException] {
+        eventsAndStateProtosValidation.requireValidEvent(Any.pack(event))
+      }
+
+      assertThrows[IllegalArgumentException] {
+        eventsAndStateProtosValidation.requireValidState(Any.pack(state))
+      }
+    }
+
   }
 }

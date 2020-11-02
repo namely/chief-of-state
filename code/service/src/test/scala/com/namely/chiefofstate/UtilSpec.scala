@@ -8,6 +8,11 @@ import com.namely.chiefofstate.Util.{Instants, Timestamps}
 import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.tests.AccountOpened
 import io.grpc.Metadata
+import io.grpc.StatusException
+import io.grpc.Status
+import io.grpc.StatusRuntimeException
+import scala.util.Try
+import scala.util.Failure
 
 class UtilSpec extends BaseSpec {
   "A protobuf Timestamp date" should {
@@ -59,6 +64,69 @@ class UtilSpec extends BaseSpec {
 
       val transformed = Util.transformMetadataToRemoteCommandHeader(metadata, Seq("some-header", "byte-header-bin"))
       transformed.size shouldBe (2)
+    }
+  }
+
+  ".makeFailedStatusPf" should {
+    "invoke makeStatusException" in {
+      val status: Status = Status.ABORTED.withDescription("abort!")
+      val exc = new StatusRuntimeException(status)
+
+      val actual = intercept[StatusException] {
+        Failure(exc)
+          .recoverWith(Util.makeFailedStatusPf)
+          .get
+      }
+
+      actual.getStatus shouldBe (status)
+    }
+  }
+
+  ".makeStatusException" should {
+    "pass through status exceptions" in {
+      // define an illegal arg exception
+      val status: Status = Status.ABORTED.withDescription("abort!")
+      val exc = new StatusException(status)
+      // convert to a status exception of INVALID ARGUMENT
+      val actual: StatusException = Util.makeStatusException(exc)
+      actual shouldBe (exc)
+    }
+    "transform status runtime exceptions" in {
+      // define an illegal arg exception
+      val status: Status = Status.ABORTED.withDescription("abort!")
+      val exc = new StatusRuntimeException(status)
+      // convert to a status exception of INVALID ARGUMENT
+      val actual: StatusException = Util.makeStatusException(exc)
+
+      actual.getStatus shouldBe (status)
+    }
+    "transform illegal argument exceptions" in {
+      // define an illegal arg exception
+      val exc = new IllegalArgumentException("some illegal thing")
+      // convert to a status exception of INVALID ARGUMENT
+      val actual: StatusException = Util.makeStatusException(exc)
+
+      actual.getStatus.getCode shouldBe (io.grpc.Status.Code.INVALID_ARGUMENT)
+      actual.getStatus.getDescription shouldBe ("some illegal thing")
+    }
+    "convert general throwables to INTERNAL status" in {
+      val exc = new Exception("boom")
+      val actual: StatusException = Util.makeStatusException(exc)
+
+      actual.getStatus.getCode shouldBe (io.grpc.Status.Code.INTERNAL)
+      actual.getStatus.getDescription shouldBe ("boom")
+    }
+  }
+
+  ".toRpcStatus" should {
+    "convert statuses to the google rpc class" in {
+      val status = io.grpc.Status.INVALID_ARGUMENT.withDescription("whoops")
+      val actual = Util.toRpcStatus(status)
+      val expected = com.google.rpc.status.Status(
+        code = io.grpc.Status.Code.INVALID_ARGUMENT.value(),
+        message = "whoops"
+      )
+      actual shouldBe (expected)
     }
   }
 }

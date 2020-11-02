@@ -12,6 +12,7 @@ class ReadSideConfigReaderSpec extends BaseSpec {
 
   "ReadSideConfigFactory" should {
     "help load all read side config" in {
+
       EnvironmentHelper.setEnv("control_config", "not-a-valid-config")
       EnvironmentHelper.setEnv("cos_read_side_config__host__rs0", "not-a-valid-config")
       EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__HOST__RS1", "host1")

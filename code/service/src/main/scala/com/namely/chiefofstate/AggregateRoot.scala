@@ -10,9 +10,9 @@ import akka.persistence.typed.scaladsl._
 import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate.config.{CosConfig, EventsConfig, SnapshotConfig}
-import com.namely.chiefofstate.Util.Instants
+import com.namely.chiefofstate.Util.{makeFailedStatusPf, toRpcStatus, Instants}
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
-import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, FailureResponse, GetStateCommand, RemoteCommand}
+import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, GetStateCommand, RemoteCommand}
 import com.namely.protobuf.chiefofstate.v1.internal.SendCommand.Type
 import com.namely.protobuf.chiefofstate.v1.persistence.{EventWrapper, StateWrapper}
 import com.namely.protobuf.chiefofstate.v1.writeside.{HandleCommandResponse, HandleEventResponse}
@@ -24,6 +24,8 @@ import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import io.grpc.Status
 import io.grpc.StatusException
 import io.grpc.StatusRuntimeException
+import com.namely.chiefofstate.WriteHandlerHelpers.NoOp
+import com.namely.chiefofstate.WriteHandlerHelpers.NewState
 
 /**
  *  This is an event sourced actor.
@@ -95,91 +97,21 @@ object AggregateRoot {
       case Type.Empty =>
         Effect
           .reply(aggregateCommand.replyTo)(
-            CommandReply().withFailure(
-              FailureResponse().withCritical("something really bad happens...")
-            )
+            CommandReply()
+              .withError(toRpcStatus(Status.INTERNAL.withDescription("something really bad happens...")))
           )
 
       case Type.RemoteCommand(remoteCommand: RemoteCommand) =>
-        // make a call to the command handler.
-        val commandHandlerResponseAttempt: Try[HandleCommandResponse] =
-          commandHandler.handleCommand(remoteCommand, aggregateState)
+        handleRemoteCommand(context,
+                            aggregateState,
+                            remoteCommand,
+                            aggregateCommand.replyTo,
+                            commandHandler,
+                            eventHandler,
+                            eventsAndStateProtoValidation,
+                            aggregateCommand.data
+        )
 
-        commandHandlerResponseAttempt match {
-
-          case Failure(exception) =>
-            Effect.reply(aggregateCommand.replyTo)(
-              CommandReply().withFailure(
-                FailureResponse().withCritical(s"[ChiefOfState] command handler failure: ${exception.getMessage}")
-              )
-            )
-
-          case Success(handleCommandResponse: HandleCommandResponse) =>
-            handleCommandResponse.event match {
-              case Some(actualEvent) =>
-                log.debug(
-                  s"[ChiefOfState] command handler return successfully. The event ${actualEvent.typeUrl} will be persisted..."
-                )
-
-                if (eventsAndStateProtoValidation.validateEvent(actualEvent)) {
-                  val eventHandlerResponseAttempt: Try[HandleEventResponse] =
-                    eventHandler.handleEvent(actualEvent, aggregateState)
-
-                  eventHandlerResponseAttempt match {
-                    case Failure(exception) =>
-                      Effect.reply(aggregateCommand.replyTo)(
-                        CommandReply().withFailure(
-                          FailureResponse().withCritical(
-                            s"[ChiefOfState] event handler failure: ${exception.getMessage}"
-                          )
-                        )
-                      )
-
-                    case Success(handleEventResponse: HandleEventResponse) =>
-                      if (eventsAndStateProtoValidation.validateState(handleEventResponse.getResultingState)) {
-                        // let us persist the event now
-                        persistEventAndReply(
-                          handleCommandResponse.getEvent,
-                          handleEventResponse.getResultingState,
-                          aggregateState,
-                          aggregateCommand.data,
-                          aggregateCommand.replyTo
-                        )
-                      } else {
-                        log.error(
-                          s"[ChiefOfState] event handler returned unknown event type, ${handleEventResponse.getResultingState.typeUrl}"
-                        )
-                        Effect.reply(aggregateCommand.replyTo)(
-                          CommandReply().withFailure(
-                            FailureResponse().withCritical(
-                              s"[ChiefOfState] received unknown state type: ${handleEventResponse.getResultingState.typeUrl}"
-                            )
-                          )
-                        )
-                      }
-                  }
-                } else {
-                  log.error(s"[ChiefOfState] command handler returned unknown event type, ${actualEvent.typeUrl}")
-                  Effect.reply(aggregateCommand.replyTo)(
-                    CommandReply().withFailure(
-                      FailureResponse().withCritical(
-                        s"[ChiefOfState] received unknown event type: ${actualEvent.typeUrl}"
-                      )
-                    )
-                  )
-                }
-
-              case None =>
-                log.debug(
-                  s"[ChiefOfState] command handler return successfully. No event will be persisted. Returning the current state..."
-                )
-                Effect
-                  .reply(aggregateCommand.replyTo)(
-                    CommandReply()
-                      .withState(aggregateState)
-                  )
-            }
-        }
       case Type.GetStateCommand(getStateCommand) =>
         handleGetStateCommand(getStateCommand, aggregateState, aggregateCommand.replyTo)
     }
@@ -202,53 +134,78 @@ object AggregateRoot {
       Effect.reply(replyTo)(CommandReply().withState(state))
     } else {
       Effect.reply(replyTo)(
-        CommandReply().withFailure(
-          FailureResponse()
-            .withNotFound(s"[ChiefOfState] entity: ${cmd.entityId} not found")
-        )
+        CommandReply()
+          .withError(toRpcStatus(Status.NOT_FOUND))
       )
     }
   }
 
+  /**
+   * hanlder for remote commands
+   *
+   * @param context actor context
+   * @param priorState the prior state of the entity
+   * @param command the command to handle
+   * @param replyTo the actor ref to reply to
+   * @param commandHandler a command handler
+   * @param eventHandler an event handler
+   * @param eventsAndStateProtoValidation a proto validator
+   * @param data COS plugin data
+   * @return a reply effect
+   */
   def handleRemoteCommand(context: ActorContext[AggregateCommand],
-                          state: StateWrapper,
+                          priorState: StateWrapper,
                           command: RemoteCommand,
                           replyTo: ActorRef[CommandReply],
                           commandHandler: RemoteCommandHandler,
                           eventHandler: RemoteEventHandler,
-                          eventsAndStateProtoValidation: EventsAndStateProtosValidation
+                          eventsAndStateProtoValidation: EventsAndStateProtosValidation,
+                          data: Map[String, com.google.protobuf.any.Any]
   ): ReplyEffect[EventWrapper, StateWrapper] = {
 
-    // val cmdResult: Try[HandleCommandResponse] = commandHandler
-    //   .handleCommand(command, state)
-    //   .recoverWith(makeFailedStatusPf)
+    val handlerOutput: Try[WriteHandlerHelpers.WriteTransitions] = commandHandler
+      .handleCommand(command, priorState)
+      .map(_.event match {
+        case Some(newEvent) =>
+          eventsAndStateProtoValidation.requireValidEvent(newEvent)
+          WriteHandlerHelpers.NewEvent(newEvent)
 
-    ???
-  }
+        case None =>
+          WriteHandlerHelpers.NoOp
+      })
+      .flatMap({
+        case WriteHandlerHelpers.NewEvent(newEvent) =>
+          eventHandler
+            .handleEvent(newEvent, priorState)
+            .map(response => {
+              require(response.resultingState.isDefined, "event handler replied with empty state")
+              eventsAndStateProtoValidation.requireValidState(response.getResultingState)
+              WriteHandlerHelpers.NewState(newEvent, response.getResultingState)
+            })
 
-  /**
-   * helper to transform Try failures into status exceptions
-   */
-  def makeFailedStatusPf[U]: PartialFunction[Throwable, Try[U]] = {
-    case e: Throwable => Failure(makeStatusException(e))
-  }
+        case x =>
+          Success(x)
+      })
+      .recoverWith(makeFailedStatusPf)
 
-  /**
-   * helper method to transform throwables into StatusExceptions
-   *
-   * @param exception
-   * @return
-   */
-  def makeStatusException(exception: Throwable): Throwable = {
-    exception match {
-      case _: StatusException =>
-        exception
+    handlerOutput match {
+      case Success(NoOp) =>
+        Effect.reply(replyTo)(CommandReply().withState(priorState))
 
-      case _: StatusRuntimeException =>
-        exception
+      case Success(NewState(event, newState)) =>
+        persistEventAndReply(event, newState, priorState.getMeta, data, replyTo)
 
-      case e: Throwable =>
-        new StatusException(Status.INTERNAL.withDescription(e.getMessage()))
+      case Failure(e: StatusException) =>
+        Effect.reply(replyTo)(
+          CommandReply().withError(toRpcStatus(e.getStatus))
+        )
+
+      case x =>
+        // this should never happen, but here for code completeness
+        val errMsg: String = s"write handler failure, ${x.getClass()}"
+        Effect.reply(replyTo)(
+          CommandReply().withError(toRpcStatus(Status.INTERNAL.withDescription(errMsg)))
+        )
     }
   }
 
@@ -324,15 +281,15 @@ object AggregateRoot {
   private[chiefofstate] def persistEventAndReply(
     event: any.Any,
     resultingState: any.Any,
-    priorState: StateWrapper,
+    priorMeta: MetaData,
     data: Map[String, any.Any],
     replyTo: ActorRef[CommandReply]
   ): ReplyEffect[EventWrapper, StateWrapper] = {
     val meta: MetaData = MetaData()
-      .withRevisionNumber(priorState.getMeta.revisionNumber + 1)
+      .withRevisionNumber(priorMeta.revisionNumber + 1)
       .withRevisionDate(Instant.now().toTimestamp)
       .withData(data)
-      .withEntityId(priorState.getMeta.entityId)
+      .withEntityId(priorMeta.entityId)
 
     Effect
       .persist(
@@ -357,4 +314,11 @@ object AggregateRoot {
       )
       .withState(any.Any.pack(Empty.defaultInstance))
   }
+}
+
+object WriteHandlerHelpers {
+  sealed trait WriteTransitions
+  case object NoOp extends WriteTransitions
+  case class NewEvent(event: com.google.protobuf.any.Any) extends WriteTransitions
+  case class NewState(event: com.google.protobuf.any.Any, state: com.google.protobuf.any.Any) extends WriteTransitions
 }

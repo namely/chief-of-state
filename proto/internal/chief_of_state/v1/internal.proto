@@ -68,33 +68,6 @@ message CommandWrapper {
   map<string, google.protobuf.Any> data = 3;
 }
 
-// ********************************************************
-// TODO: REMOVE THIS ONCE ALL FAILURES ARE gRPC STATUSES
-// ********************************************************
-// FailureResponse. This response type is returned by the
-// Commands Handler
-message FailureResponse {
-  // the failure type
-  oneof failure_type {
-    // Critical failure will result into an 13-INTERNAL for a gRPC call and
-    // 500-Internal Server Error for a HTTP/Json call
-    google.protobuf.StringValue critical = 1;
-    // Custom error details will be handled by the implementor.
-    // A error handler must be implemented to handle this type of errors.
-    // When an cutom error is sent and there is no error handler then the error
-    // will be handled as if it were a critical failure type
-    google.protobuf.Any custom = 2;
-    // Validation failure type will result into 3-INVALID_ARGUMENT for a gRPC
-    // call and 400-Bad Request for an HTTP/Json call
-    google.protobuf.StringValue validation = 3;
-    // Not found failure type will result into 5-NOT_FOUND for a gRPC call and
-    // a 404-Not Found for an HTTP/Json call
-    google.protobuf.StringValue not_found = 4;
-  }
-}
-// ********************************************************
-// ********************************************************
-
 // For returning a command reply whether it is successful or failed
 // This is used internally by lagom-pb
 message CommandReply {
@@ -102,9 +75,7 @@ message CommandReply {
   oneof reply {
     // actual state is wrapped with meta data
     StateWrapper state = 1;
-    // failed command reply
-    FailureResponse failure = 2;
     // gRPC failure
-    google.rpc.Status error = 3;
+    google.rpc.Status error = 2;
   }
 }

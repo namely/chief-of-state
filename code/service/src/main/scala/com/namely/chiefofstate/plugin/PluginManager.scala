@@ -61,7 +61,7 @@ case class PluginManager(plugins: Seq[PluginBase]) {
  */
 object PluginManager {
 
-  final val HOCON_PATH: String = "chief-of-state.plugin-settings.enable-plugins"
+  final val HOCON_PATH: String = "chiefofstate.plugin-settings.enabled-plugins"
 
   lazy val logger: Logger = LoggerFactory.getLogger(getClass)
 

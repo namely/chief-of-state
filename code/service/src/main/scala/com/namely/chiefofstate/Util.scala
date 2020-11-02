@@ -7,8 +7,9 @@ import com.google.protobuf.any.Any
 import com.google.protobuf.timestamp.Timestamp
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand.Header
-import io.grpc.Metadata
+import io.grpc.{Metadata, Status, StatusException, StatusRuntimeException}
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, IterableHasAsScala}
 
@@ -105,5 +106,48 @@ object Util {
     })
 
     output.toSeq
+  }
+
+  /**
+   * helper to transform Try failures into status exceptions
+   */
+  def makeFailedStatusPf[U]: PartialFunction[Throwable, Try[U]] = {
+    case e: Throwable => Failure(makeStatusException(e))
+  }
+
+  /**
+   * helper method to transform throwables into StatusExceptions
+   *
+   * @param exception a throwable
+   * @return that throwable as a StatusException
+   */
+  def makeStatusException(exception: Throwable): StatusException = {
+    exception match {
+      case e: StatusException =>
+        e
+
+      case e: StatusRuntimeException =>
+        new StatusException(e.getStatus)
+
+      case e: IllegalArgumentException =>
+        val errMsg = e.getMessage.stripPrefix("requirement failed: ")
+        new StatusException(Status.INVALID_ARGUMENT.withDescription(errMsg))
+
+      case e: Throwable =>
+        new StatusException(Status.INTERNAL.withDescription(e.getMessage()))
+    }
+  }
+
+  /**
+   * helper to convert io.grpc.Status to com.google.rpc.status.Status
+   *
+   * @param status a io.grpc.Status
+   * @return a the rpc Status instance
+   */
+  def toRpcStatus(status: Status): com.google.rpc.status.Status = {
+    com.google.rpc.status.Status(
+      code = status.getCode.value,
+      message = status.getDescription
+    )
   }
 }

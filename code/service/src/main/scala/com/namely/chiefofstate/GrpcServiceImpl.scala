@@ -8,7 +8,6 @@ import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
-import com.namely.protobuf.chiefofstate.v1.internal.FailureResponse.FailureType
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.service.{
   GetStateRequest,
@@ -37,15 +36,13 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
   override def processCommand(request: ProcessCommandRequest): Future[ProcessCommandResponse] = {
     val entityId: String = request.entityId
 
-    // ascertain the entity ID
-    requireEntityId(entityId)
-
     // fetch the gRPC metadata
     val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
 
-    // run plugins to get meta
-    Future
-      .fromTry(pluginManager.run(request, metadata))
+    // ascertain the entity ID
+    requireEntityId(entityId)
+      // run plugins to get meta
+      .flatMap(_ => Future.fromTry(pluginManager.run(request, metadata)))
       // run remote command
       .flatMap(meta => {
         val remoteCommand: RemoteCommand = getRemoteCommand(writeSideConfig, request, metadata)
@@ -65,21 +62,22 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
    */
   override def getState(request: GetStateRequest): Future[GetStateResponse] = {
     val entityId: String = request.entityId
+
     requireEntityId(entityId)
+      .flatMap(_ => {
+        val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
 
-    val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
+        val entityRef: EntityRef[AggregateCommand] = clusterSharding
+          .entityRefFor(AggregateRoot.TypeKey, entityId)
 
-    val entityRef: EntityRef[AggregateCommand] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
-    val reply: Future[CommandReply] =
-      entityRef ? (replyTo =>
-        AggregateCommand(
-          SendCommand().withGetStateCommand(GetStateCommand().withEntityId(entityId)),
-          replyTo,
-          Map.empty
+        entityRef ? (replyTo =>
+          AggregateCommand(
+            SendCommand().withGetStateCommand(GetStateCommand().withEntityId(entityId)),
+            replyTo,
+            Map.empty
+          )
         )
-      )
-
-    reply
+      })
       .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
       .map(c => GetStateResponse().withState(c.getState).withMeta(c.getMeta))
   }
@@ -110,61 +108,41 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
    * checks whether an entity ID is empty or not
    *
    * @param entityId the entity id
+   * @return future for the validation
    */
-  private[this] def requireEntityId(entityId: String): Unit = {
-    if (entityId.isEmpty)
-      throw new StatusException(Status.INVALID_ARGUMENT.withDescription("empty entity ID"))
-  }
-
-  /**
-   * transforms the failure response and return a gRPC exception
-   *
-   * @param failureResponse the failure response
-   * @return the gRPC exception returned
-   */
-  private[this] def transformFailure(failureResponse: FailureResponse): Failure[Throwable] = {
-    failureResponse.failureType match {
-      case FailureType.Critical(value) =>
-        Failure(
-          new StatusException(Status.INTERNAL.withDescription(value))
-        )
-
-      case FailureType.Custom(value) =>
-        Failure(
-          new StatusException(Status.INTERNAL.withDescription(s"unhandled custom error: ${value.typeUrl}"))
-        )
-
-      case FailureType.Validation(value) =>
-        Failure(
-          new StatusException(Status.INVALID_ARGUMENT.withDescription(value))
-        )
-
-      case FailureType.NotFound(value) =>
-        Failure(
-          new StatusException(
-            Status.NOT_FOUND.withDescription(value)
-          )
-        )
-
-      case FailureType.Empty =>
-        Failure(
-          new StatusException(
-            Status.INTERNAL.withDescription("unknown failure type")
-          )
-        )
+  private[this] def requireEntityId(entityId: String): Future[Unit] = {
+    if (entityId.isEmpty) {
+      Future.failed(new StatusException(Status.INVALID_ARGUMENT.withDescription("empty entity ID")))
+    } else {
+      Future.successful {}
     }
   }
 
+  /**
+   * handles the command reply, specifically for errors
+   *
+   * @param commandReply a command reply
+   * @return a state wrapper
+   */
   private[this] def handleCommandReply(commandReply: CommandReply): Try[StateWrapper] = {
     commandReply.reply match {
-      case Reply.Empty =>
+      case Reply.State(value: StateWrapper) => Success(value)
+
+      case Reply.Error(status: com.google.rpc.status.Status) =>
         Failure(
           new StatusException(
-            Status.INTERNAL.withDescription(s"unknown CommandReply ${commandReply.reply.getClass.getName}")
+            io.grpc.Status
+              .fromCodeValue(status.code)
+              .withDescription(status.message)
           )
         )
-      case Reply.State(value: StateWrapper) => Success(value)
-      case Reply.Failure(value)             => transformFailure(value).asInstanceOf[Try[StateWrapper]]
+
+      case default =>
+        Failure(
+          new StatusException(
+            Status.INTERNAL.withDescription(s"unknown CommandReply ${default.getClass.getName}")
+          )
+        )
     }
   }
 }
