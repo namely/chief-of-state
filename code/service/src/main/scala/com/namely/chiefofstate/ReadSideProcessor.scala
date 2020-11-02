@@ -26,7 +26,7 @@ import slick.jdbc.PostgresProfile
  */
 class ReadSideProcessor(
   actorSystem: ActorSystem[_],
-  processorId: String,
+  val processorId: String,
   remoteReadProcessor: RemoteReadSideProcessor,
   cosConfig: CosConfig
 ) {
@@ -39,9 +39,6 @@ class ReadSideProcessor(
 
   val baseTag: String = cosConfig.eventsConfig.eventTag
 
-  val projectionName: String =
-    s"$processorId-${cosConfig.serviceName}-readside-projection"
-
   /**
    * Initialize the projection to start fetching the events that are emitted
    */
@@ -50,7 +47,7 @@ class ReadSideProcessor(
     if (cosConfig.createDataStores) SlickProjection.createOffsetTableIfNotExists(offsetStoreDatabaseConfig)
 
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
-      name = projectionName,
+      name = projectionId,
       numberOfInstances = AggregateRoot.tags(cosConfig.eventsConfig).size,
       behaviorFactory = n => ProjectionBehavior(exactlyOnceProjection(s"$baseTag$n")),
       settings = ShardedDaemonProcessSettings(actorSystem),
@@ -67,7 +64,7 @@ class ReadSideProcessor(
   protected def exactlyOnceProjection(tagName: String): ExactlyOnceProjection[Offset, EventEnvelope[EventWrapper]] = {
     SlickProjection
       .exactlyOnce(
-        projectionId = ProjectionId(projectionName, tagName),
+        projectionId = ProjectionId(projectionId, tagName),
         sourceProvider(tagName),
         offsetStoreDatabaseConfig,
         handler = () => new ReadSideEventsConsumer(tagName, processorId, remoteReadProcessor)
