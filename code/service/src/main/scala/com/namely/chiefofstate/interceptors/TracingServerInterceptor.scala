@@ -74,7 +74,8 @@ object TracingServerInterceptor extends ServerInterceptor {
     val methodName: String = call.getMethodDescriptor().getFullMethodName()
     val componentName: String = this.getClass().getName()
 
-    val span: Span = Kamon.serverSpanBuilder(methodName, componentName).start()
+    val parentSpan: Span = B3Propagation.spanFromHeaders(headers)
+    val span: Span = Kamon.serverSpanBuilder(methodName, componentName).asChildOf(parentSpan).start()
 
     logger.debug(s"method=${methodName}, span.id=${span.id}")
 

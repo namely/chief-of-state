@@ -33,6 +33,7 @@ object TracingClientInterceptor extends ClientInterceptor {
             span.finish()
           }
         }
+        B3Propagation.updateHeadersWithSpan(headers, span)
         // invoke parent .start with tracingListener
         super.start(tracingListener, headers)
       }
