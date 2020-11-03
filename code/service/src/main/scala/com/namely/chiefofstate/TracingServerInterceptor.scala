@@ -7,6 +7,11 @@ import com.fasterxml.jackson.module.scala.deser.overrides
 import io.grpc.ForwardingServerCallListener.SimpleForwardingServerCallListener
 import io.grpc.ForwardingServerCall.SimpleForwardingServerCall
 import kamon.Kamon
+import kamon.trace.Span
+import kamon.trace.SpanBuilder
+import kamon.instrumentation.futures.scala.ScalaFutureInstrumentation.trace
+import scala.concurrent.Future
+import scala.util.Try
 
 /**
  * Intercepts gRPC headers and propagate them downstream via the gRPC context
@@ -15,8 +20,41 @@ object TracingServerInterceptor extends ServerInterceptor {
 
   private val logger: Logger = LoggerFactory.getLogger(getClass)
 
-  val CONTEXT_KEY: Context.Key[String] = Context.key[String]("some_uuid")
-  val METADATA_KEY: Metadata.Key[String] = Metadata.Key.of("some_uuid", Metadata.ASCII_STRING_MARSHALLER)
+  val SPAN_KEY: Context.Key[Span] = Context.key[Span]("kamon_span")
+
+  /**
+   * helper that yields a child span to the active span on this context
+   *
+   * @param processName some process name
+   * @return a span builder
+   */
+  def getChildSpanBuilder(processName: String): SpanBuilder = {
+    kamon.Kamon
+      .spanBuilder(processName)
+      .asChildOf(SPAN_KEY.get())
+  }
+
+  /**
+   * helper to create a span for the duration of some future
+   * as a child of the RPC parent span
+   *
+   * @param processName some name for the process
+   * @param future a future to execute
+   * @return the completed future with the span completed
+   */
+  def traceFuture[T](processName: String)(future: => Future[T]): Future[T] = {
+    trace(getChildSpanBuilder(processName))(future)
+  }
+
+  /**
+   * helper to create a span for the duration of some future
+   * as a child of the RPC parent span
+   *
+   * @param future a future to execute
+   */
+  def traceFuture[T](future: => Future[T]): Future[T] = {
+    traceFuture("runFuture")(future)
+  }
 
   /**
    * intercepts the request headers
@@ -36,25 +74,25 @@ object TracingServerInterceptor extends ServerInterceptor {
 
     val methodName: String = call.getMethodDescriptor().getFullMethodName()
     val componentName: String = this.getClass().getName()
-    val span = Kamon.serverSpanBuilder(methodName, componentName).start()
 
-    val someUuid: String = ju.UUID.randomUUID().toString()
-    logger.warn(s"BEGIN uuid=$someUuid")
+    val span: Span = Kamon.serverSpanBuilder(methodName, componentName).start()
 
-    val newCall = new SimpleForwardingServerCall[ReqT, RespT](call) {
-      override def sendHeaders(responseHeaders: Metadata): Unit = {
-        responseHeaders.put(METADATA_KEY, someUuid)
-        super.sendHeaders(responseHeaders)
-      }
-    }
+    logger.debug(s"method=${methodName}, span.id=${span.id}")
 
-    val context: Context = Context.current().withValue(CONTEXT_KEY, someUuid)
-    val listener = Contexts.interceptCall(context, newCall, headers, next)
+    // create a context with the kamon context & span injected
+    val newContext: Context = Context
+      .current()
+      .withValue(CONTEXT_KEY, Kamon.currentContext())
+      .withValue(SPAN_KEY, span)
 
+    // create the listener with this context
+    val listener = Contexts.interceptCall(newContext, call, headers, next)
+
+    // create the forwarding listener and override the completion methods
+    // to close the span
     new SimpleForwardingServerCallListener[ReqT](listener) {
       override def onCancel(): Unit = {
         try {
-          logger.warn(s"CANCEL uuid=$someUuid")
           super.onCancel()
         } finally {
           span.finish()
@@ -63,7 +101,6 @@ object TracingServerInterceptor extends ServerInterceptor {
 
       override def onComplete(): Unit = {
         try {
-          logger.warn(s"CANCEL uuid=$someUuid")
           super.onCancel()
         } finally {
           span.finish()
