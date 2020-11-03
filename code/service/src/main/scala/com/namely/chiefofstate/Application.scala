@@ -18,6 +18,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import io.grpc.{ManagedChannel, Server, ServerInterceptors}
 import io.grpc.netty.{NettyChannelBuilder, NettyServerBuilder}
 import org.slf4j.{Logger, LoggerFactory}
+import kamon.Kamon
 
 import scala.concurrent.ExecutionContext
 
@@ -32,6 +33,9 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
    * start the grpc server
    */
   private def start(): Unit = {
+
+    Kamon.init()
+
     server = NettyServerBuilder
       .forAddress(new InetSocketAddress(cosConfig.grpcConfig.server.host, cosConfig.grpcConfig.server.port))
       .addService(
@@ -40,7 +44,8 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
             new GrpcServiceImpl(clusterSharding, pluginManager, cosConfig.writeSideConfig),
             ExecutionContext.global
           ),
-          GrpcHeadersInterceptor
+          GrpcHeadersInterceptor,
+          TracingServerInterceptor
         )
       )
       .build()

@@ -55,7 +55,13 @@ object Dependencies {
     "com.typesafe.slick" %% "slick-hikaricp" % SlickVersion,
     "net.logstash.logback" % "logstash-logback-encoder" % Versions.LogstashLogbackVersion,
     "org.codehaus.janino" % "janino" % Versions.JaninoVersion,
-    "org.scala-lang" % "scala-reflect" % Versions.ScalaVersion
+    "org.scala-lang" % "scala-reflect" % Versions.ScalaVersion,
+
+    "io.kamon" %% "kamon-bundle" % Versions.KamonVersion,
+    "io.kamon" %% "kamon-prometheus" % Versions.KamonVersion,
+    "io.kamon" %% "kamon-jaeger" % Versions.KamonVersion,
+    "io.kamon" %% "kamon-zipkin" % Versions.KamonVersion,
+    "io.kamon" % "kanela-agent" % Versions.KanelaAgentVersion
   )
 
   val testJars: Seq[ModuleID] = Seq(
