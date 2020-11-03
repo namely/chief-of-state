@@ -28,6 +28,8 @@ object Dependencies {
 
   import Dependencies.Versions._
 
+  val kanelaAgent: ModuleID = "io.kamon" % "kanela-agent" % Versions.KanelaAgentVersion
+
   val jars: Seq[ModuleID] = Seq(
     "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.10" % ScalapbCommonProtoVersion,
     "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf",
@@ -61,7 +63,7 @@ object Dependencies {
     "io.kamon" %% "kamon-prometheus" % Versions.KamonVersion,
     "io.kamon" %% "kamon-jaeger" % Versions.KamonVersion,
     "io.kamon" %% "kamon-zipkin" % Versions.KamonVersion,
-    "io.kamon" % "kanela-agent" % Versions.KanelaAgentVersion
+    kanelaAgent
   )
 
   val testJars: Seq[ModuleID] = Seq(
