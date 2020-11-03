@@ -11,7 +11,7 @@ import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
 import com.namely.chiefofstate.plugin.PluginManager
-import com.namely.chiefofstate.interceptors.{GrpcHeadersInterceptor, TracingServerInterceptor}
+import com.namely.chiefofstate.interceptors.{GrpcHeadersInterceptor, TracingClientInterceptor, TracingServerInterceptor}
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
@@ -102,6 +102,7 @@ object Application extends App {
     NettyChannelBuilder
       .forAddress(cosConfig.writeSideConfig.host, cosConfig.writeSideConfig.port)
       .usePlaintext()
+      .intercept(TracingClientInterceptor)
       .build()
 
   val writeHandler: WriteSideHandlerServiceBlockingStub = new WriteSideHandlerServiceBlockingStub(channel)
@@ -136,6 +137,7 @@ object Application extends App {
         NettyChannelBuilder
           .forAddress(rsconfig.host.get, rsconfig.port.get)
           .usePlaintext()
+          .intercept(TracingClientInterceptor)
           .build()
 
       val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(channel)
