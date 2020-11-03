@@ -1,4 +1,4 @@
-package com.namely.chiefofstate
+package com.namely.chiefofstate.interceptors
 
 import io.grpc._
 import java.{util => ju}
@@ -82,7 +82,6 @@ object TracingServerInterceptor extends ServerInterceptor {
     // create a context with the kamon context & span injected
     val newContext: Context = Context
       .current()
-      .withValue(CONTEXT_KEY, Kamon.currentContext())
       .withValue(SPAN_KEY, span)
 
     // create the listener with this context

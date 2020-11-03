@@ -1,4 +1,4 @@
-package com.namely.chiefofstate
+package com.namely.chiefofstate.interceptors
 
 import io.grpc._
 

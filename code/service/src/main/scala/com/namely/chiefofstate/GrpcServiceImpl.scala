@@ -4,6 +4,7 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
 import akka.util.Timeout
 import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.plugin.PluginManager
+import com.namely.chiefofstate.interceptors.{GrpcHeadersInterceptor, TracingServerInterceptor}
 import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
