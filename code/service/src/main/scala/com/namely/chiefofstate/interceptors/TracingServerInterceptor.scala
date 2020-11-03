@@ -1,7 +1,6 @@
 package com.namely.chiefofstate.interceptors
 
 import io.grpc._
-import java.{util => ju}
 import org.slf4j.{Logger, LoggerFactory}
 import com.fasterxml.jackson.module.scala.deser.overrides
 import io.grpc.ForwardingServerCallListener.SimpleForwardingServerCallListener
