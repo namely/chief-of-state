@@ -56,8 +56,7 @@ object TracingServerInterceptor extends ServerInterceptor {
         try {
           logger.warn(s"CANCEL uuid=$someUuid")
           super.onCancel()
-        }
-        finally {
+        } finally {
           span.finish()
         }
       }
@@ -66,8 +65,7 @@ object TracingServerInterceptor extends ServerInterceptor {
         try {
           logger.warn(s"CANCEL uuid=$someUuid")
           super.onCancel()
-        }
-        finally {
+        } finally {
           span.finish()
         }
       }
