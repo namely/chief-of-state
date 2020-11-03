@@ -14,7 +14,7 @@ import scala.concurrent.Future
 import scala.util.Try
 
 /**
- * Intercepts gRPC headers and propagate them downstream via the gRPC context
+ * Intercepts tracing metadata and forwards into kamon
  */
 object TracingServerInterceptor extends ServerInterceptor {
 
