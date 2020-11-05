@@ -45,6 +45,8 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-stream-typed" % AkkaVersion,
     "com.typesafe.akka" %% "akka-discovery" % AkkaVersion,
     "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % AkkaManagementVersion,
+    "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % AkkaManagementVersion,
+    "com.lightbend.akka.management" %% "akka-management-cluster-http" % AkkaManagementVersion,
     "com.lightbend.akka" %% "akka-projection-core" % AkkaProjectionVersion,
     "com.lightbend.akka" %% "akka-projection-slick" % AkkaProjectionVersion,
     "com.lightbend.akka" %% "akka-projection-kafka" % AkkaProjectionVersion,
@@ -58,7 +60,6 @@ object Dependencies {
     "net.logstash.logback" % "logstash-logback-encoder" % Versions.LogstashLogbackVersion,
     "org.codehaus.janino" % "janino" % Versions.JaninoVersion,
     "org.scala-lang" % "scala-reflect" % Versions.ScalaVersion,
-
     "io.kamon" %% "kamon-bundle" % Versions.KamonVersion,
     "io.kamon" %% "kamon-prometheus" % Versions.KamonVersion,
     "io.kamon" %% "kamon-jaeger" % Versions.KamonVersion,
