@@ -70,7 +70,8 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % Test,
     "org.scalatest" %% "scalatest" % ScalaTestVersion % Test,
     "org.scalamock" %% "scalamock" % ScalaMockVersion % Test,
-    "org.grpcmock" % "grpcmock-core" % GrpcMockVersion % Test
+    "org.grpcmock" % "grpcmock-core" % GrpcMockVersion % Test,
+    "io.grpc" % "grpc-testing" % grpcJavaVersion % Test
   )
 
 }

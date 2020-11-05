@@ -37,22 +37,10 @@ object TracingServerInterceptor extends ServerInterceptor {
    * helper to create a span for the duration of some future
    * as a child of the RPC parent span
    *
-   * @param processName some name for the process
-   * @param future a future to execute
-   * @return the completed future with the span completed
-   */
-  def traceFuture[T](processName: String)(future: => Future[T]): Future[T] = {
-    trace(getChildSpanBuilder(processName))(future)
-  }
-
-  /**
-   * helper to create a span for the duration of some future
-   * as a child of the RPC parent span
-   *
    * @param future a future to execute
    */
   def traceFuture[T](future: => Future[T]): Future[T] = {
-    traceFuture("runFuture")(future)
+    trace(getChildSpanBuilder("runFuture"))(future)
   }
 
   /**
@@ -89,23 +77,31 @@ object TracingServerInterceptor extends ServerInterceptor {
 
     // create the forwarding listener and override the completion methods
     // to close the span
-    new SimpleForwardingServerCallListener[ReqT](listener) {
-      override def onCancel(): Unit = {
-        try {
-          super.onCancel()
-        } finally {
-          span.finish()
-        }
-      }
+    new SpanCloserCallListener[ReqT](span, listener)
+  }
 
-      override def onComplete(): Unit = {
-        try {
-          super.onCancel()
-        } finally {
-          span.finish()
-        }
+  /**
+   * custom server call listener for closing spans
+   *
+   * @param span a span to close
+   * @param listener a listener for the parent class
+   */
+  private[interceptors] class SpanCloserCallListener[ReqT](span: Span, listener: ServerCall.Listener[ReqT])
+      extends SimpleForwardingServerCallListener[ReqT](listener) {
+    override def onCancel(): Unit = {
+      try {
+        super.onCancel()
+      } finally {
+        span.finish()
+      }
+    }
+
+    override def onComplete(): Unit = {
+      try {
+        super.onCancel()
+      } finally {
+        span.finish()
       }
     }
   }
-
 }

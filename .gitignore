@@ -18,6 +18,7 @@ logs
 *.iml
 project/metals.sbt
 .protogen/
+.protogen_test/
 .DS_Store
 protos/chief_of_state/target
 .target/

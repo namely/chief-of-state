@@ -1,12 +1,7 @@
 package com.namely.chiefofstate.interceptors
 
-import java.time.{Instant, ZoneId}
-
-import com.google.protobuf.timestamp.Timestamp
-import com.namely.chiefofstate.Util.{Instants, Timestamps}
 import com.namely.chiefofstate.helper.BaseSpec
-import com.namely.protobuf.chiefofstate.v1.tests.AccountOpened
-import io.grpc.{Metadata, Status, StatusException, StatusRuntimeException}
+import io.grpc.Metadata
 
 import scala.util.Failure
 import kamon.trace.Trace.SamplingDecision._
