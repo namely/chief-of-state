@@ -218,7 +218,7 @@ class AggregateCommandHandler(
   def handleGrpcResponseFailure(status: Status): CommandHandlerResponse = {
     val rpcStatus: RpcStatus = RpcStatus()
       .withCode(status.getCode.value)
-      .withMessage(status.getDescription)
+      .withMessage(Option(status.getDescription).getOrElse(""))
 
     val failureResponse = FailureResponse()
       .withCustom(Any.pack(rpcStatus))
