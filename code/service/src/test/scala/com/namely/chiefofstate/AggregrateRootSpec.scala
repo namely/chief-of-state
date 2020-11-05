@@ -536,7 +536,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
           reply match {
             case Reply.Error(status) =>
               status.code shouldBe (Status.Code.UNKNOWN.value)
-              Option(status.message) shouldBe (None)
+              Option(status.message) shouldBe (Some(""))
 
             case _ => fail("unexpected message state")
           }

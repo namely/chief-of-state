@@ -8,7 +8,6 @@ option java_outer_classname = "CosInternalProto";
 
 import "google/protobuf/any.proto";
 import "chief_of_state/v1/persistence.proto";
-import "google/protobuf/wrappers.proto";
 import "google/rpc/status.proto";
 
 // THESE ARE INTERNAL MESSAGES FOR THE COS SERVICE

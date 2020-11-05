@@ -11,6 +11,7 @@ import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
 import com.namely.chiefofstate.plugin.PluginManager
+import com.namely.chiefofstate.interceptors.{GrpcHeadersInterceptor, TracingClientInterceptor, TracingServerInterceptor}
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
@@ -18,6 +19,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import io.grpc.{ManagedChannel, Server, ServerInterceptors}
 import io.grpc.netty.{NettyChannelBuilder, NettyServerBuilder}
 import org.slf4j.{Logger, LoggerFactory}
+import kamon.Kamon
 
 import scala.concurrent.ExecutionContext
 
@@ -32,6 +34,9 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
    * start the grpc server
    */
   private def start(): Unit = {
+
+    Kamon.init()
+
     server = NettyServerBuilder
       .forAddress(new InetSocketAddress(cosConfig.grpcConfig.server.host, cosConfig.grpcConfig.server.port))
       .addService(
@@ -40,7 +45,8 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
             new GrpcServiceImpl(clusterSharding, pluginManager, cosConfig.writeSideConfig),
             ExecutionContext.global
           ),
-          GrpcHeadersInterceptor
+          GrpcHeadersInterceptor,
+          TracingServerInterceptor
         )
       )
       .build()
@@ -96,6 +102,7 @@ object Application extends App {
     NettyChannelBuilder
       .forAddress(cosConfig.writeSideConfig.host, cosConfig.writeSideConfig.port)
       .usePlaintext()
+      .intercept(TracingClientInterceptor)
       .build()
 
   val writeHandler: WriteSideHandlerServiceBlockingStub = new WriteSideHandlerServiceBlockingStub(channel)
@@ -130,6 +137,7 @@ object Application extends App {
         NettyChannelBuilder
           .forAddress(rsconfig.host.get, rsconfig.port.get)
           .usePlaintext()
+          .intercept(TracingClientInterceptor)
           .build()
 
       val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(channel)

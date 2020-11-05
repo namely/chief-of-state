@@ -28,6 +28,8 @@ object Dependencies {
 
   import Dependencies.Versions._
 
+  val kanelaAgent: ModuleID = "io.kamon" % "kanela-agent" % Versions.KanelaAgentVersion
+
   val jars: Seq[ModuleID] = Seq(
     "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.10" % ScalapbCommonProtoVersion,
     "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf",
@@ -55,14 +57,21 @@ object Dependencies {
     "com.typesafe.slick" %% "slick-hikaricp" % SlickVersion,
     "net.logstash.logback" % "logstash-logback-encoder" % Versions.LogstashLogbackVersion,
     "org.codehaus.janino" % "janino" % Versions.JaninoVersion,
-    "org.scala-lang" % "scala-reflect" % Versions.ScalaVersion
+    "org.scala-lang" % "scala-reflect" % Versions.ScalaVersion,
+
+    "io.kamon" %% "kamon-bundle" % Versions.KamonVersion,
+    "io.kamon" %% "kamon-prometheus" % Versions.KamonVersion,
+    "io.kamon" %% "kamon-jaeger" % Versions.KamonVersion,
+    "io.kamon" %% "kamon-zipkin" % Versions.KamonVersion,
+    kanelaAgent
   )
 
   val testJars: Seq[ModuleID] = Seq(
     "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % Test,
     "org.scalatest" %% "scalatest" % ScalaTestVersion % Test,
     "org.scalamock" %% "scalamock" % ScalaMockVersion % Test,
-    "org.grpcmock" % "grpcmock-core" % GrpcMockVersion % Test
+    "org.grpcmock" % "grpcmock-core" % GrpcMockVersion % Test,
+    "io.grpc" % "grpc-testing" % grpcJavaVersion % Test
   )
 
 }
