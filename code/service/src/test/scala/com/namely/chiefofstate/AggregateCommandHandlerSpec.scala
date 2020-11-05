@@ -358,6 +358,17 @@ class AggregateCommandHandlerSpec extends CustomActorTestkit("application.conf")
       actual.message shouldBe (status.getDescription())
     }
 
+    "handle failed gRPC status with no description" in {
+      val status: Status = Status.ABORTED
+      val exception = new StatusRuntimeException(status)
+      val cmdhandler = new AggregateCommandHandler(null, testHandlerSetting)
+      val result: CommandHandlerResponse = cmdhandler.handleRemoteResponseFailure(exception)
+      result.getFailure.failureType.isCustom shouldBe (true)
+      val actual = result.getFailure.getCustom.unpack(RpcStatus)
+      actual.code shouldBe (status.getCode.value)
+      actual.message shouldBe ("")
+    }
+
     "handle failed validations sent by command handler" in {
       val badStatus: Status = Status.INVALID_ARGUMENT.withDescription("very invalid")
       val exception: StatusRuntimeException = new StatusRuntimeException(badStatus)
