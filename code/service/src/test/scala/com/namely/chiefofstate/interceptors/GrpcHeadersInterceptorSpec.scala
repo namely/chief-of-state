@@ -16,15 +16,15 @@ class GrpcHeadersInterceptorSpec extends BaseSpec {
   import GrpcHelpers._
 
   // define set of resources to close after each test
-  val resources: Closeables = new Closeables()
+  val closeables: Closeables = new Closeables()
 
   override protected def afterEach(): Unit = {
     super.afterEach()
-    resources.closeAll()
+    closeables.closeAll()
   }
 
-  "a test server" should {
-    "work" in {
+  "header interceptor" should {
+    "catch the headers" in {
       // Generate a unique in-process server name.
       val serverName: String = InProcessServerBuilder.generateName();
       val serviceImpl = new PingServiceImpl()
@@ -38,7 +38,7 @@ class GrpcHeadersInterceptorSpec extends BaseSpec {
 
       serviceImpl.registerInterceptor(intercept)
 
-      resources.register(
+      closeables.register(
         InProcessServerBuilder
           .forName(serverName)
           .directExecutor()
@@ -49,7 +49,7 @@ class GrpcHeadersInterceptorSpec extends BaseSpec {
       )
 
       val channel: ManagedChannel = {
-        resources.register(
+        closeables.register(
           InProcessChannelBuilder
             .forName(serverName)
             .directExecutor()

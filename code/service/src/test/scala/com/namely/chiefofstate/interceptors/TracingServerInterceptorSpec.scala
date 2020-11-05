@@ -26,11 +26,11 @@ class TracingServerInterceptorSpec extends BaseSpec {
   import GrpcHelpers._
 
   // define set of resources to close after each test
-  val resources: Closeables = new Closeables()
+  val closeables: Closeables = new Closeables()
 
   override protected def afterEach(): Unit = {
     super.afterEach()
-    resources.closeAll()
+    closeables.closeAll()
   }
 
   "interceptor" should {
@@ -52,7 +52,7 @@ class TracingServerInterceptorSpec extends BaseSpec {
 
       serviceImpl.registerInterceptor(intercept)
 
-      resources.register(
+      closeables.register(
         InProcessServerBuilder
           .forName(serverName)
           .directExecutor()
@@ -64,7 +64,7 @@ class TracingServerInterceptorSpec extends BaseSpec {
       )
 
       val channel: ManagedChannel = {
-        resources.register(
+        closeables.register(
           InProcessChannelBuilder
             .forName(serverName)
             .directExecutor()
