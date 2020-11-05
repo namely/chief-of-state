@@ -15,11 +15,11 @@ object B3Propagation {
   val Flags = Metadata.Key.of("X-B3-Flags", Metadata.ASCII_STRING_MARSHALLER)
 
   /**
-    * get a span from headers
-    *
-    * @param headers gRPC metadata
-    * @return a span
-    */
+   * get a span from headers
+   *
+   * @param headers gRPC metadata
+   * @return a span
+   */
   def spanFromHeaders(headers: Metadata): Span = {
     val identifierScheme = Kamon.identifierScheme
 
@@ -36,42 +36,18 @@ object B3Propagation {
       .getOrElse(Identifier.Empty)
 
     val flags = Option(headers.get(Flags))
-
-    val samplingDecision = getSamplingDecision(
-      flags,
-      Option(headers.get(Sampled))
-    )
+    val sampled = Option(headers.get(Sampled))
+    val samplingDecision = getSamplingDecision(flags, sampled)
 
     new Span.Remote(spanID, parentID, Trace(traceID, samplingDecision))
   }
 
   /**
-    * helper method to get a sampling decision given flags
-    *
-    * @param flags some flags from grpc headers
-    * @param sampled sampled gRPC header
-    * @return a sampling decision
-    */
-  protected[this] def getSamplingDecision(flags: Option[String], sampled: Option[String]): SamplingDecision = {
-    flags match {
-      // handle debug flag
-      case Some("1") => SamplingDecision.Sample
-      // else, use real sampled decision
-      case _ =>
-        sampled match {
-          case Some("1") => SamplingDecision.Sample
-          case Some("0") => SamplingDecision.DoNotSample
-          case _ => SamplingDecision.Unknown
-        }
-    }
-  }
-
-  /**
-    * update headers with a span
-    *
-    * @param headers some gRPC metadata
-    * @param span a span
-    */
+   * update headers with a span
+   *
+   * @param headers some gRPC metadata
+   * @param span a span
+   */
   def updateHeadersWithSpan(headers: Metadata, span: Span): Unit = {
     headers.put(TraceIdentifier, span.trace.id.string)
     headers.put(SpanIdentifier, span.id.string)
@@ -83,16 +59,38 @@ object B3Propagation {
   }
 
   /**
-    * returns the string encoding of a sampling decision
-    *
-    * @param samplingDecision a sampling decision
-    * @return option of string, 1 or 0
-    */
-  private def encodeSamplingDecision(samplingDecision: SamplingDecision): Option[String] =
+   * returns the string encoding of a sampling decision
+   *
+   * @param samplingDecision a sampling decision
+   * @return option of string, 1 or 0
+   */
+  private[interceptors] def encodeSamplingDecision(samplingDecision: SamplingDecision): Option[String] = {
     samplingDecision match {
       case SamplingDecision.Sample      => Some("1")
       case SamplingDecision.DoNotSample => Some("0")
-      case SamplingDecision.Unknown     => None
+      case _                            => None
     }
+  }
+
+  /**
+   * helper method to get a sampling decision given flags
+   *
+   * @param flags some flags from grpc headers
+   * @param sampled sampled gRPC header
+   * @return a sampling decision
+   */
+  private[interceptors] def getSamplingDecision(flags: Option[String], sampled: Option[String]): SamplingDecision = {
+    flags match {
+      // handle debug flag
+      case Some("1") => SamplingDecision.Sample
+      // else, use real sampled decision
+      case _ =>
+        sampled match {
+          case Some("1") => SamplingDecision.Sample
+          case Some("0") => SamplingDecision.DoNotSample
+          case _         => SamplingDecision.Unknown
+        }
+    }
+  }
 
 }
