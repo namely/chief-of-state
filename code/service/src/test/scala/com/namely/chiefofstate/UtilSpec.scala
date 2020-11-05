@@ -124,5 +124,15 @@ class UtilSpec extends BaseSpec {
       )
       actual shouldBe (expected)
     }
+
+    "handles null status messages" in {
+      val status = io.grpc.Status.INVALID_ARGUMENT
+      val actual = Util.toRpcStatus(status)
+      val expected = com.google.rpc.status.Status(
+        code = io.grpc.Status.Code.INVALID_ARGUMENT.value(),
+        message = ""
+      )
+      actual shouldBe (expected)
+    }
   }
 }

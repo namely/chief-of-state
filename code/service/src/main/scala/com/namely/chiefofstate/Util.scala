@@ -145,7 +145,7 @@ object Util {
   def toRpcStatus(status: Status): com.google.rpc.status.Status = {
     com.google.rpc.status.Status(
       code = status.getCode.value,
-      message = status.getDescription
+      message = Option(status.getDescription).getOrElse("")
     )
   }
 }
