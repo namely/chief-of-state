@@ -24,6 +24,9 @@ object Dependencies {
     val KamonVersion: String = "2.1.8"
     val JaninoVersion: String = "3.1.2"
     val LogstashLogbackVersion: String = "6.3"
+
+    val OpenTracing: String = "0.2.3"
+    val OpenTracingJaeger: String = "1.4.0"
   }
 
   import Dependencies.Versions._
@@ -60,11 +63,16 @@ object Dependencies {
     "net.logstash.logback" % "logstash-logback-encoder" % Versions.LogstashLogbackVersion,
     "org.codehaus.janino" % "janino" % Versions.JaninoVersion,
     "org.scala-lang" % "scala-reflect" % Versions.ScalaVersion,
-    "io.kamon" %% "kamon-bundle" % Versions.KamonVersion,
-    "io.kamon" %% "kamon-prometheus" % Versions.KamonVersion,
-    "io.kamon" %% "kamon-jaeger" % Versions.KamonVersion,
-    "io.kamon" %% "kamon-zipkin" % Versions.KamonVersion,
-    kanelaAgent
+
+    // "io.kamon" %% "kamon-bundle" % Versions.KamonVersion,
+    // "io.kamon" %% "kamon-prometheus" % Versions.KamonVersion,
+    // "io.kamon" %% "kamon-jaeger" % Versions.KamonVersion,
+    // "io.kamon" %% "kamon-zipkin" % Versions.KamonVersion,
+    // kanelaAgent,
+
+    // opentracing
+    "io.opentracing.contrib" % "opentracing-grpc" % Versions.OpenTracing,
+    "io.jaegertracing" % "jaeger-client" % Versions.OpenTracingJaeger
   )
 
   val testJars: Seq[ModuleID] = Seq(

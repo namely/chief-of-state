@@ -11,7 +11,7 @@
     </appender>
 
     <!-- Let us define some env vars -->
-    <variable name="LOG_LEVEL" value="${LOG_LEVEL:-DEBUG}"/>
+    <variable name="LOG_LEVEL" value="${LOG_LEVEL:-WARNING}"/>
 
     <appender name="ASYNCJSON" class="net.logstash.logback.appender.LoggingEventAsyncDisruptorAppender">
         <appender class="ch.qos.logback.core.ConsoleAppender">
@@ -28,8 +28,13 @@
 
     <!-- Turn down Slick noise-->
     <logger name="scala.slick" level="ERROR"/>
+    <logger name="slick" level="ERROR"/>
+
     <!-- Turn down kamon -->
     <logger name="kamon.jaeger" level="WARN"/>
+
+    <logger name="com.namely.chiefofstate" level="DEBUG"/>
+
 
     <root level="${LOG_LEVEL}">
         <appender-ref ref="ASYNCJSON"/>

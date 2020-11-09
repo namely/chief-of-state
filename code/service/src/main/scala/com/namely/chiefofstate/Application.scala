@@ -10,18 +10,19 @@ import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
-import com.namely.chiefofstate.interceptors.{GrpcHeadersInterceptor, TracingClientInterceptor, TracingServerInterceptor}
 import com.namely.chiefofstate.plugin.PluginManager
+import com.namely.chiefofstate.interceptors.GrpcHeadersInterceptor
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.typesafe.config.{Config, ConfigFactory}
 import io.grpc.{ManagedChannel, Server, ServerInterceptors}
 import io.grpc.netty.{NettyChannelBuilder, NettyServerBuilder}
-import kamon.Kamon
 import org.slf4j.{Logger, LoggerFactory}
-
 import scala.concurrent.ExecutionContext
+import io.opentracing.Tracer
+import io.opentracing.util.GlobalTracer
+import io.opentracing.contrib.grpc.TracingServerInterceptor
 
 class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, pluginManager: PluginManager) {
   self =>
@@ -35,7 +36,18 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
    */
   private def start(): Unit = {
 
-    Kamon.init()
+    // create tracer
+    val tracer: Tracer = GlobalTracer.get()
+
+    // create & register jaeger tracer
+    val jaegerTracer: Tracer = io.jaegertracing.Configuration.fromEnv().getTracer()
+    GlobalTracer.registerIfAbsent(jaegerTracer)
+
+    // create interceptor
+    val interceptor = TracingServerInterceptor
+      .newBuilder()
+      .withTracer(tracer)
+      .build()
 
     server = NettyServerBuilder
       .forAddress(new InetSocketAddress(cosConfig.grpcConfig.server.host, cosConfig.grpcConfig.server.port))
@@ -45,8 +57,8 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
             new GrpcServiceImpl(clusterSharding, pluginManager, cosConfig.writeSideConfig),
             ExecutionContext.global
           ),
-          GrpcHeadersInterceptor,
-          TracingServerInterceptor
+          interceptor,
+          GrpcHeadersInterceptor
         )
       )
       .build()
@@ -102,7 +114,6 @@ object Application extends App {
     NettyChannelBuilder
       .forAddress(cosConfig.writeSideConfig.host, cosConfig.writeSideConfig.port)
       .usePlaintext()
-      .intercept(TracingClientInterceptor)
       .build()
 
   val writeHandler: WriteSideHandlerServiceBlockingStub = new WriteSideHandlerServiceBlockingStub(channel)
@@ -137,7 +148,6 @@ object Application extends App {
         NettyChannelBuilder
           .forAddress(rsconfig.host.get, rsconfig.port.get)
           .usePlaintext()
-          .intercept(TracingClientInterceptor)
           .build()
 
       val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(channel)

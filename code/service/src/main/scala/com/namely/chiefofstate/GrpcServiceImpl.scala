@@ -4,7 +4,6 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
 import akka.util.Timeout
 import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.plugin.PluginManager
-import com.namely.chiefofstate.interceptors.{GrpcHeadersInterceptor, TracingServerInterceptor}
 import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
@@ -21,8 +20,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-import kamon.instrumentation.futures.scala.ScalaFutureInstrumentation.trace
-import kamon.trace.SpanBuilder
+import com.namely.chiefofstate.interceptors.GrpcHeadersInterceptor
 
 class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
   implicit val askTimeout: Timeout
@@ -38,27 +36,26 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
 
     // fetch the gRPC metadata
     val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
-    // create child span around rpc implementation
-    TracingServerInterceptor.traceFuture {
-      // ascertain the entity ID
-      requireEntityId(entityId)
-        // run plugins to get meta
-        .flatMap(_ => Future.fromTry(pluginManager.run(request, metadata)))
-        // run remote command
-        .flatMap(meta => {
-          val entityRef: EntityRef[AggregateCommand] = clusterSharding
-            .entityRefFor(AggregateRoot.TypeKey, entityId)
 
-          val remoteCommand: RemoteCommand = getRemoteCommand(writeSideConfig, request, metadata)
-          val sendCommand: SendCommand = SendCommand()
-            .withRemoteCommand(remoteCommand)
+    // ascertain the entity ID
+    requireEntityId(entityId)
+      // run plugins to get meta
+      .flatMap(_ => Future.fromTry(pluginManager.run(request, metadata)))
+      // run remote command
+      .flatMap(meta => {
+        val entityRef: EntityRef[AggregateCommand] = clusterSharding
+          .entityRefFor(AggregateRoot.TypeKey, entityId)
 
-          // ask entity for response to aggregate command
-          entityRef ? (replyTo => AggregateCommand(sendCommand, replyTo, meta))
-        })
-        .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
-        .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
-    }
+        val remoteCommand: RemoteCommand = getRemoteCommand(writeSideConfig, request, metadata)
+        val sendCommand: SendCommand = SendCommand()
+          .withRemoteCommand(remoteCommand)
+
+        // ask entity for response to aggregate command
+        entityRef ? (replyTo => AggregateCommand(sendCommand, replyTo, meta))
+      })
+      .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
+      .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
+
   }
 
   /**
@@ -67,23 +64,21 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
   override def getState(request: GetStateRequest): Future[GetStateResponse] = {
     val entityId: String = request.entityId
 
-    // create child span around rpc implementation
-    TracingServerInterceptor.traceFuture {
-      // ascertain the entity id
-      requireEntityId(entityId)
-        .flatMap(_ => {
-          val entityRef: EntityRef[AggregateCommand] = clusterSharding
-            .entityRefFor(AggregateRoot.TypeKey, entityId)
+    // ascertain the entity id
+    requireEntityId(entityId)
+      .flatMap(_ => {
+        val entityRef: EntityRef[AggregateCommand] = clusterSharding
+          .entityRefFor(AggregateRoot.TypeKey, entityId)
 
-          val getCommand = GetStateCommand().withEntityId(entityId)
-          val sendCommand = SendCommand().withGetStateCommand(getCommand)
+        val getCommand = GetStateCommand().withEntityId(entityId)
+        val sendCommand = SendCommand().withGetStateCommand(getCommand)
 
-          // ask entity for response to AggregateCommand
-          entityRef ? (replyTo => AggregateCommand(sendCommand, replyTo, Map.empty))
-        })
-        .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
-        .map(c => GetStateResponse().withState(c.getState).withMeta(c.getMeta))
-    }
+        // ask entity for response to AggregateCommand
+        entityRef ? (replyTo => AggregateCommand(sendCommand, replyTo, Map.empty))
+      })
+      .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
+      .map(c => GetStateResponse().withState(c.getState).withMeta(c.getMeta))
+
   }
 
   /**
