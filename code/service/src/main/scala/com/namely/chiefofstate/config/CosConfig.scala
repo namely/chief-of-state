@@ -29,7 +29,7 @@ final case class CosConfig(
 object CosConfig {
   private val serviceNameKey: String = "chiefofstate.service-name"
   private val askTimeoutKey: String = "chiefofstate.ask-timeout"
-  private val createDataStorekey: String = "chiefofstate.read-side.create-stores.auto"
+  private val createDataStorekey: String = "chiefofstate.create-stores.auto"
   private val enableReadSideKey: String = "chiefofstate.read-side.enabled"
 
   /**

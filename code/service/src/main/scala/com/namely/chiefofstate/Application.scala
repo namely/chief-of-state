@@ -10,16 +10,16 @@ import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
-import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.interceptors.{GrpcHeadersInterceptor, TracingClientInterceptor, TracingServerInterceptor}
+import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.typesafe.config.{Config, ConfigFactory}
 import io.grpc.{ManagedChannel, Server, ServerInterceptors}
 import io.grpc.netty.{NettyChannelBuilder, NettyServerBuilder}
-import org.slf4j.{Logger, LoggerFactory}
 import kamon.Kamon
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext
 

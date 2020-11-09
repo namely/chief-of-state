@@ -101,8 +101,8 @@ class EventsAndStateProtosValidationSpec extends BaseSpec {
       val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
         EventsAndStateProtosValidation(writeSideConfig)
 
-      val event = AccountOpened()
-      val state = Account()
+      val event: AccountOpened = AccountOpened()
+      val state: Account = Account()
 
       assertThrows[IllegalArgumentException] {
         eventsAndStateProtosValidation.requireValidEvent(Any.pack(event))

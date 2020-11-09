@@ -74,11 +74,11 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                 propagated-headers = ""
               }
               read-side {
-                create-stores {
-                  auto = true
-                }
                 # set this value to true whenever a readSide config is set
                 enabled = false
+              }
+              create-stores {
+                auto = true
               }
             }
           """)
@@ -576,11 +576,11 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                 propagated-headers = ""
               }
               read-side {
-                create-stores {
-                  auto = true
-                }
                 # set this value to true whenever a readSide config is set
                 enabled = false
+              }
+              create-stores {
+                auto = true
               }
             }
           """)
@@ -707,11 +707,11 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                 propagated-headers = ""
               }
               read-side {
-                create-stores {
-                  auto = true
-                }
                 # set this value to true whenever a readSide config is set
                 enabled = false
+              }
+              create-stores {
+                auto = true
               }
             }
           """)
@@ -839,11 +839,11 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                 propagated-headers = ""
               }
               read-side {
-                create-stores {
-                  auto = true
-                }
                 # set this value to true whenever a readSide config is set
                 enabled = false
+              }
+              create-stores {
+                auto = true
               }
             }
           """)

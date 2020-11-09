@@ -38,11 +38,11 @@ class CosConfigSpec extends BaseSpec {
                 propagated-headers = ""
               }
               read-side {
-                create-stores {
-                  auto = true
-                }
                 # set this value to true whenever a readSide config is set
                 enabled = false
+              }
+              create-stores {
+                auto = true
               }
             }
           """)
@@ -81,11 +81,11 @@ class CosConfigSpec extends BaseSpec {
                 events-protos = ""
               }
               read-side {
-                create-stores {
-                  auto = true
-                }
                 # set this value to true whenever a readSide config is set
                 enabled = false
+              }
+              create-stores {
+                auto = true
               }
             }
           """)
