@@ -93,10 +93,8 @@ object AggregateRoot {
     eventsAndStateProtoValidation: EventsAndStateProtosValidation
   ): ReplyEffect[EventWrapper, StateWrapper] = {
 
-    // val tracer: Tracer = GlobalTracer.get()
-    // val span: Span  = Span
-    // val spanContext = SpanContext
-    // tracer.buildSpan("akka-handleCommand")
+    val tracer: Tracer = GlobalTracer.get()
+    tracer.buildSpan("akka-handleCommand")
 
     aggregateCommand.command.`type` match {
       case Type.Empty =>
