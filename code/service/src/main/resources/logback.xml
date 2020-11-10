@@ -11,7 +11,9 @@
     </appender>
 
     <!-- Let us define some env vars -->
-    <variable name="LOG_LEVEL" value="${LOG_LEVEL:-WARNING}"/>
+    <variable name="LOG_LEVEL" value="${LOG_LEVEL:-WARN}"/>
+    <variable name="COS_LOG_LEVEL" value="${COS_LOG_LEVEL:-WARN}"/>
+    <variable name="OPENTRACING_LOG_LEVEL" value="${OPENTRACING_LOG_LEVEL:-WARN}"/>
 
     <appender name="ASYNCJSON" class="net.logstash.logback.appender.LoggingEventAsyncDisruptorAppender">
         <appender class="ch.qos.logback.core.ConsoleAppender">
@@ -33,8 +35,9 @@
     <!-- Turn down kamon -->
     <logger name="kamon.jaeger" level="WARN"/>
 
-    <logger name="com.namely.chiefofstate" level="DEBUG"/>
+    <logger name="com.namely.chiefofstate" level="${COS_LOG_LEVEL}"/>
 
+    <logger name="io.opentracing" level="${OPENTRACING_LOG_LEVEL}" />
 
     <root level="${LOG_LEVEL}">
         <appender-ref ref="ASYNCJSON"/>
