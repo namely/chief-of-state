@@ -18,9 +18,14 @@ import com.namely.protobuf.chiefofstate.v1.internal.SendCommand.Type
 import com.namely.protobuf.chiefofstate.v1.persistence.{EventWrapper, StateWrapper}
 import io.grpc.{Status, StatusException}
 import org.slf4j.{Logger, LoggerFactory}
+import io.opentracing.util.GlobalTracer
 
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
+import io.opentracing.Tracer
+import io.opentracing.Span
+import io.jaegertracing.thriftjava.SpanRefType
+import io.opentracing.SpanContext
 
 /**
  *  This is an event sourced actor.
@@ -87,6 +92,11 @@ object AggregateRoot {
     eventHandler: RemoteEventHandler,
     eventsAndStateProtoValidation: EventsAndStateProtosValidation
   ): ReplyEffect[EventWrapper, StateWrapper] = {
+
+    // val tracer: Tracer = GlobalTracer.get()
+    // val span: Span  = Span
+    // val spanContext = SpanContext
+    // tracer.buildSpan("akka-handleCommand")
 
     aggregateCommand.command.`type` match {
       case Type.Empty =>

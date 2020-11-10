@@ -36,17 +36,17 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
    */
   private def start(): Unit = {
 
-    // create tracer
-    // val tracer: Tracer = GlobalTracer.get()
+    // create global tracer
+    val tracer: Tracer = GlobalTracer.get()
 
     // create & register jaeger tracer
     val jaegerTracer: Tracer = io.jaegertracing.Configuration.fromEnv().getTracer()
-    // GlobalTracer.registerIfAbsent(jaegerTracer)
+    GlobalTracer.registerIfAbsent(jaegerTracer)
 
     // create interceptor
     val interceptor = TracingServerInterceptor
       .newBuilder()
-      .withTracer(jaegerTracer)
+      .withTracer(tracer)
       .build()
 
     server = NettyServerBuilder

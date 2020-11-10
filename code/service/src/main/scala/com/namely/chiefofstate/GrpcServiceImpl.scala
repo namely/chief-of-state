@@ -21,6 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import com.namely.chiefofstate.interceptors.GrpcHeadersInterceptor
+import io.opentracing.util.GlobalTracer
 
 class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
   implicit val askTimeout: Timeout
@@ -33,6 +34,10 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
    */
   override def processCommand(request: ProcessCommandRequest): Future[ProcessCommandResponse] = {
     val entityId: String = request.entityId
+
+    val tracer = GlobalTracer.get()
+    val spanId = tracer.activeSpan().context().toSpanId()
+    log.info(s"current span id, $spanId")
 
     // fetch the gRPC metadata
     val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
