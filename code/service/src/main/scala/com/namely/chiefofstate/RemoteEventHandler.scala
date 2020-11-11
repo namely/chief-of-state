@@ -9,6 +9,8 @@ import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.util.Try
+import io.opentracing.contrib.grpc.TracingClientInterceptor
+import io.opentracing.util.GlobalTracer
 
 /**
  * handles a given event by making a rpc call
@@ -32,7 +34,14 @@ case class RemoteEventHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: Wr
       log.debug(
         s" sending request to the event handler to handle the given event ${event.typeUrl}"
       )
+
+      val clientInterceptor = TracingClientInterceptor
+        .newBuilder()
+        .withTracer(GlobalTracer.get())
+        .build()
+
       writeHandlerServicetub
+        .withInterceptors(clientInterceptor)
         .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
         .handleEvent(
           HandleEventRequest()
