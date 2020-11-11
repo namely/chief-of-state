@@ -39,9 +39,11 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
     // create global tracer
     val tracer: Tracer = GlobalTracer.get()
 
-    // create & register jaeger tracer
-    val jaegerTracer: Tracer = io.jaegertracing.Configuration.fromEnv().getTracer()
-    GlobalTracer.registerIfAbsent(jaegerTracer)
+    if (cosConfig.enableJaeger) {
+      // create & register jaeger tracer
+      val jaegerTracer: Tracer = io.jaegertracing.Configuration.fromEnv().getTracer()
+      GlobalTracer.registerIfAbsent(jaegerTracer)
+    }
 
     // create interceptor
     val interceptor = TracingServerInterceptor

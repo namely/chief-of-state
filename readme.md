@@ -99,12 +99,15 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 | COS_WRITE_PERSISTED_HEADERS | CSV of gRPC headers to persist to journal (experimental) | <none> |
 | COS_JOURNAL_LOGICAL_DELETION | Event deletion is triggered after saving a new snapshot. Old events would be deleted prior to old snapshots being deleted. | false |
 | COS_COMMAND_HANDLER_TIMEOUT | Timeout required for the Aggregate to process command and reply. The value is in seconds. | 5 |
+| COS_JAEGER_ENABLED | Enable tracing (see below for more options) | false |
 
 ### Tracing configuration
 
 This library leverages the [io.opentracing](https://opentracing.io/guides/java/) library and [Jaeger tracing instrumentation library](https://github.com/jaegertracing/jaeger-client-java).
 
 See [THIS README](https://github.com/jaegertracing/jaeger-client-java/blob/master/jaeger-core/README.md) for the relevant environment configurations, or see
+
+To enable tracing, set the env var `COS_JAEGER_ENABLED = true`.
 
 The following options can be configured via environment variables ([click here for more settings](https://github.com/jaegertracing/jaeger-client-java/blob/master/jaeger-core/README.md)).
 
