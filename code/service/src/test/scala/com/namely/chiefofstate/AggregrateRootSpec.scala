@@ -585,6 +585,9 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
               create-stores {
                 auto = true
               }
+              tracing {
+                jaeger-enabled = false
+              }
             }
           """)
       val mainConfig = CosConfig(config)
@@ -715,6 +718,9 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
               }
               create-stores {
                 auto = true
+              }
+              tracing {
+                jaeger-enabled = false
               }
             }
           """)
@@ -847,6 +853,9 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
               }
               create-stores {
                 auto = true
+              }
+              tracing {
+                jaeger-enabled = false
               }
             }
           """)
