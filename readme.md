@@ -105,8 +105,6 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 
 This library leverages the [io.opentracing](https://opentracing.io/guides/java/) library and [Jaeger tracing instrumentation library](https://github.com/jaegertracing/jaeger-client-java).
 
-See [THIS README](https://github.com/jaegertracing/jaeger-client-java/blob/master/jaeger-core/README.md) for the relevant environment configurations, or see
-
 To enable tracing, set the env var `COS_JAEGER_ENABLED = true`.
 
 The following options can be configured via environment variables ([click here for more settings](https://github.com/jaegertracing/jaeger-client-java/blob/master/jaeger-core/README.md)).
