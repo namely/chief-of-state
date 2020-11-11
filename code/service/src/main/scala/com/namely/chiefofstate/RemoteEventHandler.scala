@@ -22,6 +22,11 @@ case class RemoteEventHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: Wr
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
+  lazy val clientInterceptor = TracingClientInterceptor
+    .newBuilder()
+    .withTracer(GlobalTracer.get())
+    .build()
+
   /**
    * handles the given event and return an eventual response
    *
@@ -34,11 +39,6 @@ case class RemoteEventHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: Wr
       log.debug(
         s"sending request to the event handler to handle the given event ${event.typeUrl}"
       )
-
-      val clientInterceptor = TracingClientInterceptor
-        .newBuilder()
-        .withTracer(GlobalTracer.get())
-        .build()
 
       writeHandlerServicetub
         .withInterceptors(clientInterceptor)

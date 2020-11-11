@@ -27,6 +27,11 @@ case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: 
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
+  lazy val clientInterceptor = TracingClientInterceptor
+    .newBuilder()
+    .withTracer(GlobalTracer.get())
+    .build()
+
   /**
    * handles the given command and return an eventual response
    *
@@ -54,10 +59,7 @@ case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: 
         }
       })
 
-      val clientInterceptor = TracingClientInterceptor
-        .newBuilder()
-        .withTracer(GlobalTracer.get())
-        .build()
+
 
       MetadataUtils
         .attachHeaders(writeHandlerServicetub.withInterceptors(clientInterceptor), headers)
