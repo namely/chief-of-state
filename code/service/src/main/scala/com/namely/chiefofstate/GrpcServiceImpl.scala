@@ -22,6 +22,15 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import com.namely.chiefofstate.interceptors.GrpcHeadersInterceptor
 import io.opentracing.util.GlobalTracer
+import io.opentracing.propagation.Format
+import io.opentracing.propagation.TextMap
+import io.opentracing.Tracer
+import io.opentracing.propagation.TextMapAdapter
+import io.opentracing.propagation.TextMapInjectAdapter
+import scala.jdk.CollectionConverters._
+import scala.collection.mutable
+import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc
+import com.namely.chiefofstate.interceptors.OpentracingHelpers
 
 class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
   implicit val askTimeout: Timeout
@@ -33,14 +42,14 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
    * Used to process command sent by an application
    */
   override def processCommand(request: ProcessCommandRequest): Future[ProcessCommandResponse] = {
-    val entityId: String = request.entityId
+    log.debug(ChiefOfStateServiceGrpc.METHOD_PROCESS_COMMAND.getFullMethodName())
 
-    val tracer = GlobalTracer.get()
-    val spanId = tracer.activeSpan().context().toSpanId()
-    log.info(s"current span id, $spanId")
+    val entityId: String = request.entityId
 
     // fetch the gRPC metadata
     val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
+
+    val tracingHeaders = OpentracingHelpers.getTracingHeaders()
 
     // ascertain the entity ID
     requireEntityId(entityId)
@@ -54,6 +63,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
         val remoteCommand: RemoteCommand = getRemoteCommand(writeSideConfig, request, metadata)
         val sendCommand: SendCommand = SendCommand()
           .withRemoteCommand(remoteCommand)
+          .withTracingHeaders(tracingHeaders)
 
         // ask entity for response to aggregate command
         entityRef ? (replyTo => AggregateCommand(sendCommand, replyTo, meta))
@@ -67,7 +77,11 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
    * Used to get the current state of that entity
    */
   override def getState(request: GetStateRequest): Future[GetStateResponse] = {
+    log.debug(ChiefOfStateServiceGrpc.METHOD_GET_STATE.getFullMethodName())
+
     val entityId: String = request.entityId
+
+    val tracingHeaders = OpentracingHelpers.getTracingHeaders()
 
     // ascertain the entity id
     requireEntityId(entityId)
@@ -76,14 +90,21 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
           .entityRefFor(AggregateRoot.TypeKey, entityId)
 
         val getCommand = GetStateCommand().withEntityId(entityId)
-        val sendCommand = SendCommand().withGetStateCommand(getCommand)
+
+        val sendCommand = SendCommand()
+          .withGetStateCommand(getCommand)
+          .withTracingHeaders(tracingHeaders)
 
         // ask entity for response to AggregateCommand
         entityRef ? (replyTo => AggregateCommand(sendCommand, replyTo, Map.empty))
       })
       .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
       .map(c => GetStateResponse().withState(c.getState).withMeta(c.getMeta))
-
+      .recoverWith({
+        case e: Throwable =>
+          log.error("get state failed", e)
+          Future.failed(e)
+      })
   }
 
   /**

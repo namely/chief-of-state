@@ -20,6 +20,8 @@ message SendCommand {
     RemoteCommand remote_command = 1;
     GetStateCommand get_state_command = 2;
   }
+
+  map<string, string> tracing_headers = 3;
 }
 
 // a wrapper message for forwarding headers to the remote writeside handler
