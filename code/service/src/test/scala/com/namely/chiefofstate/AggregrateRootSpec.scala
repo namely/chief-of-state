@@ -80,6 +80,9 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
               create-stores {
                 auto = true
               }
+              tracing {
+                jaeger-enabled = false
+              }
             }
           """)
     cosConfig = CosConfig(config)
