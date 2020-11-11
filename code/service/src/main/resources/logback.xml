@@ -1,7 +1,9 @@
 <configuration>
 
     <!-- Let us define some env vars -->
+    <!-- LOG_LEVEL sets the root logging level -->
     <variable name="LOG_LEVEL" value="${LOG_LEVEL:-WARN}"/>
+    <!-- LOG_STYLE accepts {SIMPLE, STDOUT, ASYNCSTDOUT} -->
     <variable name="LOG_STYLE" value="${LOG_STYLE:-ASYNCJSON}"/>
 
     <!-- define appenders -->
