@@ -20,8 +20,6 @@ object Dependencies {
     val ScalaMockVersion: String = "4.4.0"
     val GrpcMockVersion: String = "0.3.4"
 
-    val KanelaAgentVersion: String = "1.0.6"
-    val KamonVersion: String = "2.1.8"
     val JaninoVersion: String = "3.1.2"
     val LogstashLogbackVersion: String = "6.3"
 

@@ -36,7 +36,7 @@ case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: 
    */
   def handleCommand(remoteCommand: RemoteCommand, priorState: StateWrapper): Try[HandleCommandResponse] = {
     log.debug(
-      s" sending request to the command handler to handle the given command ${remoteCommand.getCommand.typeUrl}"
+      s"sending request to the command handler to handle the given command ${remoteCommand.getCommand.typeUrl}"
     )
 
     // let us set the client request headers

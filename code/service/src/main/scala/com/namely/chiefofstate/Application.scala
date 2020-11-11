@@ -66,7 +66,7 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
       .build()
       .start()
 
-    log.info(" gRPC Server started, listening on " + cosConfig.grpcConfig.server.port)
+    log.info("gRPC Server started, listening on " + cosConfig.grpcConfig.server.port)
 
     sys.addShutdownHook {
       self.stop()
