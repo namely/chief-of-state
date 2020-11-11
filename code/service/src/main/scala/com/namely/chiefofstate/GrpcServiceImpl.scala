@@ -31,6 +31,7 @@ import scala.jdk.CollectionConverters._
 import scala.collection.mutable
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc
 import com.namely.chiefofstate.interceptors.OpentracingHelpers
+import io.opentracing.tag.Tags
 
 class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
   implicit val askTimeout: Timeout
@@ -70,7 +71,12 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
       })
       .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
       .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
-
+      .recoverWith {
+        case e: Throwable =>
+          log.error("processCommand failed", e)
+          OpentracingHelpers.reportErrorToTracer(e)
+          Future.failed(e)
+      }
   }
 
   /**
@@ -103,6 +109,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
       .recoverWith({
         case e: Throwable =>
           log.error("get state failed", e)
+          OpentracingHelpers.reportErrorToTracer(e)
           Future.failed(e)
       })
   }

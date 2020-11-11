@@ -1,24 +1,19 @@
 package com.namely.chiefofstate.interceptors
 
-import com.namely.chiefofstate.helper.{BaseSpec, GrpcHelpers}
-import io.grpc.inprocess.InProcessChannelBuilder
-import io.grpc.inprocess.InProcessServerBuilder
-import io.grpc.ManagedChannel;
-import io.grpc.internal.AbstractServerImplBuilder
-import scala.collection.mutable
-import com.namely.chiefofstate.helper.PingServiceImpl
-import com.namely.protobuf.chiefofstate.test.ping_service._
-import scala.concurrent.ExecutionContext.global
+import com.namely.chiefofstate.helper.BaseSpec
 import io.grpc.stub.MetadataUtils
 import io.grpc.Metadata
-import io.opentracing.mock.MockTracer
-import io.opentracing.Tracer
-import io.opentracing.Span
-import io.opentracing.util.GlobalTracer
-import scala.jdk.CollectionConverters._
 import io.opentracing.mock.MockSpan
+import io.opentracing.mock.MockTracer
+import io.opentracing.Span
+import io.opentracing.Tracer
+import io.opentracing.util.GlobalTracer
 import io.opentracing.Tracer.SpanBuilder
 import io.opentracing.tag.Tags
+import scala.util.Try
+import io.opentracing.log.Fields
+import scala.jdk.CollectionConverters._
+import scala.collection.mutable
 
 class OpentracingHelpersSpec extends BaseSpec {
 
@@ -142,6 +137,74 @@ class OpentracingHelpersSpec extends BaseSpec {
 
       val actualTags = finishedSpans.head.tags().asScala
       actualTags.get(Tags.ERROR.getKey()) shouldBe Some(true)
+    }
+  }
+  ".reportErrorToTracer" should {
+    "handle missing active span" in {
+      val tracer: MockTracer = new MockTracer(MockTracer.Propagator.TEXT_MAP)
+      tracer.reset()
+      tracer.activeSpan() shouldBe null
+      val e = new Exception("its broken")
+      val actual: Try[Unit] = OpentracingHelpers.reportErrorToTracer(tracer, e)
+      actual.isFailure shouldBe (true)
+    }
+    "tag active span with error" in {
+      val span: Span = mockTracer
+        .buildSpan("foo")
+        .start()
+
+      mockTracer.activateSpan(span)
+
+      val e = new RuntimeException("its broken")
+      val actual: Try[Unit] = OpentracingHelpers.reportErrorToTracer(mockTracer, e)
+
+      span.finish()
+
+      actual.isSuccess shouldBe true
+
+      val finishedSpans = mockTracer.finishedSpans().asScala
+      finishedSpans.size shouldBe 1
+
+      val finishedSpan = finishedSpans.head
+      val actualTags = finishedSpan.tags().asScala
+      val actualLogs = finishedSpan.logEntries().asScala
+      actualLogs.size shouldBe (1)
+      val logMap = actualLogs.head.fields().asScala
+      // assert he tags
+      actualTags.get(Tags.ERROR.getKey()) shouldBe Some(true)
+      // asser the logs
+      logMap.get(Fields.ERROR_KIND) shouldBe Some(e.getClass.getName)
+      logMap.get(Fields.MESSAGE) shouldBe Some(e.getMessage())
+      logMap.get(Fields.STACK).isDefined shouldBe true
+    }
+    "default to global tracer" in {
+      val span: Span = mockTracer
+        .buildSpan("foo")
+        .start()
+
+      GlobalTracer.isRegistered() shouldBe true
+      GlobalTracer.get().activateSpan(span)
+
+      val e = new RuntimeException("its broken")
+      val actual: Try[Unit] = OpentracingHelpers.reportErrorToTracer(e)
+
+      span.finish()
+      actual.isSuccess shouldBe true
+
+      val finishedSpans = mockTracer.finishedSpans().asScala
+      finishedSpans.size shouldBe 1
+
+      val finishedSpan = finishedSpans.head
+      val actualTags = finishedSpan.tags().asScala
+      val actualLogs = finishedSpan.logEntries().asScala
+      actualLogs.size shouldBe (1)
+      val logMap = actualLogs.head.fields().asScala
+      // assert he tags
+      actualTags.get(Tags.ERROR.getKey()) shouldBe Some(true)
+      // asser the logs
+      logMap.get(Fields.ERROR_KIND) shouldBe Some(e.getClass.getName)
+      logMap.get(Fields.MESSAGE) shouldBe Some(e.getMessage())
+      logMap.get(Fields.STACK).isDefined shouldBe true
     }
   }
 }

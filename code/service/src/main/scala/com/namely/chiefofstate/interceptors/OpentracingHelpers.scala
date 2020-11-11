@@ -11,6 +11,9 @@ import io.opentracing.Tracer.SpanBuilder
 import scala.util.{Failure, Success, Try}
 import io.opentracing.tag.Tags
 import org.slf4j.{Logger, LoggerFactory}
+import io.opentracing.log.Fields
+import java.io.StringWriter
+import java.io.PrintWriter
 
 object OpentracingHelpers {
 
@@ -84,5 +87,46 @@ object OpentracingHelpers {
           .withTag(Tags.ERROR.getKey(), true)
 
     }
+  }
+
+  /**
+   * report an exception to the tracer
+   *
+   * @param tracer an opentracing tracer
+   * @param exception an exception
+   * @return Success if error reported
+   */
+  def reportErrorToTracer(tracer: Tracer, exception: Throwable): Try[Unit] = {
+
+    if (tracer.activeSpan() == null) {
+      log.warn(s"no active span to report errors")
+      Failure(new Exception("no active span"))
+    } else {
+      Try {
+        tracer.activeSpan.setTag(Tags.ERROR.getKey(), true)
+
+        val sw = new StringWriter
+        exception.printStackTrace(new PrintWriter(sw))
+
+        val errMap: Map[String, String] = Map(
+          Fields.EVENT -> "error",
+          Fields.ERROR_KIND -> exception.getClass.getName,
+          Fields.MESSAGE -> exception.getMessage(),
+          Fields.STACK -> sw.toString()
+        )
+
+        tracer.activeSpan.log(errMap.asJava)
+      }
+    }
+  }
+
+  /**
+   * reports a throwable to the global tracer
+   *
+   * @param exception an exception
+   * @return  Success i ferror reported
+   */
+  def reportErrorToTracer(exception: Throwable): Try[Unit] = {
+    reportErrorToTracer(GlobalTracer.get(), exception)
   }
 }

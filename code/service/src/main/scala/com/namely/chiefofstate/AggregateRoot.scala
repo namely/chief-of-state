@@ -104,10 +104,14 @@ object AggregateRoot {
 
     val output: ReplyEffect[EventWrapper, StateWrapper] = aggregateCommand.command.`type` match {
       case SendCommand.Type.Empty =>
+        val errStatus = Status.INTERNAL.withDescription("something really bad happens...")
+
+        OpentracingHelpers.reportErrorToTracer(errStatus.asException())
+
         Effect
           .reply(aggregateCommand.replyTo)(
             CommandReply()
-              .withError(toRpcStatus(Status.INTERNAL.withDescription("something really bad happens...")))
+              .withError(toRpcStatus(errStatus))
           )
 
       case SendCommand.Type.RemoteCommand(remoteCommand: RemoteCommand) =>
@@ -209,15 +213,22 @@ object AggregateRoot {
         persistEventAndReply(event, newState, priorState.getMeta, data, replyTo)
 
       case Failure(e: StatusException) =>
+        OpentracingHelpers
+          .reportErrorToTracer(e)
+
         Effect.reply(replyTo)(
           CommandReply().withError(toRpcStatus(e.getStatus))
         )
 
       case x =>
         // this should never happen, but here for code completeness
-        val errMsg: String = s"write handler failure, ${x.getClass}"
+        val errStatus = Status.INTERNAL
+          .withDescription(s"write handler failure, ${x.getClass}")
+
+        OpentracingHelpers.reportErrorToTracer(errStatus.asException())
+
         Effect.reply(replyTo)(
-          CommandReply().withError(toRpcStatus(Status.INTERNAL.withDescription(errMsg)))
+          CommandReply().withError(toRpcStatus(errStatus))
         )
     }
   }
