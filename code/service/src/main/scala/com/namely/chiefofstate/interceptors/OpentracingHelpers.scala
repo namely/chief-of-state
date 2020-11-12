@@ -14,6 +14,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import io.opentracing.log.Fields
 import java.io.StringWriter
 import java.io.PrintWriter
+import io.opentracing.Span
 
 object OpentracingHelpers {
 
@@ -90,6 +91,40 @@ object OpentracingHelpers {
   }
 
   /**
+   * report errors on a span
+   *
+   * @param span an option containing a span
+   * @param exception an exception
+   * @return successful reporting of the error
+   */
+  def reportErrorToSpan(span: Option[Span], exception: Throwable): Try[Unit] = {
+    span match {
+      case None =>
+        log.warn(s"no active span to report errors")
+        Failure(new Exception("no active span"))
+
+      case Some(span) =>
+        Try {
+          log.debug(s"reporting error to span ${span.context().toSpanId()}")
+
+          span.setTag(Tags.ERROR.getKey(), true)
+
+          val sw = new StringWriter
+          exception.printStackTrace(new PrintWriter(sw))
+
+          val errMap: Map[String, String] = Map(
+            Fields.EVENT -> "error",
+            Fields.ERROR_KIND -> exception.getClass.getName,
+            Fields.MESSAGE -> exception.getMessage(),
+            Fields.STACK -> sw.toString()
+          )
+
+          span.log(errMap.asJava)
+        }
+    }
+  }
+
+  /**
    * report an exception to the tracer
    *
    * @param tracer an opentracing tracer
@@ -97,27 +132,7 @@ object OpentracingHelpers {
    * @return Success if error reported
    */
   def reportErrorToTracer(tracer: Tracer, exception: Throwable): Try[Unit] = {
-
-    if (tracer.activeSpan() == null) {
-      log.warn(s"no active span to report errors")
-      Failure(new Exception("no active span"))
-    } else {
-      Try {
-        tracer.activeSpan.setTag(Tags.ERROR.getKey(), true)
-
-        val sw = new StringWriter
-        exception.printStackTrace(new PrintWriter(sw))
-
-        val errMap: Map[String, String] = Map(
-          Fields.EVENT -> "error",
-          Fields.ERROR_KIND -> exception.getClass.getName,
-          Fields.MESSAGE -> exception.getMessage(),
-          Fields.STACK -> sw.toString()
-        )
-
-        tracer.activeSpan.log(errMap.asJava)
-      }
-    }
+    reportErrorToSpan(Option(tracer.activeSpan()), exception)
   }
 
   /**

@@ -23,6 +23,7 @@ import scala.concurrent.ExecutionContext
 import io.opentracing.Tracer
 import io.opentracing.util.GlobalTracer
 import io.opentracing.contrib.grpc.TracingServerInterceptor
+import com.namely.chiefofstate.interceptors.ErrorsServerInterceptor
 
 class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, pluginManager: PluginManager) {
   self =>
@@ -35,20 +36,16 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
    * start the grpc server
    */
   private def start(): Unit = {
-
-    // create global tracer
-    val tracer: Tracer = GlobalTracer.get()
-
     if (cosConfig.enableJaeger) {
       // create & register jaeger tracer
       val jaegerTracer: Tracer = io.jaegertracing.Configuration.fromEnv().getTracer()
       GlobalTracer.registerIfAbsent(jaegerTracer)
     }
 
-    // create interceptor
-    val interceptor = TracingServerInterceptor
+    // create interceptor using the global tracer
+    val tracingServerInterceptor = TracingServerInterceptor
       .newBuilder()
-      .withTracer(tracer)
+      .withTracer(GlobalTracer.get())
       .build()
 
     server = NettyServerBuilder
@@ -59,7 +56,8 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
             new GrpcServiceImpl(clusterSharding, pluginManager, cosConfig.writeSideConfig),
             ExecutionContext.global
           ),
-          interceptor,
+          new ErrorsServerInterceptor(GlobalTracer.get()),
+          tracingServerInterceptor,
           GrpcHeadersInterceptor
         )
       )

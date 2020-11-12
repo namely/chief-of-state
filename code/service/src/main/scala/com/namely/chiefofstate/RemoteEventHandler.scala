@@ -11,6 +11,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.util.Try
 import io.opentracing.contrib.grpc.TracingClientInterceptor
 import io.opentracing.util.GlobalTracer
+import com.namely.chiefofstate.interceptors.ErrorsClientInterceptor
 
 /**
  * handles a given event by making a rpc call
@@ -22,10 +23,12 @@ case class RemoteEventHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: Wr
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
-  lazy val clientInterceptor = TracingClientInterceptor
+  lazy val tracingInterceptor = TracingClientInterceptor
     .newBuilder()
     .withTracer(GlobalTracer.get())
     .build()
+
+  lazy val errorsInterceptor = new ErrorsClientInterceptor(GlobalTracer.get())
 
   /**
    * handles the given event and return an eventual response
@@ -37,11 +40,11 @@ case class RemoteEventHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: Wr
   def handleEvent(event: com.google.protobuf.any.Any, priorState: StateWrapper): Try[HandleEventResponse] = {
     Try {
       log.debug(
-        s"sending request to the event handler to handle the given event ${event.typeUrl}"
+        s"sending request to the event handler, ${event.typeUrl}"
       )
 
       writeHandlerServicetub
-        .withInterceptors(clientInterceptor)
+        .withInterceptors(errorsInterceptor, tracingInterceptor)
         .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
         .handleEvent(
           HandleEventRequest()

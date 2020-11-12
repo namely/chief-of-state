@@ -32,6 +32,7 @@ import scala.collection.mutable
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc
 import com.namely.chiefofstate.interceptors.OpentracingHelpers
 import io.opentracing.tag.Tags
+import io.opentracing.Span
 
 class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
   implicit val askTimeout: Timeout
@@ -44,6 +45,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
    */
   override def processCommand(request: ProcessCommandRequest): Future[ProcessCommandResponse] = {
     log.debug(ChiefOfStateServiceGrpc.METHOD_PROCESS_COMMAND.getFullMethodName())
+    log.debug(s"Has active span, ${GlobalTracer.get().activeSpan() != null}")
 
     val entityId: String = request.entityId
 
@@ -71,12 +73,6 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
       })
       .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
       .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
-      .recoverWith {
-        case e: Throwable =>
-          log.error("processCommand failed", e)
-          OpentracingHelpers.reportErrorToTracer(e)
-          Future.failed(e)
-      }
   }
 
   /**
@@ -106,12 +102,6 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
       })
       .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
       .map(c => GetStateResponse().withState(c.getState).withMeta(c.getMeta))
-      .recoverWith({
-        case e: Throwable =>
-          log.error("get state failed", e)
-          OpentracingHelpers.reportErrorToTracer(e)
-          Future.failed(e)
-      })
   }
 
   /**
@@ -151,7 +141,8 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
   }
 
   /**
-   * handles the command reply, specifically for errors
+   * handles the command reply, specifically for errors, and
+   * reports errors to the global tracer
    *
    * @param commandReply a command reply
    * @return a state wrapper
