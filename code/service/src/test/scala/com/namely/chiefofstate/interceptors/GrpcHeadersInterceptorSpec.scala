@@ -6,11 +6,11 @@ import io.grpc.inprocess.InProcessServerBuilder
 import io.grpc.ManagedChannel;
 import io.grpc.internal.AbstractServerImplBuilder
 import scala.collection.mutable
-import com.namely.chiefofstate.helper.PingServiceImpl
 import com.namely.protobuf.chiefofstate.test.ping_service._
 import scala.concurrent.ExecutionContext.global
 import io.grpc.stub.MetadataUtils
 import io.grpc.Metadata
+import scala.concurrent.Future
 
 class GrpcHeadersInterceptorSpec extends BaseSpec {
   import GrpcHelpers._
@@ -27,16 +27,21 @@ class GrpcHeadersInterceptorSpec extends BaseSpec {
     "catch the headers" in {
       // Generate a unique in-process server name.
       val serverName: String = InProcessServerBuilder.generateName();
-      val serviceImpl = new PingServiceImpl()
-      val service = PingServiceGrpc.bindService(serviceImpl, global)
+      val serviceImpl = mock[PingServiceGrpc.PingService]
 
       // declare a variable and interceptor to capture the headers
       var responseHeaders: Option[Metadata] = None
-      def intercept(p: Ping): Unit = {
-        responseHeaders = Option(GrpcHeadersInterceptor.REQUEST_META.get())
-      }
 
-      serviceImpl.registerInterceptor(intercept)
+      (serviceImpl.send _)
+        .expects(*)
+        .onCall { ping: Ping =>
+          {
+            responseHeaders = Option(GrpcHeadersInterceptor.REQUEST_META.get())
+            Future.successful(Pong().withMsg(ping.msg))
+          }
+        }
+
+      val service = PingServiceGrpc.bindService(serviceImpl, global)
 
       closeables.register(
         InProcessServerBuilder

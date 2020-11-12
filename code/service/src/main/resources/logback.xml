@@ -1,17 +1,27 @@
 <configuration>
 
+    <!-- Let us define some env vars -->
+    <!-- LOG_LEVEL sets the root logging level -->
+    <variable name="LOG_LEVEL" value="${LOG_LEVEL:-WARN}"/>
+    <!-- LOG_STYLE accepts {SIMPLE, STDOUT, ASYNCSTDOUT} -->
+    <variable name="LOG_STYLE" value="${LOG_STYLE:-ASYNCJSON}"/>
+
+    <!-- define appenders -->
+    <appender name="SIMPLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%-5level %logger %msg%n</pattern>
+        </encoder>
+    </appender>
+
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%date{"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",UTC} %coloredLevel %logger [%mdc] - %msg%n</pattern>
+            <pattern>%date{"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",UTC} %coloredLevel %logger - %msg%n</pattern>
         </encoder>
     </appender>
 
     <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="STDOUT"/>
     </appender>
-
-    <!-- Let us define some env vars -->
-    <variable name="LOG_LEVEL" value="${LOG_LEVEL:-DEBUG}"/>
 
     <appender name="ASYNCJSON" class="net.logstash.logback.appender.LoggingEventAsyncDisruptorAppender">
         <appender class="ch.qos.logback.core.ConsoleAppender">
@@ -28,10 +38,9 @@
 
     <!-- Turn down Slick noise-->
     <logger name="scala.slick" level="ERROR"/>
-    <!-- Turn down kamon -->
-    <logger name="kamon.jaeger" level="WARN"/>
+    <logger name="slick" level="ERROR"/>
 
     <root level="${LOG_LEVEL}">
-        <appender-ref ref="ASYNCJSON"/>
+        <appender-ref ref="${LOG_STYLE}"/>
     </root>
 </configuration>

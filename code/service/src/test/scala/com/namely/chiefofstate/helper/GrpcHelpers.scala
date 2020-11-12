@@ -4,6 +4,8 @@ import io.grpc._
 import java.io.Closeable
 import scala.collection.mutable
 import java.util.concurrent.TimeUnit
+import io.opentracing.mock.MockTracer
+import io.opentracing.util.GlobalTracer
 
 object GrpcHelpers {
 

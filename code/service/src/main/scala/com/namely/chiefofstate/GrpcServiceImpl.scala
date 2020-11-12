@@ -4,7 +4,6 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
 import akka.util.Timeout
 import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.plugin.PluginManager
-import com.namely.chiefofstate.interceptors.{GrpcHeadersInterceptor, TracingServerInterceptor}
 import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
@@ -21,11 +20,26 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-import kamon.instrumentation.futures.scala.ScalaFutureInstrumentation.trace
-import kamon.trace.SpanBuilder
+import com.namely.chiefofstate.interceptors.GrpcHeadersInterceptor
+import io.opentracing.util.GlobalTracer
+import io.opentracing.propagation.Format
+import io.opentracing.propagation.TextMap
+import io.opentracing.Tracer
+import io.opentracing.propagation.TextMapAdapter
+import io.opentracing.propagation.TextMapInjectAdapter
+import scala.jdk.CollectionConverters._
+import scala.collection.mutable
+import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc
+import com.namely.chiefofstate.interceptors.OpentracingHelpers
+import io.opentracing.tag.Tags
+import io.opentracing.Span
 
-class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
-  implicit val askTimeout: Timeout
+class GrpcServiceImpl(clusterSharding: ClusterSharding,
+                      pluginManager: PluginManager,
+                      writeSideConfig: WriteSideConfig,
+                      tracer: Tracer
+)(implicit
+  val askTimeout: Timeout
 ) extends ChiefOfStateService {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -34,56 +48,63 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
    * Used to process command sent by an application
    */
   override def processCommand(request: ProcessCommandRequest): Future[ProcessCommandResponse] = {
+    log.debug(ChiefOfStateServiceGrpc.METHOD_PROCESS_COMMAND.getFullMethodName())
+
     val entityId: String = request.entityId
 
     // fetch the gRPC metadata
     val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
-    // create child span around rpc implementation
-    TracingServerInterceptor.traceFuture {
-      // ascertain the entity ID
-      requireEntityId(entityId)
-        // run plugins to get meta
-        .flatMap(_ => Future.fromTry(pluginManager.run(request, metadata)))
-        // run remote command
-        .flatMap(meta => {
-          val entityRef: EntityRef[AggregateCommand] = clusterSharding
-            .entityRefFor(AggregateRoot.TypeKey, entityId)
 
-          val remoteCommand: RemoteCommand = getRemoteCommand(writeSideConfig, request, metadata)
-          val sendCommand: SendCommand = SendCommand()
-            .withRemoteCommand(remoteCommand)
+    val tracingHeaders = OpentracingHelpers.getTracingHeaders(tracer)
 
-          // ask entity for response to aggregate command
-          entityRef ? (replyTo => AggregateCommand(sendCommand, replyTo, meta))
-        })
-        .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
-        .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
-    }
+    // ascertain the entity ID
+    requireEntityId(entityId)
+      // run plugins to get meta
+      .flatMap(_ => Future.fromTry(pluginManager.run(request, metadata)))
+      // run remote command
+      .flatMap(meta => {
+        val entityRef: EntityRef[AggregateCommand] = clusterSharding
+          .entityRefFor(AggregateRoot.TypeKey, entityId)
+
+        val remoteCommand: RemoteCommand = getRemoteCommand(writeSideConfig, request, metadata)
+        val sendCommand: SendCommand = SendCommand()
+          .withRemoteCommand(remoteCommand)
+          .withTracingHeaders(tracingHeaders)
+
+        // ask entity for response to aggregate command
+        entityRef ? (replyTo => AggregateCommand(sendCommand, replyTo, meta))
+      })
+      .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
+      .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
   }
 
   /**
    * Used to get the current state of that entity
    */
   override def getState(request: GetStateRequest): Future[GetStateResponse] = {
+    log.debug(ChiefOfStateServiceGrpc.METHOD_GET_STATE.getFullMethodName())
+
     val entityId: String = request.entityId
 
-    // create child span around rpc implementation
-    TracingServerInterceptor.traceFuture {
-      // ascertain the entity id
-      requireEntityId(entityId)
-        .flatMap(_ => {
-          val entityRef: EntityRef[AggregateCommand] = clusterSharding
-            .entityRefFor(AggregateRoot.TypeKey, entityId)
+    val tracingHeaders = OpentracingHelpers.getTracingHeaders(tracer)
 
-          val getCommand = GetStateCommand().withEntityId(entityId)
-          val sendCommand = SendCommand().withGetStateCommand(getCommand)
+    // ascertain the entity id
+    requireEntityId(entityId)
+      .flatMap(_ => {
+        val entityRef: EntityRef[AggregateCommand] = clusterSharding
+          .entityRefFor(AggregateRoot.TypeKey, entityId)
 
-          // ask entity for response to AggregateCommand
-          entityRef ? (replyTo => AggregateCommand(sendCommand, replyTo, Map.empty))
-        })
-        .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
-        .map(c => GetStateResponse().withState(c.getState).withMeta(c.getMeta))
-    }
+        val getCommand = GetStateCommand().withEntityId(entityId)
+
+        val sendCommand = SendCommand()
+          .withGetStateCommand(getCommand)
+          .withTracingHeaders(tracingHeaders)
+
+        // ask entity for response to AggregateCommand
+        entityRef ? (replyTo => AggregateCommand(sendCommand, replyTo, Map.empty))
+      })
+      .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
+      .map(c => GetStateResponse().withState(c.getState).withMeta(c.getMeta))
   }
 
   /**
@@ -123,7 +144,8 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
   }
 
   /**
-   * handles the command reply, specifically for errors
+   * handles the command reply, specifically for errors, and
+   * reports errors to the global tracer
    *
    * @param commandReply a command reply
    * @return a state wrapper

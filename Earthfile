@@ -47,9 +47,6 @@ code:
     COPY --chown $BUILD_USR:root code/service/src ./code/service/src
     COPY --chown $BUILD_USR:root code/plugin/src ./code/plugin/src
 
-    # save base image for use downstream
-    SAVE IMAGE
-
 docker-stage:
     # package the jars/executables
     FROM +code
@@ -89,7 +86,6 @@ test-local:
     ARG CODECOV_TOKEN=""
     ENV CODECOV_TOKEN=${CODECOV_TOKEN}
     RUN sbt coverage test coverageAggregate
-    SAVE IMAGE
 
 codecov:
     FROM +test-local
@@ -115,5 +111,3 @@ sbt:
         apt-get update && \
         apt-get install sbt && \
         sbt sbtVersion
-
-    SAVE IMAGE

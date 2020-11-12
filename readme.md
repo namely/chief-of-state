@@ -95,18 +95,29 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 | HANDLER_SERVICE_STATES_PROTOS | handler service states proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`.  This will be a comma separated list of values | <none> |
 | HANDLER_SERVICE_EVENTS_PROTOS | handler service events proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`. This will be a comma separated list of values | <none> |
 | COS_SERVICE_NAME | service name | chiefofstate |
-| JAEGER_ENABLED | Enable the Jaeger collector | false |
-| JAEGER_HOST | Jaeger collector/agent host | localhost |
-| JAEGER_PORT | Jaeger collector/agent port | 14268 |
-| JAEGER_URL | Jaeger URL override (instead of host/port) | 14268 |
-| ZIPKIN_ENABLED | Enable the Zipkin collector | false |
-| ZIPKIN_HOST | Zipkin collector/agent host | localhost |
-| ZIPKIN_PORT | Zipkin collector/agent port | 14268 |
-| ZIPKIN_URL | Zipkin URL override (instead of host/port) | 14268 |
 | COS_WRITE_PROPAGATED_HEADERS | CSV of gRPC headers to propagate to write side handler | <none> |
 | COS_WRITE_PERSISTED_HEADERS | CSV of gRPC headers to persist to journal (experimental) | <none> |
 | COS_JOURNAL_LOGICAL_DELETION | Event deletion is triggered after saving a new snapshot. Old events would be deleted prior to old snapshots being deleted. | false |
 | COS_COMMAND_HANDLER_TIMEOUT | Timeout required for the Aggregate to process command and reply. The value is in seconds. | 5 |
+| COS_JAEGER_ENABLED | Enable tracing (see below for more options) | false |
+
+### Tracing configuration
+
+This library leverages the [io.opentracing](https://opentracing.io/guides/java/) library and [Jaeger tracing instrumentation library](https://github.com/jaegertracing/jaeger-client-java).
+
+To enable tracing, set the env var `COS_JAEGER_ENABLED = true`.
+
+The following options can be configured via environment variables ([click here for more settings](https://github.com/jaegertracing/jaeger-client-java/blob/master/jaeger-core/README.md)).
+
+Property | Required | Description
+--- | --- | ---
+JAEGER_SERVICE_NAME | yes | The service name
+JAEGER_AGENT_HOST | no | The hostname for communicating with agent via UDP
+JAEGER_AGENT_PORT | no | The port for communicating with agent via UDP
+JAEGER_ENDPOINT | no | The traces endpoint, in case the client should connect directly to the Collector, like http://jaeger-collector:14268/api/traces
+JAEGER_PROPAGATION | no | Comma separated list of formats to use for propagating the trace context. Defaults to the standard Jaeger format. Valid values are **jaeger**, **b3**, and **w3c**
+JAEGER_SAMPLER_TYPE | no | The [sampler type](https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration)
+JAEGER_TAGS | no | A comma separated list of `name = value` tracer level tags, which get added to all reported spans. The value can also refer to an environment variable using the format `${envVarName:default}`, where the `:default` is optional, and identifies a value to be used if the environment variable cannot be found
 
 ### Read side configurations
 

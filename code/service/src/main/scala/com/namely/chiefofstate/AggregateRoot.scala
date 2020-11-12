@@ -1,7 +1,5 @@
 package com.namely.chiefofstate
 
-import java.time.Instant
-
 import akka.actor.typed.{ActorRef, Behavior, SupervisorStrategy}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
@@ -11,16 +9,20 @@ import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate.config.{CosConfig, EventsConfig, SnapshotConfig}
 import com.namely.chiefofstate.Util.{makeFailedStatusPf, toRpcStatus, Instants}
+import com.namely.chiefofstate.interceptors.OpentracingHelpers
 import com.namely.chiefofstate.WriteHandlerHelpers.{NewState, NoOp}
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
-import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, GetStateCommand, RemoteCommand}
-import com.namely.protobuf.chiefofstate.v1.internal.SendCommand.Type
+import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, GetStateCommand, RemoteCommand, SendCommand}
 import com.namely.protobuf.chiefofstate.v1.persistence.{EventWrapper, StateWrapper}
 import io.grpc.{Status, StatusException}
 import org.slf4j.{Logger, LoggerFactory}
-
+import io.opentracing.util.GlobalTracer
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
+import io.opentracing.Span
+import io.opentracing.tag.Tags
+import java.time.Instant
+import io.opentracing.Tracer
 
 /**
  *  This is an event sourced actor.
@@ -28,6 +30,8 @@ import scala.util.{Failure, Success, Try}
 object AggregateRoot {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
+
+  lazy val tracer: Tracer = GlobalTracer.get()
 
   /**
    * thee aggregate root type key
@@ -88,15 +92,32 @@ object AggregateRoot {
     eventsAndStateProtoValidation: EventsAndStateProtosValidation
   ): ReplyEffect[EventWrapper, StateWrapper] = {
 
-    aggregateCommand.command.`type` match {
-      case Type.Empty =>
+    log.debug("begin handle command")
+
+    val headers = aggregateCommand.command.tracingHeaders
+
+    val tracer = GlobalTracer.get()
+
+    val span: Span = OpentracingHelpers
+      .getChildSpanBuilder(tracer, headers, "AggregateRoot.handleCommand")
+      .withTag(Tags.COMPONENT.getKey(), this.getClass().getName)
+      .start()
+
+    tracer.activateSpan(span)
+
+    val output: ReplyEffect[EventWrapper, StateWrapper] = aggregateCommand.command.`type` match {
+      case SendCommand.Type.Empty =>
+        val errStatus = Status.INTERNAL.withDescription("something really bad happens...")
+
+        OpentracingHelpers.reportErrorToTracer(tracer, errStatus.asException())
+
         Effect
           .reply(aggregateCommand.replyTo)(
             CommandReply()
-              .withError(toRpcStatus(Status.INTERNAL.withDescription("something really bad happens...")))
+              .withError(toRpcStatus(errStatus))
           )
 
-      case Type.RemoteCommand(remoteCommand: RemoteCommand) =>
+      case SendCommand.Type.RemoteCommand(remoteCommand: RemoteCommand) =>
         handleRemoteCommand(context,
                             aggregateState,
                             remoteCommand,
@@ -107,9 +128,13 @@ object AggregateRoot {
                             aggregateCommand.data
         )
 
-      case Type.GetStateCommand(getStateCommand) =>
+      case SendCommand.Type.GetStateCommand(getStateCommand) =>
         handleGetStateCommand(getStateCommand, aggregateState, aggregateCommand.replyTo)
     }
+
+    span.finish()
+
+    output
   }
 
   /**
@@ -125,7 +150,7 @@ object AggregateRoot {
                             replyTo: ActorRef[CommandReply]
   ): ReplyEffect[EventWrapper, StateWrapper] = {
     if (state.meta.map(_.revisionNumber).getOrElse(0) > 0) {
-      log.debug(s"[ChiefOfState] found state for entity ${cmd.entityId}")
+      log.debug(s"found state for entity ${cmd.entityId}")
       Effect.reply(replyTo)(CommandReply().withState(state))
     } else {
       Effect.reply(replyTo)(
@@ -191,15 +216,22 @@ object AggregateRoot {
         persistEventAndReply(event, newState, priorState.getMeta, data, replyTo)
 
       case Failure(e: StatusException) =>
+        OpentracingHelpers
+          .reportErrorToTracer(tracer, e)
+
         Effect.reply(replyTo)(
           CommandReply().withError(toRpcStatus(e.getStatus))
         )
 
       case x =>
         // this should never happen, but here for code completeness
-        val errMsg: String = s"write handler failure, ${x.getClass}"
+        val errStatus = Status.INTERNAL
+          .withDescription(s"write handler failure, ${x.getClass}")
+
+        OpentracingHelpers.reportErrorToTracer(tracer, errStatus.asException())
+
         Effect.reply(replyTo)(
-          CommandReply().withError(toRpcStatus(Status.INTERNAL.withDescription(errMsg)))
+          CommandReply().withError(toRpcStatus(errStatus))
         )
     }
   }

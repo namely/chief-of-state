@@ -13,6 +13,10 @@ import io.grpc.stub.MetadataUtils
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.util.Try
+import io.opentracing.util.GlobalTracer
+import io.opentracing.tag.Tags
+import io.opentracing.contrib.grpc.TracingClientInterceptor
+import com.namely.chiefofstate.interceptors.ErrorsClientInterceptor
 
 /**
  * handles command via a gRPC call
@@ -24,6 +28,13 @@ case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: 
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
+  lazy val tracingInterceptor = TracingClientInterceptor
+    .newBuilder()
+    .withTracer(GlobalTracer.get())
+    .build()
+
+  lazy val errorsInterceptor = new ErrorsClientInterceptor(GlobalTracer.get())
+
   /**
    * handles the given command and return an eventual response
    *
@@ -33,8 +44,9 @@ case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: 
    */
   def handleCommand(remoteCommand: RemoteCommand, priorState: StateWrapper): Try[HandleCommandResponse] = {
     log.debug(
-      s"[ChiefOfState] sending request to the command handler to handle the given command ${remoteCommand.getCommand.typeUrl}"
+      s"sending request to the command handler, ${remoteCommand.getCommand.typeUrl}"
     )
+
     // let us set the client request headers
     val headers: Metadata = new Metadata()
 
@@ -45,12 +57,13 @@ case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: 
             headers.put(Metadata.Key.of(header.key, Metadata.ASCII_STRING_MARSHALLER), value)
           case Value.BytesValue(value) =>
             headers.put(Metadata.Key.of(header.key, Metadata.BINARY_BYTE_MARSHALLER), value.toByteArray)
-          case Value.Empty => throw new RuntimeException("header value must be string or bytes")
+          case Value.Empty =>
+            throw new RuntimeException("header value must be string or bytes")
         }
       })
 
       MetadataUtils
-        .attachHeaders(writeHandlerServicetub, headers)
+        .attachHeaders(writeHandlerServicetub.withInterceptors(errorsInterceptor, tracingInterceptor), headers)
         .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
         .handleCommand(
           HandleCommandRequest()

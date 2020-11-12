@@ -10,18 +10,20 @@ import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
-import com.namely.chiefofstate.interceptors.{GrpcHeadersInterceptor, TracingClientInterceptor, TracingServerInterceptor}
 import com.namely.chiefofstate.plugin.PluginManager
+import com.namely.chiefofstate.interceptors.GrpcHeadersInterceptor
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.typesafe.config.{Config, ConfigFactory}
 import io.grpc.{ManagedChannel, Server, ServerInterceptors}
 import io.grpc.netty.{NettyChannelBuilder, NettyServerBuilder}
-import kamon.Kamon
 import org.slf4j.{Logger, LoggerFactory}
-
 import scala.concurrent.ExecutionContext
+import io.opentracing.Tracer
+import io.opentracing.util.GlobalTracer
+import io.opentracing.contrib.grpc.TracingServerInterceptor
+import com.namely.chiefofstate.interceptors.ErrorsServerInterceptor
 
 class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, pluginManager: PluginManager) {
   self =>
@@ -34,25 +36,37 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
    * start the grpc server
    */
   private def start(): Unit = {
+    if (cosConfig.enableJaeger) {
+      // create & register jaeger tracer
+      val jaegerTracer: Tracer = io.jaegertracing.Configuration.fromEnv().getTracer()
+      GlobalTracer.registerIfAbsent(jaegerTracer)
+    }
 
-    Kamon.init()
+    val tracer: Tracer = GlobalTracer.get()
+
+    // create interceptor using the global tracer
+    val tracingServerInterceptor = TracingServerInterceptor
+      .newBuilder()
+      .withTracer(tracer)
+      .build()
 
     server = NettyServerBuilder
       .forAddress(new InetSocketAddress(cosConfig.grpcConfig.server.host, cosConfig.grpcConfig.server.port))
       .addService(
         ServerInterceptors.intercept(
           ChiefOfStateService.bindService(
-            new GrpcServiceImpl(clusterSharding, pluginManager, cosConfig.writeSideConfig),
+            new GrpcServiceImpl(clusterSharding, pluginManager, cosConfig.writeSideConfig, tracer),
             ExecutionContext.global
           ),
-          GrpcHeadersInterceptor,
-          TracingServerInterceptor
+          new ErrorsServerInterceptor(GlobalTracer.get()),
+          tracingServerInterceptor,
+          GrpcHeadersInterceptor
         )
       )
       .build()
       .start()
 
-    log.info("[ChiefOfState] gRPC Server started, listening on " + cosConfig.grpcConfig.server.port)
+    log.info("gRPC Server started, listening on " + cosConfig.grpcConfig.server.port)
 
     sys.addShutdownHook {
       self.stop()
@@ -102,7 +116,6 @@ object Application extends App {
     NettyChannelBuilder
       .forAddress(cosConfig.writeSideConfig.host, cosConfig.writeSideConfig.port)
       .usePlaintext()
-      .intercept(TracingClientInterceptor)
       .build()
 
   val writeHandler: WriteSideHandlerServiceBlockingStub = new WriteSideHandlerServiceBlockingStub(channel)
@@ -137,7 +150,6 @@ object Application extends App {
         NettyChannelBuilder
           .forAddress(rsconfig.host.get, rsconfig.port.get)
           .usePlaintext()
-          .intercept(TracingClientInterceptor)
           .build()
 
       val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(channel)

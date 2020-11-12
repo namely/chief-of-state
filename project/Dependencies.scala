@@ -18,17 +18,16 @@ object Dependencies {
     val SlickVersion: String = "3.3.3"
     val AkkaPersistenceJdbcVersion: String = "4.0.0"
     val ScalaMockVersion: String = "4.4.0"
-    val GrpcMockVersion: String = "0.3.4"
 
-    val KanelaAgentVersion: String = "1.0.6"
-    val KamonVersion: String = "2.1.8"
     val JaninoVersion: String = "3.1.2"
     val LogstashLogbackVersion: String = "6.3"
+
+    val OpenTracing: String = "0.33.0"
+    val OpenTracingContrib: String = "0.2.3"
+    val OpenTracingJaeger: String = "1.4.0"
   }
 
   import Dependencies.Versions._
-
-  val kanelaAgent: ModuleID = "io.kamon" % "kanela-agent" % Versions.KanelaAgentVersion
 
   val jars: Seq[ModuleID] = Seq(
     "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.10" % ScalapbCommonProtoVersion,
@@ -60,19 +59,21 @@ object Dependencies {
     "net.logstash.logback" % "logstash-logback-encoder" % Versions.LogstashLogbackVersion,
     "org.codehaus.janino" % "janino" % Versions.JaninoVersion,
     "org.scala-lang" % "scala-reflect" % Versions.ScalaVersion,
-    "io.kamon" %% "kamon-bundle" % Versions.KamonVersion,
-    "io.kamon" %% "kamon-prometheus" % Versions.KamonVersion,
-    "io.kamon" %% "kamon-jaeger" % Versions.KamonVersion,
-    "io.kamon" %% "kamon-zipkin" % Versions.KamonVersion,
-    kanelaAgent
+
+    // opentracing
+    "io.opentracing" % "opentracing-api" % Versions.OpenTracing,
+    "io.opentracing" % "opentracing-noop" % Versions.OpenTracing,
+    "io.opentracing.contrib" % "opentracing-grpc" % Versions.OpenTracingContrib,
+    "io.jaegertracing" % "jaeger-client" % Versions.OpenTracingJaeger
   )
 
   val testJars: Seq[ModuleID] = Seq(
     "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % Test,
     "org.scalatest" %% "scalatest" % ScalaTestVersion % Test,
     "org.scalamock" %% "scalamock" % ScalaMockVersion % Test,
-    "org.grpcmock" % "grpcmock-core" % GrpcMockVersion % Test,
-    "io.grpc" % "grpc-testing" % grpcJavaVersion % Test
+    "io.grpc" % "grpc-testing" % grpcJavaVersion % Test,
+    // opentracing
+    "io.opentracing" % "opentracing-mock" % Versions.OpenTracing
   )
 
 }

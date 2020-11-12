@@ -13,11 +13,7 @@ lazy val chiefofstate: Project = project
   .enablePlugins(BuildSettings)
   .enablePlugins(DockerSettings)
   .enablePlugins(NoPublish)
-  .enablePlugins(JavaAgent)
-  .settings(
-    name := "chiefofstate",
-    javaAgents += Dependencies.kanelaAgent
-  )
+  .settings(name := "chiefofstate")
   .dependsOn(protogen, chiefofstateplugins, protogenTest % "test->compile")
 
 lazy val chiefofstateplugins = project

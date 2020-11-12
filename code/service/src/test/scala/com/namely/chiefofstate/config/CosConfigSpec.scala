@@ -41,6 +41,9 @@ class CosConfigSpec extends BaseSpec {
                 # set this value to true whenever a readSide config is set
                 enabled = false
               }
+              tracing {
+                jaeger-enabled = false
+              }
               create-stores {
                 auto = true
               }
@@ -83,6 +86,9 @@ class CosConfigSpec extends BaseSpec {
               read-side {
                 # set this value to true whenever a readSide config is set
                 enabled = false
+              }
+              tracing {
+                jaeger-enabled = false
               }
               create-stores {
                 auto = true
