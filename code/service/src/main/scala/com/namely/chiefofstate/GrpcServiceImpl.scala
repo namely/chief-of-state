@@ -49,7 +49,6 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding,
    */
   override def processCommand(request: ProcessCommandRequest): Future[ProcessCommandResponse] = {
     log.debug(ChiefOfStateServiceGrpc.METHOD_PROCESS_COMMAND.getFullMethodName())
-    log.debug(s"Has active span, ${GlobalTracer.get().activeSpan() != null}")
 
     val entityId: String = request.entityId
 
