@@ -13,24 +13,26 @@ import io.grpc.{ManagedChannel, Status}
 import io.grpc.netty.NettyChannelBuilder
 import org.grpcmock.GrpcMock
 import org.grpcmock.GrpcMock._
+import com.namely.chiefofstate.helper.GrpcHelpers
+import io.grpc.inprocess._
+import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerService
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.global
 
 class RemoteReadSideProcessorSpec extends BaseSpec {
-  var serverChannel: ManagedChannel = null
+  import GrpcHelpers._
 
-  override def beforeAll(): Unit = {
-    GrpcMock.configureFor(grpcMock(50053).build().start())
-  }
+  // define set of resources to close after each test
+  val closeables: Closeables = new Closeables()
 
   override def beforeEach(): Unit = {
-    GrpcMock.resetMappings()
-    serverChannel = NettyChannelBuilder
-      .forAddress("localhost", getGlobalPort)
-      .usePlaintext()
-      .build()
+    closeables.closeAll()
+    super.beforeEach
   }
 
   override def afterEach(): Unit = {
-    serverChannel.shutdownNow()
+    closeables.closeAll()
+    super.afterEach()
   }
 
   "RemoteReadSideProcessor" should {
@@ -50,19 +52,41 @@ class RemoteReadSideProcessorSpec extends BaseSpec {
 
       val expected: HandleReadSideResponse = HandleReadSideResponse().withSuccessful(true)
 
-      stubFor(
-        unaryMethod(ReadSideHandlerServiceGrpc.METHOD_HANDLE_READ_SIDE)
-          .withRequest(request)
-          .withHeader("x-cos-entity-id", "231")
-          .withHeader("x-cos-event-tag", eventTag)
-          .willReturn(
-            response(expected)
-          )
+      // mock the grpc server
+      val mockImpl = mock[ReadSideHandlerServiceGrpc.ReadSideHandlerService]
+
+      (mockImpl.handleReadSide _)
+        .expects(request)
+        .returning(Future.successful(expected))
+
+      val service = ReadSideHandlerServiceGrpc.bindService(mockImpl, global)
+
+      val serverName = InProcessServerBuilder.generateName()
+
+      // register a server that intercepts traces and reports errors
+      closeables.register(
+        InProcessServerBuilder
+          .forName(serverName)
+          .directExecutor()
+          .addService(service)
+          .build()
+          .start()
       )
+
+      val serverChannel = {
+        closeables.register(
+          InProcessChannelBuilder
+            .forName(serverName)
+            .directExecutor()
+            .build()
+        )
+      }
 
       val readSideHandlerServiceStub: ReadSideHandlerServiceBlockingStub =
         new ReadSideHandlerServiceBlockingStub(serverChannel)
+
       val remoteReadSideProcessor = new RemoteReadSideProcessor(readSideHandlerServiceStub)
+
       val triedHandleReadSideResponse =
         remoteReadSideProcessor.processEvent(com.google.protobuf.any.Any.pack(accountOpened),
                                              eventTag,
@@ -87,18 +111,38 @@ class RemoteReadSideProcessorSpec extends BaseSpec {
         .withState(resultingState)
         .withMeta(meta)
 
-      stubFor(
-        unaryMethod(ReadSideHandlerServiceGrpc.METHOD_HANDLE_READ_SIDE)
-          .withRequest(request)
-          .withHeader("x-cos-entity-id", "231")
-          .withHeader("x-cos-event-tag", eventTag)
-          .willReturn(
-            statusException(Status.INTERNAL)
-          )
+      val mockImpl = mock[ReadSideHandlerServiceGrpc.ReadSideHandlerService]
+
+      (mockImpl.handleReadSide _)
+        .expects(request)
+        .returning(Future.failed(Status.INTERNAL.asException()))
+
+      val service = ReadSideHandlerServiceGrpc.bindService(mockImpl, global)
+
+      val serverName = InProcessServerBuilder.generateName()
+
+      // register a server that intercepts traces and reports errors
+      closeables.register(
+        InProcessServerBuilder
+          .forName(serverName)
+          .directExecutor()
+          .addService(service)
+          .build()
+          .start()
       )
+
+      val serverChannel = {
+        closeables.register(
+          InProcessChannelBuilder
+            .forName(serverName)
+            .directExecutor()
+            .build()
+        )
+      }
 
       val readSideHandlerServiceStub: ReadSideHandlerServiceBlockingStub =
         new ReadSideHandlerServiceBlockingStub(serverChannel)
+
       val remoteReadSideProcessor = new RemoteReadSideProcessor(readSideHandlerServiceStub)
       val triedHandleReadSideResponse =
         remoteReadSideProcessor.processEvent(com.google.protobuf.any.Any.pack(accountOpened),
