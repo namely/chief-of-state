@@ -34,8 +34,12 @@ import com.namely.chiefofstate.interceptors.OpentracingHelpers
 import io.opentracing.tag.Tags
 import io.opentracing.Span
 
-class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
-  implicit val askTimeout: Timeout
+class GrpcServiceImpl(clusterSharding: ClusterSharding,
+                      pluginManager: PluginManager,
+                      writeSideConfig: WriteSideConfig,
+                      tracer: Tracer
+)(implicit
+  val askTimeout: Timeout
 ) extends ChiefOfStateService {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -52,7 +56,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
     // fetch the gRPC metadata
     val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
 
-    val tracingHeaders = OpentracingHelpers.getTracingHeaders()
+    val tracingHeaders = OpentracingHelpers.getTracingHeaders(tracer)
 
     // ascertain the entity ID
     requireEntityId(entityId)
@@ -83,7 +87,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
 
     val entityId: String = request.entityId
 
-    val tracingHeaders = OpentracingHelpers.getTracingHeaders()
+    val tracingHeaders = OpentracingHelpers.getTracingHeaders(tracer)
 
     // ascertain the entity id
     requireEntityId(entityId)

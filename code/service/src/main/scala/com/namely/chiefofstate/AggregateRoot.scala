@@ -22,6 +22,7 @@ import scala.util.{Failure, Success, Try}
 import io.opentracing.Span
 import io.opentracing.tag.Tags
 import java.time.Instant
+import io.opentracing.Tracer
 
 /**
  *  This is an event sourced actor.
@@ -29,6 +30,8 @@ import java.time.Instant
 object AggregateRoot {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
+
+  lazy val tracer: Tracer = GlobalTracer.get()
 
   /**
    * thee aggregate root type key
@@ -106,7 +109,7 @@ object AggregateRoot {
       case SendCommand.Type.Empty =>
         val errStatus = Status.INTERNAL.withDescription("something really bad happens...")
 
-        OpentracingHelpers.reportErrorToTracer(errStatus.asException())
+        OpentracingHelpers.reportErrorToTracer(tracer, errStatus.asException())
 
         Effect
           .reply(aggregateCommand.replyTo)(
@@ -214,7 +217,7 @@ object AggregateRoot {
 
       case Failure(e: StatusException) =>
         OpentracingHelpers
-          .reportErrorToTracer(e)
+          .reportErrorToTracer(tracer, e)
 
         Effect.reply(replyTo)(
           CommandReply().withError(toRpcStatus(e.getStatus))
@@ -225,7 +228,7 @@ object AggregateRoot {
         val errStatus = Status.INTERNAL
           .withDescription(s"write handler failure, ${x.getClass}")
 
-        OpentracingHelpers.reportErrorToTracer(errStatus.asException())
+        OpentracingHelpers.reportErrorToTracer(tracer, errStatus.asException())
 
         Effect.reply(replyTo)(
           CommandReply().withError(toRpcStatus(errStatus))

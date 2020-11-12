@@ -6,7 +6,6 @@ import io.grpc.inprocess.InProcessServerBuilder
 import io.grpc.ManagedChannel;
 import io.grpc.internal.AbstractServerImplBuilder
 import scala.collection.mutable
-import com.namely.chiefofstate.helper.PingServiceImpl
 import com.namely.protobuf.chiefofstate.test.ping_service._
 import scala.concurrent.ExecutionContext.global
 import io.grpc.stub.MetadataUtils
@@ -28,14 +27,12 @@ import io.grpc.Status
 class ErrorsServerInterceptorSpec extends BaseSpec {
   import GrpcHelpers.Closeables
 
-  val tracer: MockTracer = GrpcHelpers.mockTracer
-  GlobalTracer.registerIfAbsent(tracer)
+  // val tracer: MockTracer = GrpcHelpers.getMockTracer()
 
   // define set of resources to close after each test
   val closeables: Closeables = new Closeables()
 
   override protected def beforeEach(): Unit = {
-    GrpcHelpers.mockTracer.reset()
     super.beforeEach()
   }
 
@@ -46,21 +43,28 @@ class ErrorsServerInterceptorSpec extends BaseSpec {
 
   "server interceptor" should {
     "report inner errors" in {
+
+      val tracer = new MockTracer(MockTracer.Propagator.TEXT_MAP)
+
       // Generate a unique in-process server name.
       val serverName: String = InProcessServerBuilder.generateName();
-      val serviceImpl = new PingServiceImpl()
+
+      // make a mock service that returns an error
+      val serviceImpl: PingServiceGrpc.PingService = mock[PingServiceGrpc.PingService]
+      val err: Throwable = Status.ABORTED.withDescription("inner exception").asException()
+      (serviceImpl.send _)
+        .expects(*)
+        .returning(Future.failed(err))
+
       val service = PingServiceGrpc.bindService(serviceImpl, global)
+
+      // create the error interceptor
       val interceptor = new ErrorsServerInterceptor(tracer)
 
-      // make the service return an error
-      val err: Throwable = Status.ABORTED.withDescription("inner exception").asException()
-      val handler = (request: Ping) => Future.failed(err)
-      serviceImpl.setHandler(handler)
-
-      // create interceptor using the global tracer
+      // create a tracing interceptor
       val tracingServerInterceptor = TracingServerInterceptor
         .newBuilder()
-        .withTracer(GlobalTracer.get())
+        .withTracer(tracer)
         .build()
 
       // register a server that intercepts traces and reports errors
@@ -85,7 +89,8 @@ class ErrorsServerInterceptorSpec extends BaseSpec {
       }
 
       // start a span and send a message that fails
-      val span = tracer.buildSpan("outer").start()
+      val span = tracer.buildSpan("outer").ignoreActiveSpan().start()
+      tracer.activateSpan(span)
       val stub = PingServiceGrpc.blockingStub(channel)
       val actual = Try(stub.send(Ping("foo")))
       span.finish()

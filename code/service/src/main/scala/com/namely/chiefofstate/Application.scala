@@ -42,10 +42,12 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
       GlobalTracer.registerIfAbsent(jaegerTracer)
     }
 
+    val tracer: Tracer = GlobalTracer.get()
+
     // create interceptor using the global tracer
     val tracingServerInterceptor = TracingServerInterceptor
       .newBuilder()
-      .withTracer(GlobalTracer.get())
+      .withTracer(tracer)
       .build()
 
     server = NettyServerBuilder
@@ -53,7 +55,7 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
       .addService(
         ServerInterceptors.intercept(
           ChiefOfStateService.bindService(
-            new GrpcServiceImpl(clusterSharding, pluginManager, cosConfig.writeSideConfig),
+            new GrpcServiceImpl(clusterSharding, pluginManager, cosConfig.writeSideConfig, tracer),
             ExecutionContext.global
           ),
           new ErrorsServerInterceptor(GlobalTracer.get()),

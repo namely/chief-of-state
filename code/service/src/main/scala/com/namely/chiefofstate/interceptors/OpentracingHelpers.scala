@@ -26,20 +26,16 @@ object OpentracingHelpers {
    *
    * @return a text map with all tracing information
    */
-  def getTracingHeaders(): Map[String, String] = {
-    val carrierMap = mutable.HashMap.empty[String, String].asJava
-    val carrier: TextMapAdapter = new TextMapAdapter(carrierMap)
-
-    Option(GlobalTracer.get()) match {
-      case Some(tracer) if tracer.activeSpan != null =>
-        tracer.inject(tracer.activeSpan.context, Format.Builtin.TEXT_MAP, carrier)
-        carrierMap.asScala.toMap
-
-      case _ =>
-        log.warn("missing global tracer or span")
-        Map.empty[String, String]
+  def getTracingHeaders(tracer: Tracer): Map[String, String] = {
+    if (tracer.activeSpan != null) {
+      val carrierMap = mutable.HashMap.empty[String, String].asJava
+      val carrier: TextMapAdapter = new TextMapAdapter(carrierMap)
+      tracer.inject(tracer.activeSpan.context, Format.Builtin.TEXT_MAP, carrier)
+      carrierMap.asScala.toMap
+    } else {
+      log.warn("missing global tracer or span")
+      Map.empty[String, String]
     }
-
   }
 
   /**
@@ -133,15 +129,5 @@ object OpentracingHelpers {
    */
   def reportErrorToTracer(tracer: Tracer, exception: Throwable): Try[Unit] = {
     reportErrorToSpan(Option(tracer.activeSpan()), exception)
-  }
-
-  /**
-   * reports a throwable to the global tracer
-   *
-   * @param exception an exception
-   * @return  Success i ferror reported
-   */
-  def reportErrorToTracer(exception: Throwable): Try[Unit] = {
-    reportErrorToTracer(GlobalTracer.get(), exception)
   }
 }

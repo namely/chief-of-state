@@ -11,8 +11,6 @@ import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.R
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened}
 import io.grpc.{ManagedChannel, Status}
 import io.grpc.netty.NettyChannelBuilder
-import org.grpcmock.GrpcMock
-import org.grpcmock.GrpcMock._
 import com.namely.chiefofstate.helper.GrpcHelpers
 import io.grpc.inprocess._
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerService

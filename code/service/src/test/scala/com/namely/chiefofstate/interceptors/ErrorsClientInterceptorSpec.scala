@@ -10,7 +10,6 @@ import scala.concurrent.Future
 import io.grpc.inprocess.InProcessServerBuilder
 import io.grpc.inprocess.InProcessChannelBuilder
 import io.opentracing.util.GlobalTracer
-import com.namely.chiefofstate.helper.PingServiceImpl
 import io.grpc.Status
 import com.namely.protobuf.chiefofstate.test.ping_service.Ping
 import scala.util.Try
@@ -20,33 +19,30 @@ import scala.concurrent.ExecutionContext.global
 class ErrorsClientInterceptorSpec extends BaseSpec {
   import GrpcHelpers.Closeables
 
-  val tracer: MockTracer = GrpcHelpers.mockTracer
-
   // define set of resources to close after each test
   val closeables: Closeables = new Closeables()
 
-  override protected def beforeEach(): Unit = {
-    GrpcHelpers.mockTracer.reset()
-    super.beforeEach()
-  }
-
   override protected def afterEach(): Unit = {
-    super.afterEach()
     closeables.closeAll()
+    super.afterEach()
   }
 
   "interceptor" should {
     "report a server error" in {
+      val tracer = new MockTracer(MockTracer.Propagator.TEXT_MAP)
+
       // Generate a unique in-process server name.
       val serverName: String = InProcessServerBuilder.generateName();
 
-      val serviceImpl = new PingServiceImpl()
-      val service = PingServiceGrpc.bindService(serviceImpl, global)
-
-      // make the service return an error
+      // mock the service return an error
+      val serviceImpl: PingServiceGrpc.PingService = mock[PingServiceGrpc.PingService]
       val err: Throwable = Status.ABORTED.withDescription("inner exception").asException()
-      val handler = (request: Ping) => Future.failed(err)
-      serviceImpl.setHandler(handler)
+
+      (serviceImpl.send _)
+        .expects(*)
+        .returning(Future.failed(err))
+
+      val service = PingServiceGrpc.bindService(serviceImpl, global)
 
       // register a server that intercepts traces and reports errors
       closeables.register(
@@ -71,8 +67,8 @@ class ErrorsClientInterceptorSpec extends BaseSpec {
       }
 
       // start a span and send a message that fails
-      val span = tracer.buildSpan("outer").start()
-      GlobalTracer.get().activateSpan(span)
+      val span = tracer.buildSpan("outer").ignoreActiveSpan.start()
+      tracer.activateSpan(span)
       val stub = PingServiceGrpc.blockingStub(channel)
       val actual = Try(stub.send(Ping("foo")))
       span.finish()
