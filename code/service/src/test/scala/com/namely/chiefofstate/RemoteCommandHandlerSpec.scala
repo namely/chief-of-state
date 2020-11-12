@@ -15,31 +15,42 @@ import com.namely.protobuf.chiefofstate.v1.writeside.{
 }
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import io.grpc.{ManagedChannel, Metadata, Status}
-import io.grpc.netty.NettyChannelBuilder
-import org.grpcmock.GrpcMock
-import org.grpcmock.GrpcMock._
-
 import scala.util.Try
+import com.namely.chiefofstate.helper.GrpcHelpers.Closeables
+import io.grpc.inprocess._
+import io.grpc.ServerServiceDefinition
+import scala.concurrent.ExecutionContext.global
 
 class RemoteCommandHandlerSpec extends BaseSpec {
 
-  var serverChannel: ManagedChannel = null
   val grpcConfig: GrpcConfig = GrpcConfig(GrpcClient(5000), GrpcServer("0.0.0.0", 5052))
 
-  override def beforeAll(): Unit = {
-    GrpcMock.configureFor(grpcMock(grpcConfig.server.port).build().start())
+  // define set of resources to close after each test
+  val closeables: Closeables = new Closeables()
+
+  // register a server that intercepts traces and reports errors
+  def createServer(serverName: String, service: ServerServiceDefinition): Unit = {
+    closeables.register(
+      InProcessServerBuilder
+        .forName(serverName)
+        .directExecutor()
+        .addService(service)
+        .build()
+        .start()
+    )
   }
 
-  override def beforeEach(): Unit = {
-    GrpcMock.resetMappings()
-    serverChannel = NettyChannelBuilder
-      .forAddress("localhost", getGlobalPort)
-      .usePlaintext()
-      .build()
+  def getChannel(serverName: String): ManagedChannel = {
+    closeables.register(
+      InProcessChannelBuilder
+        .forName(serverName)
+        .directExecutor()
+        .build()
+    )
   }
 
   override def afterEach(): Unit = {
-    serverChannel.shutdownNow()
+    closeables.closeAll()
   }
 
   "RemoteCommandHandler" should {
@@ -56,14 +67,16 @@ class RemoteCommandHandlerSpec extends BaseSpec {
         .withPriorState(stateWrapper.getState)
         .withPriorEventMeta(stateWrapper.getMeta)
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
-          .withRequest(request)
-          .withHeader("header-1", "header-value-1")
-          .willReturn(
-            response(expected)
-          )
-      )
+      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
+
+      (serviceImpl.handleCommand _)
+        .expects(request)
+        .returning(scala.concurrent.Future.successful(expected))
+
+      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+      val serverName = InProcessServerBuilder.generateName()
+      createServer(serverName, service)
+      val serverChannel = getChannel(serverName)
 
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
@@ -91,15 +104,16 @@ class RemoteCommandHandlerSpec extends BaseSpec {
         .withPriorState(stateWrapper.getState)
         .withPriorEventMeta(stateWrapper.getMeta)
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
-          .withRequest(request)
-          .withHeader("header-1", "header-value-1")
-          .withHeader(Metadata.Key.of("header-2-bin", Metadata.BINARY_BYTE_MARSHALLER), "header-value-2".getBytes)
-          .willReturn(
-            statusException(Status.INTERNAL)
-          )
-      )
+      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
+
+      (serviceImpl.handleCommand _)
+        .expects(request)
+        .returning(scala.concurrent.Future.failed(Status.INTERNAL.asException()))
+
+      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+      val serverName = InProcessServerBuilder.generateName()
+      createServer(serverName, service)
+      val serverChannel = getChannel(serverName)
 
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
@@ -125,21 +139,11 @@ class RemoteCommandHandlerSpec extends BaseSpec {
     "handle command when a header is not properly set" in {
       val stateWrapper: StateWrapper = StateWrapper()
       val command: Any = Any.pack(OpenAccount())
-
-      val request: HandleCommandRequest = HandleCommandRequest()
-        .withCommand(command)
-        .withPriorState(stateWrapper.getState)
-        .withPriorEventMeta(stateWrapper.getMeta)
-
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
-          .withRequest(request)
-          .withHeader("header-1", "header-value-1")
-          .withHeader(Metadata.Key.of("header-2-bin", Metadata.BINARY_BYTE_MARSHALLER), "header-value-2".getBytes)
-          .willReturn(
-            statusException(Status.INTERNAL)
-          )
-      )
+      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
+      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+      val serverName = InProcessServerBuilder.generateName()
+      createServer(serverName, service)
+      val serverChannel = getChannel(serverName)
 
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)

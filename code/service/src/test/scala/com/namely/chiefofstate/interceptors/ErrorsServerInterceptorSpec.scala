@@ -27,8 +27,6 @@ import io.grpc.Status
 class ErrorsServerInterceptorSpec extends BaseSpec {
   import GrpcHelpers.Closeables
 
-  // val tracer: MockTracer = GrpcHelpers.getMockTracer()
-
   // define set of resources to close after each test
   val closeables: Closeables = new Closeables()
 

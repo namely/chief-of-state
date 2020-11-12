@@ -9,19 +9,6 @@ import io.opentracing.util.GlobalTracer
 
 object GrpcHelpers {
 
-  private lazy val mockTracer: MockTracer = {
-    val tracer = new MockTracer(MockTracer.Propagator.TEXT_MAP)
-    GlobalTracer.registerIfAbsent(tracer)
-    tracer
-  }
-
-  def getMockTracer(wait: Long = 100): MockTracer = {
-    Thread.sleep(wait)
-    mockTracer
-  }
-
-  def resetMockTracer(): Unit = mockTracer.reset()
-
   def getHeaders(headers: (String, String)*): Metadata = {
     val metadata: Metadata = new Metadata()
     headers.foreach({

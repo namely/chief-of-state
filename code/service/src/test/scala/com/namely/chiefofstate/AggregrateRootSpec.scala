@@ -41,6 +41,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
   var cosConfig: CosConfig = null
   val actorSystem: ActorSystem[Nothing] = testKit.system
   val replyTimeout: FiniteDuration = FiniteDuration(30, TimeUnit.SECONDS)
+
   // define set of resources to close after each test
   val closeables: Closeables = new Closeables()
 
@@ -180,7 +181,6 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         .returning(Future.successful(HandleEventResponse().withResultingState(resultingState)))
 
       val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
-
       val serverName = InProcessServerBuilder.generateName()
 
       createServer(serverName, service)

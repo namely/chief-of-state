@@ -12,31 +12,42 @@ import com.namely.protobuf.chiefofstate.v1.writeside.{
 }
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import io.grpc.{ManagedChannel, Status}
-import io.grpc.netty.NettyChannelBuilder
-import org.grpcmock.GrpcMock
-import org.grpcmock.GrpcMock._
-
 import scala.util.Try
+import com.namely.chiefofstate.helper.GrpcHelpers.Closeables
+import io.grpc.ServerServiceDefinition
+import io.grpc.inprocess._
+import scala.concurrent.ExecutionContext.global
 
 class RemoteEventHandlerSpec extends BaseSpec {
 
-  var serverChannel: ManagedChannel = null
   val grpcConfig: GrpcConfig = GrpcConfig(GrpcClient(5000), GrpcServer("0.0.0.0", 5051))
 
-  override def beforeAll(): Unit = {
-    GrpcMock.configureFor(grpcMock(grpcConfig.server.port).build().start())
+  // define set of resources to close after each test
+  val closeables: Closeables = new Closeables()
+
+  // register a server that intercepts traces and reports errors
+  def createServer(serverName: String, service: ServerServiceDefinition): Unit = {
+    closeables.register(
+      InProcessServerBuilder
+        .forName(serverName)
+        .directExecutor()
+        .addService(service)
+        .build()
+        .start()
+    )
   }
 
-  override def beforeEach(): Unit = {
-    GrpcMock.resetMappings()
-    serverChannel = NettyChannelBuilder
-      .forAddress("localhost", getGlobalPort)
-      .usePlaintext()
-      .build()
+  def getChannel(serverName: String): ManagedChannel = {
+    closeables.register(
+      InProcessChannelBuilder
+        .forName(serverName)
+        .directExecutor()
+        .build()
+    )
   }
 
   override def afterEach(): Unit = {
-    serverChannel.shutdownNow()
+    closeables.closeAll()
   }
 
   "RemoteEventHandler" should {
@@ -57,13 +68,15 @@ class RemoteEventHandlerSpec extends BaseSpec {
         .withEventMeta(stateWrapper.getMeta)
         .withEvent(event)
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_EVENT)
-          .withRequest(request)
-          .willReturn(
-            response(expected)
-          )
-      )
+      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
+      (serviceImpl.handleEvent _)
+        .expects(request)
+        .returning(scala.concurrent.Future.successful(expected))
+
+      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+      val serverName = InProcessServerBuilder.generateName()
+      createServer(serverName, service)
+      val serverChannel = getChannel(serverName)
 
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
@@ -85,13 +98,15 @@ class RemoteEventHandlerSpec extends BaseSpec {
         .withEventMeta(stateWrapper.getMeta)
         .withEvent(event)
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_EVENT)
-          .withRequest(request)
-          .willReturn(
-            statusException(Status.UNKNOWN)
-          )
-      )
+      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
+      (serviceImpl.handleEvent _)
+        .expects(request)
+        .returning(scala.concurrent.Future.failed(Status.UNKNOWN.asException()))
+
+      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+      val serverName = InProcessServerBuilder.generateName()
+      createServer(serverName, service)
+      val serverChannel = getChannel(serverName)
 
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)

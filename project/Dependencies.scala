@@ -18,7 +18,6 @@ object Dependencies {
     val SlickVersion: String = "3.3.3"
     val AkkaPersistenceJdbcVersion: String = "4.0.0"
     val ScalaMockVersion: String = "4.4.0"
-    val GrpcMockVersion: String = "0.3.4"
 
     val JaninoVersion: String = "3.1.2"
     val LogstashLogbackVersion: String = "6.3"
@@ -72,7 +71,6 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % Test,
     "org.scalatest" %% "scalatest" % ScalaTestVersion % Test,
     "org.scalamock" %% "scalamock" % ScalaMockVersion % Test,
-    "org.grpcmock" % "grpcmock-core" % GrpcMockVersion % Test,
     "io.grpc" % "grpc-testing" % grpcJavaVersion % Test,
     // opentracing
     "io.opentracing" % "opentracing-mock" % Versions.OpenTracing
