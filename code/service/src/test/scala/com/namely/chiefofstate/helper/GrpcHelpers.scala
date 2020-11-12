@@ -4,8 +4,16 @@ import io.grpc._
 import java.io.Closeable
 import scala.collection.mutable
 import java.util.concurrent.TimeUnit
+import io.opentracing.mock.MockTracer
+import io.opentracing.util.GlobalTracer
 
 object GrpcHelpers {
+
+  lazy val mockTracer: MockTracer = {
+    val tracer = new MockTracer(MockTracer.Propagator.TEXT_MAP)
+    GlobalTracer.registerIfAbsent(tracer)
+    tracer
+  }
 
   def getHeaders(headers: (String, String)*): Metadata = {
     val metadata: Metadata = new Metadata()

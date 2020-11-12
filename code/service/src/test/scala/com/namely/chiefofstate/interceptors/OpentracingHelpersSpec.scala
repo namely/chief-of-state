@@ -14,11 +14,11 @@ import scala.util.Try
 import io.opentracing.log.Fields
 import scala.jdk.CollectionConverters._
 import scala.collection.mutable
+import com.namely.chiefofstate.helper.GrpcHelpers
 
 class OpentracingHelpersSpec extends BaseSpec {
 
-  val mockTracer: MockTracer = new MockTracer(MockTracer.Propagator.TEXT_MAP)
-  GlobalTracer.registerIfAbsent(mockTracer)
+  val mockTracer: MockTracer = GrpcHelpers.mockTracer
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()

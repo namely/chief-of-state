@@ -63,10 +63,7 @@ case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: 
       })
 
       MetadataUtils
-        .attachHeaders(writeHandlerServicetub.withInterceptors(errorsInterceptor,
-                                                               tracingInterceptor),
-                       headers
-        )
+        .attachHeaders(writeHandlerServicetub.withInterceptors(errorsInterceptor, tracingInterceptor), headers)
         .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
         .handleCommand(
           HandleCommandRequest()
