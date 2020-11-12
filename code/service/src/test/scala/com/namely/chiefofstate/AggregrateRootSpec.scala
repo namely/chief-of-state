@@ -22,11 +22,14 @@ import com.namely.protobuf.chiefofstate.v1.writeside._
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.typesafe.config.{Config, ConfigFactory}
 import io.grpc.{ManagedChannel, Status}
-import io.grpc.netty.NettyChannelBuilder
-import org.grpcmock.GrpcMock
-import org.grpcmock.GrpcMock._
+import scala.concurrent.ExecutionContext.global
+import io.grpc.inprocess._
 
 import scala.concurrent.duration.FiniteDuration
+import com.namely.chiefofstate.helper.GrpcHelpers.Closeables
+import scala.concurrent.Future
+import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceStub
+import io.grpc.ServerServiceDefinition
 
 class AggregrateRootSpec extends BaseActorSpec(s"""
       akka.cluster.sharding.number-of-shards = 1
@@ -35,13 +38,35 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       akka.persistence.snapshot-store.local.dir = "tmp/snapshot"
     """) {
 
-  var serverChannel: ManagedChannel = null
   var cosConfig: CosConfig = null
   val actorSystem: ActorSystem[Nothing] = testKit.system
   val replyTimeout: FiniteDuration = FiniteDuration(30, TimeUnit.SECONDS)
+  // define set of resources to close after each test
+  val closeables: Closeables = new Closeables()
+
+  // register a server that intercepts traces and reports errors
+  def createServer(serverName: String, service: ServerServiceDefinition): Unit = {
+    closeables.register(
+      InProcessServerBuilder
+        .forName(serverName)
+        .directExecutor()
+        .addService(service)
+        .build()
+        .start()
+    )
+  }
+
+  def getChannel(serverName: String): ManagedChannel = {
+    closeables.register(
+      InProcessChannelBuilder
+        .forName(serverName)
+        .directExecutor()
+        .build()
+    )
+  }
 
   override def beforeAll(): Unit = {
-    GrpcMock.configureFor(grpcMock(6000).build().start())
+
     val config: Config = ConfigFactory.parseString(s"""
             akka.cluster.sharding.number-of-shards = 1
             chiefofstate {
@@ -88,16 +113,9 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
     cosConfig = CosConfig(config)
   }
 
-  override def beforeEach(): Unit = {
-    GrpcMock.resetMappings()
-    serverChannel = NettyChannelBuilder
-      .forAddress("localhost", getGlobalPort)
-      .usePlaintext()
-      .build()
-  }
-
-  override def afterEach(): Unit = {
-    serverChannel.shutdownNow()
+  override protected def beforeEach(): Unit = {
+    closeables.closeAll()
+    super.beforeEach()
   }
 
   ".tags" should {
@@ -141,32 +159,32 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val resultingState = com.google.protobuf.any.Any.pack(state.withBalance(200))
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
-          .withRequest(
-            HandleCommandRequest()
-              .withCommand(command)
-              .withPriorState(stateWrapper.getState)
-              .withPriorEventMeta(stateWrapper.getMeta)
-          )
-          .withHeader("header-1", "header-value-1")
-          .willReturn(
-            response(HandleCommandResponse().withEvent(Any.pack(event)))
-          )
-      )
+      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_EVENT)
-          .withRequest(
-            HandleEventRequest()
-              .withPriorState(stateWrapper.getState)
-              .withEventMeta(stateWrapper.getMeta)
-              .withEvent(Any.pack(event))
-          )
-          .willReturn(
-            response(HandleEventResponse().withResultingState(resultingState))
-          )
-      )
+      val handleCommandRequest = HandleCommandRequest()
+        .withCommand(command)
+        .withPriorState(stateWrapper.getState)
+        .withPriorEventMeta(stateWrapper.getMeta)
+
+      val handleEventRequest = HandleEventRequest()
+        .withPriorState(stateWrapper.getState)
+        .withEventMeta(stateWrapper.getMeta)
+        .withEvent(Any.pack(event))
+
+      (serviceImpl.handleCommand _)
+        .expects(handleCommandRequest)
+        .returning(Future.successful(HandleCommandResponse().withEvent(Any.pack(event))))
+
+      (serviceImpl.handleEvent _)
+        .expects(handleEventRequest)
+        .returning(Future.successful(HandleEventResponse().withResultingState(resultingState)))
+
+      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+
+      val serverName = InProcessServerBuilder.generateName()
+
+      createServer(serverName, service)
+      val serverChannel = getChannel(serverName)
 
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
@@ -204,17 +222,13 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       )
 
       commandSender.receiveMessage(replyTimeout) match {
-        case CommandReply(reply, _) =>
-          reply match {
-            case Reply.State(value: StateWrapper) =>
-              val account: Account = value.getState.unpack[Account]
-              account.accountUuid shouldBe aggregateId
-              account.balance shouldBe 200
-              value.getMeta.revisionNumber shouldBe 1
-              value.getMeta.entityId shouldBe aggregateId
+        case CommandReply(Reply.State(value: StateWrapper), _) =>
+          val account: Account = value.getState.unpack[Account]
+          account.accountUuid shouldBe aggregateId
+          account.balance shouldBe 200
+          value.getMeta.revisionNumber shouldBe 1
+          value.getMeta.entityId shouldBe aggregateId
 
-            case _ => fail("unexpected message state")
-          }
         case _ => fail("unexpected message type")
       }
     }
@@ -228,19 +242,23 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         )
       val command: Any = Any.pack(OpenAccount())
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
-          .withRequest(
-            HandleCommandRequest()
-              .withCommand(command)
-              .withPriorState(stateWrapper.getState)
-              .withPriorEventMeta(stateWrapper.getMeta)
-          )
-          .withHeader("header-1", "header-value-1")
-          .willReturn(
-            response(HandleCommandResponse())
-          )
-      )
+      val request = HandleCommandRequest()
+        .withCommand(command)
+        .withPriorState(stateWrapper.getState)
+        .withPriorEventMeta(stateWrapper.getMeta)
+
+      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
+
+      (serviceImpl.handleCommand _)
+        .expects(request)
+        .returning(Future.successful(HandleCommandResponse()))
+
+      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+
+      val serverName = InProcessServerBuilder.generateName()
+
+      createServer(serverName, service)
+      val serverChannel = getChannel(serverName)
 
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
@@ -278,58 +296,25 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       )
 
       commandSender.receiveMessage(replyTimeout) match {
-        case CommandReply(reply, _) =>
-          reply match {
-            case Reply.State(value: StateWrapper) =>
-              value.getState shouldBe Any.pack(Empty.defaultInstance)
-              value.getMeta.revisionNumber shouldBe 0
-              value.getMeta.entityId shouldBe aggregateId
+        case CommandReply(Reply.State(value: StateWrapper), _) =>
+          value.getState shouldBe Any.pack(Empty.defaultInstance)
+          value.getMeta.revisionNumber shouldBe 0
+          value.getMeta.entityId shouldBe aggregateId
 
-            case _ => fail("unexpected message state")
-          }
         case _ => fail("unexpected message type")
       }
     }
     "return a failure when an empty command is sent" in {
       val aggregateId: String = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
-      val state: Account = Account().withAccountUuid(aggregateId)
-      val stateWrapper: StateWrapper = StateWrapper()
-        .withState(any.Any.pack(Empty.defaultInstance))
-        .withMeta(
-          MetaData.defaultInstance.withEntityId(getEntityId(persistenceId))
-        )
-      val command: Any = Any.pack(OpenAccount())
-      val event: AccountOpened = AccountOpened()
 
-      val resultingState = com.google.protobuf.any.Any.pack(state.withBalance(200))
+      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
+      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
-          .withRequest(
-            HandleCommandRequest()
-              .withCommand(command)
-              .withPriorState(stateWrapper.getState)
-              .withPriorEventMeta(stateWrapper.getMeta)
-          )
-          .withHeader("header-1", "header-value-1")
-          .willReturn(
-            response(HandleCommandResponse().withEvent(Any.pack(event)))
-          )
-      )
+      val serverName = InProcessServerBuilder.generateName()
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_EVENT)
-          .withRequest(
-            HandleEventRequest()
-              .withPriorState(stateWrapper.getState)
-              .withEventMeta(stateWrapper.getMeta)
-              .withEvent(Any.pack(event))
-          )
-          .willReturn(
-            response(HandleEventResponse().withResultingState(resultingState))
-          )
-      )
+      createServer(serverName, service)
+      val serverChannel = getChannel(serverName)
 
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
@@ -340,6 +325,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommandHandler: RemoteCommandHandler =
         RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+
       val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
@@ -362,13 +348,9 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       )
 
       commandSender.receiveMessage(replyTimeout) match {
-        case CommandReply(reply, _) =>
-          reply match {
-            case Reply.Error(status) =>
-              status.code shouldBe (Status.Code.INTERNAL.value)
-              Option(status.message) shouldBe Some("something really bad happens...")
-            case _ => fail("unexpected message state")
-          }
+        case CommandReply(Reply.Error(status), _) =>
+          status.code shouldBe (Status.Code.INTERNAL.value)
+          Option(status.message) shouldBe Some("something really bad happens...")
         case _ => fail("unexpected message type")
       }
 
@@ -376,43 +358,20 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
     "return a failure when command handler failed" in {
       val aggregateId: String = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
-      val state: Account = Account().withAccountUuid(aggregateId)
-      val stateWrapper: StateWrapper = StateWrapper()
-        .withState(any.Any.pack(Empty.defaultInstance))
-        .withMeta(
-          MetaData.defaultInstance.withEntityId(getEntityId(persistenceId))
-        )
       val command: Any = Any.pack(OpenAccount())
-      val event: AccountOpened = AccountOpened()
 
-      val resultingState = com.google.protobuf.any.Any.pack(state.withBalance(200))
+      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
-          .withRequest(
-            HandleCommandRequest()
-              .withCommand(command)
-              .withPriorState(stateWrapper.getState)
-              .withPriorEventMeta(stateWrapper.getMeta)
-          )
-          .withHeader("header-1", "header-value-1")
-          .willReturn(
-            statusException(Status.INTERNAL.withDescription("oops"))
-          )
-      )
+      (serviceImpl.handleCommand _)
+        .expects(*)
+        .returning(Future.failed(Status.INTERNAL.withDescription("oops").asException()))
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_EVENT)
-          .withRequest(
-            HandleEventRequest()
-              .withPriorState(stateWrapper.getState)
-              .withEventMeta(stateWrapper.getMeta)
-              .withEvent(Any.pack(event))
-          )
-          .willReturn(
-            response(HandleEventResponse().withResultingState(resultingState))
-          )
-      )
+      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+
+      val serverName = InProcessServerBuilder.generateName()
+
+      createServer(serverName, service)
+      val serverChannel = getChannel(serverName)
 
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
@@ -450,54 +409,34 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       )
 
       commandSender.receiveMessage(replyTimeout) match {
-        case CommandReply(reply, _) =>
-          reply match {
-            case Reply.Error(status) =>
-              status.code shouldBe (Status.Code.INTERNAL.value)
-              Option(status.message) shouldBe (Some("oops"))
+        case CommandReply(Reply.Error(status), _) =>
+          status.code shouldBe (Status.Code.INTERNAL.value)
+          Option(status.message) shouldBe (Some("oops"))
 
-            case _ => fail("unexpected message state")
-          }
         case _ => fail("unexpected message type")
       }
     }
     "return a failure when event handler failed" in {
       val aggregateId: String = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
-      val stateWrapper: StateWrapper = StateWrapper()
-        .withState(any.Any.pack(Empty.defaultInstance))
-        .withMeta(
-          MetaData.defaultInstance.withEntityId(getEntityId(persistenceId))
-        )
       val command: Any = Any.pack(OpenAccount())
-      val event: AccountOpened = AccountOpened()
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
-          .withRequest(
-            HandleCommandRequest()
-              .withCommand(command)
-              .withPriorState(stateWrapper.getState)
-              .withPriorEventMeta(stateWrapper.getMeta)
-          )
-          .withHeader("header-1", "header-value-1")
-          .willReturn(
-            response(HandleCommandResponse().withEvent(Any.pack(event)))
-          )
-      )
+      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_EVENT)
-          .withRequest(
-            HandleEventRequest()
-              .withPriorState(stateWrapper.getState)
-              .withEventMeta(stateWrapper.getMeta)
-              .withEvent(Any.pack(event))
-          )
-          .willReturn(
-            statusException(Status.UNKNOWN)
-          )
-      )
+      (serviceImpl.handleCommand _)
+        .expects(*)
+        .returning(Future.successful(HandleCommandResponse().withEvent(Any.pack(AccountOpened()))))
+
+      (serviceImpl.handleEvent _)
+        .expects(*)
+        .returning(Future.failed(Status.UNKNOWN.asException()))
+
+      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+
+      val serverName = InProcessServerBuilder.generateName()
+
+      createServer(serverName, service)
+      val serverChannel = getChannel(serverName)
 
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
@@ -535,14 +474,10 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       )
 
       commandSender.receiveMessage(replyTimeout) match {
-        case CommandReply(reply, _) =>
-          reply match {
-            case Reply.Error(status) =>
-              status.code shouldBe (Status.Code.UNKNOWN.value)
-              Option(status.message) shouldBe (Some(""))
+        case CommandReply(Reply.Error(status), _) =>
+          status.code shouldBe (Status.Code.UNKNOWN.value)
+          Option(status.message) shouldBe (Some(""))
 
-            case _ => fail("unexpected message state")
-          }
         case _ => fail("unexpected message type")
       }
     }
@@ -594,41 +529,20 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val aggregateId: String = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
-      val stateWrapper: StateWrapper = StateWrapper()
-        .withState(any.Any.pack(Empty.defaultInstance))
-        .withMeta(
-          MetaData.defaultInstance.withEntityId(getEntityId(persistenceId))
-        )
       val command: Any = Any.pack(OpenAccount())
-      val event: AccountOpened = AccountOpened()
-      val state: Account = Account().withAccountUuid(aggregateId)
-      val resultingState = com.google.protobuf.any.Any.pack(state.withBalance(200))
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
-          .withRequest(
-            HandleCommandRequest()
-              .withCommand(command)
-              .withPriorState(stateWrapper.getState)
-              .withPriorEventMeta(stateWrapper.getMeta)
-          )
-          .withHeader("header-1", "header-value-1")
-          .willReturn(
-            response(HandleCommandResponse().withEvent(Any.pack(event)))
-          )
-      )
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_EVENT)
-          .withRequest(
-            HandleEventRequest()
-              .withPriorState(stateWrapper.getState)
-              .withEventMeta(stateWrapper.getMeta)
-              .withEvent(Any.pack(event))
-          )
-          .willReturn(
-            response(HandleEventResponse().withResultingState(resultingState))
-          )
-      )
+      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
+
+      (serviceImpl.handleCommand _)
+        .expects(*)
+        .returning(Future.successful(HandleCommandResponse().withEvent(Any.pack(AccountOpened()))))
+
+      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+
+      val serverName = InProcessServerBuilder.generateName()
+
+      createServer(serverName, service)
+      val serverChannel = getChannel(serverName)
 
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
@@ -666,16 +580,12 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       )
 
       commandSender.receiveMessage(replyTimeout) match {
-        case CommandReply(reply, _) =>
-          reply match {
-            case Reply.Error(status) =>
-              status.code shouldBe (Status.Code.INVALID_ARGUMENT.value)
-              Option(status.message) shouldBe (Some(
-                "invalid event, type.googleapis.com/chief_of_state.v1.AccountOpened"
-              ))
+        case CommandReply(Reply.Error(status), _) =>
+          status.code shouldBe (Status.Code.INVALID_ARGUMENT.value)
+          Option(status.message) shouldBe (Some(
+            "invalid event, type.googleapis.com/chief_of_state.v1.AccountOpened"
+          ))
 
-            case _ => fail("unexpected message state")
-          }
         case _ => fail("unexpected message type")
       }
 
@@ -728,41 +638,27 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val aggregateId: String = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
-      val stateWrapper: StateWrapper = StateWrapper()
-        .withState(any.Any.pack(Empty.defaultInstance))
-        .withMeta(
-          MetaData.defaultInstance.withEntityId(getEntityId(persistenceId))
-        )
       val command: Any = Any.pack(OpenAccount())
       val event: AccountOpened = AccountOpened()
       val state: Account = Account().withAccountUuid(aggregateId)
       val resultingState = com.google.protobuf.any.Any.pack(state.withBalance(200))
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
-          .withRequest(
-            HandleCommandRequest()
-              .withCommand(command)
-              .withPriorState(stateWrapper.getState)
-              .withPriorEventMeta(stateWrapper.getMeta)
-          )
-          .withHeader("header-1", "header-value-1")
-          .willReturn(
-            response(HandleCommandResponse().withEvent(Any.pack(event)))
-          )
-      )
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_EVENT)
-          .withRequest(
-            HandleEventRequest()
-              .withPriorState(stateWrapper.getState)
-              .withEventMeta(stateWrapper.getMeta)
-              .withEvent(Any.pack(event))
-          )
-          .willReturn(
-            response(HandleEventResponse().withResultingState(resultingState))
-          )
-      )
+      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
+
+      (serviceImpl.handleCommand _)
+        .expects(*)
+        .returning(Future.successful(HandleCommandResponse().withEvent(Any.pack(event))))
+
+      (serviceImpl.handleEvent _)
+        .expects(*)
+        .returning(Future.successful(HandleEventResponse().withResultingState(resultingState)))
+
+      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+
+      val serverName = InProcessServerBuilder.generateName()
+
+      createServer(serverName, service)
+      val serverChannel = getChannel(serverName)
 
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
@@ -800,16 +696,12 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       )
 
       commandSender.receiveMessage(replyTimeout) match {
-        case CommandReply(reply, _) =>
-          reply match {
-            case Reply.Error(status) =>
-              status.code shouldBe (Status.Code.INVALID_ARGUMENT.value)
-              Option(status.message) shouldBe (Some(
-                "invalid state, type.googleapis.com/chief_of_state.v1.Account"
-              ))
+        case CommandReply(Reply.Error(status), _) =>
+          status.code shouldBe (Status.Code.INVALID_ARGUMENT.value)
+          Option(status.message) shouldBe (Some(
+            "invalid state, type.googleapis.com/chief_of_state.v1.Account"
+          ))
 
-            case _ => fail("unexpected message state")
-          }
         case _ => fail("unexpected message type")
       }
 
@@ -863,40 +755,25 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val aggregateId: String = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
-      val stateWrapper: StateWrapper = StateWrapper()
-        .withState(any.Any.pack(Empty.defaultInstance))
-        .withMeta(
-          MetaData.defaultInstance.withEntityId(getEntityId(persistenceId))
-        )
       val command: Any = Any.pack(OpenAccount())
       val event: AccountOpened = AccountOpened()
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
-          .withRequest(
-            HandleCommandRequest()
-              .withCommand(command)
-              .withPriorState(stateWrapper.getState)
-              .withPriorEventMeta(stateWrapper.getMeta)
-          )
-          .withHeader("header-1", "header-value-1")
-          .willReturn(
-            response(HandleCommandResponse().withEvent(Any.pack(event)))
-          )
-      )
+      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_EVENT)
-          .withRequest(
-            HandleEventRequest()
-              .withPriorState(stateWrapper.getState)
-              .withEventMeta(stateWrapper.getMeta)
-              .withEvent(Any.pack(event))
-          )
-          .willReturn(
-            response(HandleEventResponse())
-          )
-      )
+      (serviceImpl.handleCommand _)
+        .expects(*)
+        .returning(Future.successful(HandleCommandResponse().withEvent(Any.pack(event))))
+
+      (serviceImpl.handleEvent _)
+        .expects(*)
+        .returning(Future.successful(HandleEventResponse()))
+
+      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+
+      val serverName = InProcessServerBuilder.generateName()
+
+      createServer(serverName, service)
+      val serverChannel = getChannel(serverName)
 
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
@@ -934,16 +811,12 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       )
 
       commandSender.receiveMessage(replyTimeout) match {
-        case CommandReply(reply, _) =>
-          reply match {
-            case Reply.Error(status) =>
-              status.code shouldBe (Status.Code.INVALID_ARGUMENT.value)
-              Option(status.message) shouldBe (Some(
-                "event handler replied with empty state"
-              ))
+        case CommandReply(Reply.Error(status), _) =>
+          status.code shouldBe (Status.Code.INVALID_ARGUMENT.value)
+          Option(status.message) shouldBe (Some(
+            "event handler replied with empty state"
+          ))
 
-            case _ => fail("unexpected message state")
-          }
         case _ => fail("unexpected message type")
       }
 
@@ -955,42 +828,26 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val aggregateId: String = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
       val state: Account = Account().withAccountUuid(aggregateId)
-      val stateWrapper: StateWrapper = StateWrapper()
-        .withState(any.Any.pack(Empty.defaultInstance))
-        .withMeta(
-          MetaData.defaultInstance
-            .withEntityId(getEntityId(persistenceId))
-        )
       val command: Any = Any.pack(OpenAccount())
       val event: AccountOpened = AccountOpened()
-
       val resultingState = com.google.protobuf.any.Any.pack(state.withBalance(200))
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_COMMAND)
-          .withRequest(
-            HandleCommandRequest()
-              .withCommand(command)
-              .withPriorState(stateWrapper.getState)
-              .withPriorEventMeta(stateWrapper.getMeta)
-          )
-          .withHeader("header-1", "header-value-1")
-          .willReturn(
-            response(HandleCommandResponse().withEvent(Any.pack(event)))
-          )
-      )
 
-      stubFor(
-        unaryMethod(WriteSideHandlerServiceGrpc.METHOD_HANDLE_EVENT)
-          .withRequest(
-            HandleEventRequest()
-              .withPriorState(stateWrapper.getState)
-              .withEventMeta(stateWrapper.getMeta)
-              .withEvent(Any.pack(event))
-          )
-          .willReturn(
-            response(HandleEventResponse().withResultingState(resultingState))
-          )
-      )
+      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
+
+      (serviceImpl.handleCommand _)
+        .expects(*)
+        .returning(Future.successful(HandleCommandResponse().withEvent(Any.pack(event))))
+
+      (serviceImpl.handleEvent _)
+        .expects(*)
+        .returning(Future.successful(HandleEventResponse().withResultingState(resultingState)))
+
+      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+
+      val serverName = InProcessServerBuilder.generateName()
+
+      createServer(serverName, service)
+      val serverChannel = getChannel(serverName)
 
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
@@ -1025,17 +882,13 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         Map.empty[String, Any]
       )
       commandSender.receiveMessage(replyTimeout) match {
-        case CommandReply(reply, _) =>
-          reply match {
-            case Reply.State(value: StateWrapper) =>
-              val account: Account = value.getState.unpack[Account]
-              account.accountUuid shouldBe aggregateId
-              account.balance shouldBe 200
-              value.getMeta.revisionNumber shouldBe 1
-              value.getMeta.entityId shouldBe aggregateId
+        case CommandReply(Reply.State(value: StateWrapper), _) =>
+          val account: Account = value.getState.unpack[Account]
+          account.accountUuid shouldBe aggregateId
+          account.balance shouldBe 200
+          value.getMeta.revisionNumber shouldBe 1
+          value.getMeta.entityId shouldBe aggregateId
 
-            case _ => fail("unexpected message state")
-          }
         case _ => fail("unexpected message type")
       }
       aggregateRef ! AggregateCommand(
@@ -1066,14 +919,23 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val aggregateId: String = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
 
-      val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
-        new WriteSideHandlerServiceBlockingStub(serverChannel)
       // Let us create the sender of commands
       val commandSender: TestProbe[CommandReply] =
         createTestProbe[CommandReply]()
 
+      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
+      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+      val serverName = InProcessServerBuilder.generateName()
+
+      createServer(serverName, service)
+      val serverChannel = getChannel(serverName)
+
+      val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
+        new WriteSideHandlerServiceBlockingStub(serverChannel)
+
       val remoteCommandHandler: RemoteCommandHandler =
         RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+
       val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
