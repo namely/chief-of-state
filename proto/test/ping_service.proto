@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package chief_of_state.test;
+
+option java_multiple_files = true;
+option java_outer_classname = "PingServiceProto";
+option java_package = "com.namely.protobuf.chiefofstate.test";
+
+service PingService {
+  rpc Send(Ping) returns (Pong);
+}
+
+message Ping {
+  string msg = 1;
+}
+
+message Pong {
+  string msg = 1;
+}

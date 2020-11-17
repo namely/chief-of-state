@@ -1,11 +1,11 @@
 package com.namely.chiefofstate.plugin
 
-import akka.grpc.GrpcServiceException
 import com.google.protobuf.any.Any
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
 import com.typesafe.config.Config
-import io.grpc.{Metadata, Status}
+import io.grpc.{Metadata, Status, StatusException, StatusRuntimeException}
 import org.slf4j.{Logger, LoggerFactory}
+
 import scala.reflect.runtime.universe
 import scala.util.{Failure, Success, Try}
 
@@ -31,19 +31,26 @@ case class PluginManager(plugins: Seq[PluginBase]) {
       val pluginRun: Try[Map[String, Any]] = Try {
         plugin.run(processCommandRequest, metadata) match {
           case Some(value) => Map(plugin.pluginId -> value)
-          case None => Map.empty[String, com.google.protobuf.any.Any]
+          case None        => Map.empty[String, com.google.protobuf.any.Any]
         }
       }
       pluginRun match {
-        case Success(m) => Try(metaMap.get ++ m)
-        case Failure(e: GrpcServiceException) =>
-          logger.error(s"plugin '${plugin.pluginId}' failed with ${e.getClass.getName}: ${e.getStatus.toString}")
+        case Success(m) =>
+          Try(metaMap.get ++ m)
+
+        case Failure(e: StatusException) =>
+          logger.error(s"plugin '${plugin.pluginId}' failed with ${e.getStatus.toString}")
           Failure(e)
+
+        case Failure(e: StatusRuntimeException) =>
+          logger.error(s"plugin '${plugin.pluginId}' failed with ${e.getStatus.toString}")
+          Failure(e)
+
         case Failure(e: Throwable) =>
           val errMsg = s"plugin ${plugin.pluginId} failed due to ${e.getClass.getName}: ${e.getMessage}"
           logger.error(errMsg)
           val status = Status.INTERNAL.withDescription(e.getMessage)
-          val err = new GrpcServiceException(status=status)
+          val err = new StatusException(status)
           Failure(err)
       }
     })
@@ -55,7 +62,7 @@ case class PluginManager(plugins: Seq[PluginBase]) {
  */
 object PluginManager {
 
-  final val HOCON_PATH: String = "chief-of-state.plugin-settings.enable-plugins"
+  final val HOCON_PATH: String = "chiefofstate.plugin-settings.enabled-plugins"
 
   lazy val logger: Logger = LoggerFactory.getLogger(getClass)
 
@@ -63,7 +70,7 @@ object PluginManager {
    * Default COS Plugins
    */
   final val DEFAULT_PLUGINS: Seq[String] = Seq(
-    "com.namely.chiefofstate.plugin.PersistHeaders"
+    "com.namely.chiefofstate.plugin.PersistedHeaders"
   )
 
   /**

@@ -1,41 +1,37 @@
-import play.grpc.gen.scaladsl.PlayScalaServerCodeGenerator
-
+parallelExecution in test := false
 enablePlugins(DockerComposePlugin)
-dockerImageCreationTask := (Docker / publishLocal in `chiefofstate`).value
+dockerImageCreationTask := (Docker / publishLocal in chiefofstate).value
 
 lazy val root: Project = project
   .in(file("."))
   .enablePlugins(NoPublish)
-  .aggregate(protogen, `chiefofstate`, `chiefofstateplugins`)
+  .aggregate(protogen, chiefofstate, chiefofstateplugins, protogenTest)
 
-lazy val `chiefofstate`: Project = project
+lazy val chiefofstate: Project = project
   .in(file("code/service"))
-  .enablePlugins(LagomScala)
-  .enablePlugins(PlayAkkaHttp2Support)
+  .enablePlugins(Common)
+  .enablePlugins(BuildSettings)
+  .enablePlugins(DockerSettings)
+  .enablePlugins(NoPublish)
+  .settings(name := "chiefofstate")
+  .dependsOn(protogen, chiefofstateplugins, protogenTest % "test->compile")
+
+lazy val chiefofstateplugins = project
+  .in(file("code/plugin"))
+  .enablePlugins(Common)
   .enablePlugins(BuildSettings)
   .enablePlugins(DockerSettings)
   .enablePlugins(NoPublish)
   .settings(
-    name := "chiefofstate",
-    javaAgents += Dependencies.Compile.KanelaAgent
-  )
-  .dependsOn(protogen, `chiefofstateplugins`)
-
-lazy val `chiefofstateplugins` = project
-  .in(file("code/plugin"))
-  .enablePlugins(Common)
-  .enablePlugins(LagomScala)
-  .enablePlugins(NoPublish)
-  .settings(
-    name := "chiefofstateplugins",
+    name := "chiefofstate-plugins",
     description := "Chief of State Plugins"
   )
   .dependsOn(protogen)
 
 lazy val protogen: Project = project
   .in(file("code/.protogen"))
-  .enablePlugins(AkkaGrpcPlugin)
-  .enablePlugins(ProtocRuntime)
+  .enablePlugins(Common)
+  .enablePlugins(BuildSettings)
   .enablePlugins(NoPublish)
   .settings(name := "protogen")
   .settings(
@@ -52,13 +48,42 @@ lazy val protogen: Project = project
           file("proto/internal"),
           // includes external protobufs (like google dependencies)
           baseDirectory.value / "target/protobuf_external"
+        ),
+        PB.targets := Seq(
+          scalapb.gen(
+            flatPackage = false,
+            javaConversions = false,
+            grpc = true
+          ) -> (sourceManaged in Compile).value / "scalapb"
         )
       )
-    ),
-    // Using Scala
-    akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Scala),
-    akkaGrpcExtraGenerators in Compile += PlayScalaServerCodeGenerator,
-    akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server),
-    akkaGrpcCodeGeneratorSettings += "server_power_apis",
-    akkaGrpcCodeGeneratorSettings := akkaGrpcCodeGeneratorSettings.value.filterNot(_ == "flat_package")
+    )
   )
+
+lazy val protogenTest: Project = project
+.in(file("code/.protogen_test"))
+.enablePlugins(Common)
+.enablePlugins(BuildSettings)
+.enablePlugins(NoPublish)
+.settings(name := "protogen_test")
+.settings(
+  inConfig(Compile)(
+    Seq(
+      PB.protoSources := Seq(
+        file("proto/test")
+      ),
+      PB.includePaths := Seq(
+        file("proto/test"),
+        // includes external protobufs (like google dependencies)
+        baseDirectory.value / "target/protobuf_external"
+      ),
+      PB.targets := Seq(
+        scalapb.gen(
+          flatPackage = false,
+          javaConversions = false,
+          grpc = true
+        ) -> (sourceManaged in Compile).value / "scalapb"
+      )
+    )
+  )
+)

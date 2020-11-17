@@ -4,18 +4,6 @@ all:
     # target running it all
     BUILD +test-all
     BUILD +docker-build
-    BUILD +sbt-publish
-
-sbt-publish:
-    FROM +code
-
-    ARG VERSION=dev
-
-    # sbt publish
-    RUN --push \
-        --secret JFROG_USERNAME=+secrets/JFROG_USERNAME \
-        --secret JFROG_PASSWORD=+secrets/JFROG_PASSWORD \
-        sbt publish
 
 code:
     # copy relevant files in, save as a base image
@@ -44,8 +32,8 @@ code:
         project/Dependencies.scala \
         project/DockerSettings.scala \
         project/plugins.sbt \
-        project/ProtocRuntime.scala \
         project/Publish.scala \
+        project/protoc.sbt \
         ./project/
 
     # clean & install dependencies
@@ -58,9 +46,6 @@ code:
     # copy code
     COPY --chown $BUILD_USR:root code/service/src ./code/service/src
     COPY --chown $BUILD_USR:root code/plugin/src ./code/plugin/src
-
-    # save base image for use downstream
-    SAVE IMAGE
 
 docker-stage:
     # package the jars/executables
@@ -101,7 +86,6 @@ test-local:
     ARG CODECOV_TOKEN=""
     ENV CODECOV_TOKEN=${CODECOV_TOKEN}
     RUN sbt coverage test coverageAggregate
-    SAVE IMAGE
 
 codecov:
     FROM +test-local
@@ -127,5 +111,3 @@ sbt:
         apt-get update && \
         apt-get install sbt && \
         sbt sbtVersion
-
-    SAVE IMAGE
