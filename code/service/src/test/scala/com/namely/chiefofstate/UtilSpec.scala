@@ -157,14 +157,13 @@ class UtilSpec extends BaseSpec {
         .sortBy(_._1)
         .map(_._1)
         .map(input => {
-          val id: String = s"chiefOfState|test-id-$input"
-          Util.getShardIndex(id, 10)
+          val id: String = s"test-id-$input"
+          Util.getShardIndex(id, 9)
         })
 
       val expected = expectedPairs.toSeq.sortBy(_._1).map(_._2)
 
       actual shouldBe expected
-
     }
   }
 }
