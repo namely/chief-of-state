@@ -139,7 +139,8 @@ class UtilSpec extends BaseSpec {
   ".getShardIndex" should {
 
     "be backwards compatible" in {
-      // define pairs as they were in 0.5
+      // define pairs as they were in 0.5.1
+      // these were pulled directly from the journal
       val expectedPairs = Map(
         0 -> 5,
         1 -> 4,
