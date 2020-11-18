@@ -148,4 +148,15 @@ object Util {
       message = Option(status.getDescription).getOrElse("")
     )
   }
+
+  /**
+   * function to get the shard index given the entity id and number of shards
+   *
+   * @param entityId string entity ID
+   * @param numShards number of shards
+   * @return the tag
+   */
+  def getShardIndex(entityId: String, numShards: Int): Int = {
+    Math.abs(entityId.hashCode) % numShards
+  }
 }

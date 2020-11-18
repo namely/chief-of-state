@@ -135,4 +135,36 @@ class UtilSpec extends BaseSpec {
       actual shouldBe (expected)
     }
   }
+
+  ".getShardIndex" should {
+
+    "be backwards compatible" in {
+      // define pairs as they were in 0.5.1
+      // these were pulled directly from the journal
+      val expectedPairs = Map(
+        0 -> 5,
+        1 -> 4,
+        2 -> 3,
+        3 -> 2,
+        4 -> 1,
+        5 -> 0,
+        6 -> 8,
+        7 -> 7,
+        8 -> 6,
+        9 -> 5
+      )
+
+      val actual = expectedPairs.toSeq
+        .sortBy(_._1)
+        .map(_._1)
+        .map(input => {
+          val id: String = s"test-id-$input"
+          Util.getShardIndex(id, 9)
+        })
+
+      val expected = expectedPairs.toSeq.sortBy(_._1).map(_._2)
+
+      actual shouldBe expected
+    }
+  }
 }
