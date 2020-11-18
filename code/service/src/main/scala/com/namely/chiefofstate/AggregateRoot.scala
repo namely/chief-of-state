@@ -36,7 +36,7 @@ object AggregateRoot {
   /**
    * thee aggregate root type key
    */
-  val TypeKey: EntityTypeKey[AggregateCommand] = EntityTypeKey[AggregateCommand]("COS")
+  val TypeKey: EntityTypeKey[AggregateCommand] = EntityTypeKey[AggregateCommand]("chiefOfState")
 
   /**
    * creates a new instance of the aggregate root
@@ -273,15 +273,16 @@ object AggregateRoot {
   }
 
   /**
-   * returns the list of possible event tags baseed upon the number of shards defined
+   * returns the list of possible event tags based upon the number of shards defined
    * in the configuration file
    *
    * @param eventsConfig the events config
    * @return the list of tags
    */
   def tags(eventsConfig: EventsConfig): Vector[String] = {
-    (for (shardNo <- 0 until eventsConfig.numShards)
-      yield s"${eventsConfig.eventTag}$shardNo").toVector
+    (0 until eventsConfig.numShards)
+      .map(shardNo => s"${eventsConfig.eventTag}$shardNo")
+      .toVector
   }
 
   /**

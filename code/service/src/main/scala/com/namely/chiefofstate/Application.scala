@@ -125,7 +125,7 @@ object Application extends App {
   // registration at startup
   sharding.init(Entity(typeKey = AggregateRoot.TypeKey) { entityContext =>
 
-    val shardIndex: Int = Math.abs(entityContext.entityId.hashCode) % cosConfig.eventsConfig.numShards
+    val shardIndex: Int = Util.getShardIndex(entityContext.entityId, cosConfig.eventsConfig.numShards)
 
     AggregateRoot(
       PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
