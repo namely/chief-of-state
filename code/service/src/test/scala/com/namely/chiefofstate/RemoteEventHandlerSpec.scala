@@ -17,6 +17,8 @@ import com.namely.chiefofstate.helper.GrpcHelpers.Closeables
 import io.grpc.ServerServiceDefinition
 import io.grpc.inprocess._
 import scala.concurrent.ExecutionContext.global
+import com.namely.protobuf.chiefofstate.v1.common.MetaData
+import com.google.protobuf.any
 
 class RemoteEventHandlerSpec extends BaseSpec {
 
@@ -52,20 +54,22 @@ class RemoteEventHandlerSpec extends BaseSpec {
 
   "RemoteEventHandler" should {
     "handle event successfully" in {
-      val state: Account = Account().withAccountUuid("123")
-
-      val stateWrapper: StateWrapper = StateWrapper().withState(com.google.protobuf.any.Any.pack(state))
+      val state = Account().withAccountUuid("123")
+      val stateAny = any.Any.pack(state)
 
       val resultingState = com.google.protobuf.any.Any.pack(state.withBalance(200))
 
       val event: any.Any = com.google.protobuf.any.Any.pack(AccountOpened())
 
+      val eventMeta: MetaData = MetaData.defaultInstance
+        .withRevisionNumber(2)
+
       val expected: HandleEventResponse =
         HandleEventResponse().withResultingState(resultingState)
 
       val request: HandleEventRequest = HandleEventRequest()
-        .withPriorState(stateWrapper.getState)
-        .withEventMeta(stateWrapper.getMeta)
+        .withPriorState(stateAny)
+        .withEventMeta(eventMeta)
         .withEvent(event)
 
       val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
@@ -82,20 +86,24 @@ class RemoteEventHandlerSpec extends BaseSpec {
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
       val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(grpcConfig, writeHandlerServicetub)
-      val triedHandleEventResponse: Try[HandleEventResponse] = remoteEventHandler.handleEvent(event, stateWrapper)
+      val triedHandleEventResponse: Try[HandleEventResponse] =
+        remoteEventHandler.handleEvent(event, stateAny, eventMeta)
       triedHandleEventResponse.success.value shouldBe (expected)
     }
 
     "handle event when there is a failure" in {
       val state: Account = Account().withAccountUuid("123")
+      val stateAny = any.Any.pack(state)
 
       val stateWrapper: StateWrapper = StateWrapper().withState(com.google.protobuf.any.Any.pack(state))
 
       val event: any.Any = com.google.protobuf.any.Any.pack(AccountOpened())
 
+      val eventMeta: MetaData = MetaData.defaultInstance.withRevisionNumber(3)
+
       val request: HandleEventRequest = HandleEventRequest()
         .withPriorState(stateWrapper.getState)
-        .withEventMeta(stateWrapper.getMeta)
+        .withEventMeta(eventMeta)
         .withEvent(event)
 
       val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
@@ -112,7 +120,8 @@ class RemoteEventHandlerSpec extends BaseSpec {
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
       val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(grpcConfig, writeHandlerServicetub)
-      val triedHandleEventResponse: Try[HandleEventResponse] = remoteEventHandler.handleEvent(event, stateWrapper)
+      val triedHandleEventResponse: Try[HandleEventResponse] =
+        remoteEventHandler.handleEvent(event, stateAny, eventMeta)
       (triedHandleEventResponse.failure.exception should have).message("UNKNOWN")
     }
   }

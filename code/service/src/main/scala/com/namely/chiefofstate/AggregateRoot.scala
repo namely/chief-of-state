@@ -195,12 +195,20 @@ object AggregateRoot {
       })
       .flatMap({
         case WriteHandlerHelpers.NewEvent(newEvent) =>
+          val newEventMeta: MetaData = MetaData()
+            .withRevisionNumber(priorState.getMeta.revisionNumber + 1)
+            .withRevisionDate(Instant.now().toTimestamp)
+            .withData(data)
+            .withEntityId(priorState.getMeta.entityId)
+
+          val priorStateAny: com.google.protobuf.any.Any = priorState.getState
+
           eventHandler
-            .handleEvent(newEvent, priorState)
+            .handleEvent(newEvent, priorStateAny, newEventMeta)
             .map(response => {
               require(response.resultingState.isDefined, "event handler replied with empty state")
               eventsAndStateProtoValidation.requireValidState(response.getResultingState)
-              WriteHandlerHelpers.NewState(newEvent, response.getResultingState)
+              WriteHandlerHelpers.NewState(newEvent, response.getResultingState, newEventMeta)
             })
 
         case x =>
@@ -212,8 +220,8 @@ object AggregateRoot {
       case Success(NoOp) =>
         Effect.reply(replyTo)(CommandReply().withState(priorState))
 
-      case Success(NewState(event, newState)) =>
-        persistEventAndReply(event, newState, priorState.getMeta, data, replyTo)
+      case Success(NewState(event, newState, eventMeta)) =>
+        persistEventAndReply(event, newState, eventMeta, replyTo)
 
       case Failure(e: StatusException) =>
         OpentracingHelpers
@@ -309,22 +317,16 @@ object AggregateRoot {
   private[chiefofstate] def persistEventAndReply(
     event: any.Any,
     resultingState: any.Any,
-    priorMeta: MetaData,
-    data: Map[String, any.Any],
+    eventMeta: MetaData,
     replyTo: ActorRef[CommandReply]
   ): ReplyEffect[EventWrapper, StateWrapper] = {
-    val meta: MetaData = MetaData()
-      .withRevisionNumber(priorMeta.revisionNumber + 1)
-      .withRevisionDate(Instant.now().toTimestamp)
-      .withData(data)
-      .withEntityId(priorMeta.entityId)
 
     Effect
       .persist(
         EventWrapper()
           .withEvent(event)
           .withResultingState(resultingState)
-          .withMeta(meta)
+          .withMeta(eventMeta)
       )
       .thenReply(replyTo)((updatedState: StateWrapper) => CommandReply().withState(updatedState))
   }
@@ -348,5 +350,10 @@ object WriteHandlerHelpers {
   sealed trait WriteTransitions
   case object NoOp extends WriteTransitions
   case class NewEvent(event: com.google.protobuf.any.Any) extends WriteTransitions
-  case class NewState(event: com.google.protobuf.any.Any, state: com.google.protobuf.any.Any) extends WriteTransitions
+
+  case class NewState(
+    event: com.google.protobuf.any.Any,
+    state: com.google.protobuf.any.Any,
+    eventMeta: MetaData
+  ) extends WriteTransitions
 }
