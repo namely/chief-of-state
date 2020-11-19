@@ -12,6 +12,8 @@ import scala.util.Try
 import io.opentracing.contrib.grpc.TracingClientInterceptor
 import io.opentracing.util.GlobalTracer
 import com.namely.chiefofstate.interceptors.ErrorsClientInterceptor
+import com.google.protobuf.any
+import com.namely.protobuf.chiefofstate.v1.common.MetaData
 
 /**
  * handles a given event by making a rpc call
@@ -37,7 +39,7 @@ case class RemoteEventHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: Wr
    * @param priorState the aggregate prior state
    * @return the eventual HandleEventResponse
    */
-  def handleEvent(event: com.google.protobuf.any.Any, priorState: StateWrapper): Try[HandleEventResponse] = {
+  def handleEvent(event: any.Any, priorState: any.Any, eventMeta: MetaData): Try[HandleEventResponse] = {
     Try {
       log.debug(
         s"sending request to the event handler, ${event.typeUrl}"
@@ -49,8 +51,8 @@ case class RemoteEventHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: Wr
         .handleEvent(
           HandleEventRequest()
             .withEvent(event)
-            .withPriorState(priorState.getState)
-            .withEventMeta(priorState.getMeta)
+            .withPriorState(priorState)
+            .withEventMeta(eventMeta)
         )
     }
   }

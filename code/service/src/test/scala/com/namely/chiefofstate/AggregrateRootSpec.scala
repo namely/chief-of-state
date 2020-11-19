@@ -30,6 +30,8 @@ import com.namely.chiefofstate.helper.GrpcHelpers.Closeables
 import scala.concurrent.Future
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceStub
 import io.grpc.ServerServiceDefinition
+import scala.util.Try
+import scala.util.Failure
 
 class AggregrateRootSpec extends BaseActorSpec(s"""
       akka.cluster.sharding.number-of-shards = 1
@@ -147,38 +149,52 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
   ".handleCommand" should {
     "return as expected" in {
+      // define the ID's
       val aggregateId: String = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
-      val state: Account = Account().withAccountUuid(aggregateId)
-      val stateWrapper: StateWrapper = StateWrapper()
-        .withState(any.Any.pack(Empty.defaultInstance))
-        .withMeta(
-          MetaData.defaultInstance.withEntityId(getEntityId(persistenceId))
-        )
+
+      // define prior state, command, and prior event meta
+      val priorState: Any = Any.pack(Empty.defaultInstance)
       val command: Any = Any.pack(OpenAccount())
+      val priorMeta: MetaData = MetaData.defaultInstance
+        .withRevisionNumber(0)
+        .withEntityId(aggregateId)
+
+      // define event to return and handle command response
       val event: AccountOpened = AccountOpened()
-
-      val resultingState = com.google.protobuf.any.Any.pack(state.withBalance(200))
-
-      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
 
       val handleCommandRequest = HandleCommandRequest()
         .withCommand(command)
-        .withPriorState(stateWrapper.getState)
-        .withPriorEventMeta(stateWrapper.getMeta)
+        .withPriorState(priorState)
+        .withPriorEventMeta(priorMeta)
 
-      val handleEventRequest = HandleEventRequest()
-        .withPriorState(stateWrapper.getState)
-        .withEventMeta(stateWrapper.getMeta)
+      val handleCommandResponse = HandleCommandResponse()
         .withEvent(Any.pack(event))
+
+      // define a resulting state
+      val resultingState = Any.pack(Account().withAccountUuid(aggregateId).withBalance(200))
+
+      // mock the write handler
+      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
 
       (serviceImpl.handleCommand _)
         .expects(handleCommandRequest)
-        .returning(Future.successful(HandleCommandResponse().withEvent(Any.pack(event))))
+        .returning {
+          Future.successful(handleCommandResponse)
+        }
 
       (serviceImpl.handleEvent _)
-        .expects(handleEventRequest)
-        .returning(Future.successful(HandleEventResponse().withResultingState(resultingState)))
+        .expects(*)
+        .onCall((request: HandleEventRequest) => {
+          val output = Try {
+            require(request.getEventMeta.revisionNumber == priorMeta.revisionNumber + 1)
+            HandleEventResponse().withResultingState(resultingState)
+          }
+            .recoverWith({
+              case e: Throwable => Failure(Util.makeStatusException(e))
+            })
+          Future.fromTry(output)
+        })
 
       val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
       val serverName = InProcessServerBuilder.generateName()
@@ -223,13 +239,12 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(Reply.State(value: StateWrapper), _) =>
-          val account: Account = value.getState.unpack[Account]
-          account.accountUuid shouldBe aggregateId
-          account.balance shouldBe 200
-          value.getMeta.revisionNumber shouldBe 1
+          value.getState shouldBe (resultingState)
+          value.getMeta.revisionNumber shouldBe priorMeta.revisionNumber + 1
           value.getMeta.entityId shouldBe aggregateId
 
-        case _ => fail("unexpected message type")
+        case x =>
+          fail("unexpected message type")
       }
     }
     "return as expected with no event to persist" in {
