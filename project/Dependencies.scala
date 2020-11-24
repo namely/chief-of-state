@@ -28,6 +28,8 @@ object Dependencies {
     val OpenTracingJaeger: String = "1.5.0"
 
     val Micrometer: String = "1.6.1"
+
+    val Scalatra: String = "2.7.0"
   }
 
   import Dependencies.Versions._
@@ -76,6 +78,8 @@ object Dependencies {
     "io.jaegertracing" % "jaeger-micrometer" % Versions.OpenTracingJaeger,
     "io.micrometer" % "micrometer-core" % Versions.Micrometer,
     "io.micrometer" % "micrometer-registry-prometheus" % Versions.Micrometer,
+
+    "org.scalatra" %% "scalatra" % Versions.Scalatra,
   )
 
   val testJars: Seq[ModuleID] = Seq(
