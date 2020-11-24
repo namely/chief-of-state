@@ -28,6 +28,12 @@ import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.micrometer.core.instrument.Metrics
 import io.opentracing.contrib.metrics.micrometer.MicrometerMetricsReporter
+import io.opentracing.contrib.metrics.MetricsReporter
+import io.opentracing.contrib.grpc.ActiveSpanSource
+import io.opentracing.tag.Tags
+import io.opentracing.tag.Tag
+import io.micrometer.prometheus.PrometheusMeterRegistry
+import io.micrometer.prometheus.PrometheusConfig
 
 class TestMetricsSpec extends BaseSpec {
   import GrpcHelpers.Closeables
@@ -49,20 +55,23 @@ class TestMetricsSpec extends BaseSpec {
 
       // set up micrometer with the global registry
       val simple: SimpleMeterRegistry = new SimpleMeterRegistry();
+      // set up prometheus registry
+      val prometheusRegistry: PrometheusMeterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
 
       val meterRegistry: MeterRegistry = {
         // create a composite registry
         val compositeRegistry = new CompositeMeterRegistry()
         // add a simple registry to it
-        // TODO: add a real registry
         compositeRegistry.add(simple)
+        // add prometheus registry
+        compositeRegistry.add(prometheusRegistry)
         // set registry as global
         Metrics.addRegistry(compositeRegistry)
         // return it
         compositeRegistry
       }
 
-      val metricsReporter: MicrometerMetricsReporter = MicrometerMetricsReporter
+      val metricsReporter: MetricsReporter = MicrometerMetricsReporter
         .newMetricsReporter()
         .withRegistry(meterRegistry)
         .withName("Micrometer") // TODO: name?
@@ -81,7 +90,22 @@ class TestMetricsSpec extends BaseSpec {
       (serviceImpl.send _)
         .expects(*)
         .onCall((request: Ping) => {
-          val span = GlobalTracer.get.buildSpan("inner").start()
+          val span = GlobalTracer.get
+            .buildSpan("inner")
+            .withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER)
+            .start()
+
+          val innerSpan = GlobalTracer
+            .get()
+            .buildSpan("inner-inner")
+            .asChildOf(span)
+            .withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
+            .start()
+
+          innerSpan.log("yayayayay")
+
+          innerSpan.finish()
+
           span.log("yay")
           span.finish()
           Future.successful(Pong("pong"))
@@ -119,7 +143,11 @@ class TestMetricsSpec extends BaseSpec {
       }
 
       // start a span and send a message
-      val span = tracer.buildSpan("outer").ignoreActiveSpan().start()
+      val span = tracer
+        .buildSpan("outer")
+        .ignoreActiveSpan()
+        .withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
+        .start()
       mockTracer.activateSpan(span)
       val stub = PingServiceGrpc.blockingStub(channel)
       val actual = Try(stub.send(Ping("foo")))
@@ -142,10 +170,17 @@ class TestMetricsSpec extends BaseSpec {
       simple
         .getMeters()
         .asScala
-        .foreach(meter => {
-          println(meter.getId())
-          println(meter.measure())
+        .zipWithIndex
+        .foreach({
+          case (meter, ix) => {
+            println(s"\n... meter $ix")
+            println(meter.getId())
+            println(meter.measure())
+          }
         })
+
+      println("prometheusRegistry *********")
+      println(prometheusRegistry.scrape())
     }
   }
 }
