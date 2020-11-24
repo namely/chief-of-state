@@ -69,9 +69,8 @@ class TestMetricsSpec extends BaseSpec {
         .build()
 
       val mockTracer: MockTracer = new MockTracer(MockTracer.Propagator.TEXT_MAP)
-
-      val tracer = mockTracer
-      val realTracer: Tracer = io.opentracing.contrib.metrics.Metrics.decorate(mockTracer, metricsReporter)
+      val tracer: Tracer = io.opentracing.contrib.metrics.Metrics.decorate(mockTracer, metricsReporter)
+      GlobalTracer.registerIfAbsent(tracer)
 
       // Generate a unique in-process server name.
       val serverName: String = InProcessServerBuilder.generateName();
@@ -81,17 +80,21 @@ class TestMetricsSpec extends BaseSpec {
 
       (serviceImpl.send _)
         .expects(*)
-        .returning(Future.successful(Pong("pong")))
+        .onCall((request: Ping) => {
+          val span = GlobalTracer.get.buildSpan("inner").start()
+          span.log("yay")
+          span.finish()
+          Future.successful(Pong("pong"))
+        })
 
       val service = PingServiceGrpc.bindService(serviceImpl, global)
 
       // create the error interceptor
-      val interceptor = new ErrorsServerInterceptor(realTracer)
-
+      val interceptor = new ErrorsServerInterceptor(tracer)
       // create a tracing interceptor
       val tracingServerInterceptor = TracingServerInterceptor
         .newBuilder()
-        .withTracer(realTracer)
+        .withTracer(tracer)
         .build()
 
       // register a server that intercepts traces and reports errors
@@ -115,9 +118,9 @@ class TestMetricsSpec extends BaseSpec {
         )
       }
 
-      // start a span and send a message that fails
+      // start a span and send a message
       val span = tracer.buildSpan("outer").ignoreActiveSpan().start()
-      tracer.activateSpan(span)
+      mockTracer.activateSpan(span)
       val stub = PingServiceGrpc.blockingStub(channel)
       val actual = Try(stub.send(Ping("foo")))
       span.finish()
