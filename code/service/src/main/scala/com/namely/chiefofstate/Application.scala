@@ -24,6 +24,13 @@ import io.opentracing.Tracer
 import io.opentracing.util.GlobalTracer
 import io.opentracing.contrib.grpc.TracingServerInterceptor
 import com.namely.chiefofstate.interceptors.ErrorsServerInterceptor
+import io.jaegertracing.micrometer.MicrometerMetricsFactory
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.micrometer.core.instrument.MeterRegistry
+import io.opentracing.contrib.metrics.micrometer.MicrometerMetricsReporter
+import io.opentracing.noop.NoopTracerFactory
+import io.micrometer.core.instrument.Metrics
 
 class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, pluginManager: PluginManager) {
   self =>
@@ -36,13 +43,52 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
    * start the grpc server
    */
   private def start(): Unit = {
-    if (cosConfig.enableJaeger) {
-      // create & register jaeger tracer
-      val jaegerTracer: Tracer = io.jaegertracing.Configuration.fromEnv().getTracer()
-      GlobalTracer.registerIfAbsent(jaegerTracer)
+
+    // set up micrometer with the global registry
+    val meterRegistry: MeterRegistry = {
+      // create a composite registry
+      val compositeRegistry = new CompositeMeterRegistry()
+      // add a simple registry to it
+      // TODO: add a real registry
+      val simple: SimpleMeterRegistry = new SimpleMeterRegistry();
+      compositeRegistry.add(simple)
+      // set registry as global
+      Metrics.addRegistry(compositeRegistry)
+      // return it
+      compositeRegistry
     }
 
-    val tracer: Tracer = GlobalTracer.get()
+    val metricsReporter: MicrometerMetricsReporter = MicrometerMetricsReporter
+      .newMetricsReporter()
+      .withRegistry(meterRegistry)
+      .withName("Micrometer") // TODO: name?
+      .build()
+
+    // TODO: move this into a tracing helper
+    val tracer: Tracer = {
+      // start with a no-op tracer
+      var tmpTracer: Tracer = NoopTracerFactory.create()
+
+      // conditionally set up Jaeger
+      if (cosConfig.enableJaeger) {
+        // create & register jaeger tracer
+        val jaegerTracer: Tracer = io.jaegertracing.Configuration
+          .fromEnv()
+          // add a metrics factory for jaeger internal metrics?
+          // TODO: do we need this?
+          .withMetricsFactory(new MicrometerMetricsFactory())
+          .getTracer()
+
+        tmpTracer = jaegerTracer
+      }
+
+      // create a decorated tracer with our tracer and the micrometer reporter
+      tmpTracer = io.opentracing.contrib.metrics.Metrics.decorate(tmpTracer, metricsReporter)
+
+      GlobalTracer.registerIfAbsent(tmpTracer)
+
+      tmpTracer
+    }
 
     // create interceptor using the global tracer
     val tracingServerInterceptor = TracingServerInterceptor

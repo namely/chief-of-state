@@ -24,7 +24,10 @@ object Dependencies {
 
     val OpenTracing: String = "0.33.0"
     val OpenTracingContrib: String = "0.2.3"
-    val OpenTracingJaeger: String = "1.4.0"
+    val OpenTracingMetrics: String = "0.3.0"
+    val OpenTracingJaeger: String = "1.5.0"
+
+    val Micrometer: String = "1.6.1"
   }
 
   import Dependencies.Versions._
@@ -64,7 +67,15 @@ object Dependencies {
     "io.opentracing" % "opentracing-api" % Versions.OpenTracing,
     "io.opentracing" % "opentracing-noop" % Versions.OpenTracing,
     "io.opentracing.contrib" % "opentracing-grpc" % Versions.OpenTracingContrib,
-    "io.jaegertracing" % "jaeger-client" % Versions.OpenTracingJaeger
+    "io.jaegertracing" % "jaeger-client" % Versions.OpenTracingJaeger,
+
+    // metrics
+    "io.opentracing.contrib" % "opentracing-metrics" % Versions.OpenTracingMetrics,
+    "io.opentracing.contrib" % "opentracing-metrics-parent" % Versions.OpenTracingMetrics,
+    "io.opentracing.contrib" % "opentracing-metrics-micrometer" % Versions.OpenTracingMetrics,
+    "io.jaegertracing" % "jaeger-micrometer" % Versions.OpenTracingJaeger,
+    "io.micrometer" % "micrometer-core" % Versions.Micrometer,
+    "io.micrometer" % "micrometer-registry-prometheus" % Versions.Micrometer,
   )
 
   val testJars: Seq[ModuleID] = Seq(
