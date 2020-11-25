@@ -25,6 +25,7 @@ object Dependencies {
     val OpenTracing: String = "0.33.0"
     val OpenTracingContrib: String = "0.2.3"
     val OpenTracingMetrics: String = "0.3.0"
+    val OpenTracingApiExtensions: String = "0.6.0"
     val OpenTracingJaeger: String = "1.5.0"
 
     val Micrometer: String = "1.6.1"
@@ -75,11 +76,14 @@ object Dependencies {
     "io.opentracing.contrib" % "opentracing-metrics" % Versions.OpenTracingMetrics,
     "io.opentracing.contrib" % "opentracing-metrics-parent" % Versions.OpenTracingMetrics,
     "io.opentracing.contrib" % "opentracing-metrics-micrometer" % Versions.OpenTracingMetrics,
+    "io.opentracing.contrib" % "opentracing-api-extensions" % Versions.OpenTracingApiExtensions,
     "io.jaegertracing" % "jaeger-micrometer" % Versions.OpenTracingJaeger,
     "io.micrometer" % "micrometer-core" % Versions.Micrometer,
     "io.micrometer" % "micrometer-registry-prometheus" % Versions.Micrometer,
 
     "org.scalatra" %% "scalatra" % Versions.Scalatra,
+    "org.scalatra" %% "scalatra-scalatest" % Versions.Scalatra % "test",
+    "javax.servlet" % "javax.servlet-api" % "3.1.0",
   )
 
   val testJars: Seq[ModuleID] = Seq(

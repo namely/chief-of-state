@@ -148,7 +148,8 @@ class TestMetricsSpec extends BaseSpec {
         .ignoreActiveSpan()
         .withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
         .start()
-      mockTracer.activateSpan(span)
+
+      tracer.activateSpan(span)
       val stub = PingServiceGrpc.blockingStub(channel)
       val actual = Try(stub.send(Ping("foo")))
       span.finish()

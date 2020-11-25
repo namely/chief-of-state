@@ -31,6 +31,8 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.opentracing.contrib.metrics.micrometer.MicrometerMetricsReporter
 import io.opentracing.noop.NoopTracerFactory
 import io.micrometer.core.instrument.Metrics
+import io.micrometer.prometheus.PrometheusMeterRegistry
+import io.micrometer.prometheus.PrometheusConfig
 
 class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, pluginManager: PluginManager) {
   self =>
@@ -43,24 +45,20 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
    * start the grpc server
    */
   private def start(): Unit = {
-
-    // set up micrometer with the global registry
-    val meterRegistry: MeterRegistry = {
-      // create a composite registry
-      val compositeRegistry = new CompositeMeterRegistry()
-      // add a simple registry to it
-      // TODO: add a real registry
-      val simple: SimpleMeterRegistry = new SimpleMeterRegistry();
-      compositeRegistry.add(simple)
-      // set registry as global
-      Metrics.addRegistry(compositeRegistry)
-      // return it
-      compositeRegistry
-    }
+    // create a composite registry
+    val compositeRegistry = new CompositeMeterRegistry()
+    // set registry as global
+    Metrics.addRegistry(compositeRegistry)
+    // add a simple registry to it
+    val simple: SimpleMeterRegistry = new SimpleMeterRegistry();
+    compositeRegistry.add(simple)
+    // create prometheus registry
+    val prometheusRegistry: PrometheusMeterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+    compositeRegistry.add(prometheusRegistry)
 
     val metricsReporter: MicrometerMetricsReporter = MicrometerMetricsReporter
       .newMetricsReporter()
-      .withRegistry(meterRegistry)
+      .withRegistry(compositeRegistry)
       .withName("Micrometer") // TODO: name?
       .build()
 
@@ -112,9 +110,13 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
       .build()
       .start()
 
+    val prometheusServer: PrometheusServer = PrometheusServer(prometheusRegistry, 8888)
+    prometheusServer.start()
+
     log.info("gRPC Server started, listening on " + cosConfig.grpcConfig.server.port)
 
     sys.addShutdownHook {
+      prometheusServer.stop()
       self.stop()
     }
   }
