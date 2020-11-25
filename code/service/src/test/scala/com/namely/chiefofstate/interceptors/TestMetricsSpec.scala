@@ -34,6 +34,7 @@ import io.opentracing.tag.Tags
 import io.opentracing.tag.Tag
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import io.micrometer.prometheus.PrometheusConfig
+import io.opentracing.contrib.api.tracer.APIExtensionsTracer
 
 class TestMetricsSpec extends BaseSpec {
   import GrpcHelpers.Closeables

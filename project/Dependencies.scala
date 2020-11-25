@@ -29,8 +29,6 @@ object Dependencies {
     val OpenTracingJaeger: String = "1.5.0"
 
     val Micrometer: String = "1.6.1"
-
-    val Scalatra: String = "2.7.0"
   }
 
   import Dependencies.Versions._
