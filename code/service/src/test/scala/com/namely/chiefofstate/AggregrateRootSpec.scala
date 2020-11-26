@@ -12,6 +12,7 @@ import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate.config.{CosConfig, EventsConfig}
 import com.namely.chiefofstate.helper.BaseActorSpec
 import com.namely.chiefofstate.AggregateRoot.getEntityId
+import com.namely.chiefofstate.helper.GrpcHelpers.Closeables
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
@@ -21,17 +22,13 @@ import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened, OpenAc
 import com.namely.protobuf.chiefofstate.v1.writeside._
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.typesafe.config.{Config, ConfigFactory}
-import io.grpc.{ManagedChannel, Status}
-import scala.concurrent.ExecutionContext.global
+import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
 import io.grpc.inprocess._
 
+import scala.concurrent.ExecutionContext.global
 import scala.concurrent.duration.FiniteDuration
-import com.namely.chiefofstate.helper.GrpcHelpers.Closeables
 import scala.concurrent.Future
-import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceStub
-import io.grpc.ServerServiceDefinition
-import scala.util.Try
-import scala.util.Failure
+import scala.util.{Failure, Try}
 
 class AggregrateRootSpec extends BaseActorSpec(s"""
       akka.cluster.sharding.number-of-shards = 1
@@ -598,7 +595,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         case CommandReply(Reply.Error(status), _) =>
           status.code shouldBe (Status.Code.INVALID_ARGUMENT.value)
           Option(status.message) shouldBe (Some(
-            "invalid event, type.googleapis.com/chief_of_state.v1.AccountOpened"
+            "invalid event: type.googleapis.com/chief_of_state.v1.AccountOpened"
           ))
 
         case _ => fail("unexpected message type")
@@ -714,7 +711,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         case CommandReply(Reply.Error(status), _) =>
           status.code shouldBe (Status.Code.INVALID_ARGUMENT.value)
           Option(status.message) shouldBe (Some(
-            "invalid state, type.googleapis.com/chief_of_state.v1.Account"
+            "invalid state: type.googleapis.com/chief_of_state.v1.Account"
           ))
 
         case _ => fail("unexpected message type")

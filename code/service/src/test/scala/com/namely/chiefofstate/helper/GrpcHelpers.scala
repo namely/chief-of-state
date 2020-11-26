@@ -1,11 +1,11 @@
 package com.namely.chiefofstate.helper
 
-import io.grpc._
 import java.io.Closeable
-import scala.collection.mutable
 import java.util.concurrent.TimeUnit
-import io.opentracing.mock.MockTracer
-import io.opentracing.util.GlobalTracer
+
+import io.grpc._
+
+import scala.collection.mutable
 
 object GrpcHelpers {
 
@@ -34,11 +34,9 @@ object GrpcHelpers {
     }
 
     def register(server: io.grpc.Server): io.grpc.Server = {
-      val closeable = new Closeable {
-        def close(): Unit = {
-          server.shutdownNow()
-          server.awaitTermination(10000, TimeUnit.MILLISECONDS)
-        }
+      val closeable: Closeable = () => {
+        server.shutdownNow()
+        server.awaitTermination(10000, TimeUnit.MILLISECONDS)
       }
 
       register(closeable)
@@ -47,11 +45,9 @@ object GrpcHelpers {
     }
 
     def register(channel: ManagedChannel): ManagedChannel = {
-      val closeable = new Closeable {
-        def close(): Unit = {
-          channel.shutdownNow()
-          channel.awaitTermination(10000, TimeUnit.MILLISECONDS)
-        }
+      val closeable: Closeable = () => {
+        channel.shutdownNow()
+        channel.awaitTermination(10000, TimeUnit.MILLISECONDS)
       }
 
       register(closeable)

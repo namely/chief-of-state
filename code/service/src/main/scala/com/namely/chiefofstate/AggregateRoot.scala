@@ -1,5 +1,7 @@
 package com.namely.chiefofstate
 
+import java.time.Instant
+
 import akka.actor.typed.{ActorRef, Behavior, SupervisorStrategy}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
@@ -8,21 +10,20 @@ import akka.persistence.typed.scaladsl._
 import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate.config.{CosConfig, EventsConfig, SnapshotConfig}
-import com.namely.chiefofstate.Util.{makeFailedStatusPf, toRpcStatus, Instants}
+import com.namely.chiefofstate.Util.{toRpcStatus, Instants}
 import com.namely.chiefofstate.interceptors.OpentracingHelpers
-import com.namely.chiefofstate.WriteHandlerHelpers.{NewState, NoOp}
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, GetStateCommand, RemoteCommand, SendCommand}
 import com.namely.protobuf.chiefofstate.v1.persistence.{EventWrapper, StateWrapper}
-import io.grpc.{Status, StatusException}
-import org.slf4j.{Logger, LoggerFactory}
-import io.opentracing.util.GlobalTracer
-import scala.concurrent.duration.DurationInt
-import scala.util.{Failure, Success, Try}
-import io.opentracing.Span
+import com.namely.protobuf.chiefofstate.v1.writeside.{HandleCommandResponse, HandleEventResponse}
+import io.grpc.Status
+import io.opentracing.{Span, Tracer}
 import io.opentracing.tag.Tags
-import java.time.Instant
-import io.opentracing.Tracer
+import io.opentracing.util.GlobalTracer
+import org.slf4j.{Logger, LoggerFactory}
+
+import scala.concurrent.duration.DurationInt
+import scala.util.{Failure, Success}
 
 /**
  *  This is an event sourced actor.
@@ -182,66 +183,91 @@ object AggregateRoot {
                           eventsAndStateProtoValidation: EventsAndStateProtosValidation,
                           data: Map[String, com.google.protobuf.any.Any]
   ): ReplyEffect[EventWrapper, StateWrapper] = {
+    // send a request to the command handler to handle the given command
+    commandHandler
+      .handleCommand(command, priorState) match {
+      case Failure(exception) => replyWithErrors(exception, replyTo)
 
-    val handlerOutput: Try[WriteHandlerHelpers.WriteTransitions] = commandHandler
-      .handleCommand(command, priorState)
-      .map(_.event match {
-        case Some(newEvent) =>
-          eventsAndStateProtoValidation.requireValidEvent(newEvent)
-          WriteHandlerHelpers.NewEvent(newEvent)
+      case Success(handleCommandResponse: HandleCommandResponse) =>
+        if (handleCommandResponse.event.isEmpty) {
+          Effect.reply(replyTo)(CommandReply().withState(priorState))
+        } else {
+          val event: any.Any = handleCommandResponse.getEvent
+          if (eventsAndStateProtoValidation.validateEvent(event)) {
 
-        case None =>
-          WriteHandlerHelpers.NoOp
-      })
-      .flatMap({
-        case WriteHandlerHelpers.NewEvent(newEvent) =>
-          val newEventMeta: MetaData = MetaData()
-            .withRevisionNumber(priorState.getMeta.revisionNumber + 1)
-            .withRevisionDate(Instant.now().toTimestamp)
-            .withData(data)
-            .withEntityId(priorState.getMeta.entityId)
+            val newEventMeta: MetaData = MetaData()
+              .withRevisionNumber(priorState.getMeta.revisionNumber + 1)
+              .withRevisionDate(Instant.now().toTimestamp)
+              .withData(data)
+              .withEntityId(priorState.getMeta.entityId)
 
-          val priorStateAny: com.google.protobuf.any.Any = priorState.getState
+            val priorStateAny: com.google.protobuf.any.Any = priorState.getState
 
-          eventHandler
-            .handleEvent(newEvent, priorStateAny, newEventMeta)
-            .map(response => {
-              require(response.resultingState.isDefined, "event handler replied with empty state")
-              eventsAndStateProtoValidation.requireValidState(response.getResultingState)
-              WriteHandlerHelpers.NewState(newEvent, response.getResultingState, newEventMeta)
-            })
+            // send request to the event handler to handle the event returned by the command handler
+            eventHandler.handleEvent(event, priorStateAny, newEventMeta) match {
+              case Failure(exception) => replyWithErrors(exception, replyTo)
 
-        case x =>
-          Success(x)
-      })
-      .recoverWith(makeFailedStatusPf)
-
-    handlerOutput match {
-      case Success(NoOp) =>
-        Effect.reply(replyTo)(CommandReply().withState(priorState))
-
-      case Success(NewState(event, newState, eventMeta)) =>
-        persistEventAndReply(event, newState, eventMeta, replyTo)
-
-      case Failure(e: StatusException) =>
-        OpentracingHelpers
-          .reportErrorToTracer(tracer, e)
-
-        Effect.reply(replyTo)(
-          CommandReply().withError(toRpcStatus(e.getStatus))
-        )
-
-      case x =>
-        // this should never happen, but here for code completeness
-        val errStatus = Status.INTERNAL
-          .withDescription(s"write handler failure, ${x.getClass}")
-
-        OpentracingHelpers.reportErrorToTracer(tracer, errStatus.asException())
-
-        Effect.reply(replyTo)(
-          CommandReply().withError(toRpcStatus(errStatus))
-        )
+              case Success(handleEventResponse: HandleEventResponse) =>
+                if (handleEventResponse.resultingState.isEmpty) {
+                  Effect.reply(replyTo)(
+                    CommandReply().withError(
+                      toRpcStatus(
+                        Status.INVALID_ARGUMENT.withDescription(
+                          "event handler replied with empty state"
+                        )
+                      )
+                    )
+                  )
+                } else {
+                  val newState: any.Any = handleEventResponse.getResultingState
+                  if (eventsAndStateProtoValidation.validateState(newState)) {
+                    persistEventAndReply(event, newState, newEventMeta, replyTo)
+                  } else {
+                    Effect.reply(replyTo)(
+                      CommandReply().withError(
+                        toRpcStatus(
+                          Status.INVALID_ARGUMENT.withDescription(
+                            s"invalid state: ${newState.typeUrl}"
+                          )
+                        )
+                      )
+                    )
+                  }
+                }
+            }
+          } else {
+            Effect.reply(replyTo)(
+              CommandReply().withError(
+                toRpcStatus(
+                  Status.INVALID_ARGUMENT.withDescription(
+                    s"invalid event: ${event.typeUrl}"
+                  )
+                )
+              )
+            )
+          }
+        }
     }
+  }
+
+  /**
+   * sends a CommandReply with error response
+   *
+   * @param exception the error object
+   * @param replyTo the receiver of the message
+   * @return CommandReply message
+   */
+  private[chiefofstate] def replyWithErrors(exception: Throwable,
+                                            replyTo: ActorRef[CommandReply]
+  ): ReplyEffect[EventWrapper, StateWrapper] = {
+    // propagate the traces
+    OpentracingHelpers
+      .reportErrorToTracer(tracer, exception)
+
+    // send the reply
+    Effect.reply(replyTo)(
+      CommandReply().withError(toRpcStatus(Util.makeStatusException(exception).getStatus))
+    )
   }
 
   /**
@@ -309,8 +335,7 @@ object AggregateRoot {
    *
    * @param event the event to persist
    * @param resultingState the resulting state to persist
-   * @param priorMeta the prior meta before the event to be persisted
-   * @param data the additional data to persist
+   * @param eventMeta the prior meta before the event to be persisted
    * @param replyTo the caller ref receiving the reply when persistence is successful
    * @return a reply effect
    */
@@ -344,16 +369,4 @@ object AggregateRoot {
       )
       .withState(any.Any.pack(Empty.defaultInstance))
   }
-}
-
-object WriteHandlerHelpers {
-  sealed trait WriteTransitions
-  case object NoOp extends WriteTransitions
-  case class NewEvent(event: com.google.protobuf.any.Any) extends WriteTransitions
-
-  case class NewState(
-    event: com.google.protobuf.any.Any,
-    state: com.google.protobuf.any.Any,
-    eventMeta: MetaData
-  ) extends WriteTransitions
 }
