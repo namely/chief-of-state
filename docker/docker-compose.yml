@@ -3,8 +3,6 @@ version: '3.5'
 services:
   postgres:
     image: postgres
-    volumes:
-      - ./db:/docker-entrypoint-initdb.d
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
@@ -57,13 +55,22 @@ services:
       - 9095:9095
       - 5266:5266
     environment:
-      LOG_LEVEL: DEBUG
+      LOG_LEVEL: "INFO"
+      LOG_STYLE: "SIMPLE"
       GRPC_PORT: 9000
       WRITE_SIDE_HANDLER_SERVICE_HOST: host.docker.internal
       WRITE_SIDE_HANDLER_SERVICE_PORT: 50052
-      GRPC_CALLS_TIMEOUT: 5000
-      TRACE_HOST: tracer
-      TRACE_PORT: 14268
+      HANDLER_SERVICE_ENABLE_PROTO_VALIDATION: "false"
+      COS_JAEGER_ENABLED: "true"
+      JAEGER_HOST: tracer
+      JAEGER_PORT: 14268
+      JAEGER_SERVICE_NAME: "chiefofstate"
+      JAEGER_AGENT_HOST: "tracer"
+      JAEGER_AGENT_PORT: 5775
+      JAEGER_SAMPLER_TYPE: "const"
+      JAEGER_SAMPLER_PARAM: "1"
+      JAEGER_PROPAGATION: "b3"
+      GRPC_CALLS_TIMEOUT: 2000
       COS_SERVICE_NAME: "chiefofstate"
       COS_POSTGRES_USER: "postgres"
       COS_POSTGRES_PASSWORD: "changeme"
