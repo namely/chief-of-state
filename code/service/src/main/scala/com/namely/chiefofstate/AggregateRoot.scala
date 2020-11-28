@@ -12,6 +12,7 @@ import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate.config.{CosConfig, EventsConfig, SnapshotConfig}
 import com.namely.chiefofstate.Util.{toRpcStatus, Instants}
 import com.namely.chiefofstate.interceptors.OpentracingHelpers
+import com.namely.chiefofstate.WriteHandlerHelper.NoOpException
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, GetStateCommand, RemoteCommand, SendCommand}
 import com.namely.protobuf.chiefofstate.v1.persistence.{EventWrapper, StateWrapper}
@@ -23,7 +24,7 @@ import io.opentracing.util.GlobalTracer
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.duration.DurationInt
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 /**
  *  This is an event sourced actor.
@@ -55,7 +56,7 @@ object AggregateRoot {
     cosConfig: CosConfig,
     commandHandler: RemoteCommandHandler,
     eventHandler: RemoteEventHandler,
-    eventsAndStateProtoValidation: EventsAndStateProtosValidation
+    protosValidator: ProtosValidator
   ): Behavior[AggregateCommand] = {
     Behaviors.setup { context =>
       {
@@ -63,8 +64,7 @@ object AggregateRoot {
           .withEnforcedReplies[AggregateCommand, EventWrapper, StateWrapper](
             persistenceId,
             emptyState = initialState(persistenceId),
-            (state, command) =>
-              handleCommand(context, state, command, commandHandler, eventHandler, eventsAndStateProtoValidation),
+            (state, command) => handleCommand(context, state, command, commandHandler, eventHandler, protosValidator),
             (state, event) => handleEvent(state, event)
           )
           .withTagger(_ => Set(tags(cosConfig.eventsConfig)(shardIndex)))
@@ -90,18 +90,18 @@ object AggregateRoot {
     aggregateCommand: AggregateCommand,
     commandHandler: RemoteCommandHandler,
     eventHandler: RemoteEventHandler,
-    eventsAndStateProtoValidation: EventsAndStateProtosValidation
+    eventsAndStateProtoValidation: ProtosValidator
   ): ReplyEffect[EventWrapper, StateWrapper] = {
 
     log.debug("begin handle command")
 
-    val headers = aggregateCommand.command.tracingHeaders
+    val headers: Map[String, String] = aggregateCommand.command.tracingHeaders
 
-    val tracer = GlobalTracer.get()
+    val tracer: Tracer = GlobalTracer.get()
 
     val span: Span = OpentracingHelpers
       .getChildSpanBuilder(tracer, headers, "AggregateRoot.handleCommand")
-      .withTag(Tags.COMPONENT.getKey(), this.getClass().getName)
+      .withTag(Tags.COMPONENT.getKey, this.getClass.getName)
       .start()
 
     tracer.activateSpan(span)
@@ -146,9 +146,10 @@ object AggregateRoot {
    * @param replyTo address to reply to
    * @return a reply effect returning the state or an error
    */
-  def handleGetStateCommand(cmd: GetStateCommand,
-                            state: StateWrapper,
-                            replyTo: ActorRef[CommandReply]
+  def handleGetStateCommand(
+    cmd: GetStateCommand,
+    state: StateWrapper,
+    replyTo: ActorRef[CommandReply]
   ): ReplyEffect[EventWrapper, StateWrapper] = {
     if (state.meta.map(_.revisionNumber).getOrElse(0) > 0) {
       log.debug(s"found state for entity ${cmd.entityId}")
@@ -162,6 +163,85 @@ object AggregateRoot {
   }
 
   /**
+   * checks whether an event is present in the command handler response.
+   *
+   * @param handleCommandResponse the command handler response
+   */
+  private[chiefofstate] def requireNewEvent(handleCommandResponse: HandleCommandResponse): Unit = {
+    if (handleCommandResponse.event.isEmpty) throw NoOpException()
+  }
+
+  /**
+   * checks whether the resulting state is present in the event handler response.
+   *
+   * @param handleEventResponse the event handler response
+   */
+  private[chiefofstate] def requireNewState(handleEventResponse: HandleEventResponse): Unit = {
+    if (handleEventResponse.resultingState.isEmpty)
+      throw new IllegalArgumentException("requirement failed: event handler replied with empty state")
+  }
+
+  /**
+   * returns the new event meta based upon the prior state and additional data
+   *
+   * @param priorState the prior state
+   * @param data the additional data
+   * @return the new event meta
+   */
+  private[chiefofstate] def newEventMeta(
+    priorState: StateWrapper,
+    data: Map[String, com.google.protobuf.any.Any]
+  ): MetaData = {
+    MetaData()
+      .withRevisionNumber(priorState.getMeta.revisionNumber + 1)
+      .withRevisionDate(Instant.now().toTimestamp)
+      .withData(data)
+      .withEntityId(priorState.getMeta.entityId)
+  }
+
+  /**
+   * processes the write handler request flow
+   *
+   * @param priorState the prior state
+   * @param command the command to process
+   * @param commandHandler the command handler
+   * @param eventHandler the event handler
+   * @param protosValidator the protos validation
+   * @param data additional data
+   * @return
+   */
+  private def process(
+    command: RemoteCommand,
+    priorState: StateWrapper,
+    commandHandler: RemoteCommandHandler,
+    eventHandler: RemoteEventHandler,
+    protosValidator: ProtosValidator,
+    data: Map[String, com.google.protobuf.any.Any]
+  ): Try[(any.Any, any.Any, MetaData)] =
+    for {
+      // send the command to the command handler
+      cmdHandlerResponse <- commandHandler.handleCommand(command, priorState)
+
+      // validate the command handler response
+      _ <- Try(requireNewEvent(cmdHandlerResponse))
+
+      // check whether a valid event is emitted or not
+      _ <- Try(protosValidator.requireValidEvent(cmdHandlerResponse.getEvent))
+
+      // construct a new event meta data
+      newEventMeta <- Try(newEventMeta(priorState, data))
+
+      // call the event handler to obtain the resulting state
+      eventHandlerResponse <- eventHandler.handleEvent(cmdHandlerResponse.getEvent, priorState.getState, newEventMeta)
+
+      // validate the event handler response
+      _ <- Try(requireNewState(eventHandlerResponse))
+
+      // check whether the resulting state is valid or not
+      _ <- Try(protosValidator.requireValidState(eventHandlerResponse.getResultingState))
+    } yield (cmdHandlerResponse.getEvent, eventHandlerResponse.getResultingState, newEventMeta)
+
+  /**
    * hanlder for remote commands
    *
    * @param context actor context
@@ -170,82 +250,26 @@ object AggregateRoot {
    * @param replyTo the actor ref to reply to
    * @param commandHandler a command handler
    * @param eventHandler an event handler
-   * @param eventsAndStateProtoValidation a proto validator
+   * @param protosValidator a proto validator
    * @param data COS plugin data
    * @return a reply effect
    */
-  def handleRemoteCommand(context: ActorContext[AggregateCommand],
-                          priorState: StateWrapper,
-                          command: RemoteCommand,
-                          replyTo: ActorRef[CommandReply],
-                          commandHandler: RemoteCommandHandler,
-                          eventHandler: RemoteEventHandler,
-                          eventsAndStateProtoValidation: EventsAndStateProtosValidation,
-                          data: Map[String, com.google.protobuf.any.Any]
+  def handleRemoteCommand(
+    context: ActorContext[AggregateCommand],
+    priorState: StateWrapper,
+    command: RemoteCommand,
+    replyTo: ActorRef[CommandReply],
+    commandHandler: RemoteCommandHandler,
+    eventHandler: RemoteEventHandler,
+    protosValidator: ProtosValidator,
+    data: Map[String, com.google.protobuf.any.Any]
   ): ReplyEffect[EventWrapper, StateWrapper] = {
-    // send a request to the command handler to handle the given command
-    commandHandler
-      .handleCommand(command, priorState) match {
-      case Failure(exception) => replyWithErrors(exception, replyTo)
-
-      case Success(handleCommandResponse: HandleCommandResponse) =>
-        if (handleCommandResponse.event.isEmpty) {
-          Effect.reply(replyTo)(CommandReply().withState(priorState))
-        } else {
-          val event: any.Any = handleCommandResponse.getEvent
-          if (eventsAndStateProtoValidation.validateEvent(event)) {
-
-            val newEventMeta: MetaData = MetaData()
-              .withRevisionNumber(priorState.getMeta.revisionNumber + 1)
-              .withRevisionDate(Instant.now().toTimestamp)
-              .withData(data)
-              .withEntityId(priorState.getMeta.entityId)
-
-            val priorStateAny: com.google.protobuf.any.Any = priorState.getState
-
-            // send request to the event handler to handle the event returned by the command handler
-            eventHandler.handleEvent(event, priorStateAny, newEventMeta) match {
-              case Failure(exception) => replyWithErrors(exception, replyTo)
-
-              case Success(handleEventResponse: HandleEventResponse) =>
-                if (handleEventResponse.resultingState.isEmpty) {
-                  Effect.reply(replyTo)(
-                    CommandReply().withError(
-                      toRpcStatus(
-                        Status.INVALID_ARGUMENT.withDescription(
-                          "event handler replied with empty state"
-                        )
-                      )
-                    )
-                  )
-                } else {
-                  val newState: any.Any = handleEventResponse.getResultingState
-                  if (eventsAndStateProtoValidation.validateState(newState)) {
-                    persistEventAndReply(event, newState, newEventMeta, replyTo)
-                  } else {
-                    Effect.reply(replyTo)(
-                      CommandReply().withError(
-                        toRpcStatus(
-                          Status.INVALID_ARGUMENT.withDescription(
-                            s"invalid state: ${newState.typeUrl}"
-                          )
-                        )
-                      )
-                    )
-                  }
-                }
-            }
-          } else {
-            Effect.reply(replyTo)(
-              CommandReply().withError(
-                toRpcStatus(
-                  Status.INVALID_ARGUMENT.withDescription(
-                    s"invalid event: ${event.typeUrl}"
-                  )
-                )
-              )
-            )
-          }
+    process(command, priorState, commandHandler, eventHandler, protosValidator, data) match {
+      case Success((event, newState, meta)) => persistEventAndReply(event, newState, meta, replyTo)
+      case Failure(exception) =>
+        exception match {
+          case _: NoOpException => Effect.reply(replyTo)(CommandReply().withState(priorState))
+          case e                => handleException(e, replyTo)
         }
     }
   }
@@ -257,8 +281,9 @@ object AggregateRoot {
    * @param replyTo the receiver of the message
    * @return CommandReply message
    */
-  private[chiefofstate] def replyWithErrors(exception: Throwable,
-                                            replyTo: ActorRef[CommandReply]
+  private[chiefofstate] def handleException(
+    exception: Throwable,
+    replyTo: ActorRef[CommandReply]
   ): ReplyEffect[EventWrapper, StateWrapper] = {
     // propagate the traces
     OpentracingHelpers
@@ -369,4 +394,8 @@ object AggregateRoot {
       )
       .withState(any.Any.pack(Empty.defaultInstance))
   }
+}
+
+object WriteHandlerHelper {
+  case class NoOpException() extends RuntimeException
 }

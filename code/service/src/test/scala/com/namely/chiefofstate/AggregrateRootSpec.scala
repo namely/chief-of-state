@@ -210,8 +210,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
-        EventsAndStateProtosValidation(cosConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: ProtosValidator =
+        ProtosValidator(cosConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(persistenceId,
                                         shardIndex,
@@ -283,8 +283,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
-        EventsAndStateProtosValidation(cosConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: ProtosValidator =
+        ProtosValidator(cosConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(persistenceId,
                                         shardIndex,
@@ -340,8 +340,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
-        EventsAndStateProtosValidation(cosConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: ProtosValidator =
+        ProtosValidator(cosConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(persistenceId,
                                         shardIndex,
@@ -396,8 +396,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
-        EventsAndStateProtosValidation(cosConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: ProtosValidator =
+        ProtosValidator(cosConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(persistenceId,
                                         shardIndex,
@@ -461,8 +461,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
-        EventsAndStateProtosValidation(cosConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: ProtosValidator =
+        ProtosValidator(cosConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(persistenceId,
                                         shardIndex,
@@ -567,8 +567,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         RemoteCommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
-        EventsAndStateProtosValidation(mainConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: ProtosValidator =
+        ProtosValidator(mainConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(persistenceId,
                                         shardIndex,
@@ -683,8 +683,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         RemoteCommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
-        EventsAndStateProtosValidation(mainConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: ProtosValidator =
+        ProtosValidator(mainConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(persistenceId,
                                         shardIndex,
@@ -798,8 +798,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         RemoteCommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
-        EventsAndStateProtosValidation(mainConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: ProtosValidator =
+        ProtosValidator(mainConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(persistenceId,
                                         shardIndex,
@@ -871,8 +871,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
-        EventsAndStateProtosValidation(cosConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: ProtosValidator =
+        ProtosValidator(cosConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(persistenceId,
                                         shardIndex,
@@ -950,8 +950,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
-        EventsAndStateProtosValidation(cosConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: ProtosValidator =
+        ProtosValidator(cosConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(persistenceId,
                                         shardIndex,

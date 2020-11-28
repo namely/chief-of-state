@@ -8,7 +8,7 @@ import com.namely.chiefofstate.config.WriteSideConfig
  *
  * @param writeSideConfig the write side configuration
  */
-case class EventsAndStateProtosValidation(writeSideConfig: WriteSideConfig) {
+case class ProtosValidator(writeSideConfig: WriteSideConfig) {
 
   private val isValidationEnabled: Boolean = writeSideConfig.enableProtoValidation
   private val validEventsProtos: Seq[String] = writeSideConfig.eventsProtos
@@ -48,7 +48,7 @@ case class EventsAndStateProtosValidation(writeSideConfig: WriteSideConfig) {
    * @param event an event as an Any
    */
   def requireValidEvent(event: com.google.protobuf.any.Any): Unit = {
-    require(validateEvent(event), s"invalid event, ${event.typeUrl}")
+    require(validateEvent(event), s"invalid event: ${event.typeUrl}")
   }
 
   /**
@@ -57,6 +57,6 @@ case class EventsAndStateProtosValidation(writeSideConfig: WriteSideConfig) {
    * @param state a state as an Any
    */
   def requireValidState(state: com.google.protobuf.any.Any): Unit = {
-    require(validateState(state), s"invalid state, ${state.typeUrl}")
+    require(validateState(state), s"invalid state: ${state.typeUrl}")
   }
 }
