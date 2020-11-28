@@ -59,7 +59,6 @@ object Dependencies {
     "net.logstash.logback" % "logstash-logback-encoder" % Versions.LogstashLogbackVersion,
     "org.codehaus.janino" % "janino" % Versions.JaninoVersion,
     "org.scala-lang" % "scala-reflect" % Versions.ScalaVersion,
-
     // opentracing
     "io.opentracing" % "opentracing-api" % Versions.OpenTracing,
     "io.opentracing" % "opentracing-noop" % Versions.OpenTracing,

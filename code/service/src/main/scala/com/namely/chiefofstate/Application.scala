@@ -100,6 +100,9 @@ object Application extends App {
   // load the main application config
   val cosConfig: CosConfig = CosConfig(config)
 
+  // kick-start the journal and snapshot store creation
+  if (cosConfig.createDataStores) JournalAndSnapshotMigration(config).createSchemas()
+
   // instance of eventsAndStatesProtoValidation
   val eventsAndStateProtoValidation: ProtosValidator = ProtosValidator(
     cosConfig.writeSideConfig
