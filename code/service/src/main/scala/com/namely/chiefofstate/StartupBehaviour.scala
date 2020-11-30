@@ -8,7 +8,7 @@ object StartupBehaviour {
   def apply(config: Config, createStore: Boolean): Behavior[Nothing] = {
     Behaviors.setup[Nothing] { ctx =>
       if (createStore) {
-        ctx.log.info("kick-start the journal and snapshot store creation")
+        ctx.log.info("kick-starting the journal and snapshot store creation")
         val migration: JournalAndSnapshotMigration = JournalAndSnapshotMigration(config)
         migration.createSchemas()
       }
