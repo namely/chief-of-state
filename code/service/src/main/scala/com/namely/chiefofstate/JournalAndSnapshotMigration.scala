@@ -10,7 +10,6 @@ import slick.jdbc.PostgresProfile
  * Help create the journal and snapshot stores
  */
 case class JournalAndSnapshotMigration(config: Config) {
-  // $COVERAGE-OFF$
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   private val dc: DatabaseConfig[PostgresProfile] = DatabaseConfig.forConfig[PostgresProfile]("slick", config)
@@ -73,6 +72,4 @@ case class JournalAndSnapshotMigration(config: Config) {
       dc.db.close()
     }
   }
-
-  // $COVERAGE-ON$
 }
