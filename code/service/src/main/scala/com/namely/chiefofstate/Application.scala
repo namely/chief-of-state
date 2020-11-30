@@ -3,7 +3,6 @@ package com.namely.chiefofstate
 import java.net.InetSocketAddress
 
 import akka.actor.typed.ActorSystem
-import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
@@ -100,9 +99,6 @@ object Application extends App {
   // load the main application config
   val cosConfig: CosConfig = CosConfig(config)
 
-  // kick-start the journal and snapshot store creation
-  if (cosConfig.createDataStores) JournalAndSnapshotMigration(config).createSchemas()
-
   // instance of eventsAndStatesProtoValidation
   val eventsAndStateProtoValidation: ProtosValidator = ProtosValidator(
     cosConfig.writeSideConfig
@@ -110,7 +106,7 @@ object Application extends App {
 
   // boot the actor system
   val actorSystem: ActorSystem[Nothing] =
-    ActorSystem[Nothing](Behaviors.empty, "ChiefOfStateSystem", config)
+    ActorSystem[Nothing](StartupBehaviour(config, cosConfig.createDataStores), "ChiefOfStateSystem", config)
 
   // instance of the clusterSharding
   val sharding: ClusterSharding = ClusterSharding(actorSystem)
