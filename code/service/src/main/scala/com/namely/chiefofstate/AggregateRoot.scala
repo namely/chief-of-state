@@ -10,14 +10,13 @@ import akka.persistence.typed.scaladsl._
 import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate.config.{CosConfig, EventsConfig, SnapshotConfig}
-import com.namely.chiefofstate.Util.{toRpcStatus, Instants}
+import com.namely.chiefofstate.Util.{makeFailedStatusPf, toRpcStatus, Instants}
 import com.namely.chiefofstate.interceptors.OpentracingHelpers
-import com.namely.chiefofstate.WriteHandlerHelper.NoOpException
+import com.namely.chiefofstate.WriteHandlerHelpers.{NewState, NoOp}
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, GetStateCommand, RemoteCommand, SendCommand}
 import com.namely.protobuf.chiefofstate.v1.persistence.{EventWrapper, StateWrapper}
-import com.namely.protobuf.chiefofstate.v1.writeside.{HandleCommandResponse, HandleEventResponse}
-import io.grpc.Status
+import io.grpc.{Status, StatusException}
 import io.opentracing.{Span, Tracer}
 import io.opentracing.tag.Tags
 import io.opentracing.util.GlobalTracer
@@ -90,18 +89,18 @@ object AggregateRoot {
     aggregateCommand: AggregateCommand,
     commandHandler: RemoteCommandHandler,
     eventHandler: RemoteEventHandler,
-    eventsAndStateProtoValidation: ProtosValidator
+    protosValidator: ProtosValidator
   ): ReplyEffect[EventWrapper, StateWrapper] = {
 
     log.debug("begin handle command")
 
-    val headers: Map[String, String] = aggregateCommand.command.tracingHeaders
+    val headers = aggregateCommand.command.tracingHeaders
 
-    val tracer: Tracer = GlobalTracer.get()
+    val tracer = GlobalTracer.get()
 
     val span: Span = OpentracingHelpers
       .getChildSpanBuilder(tracer, headers, "AggregateRoot.handleCommand")
-      .withTag(Tags.COMPONENT.getKey, this.getClass.getName)
+      .withTag(Tags.COMPONENT.getKey(), this.getClass().getName)
       .start()
 
     tracer.activateSpan(span)
@@ -125,7 +124,7 @@ object AggregateRoot {
                             aggregateCommand.replyTo,
                             commandHandler,
                             eventHandler,
-                            eventsAndStateProtoValidation,
+                            protosValidator,
                             aggregateCommand.data
         )
 
@@ -146,10 +145,9 @@ object AggregateRoot {
    * @param replyTo address to reply to
    * @return a reply effect returning the state or an error
    */
-  def handleGetStateCommand(
-    cmd: GetStateCommand,
-    state: StateWrapper,
-    replyTo: ActorRef[CommandReply]
+  def handleGetStateCommand(cmd: GetStateCommand,
+                            state: StateWrapper,
+                            replyTo: ActorRef[CommandReply]
   ): ReplyEffect[EventWrapper, StateWrapper] = {
     if (state.meta.map(_.revisionNumber).getOrElse(0) > 0) {
       log.debug(s"found state for entity ${cmd.entityId}")
@@ -161,85 +159,6 @@ object AggregateRoot {
       )
     }
   }
-
-  /**
-   * checks whether an event is present in the command handler response.
-   *
-   * @param handleCommandResponse the command handler response
-   */
-  private[chiefofstate] def requireNewEvent(handleCommandResponse: HandleCommandResponse): Unit = {
-    if (handleCommandResponse.event.isEmpty) throw NoOpException()
-  }
-
-  /**
-   * checks whether the resulting state is present in the event handler response.
-   *
-   * @param handleEventResponse the event handler response
-   */
-  private[chiefofstate] def requireNewState(handleEventResponse: HandleEventResponse): Unit = {
-    if (handleEventResponse.resultingState.isEmpty)
-      throw new IllegalArgumentException("requirement failed: event handler replied with empty state")
-  }
-
-  /**
-   * returns the new event meta based upon the prior state and additional data
-   *
-   * @param priorState the prior state
-   * @param data the additional data
-   * @return the new event meta
-   */
-  private[chiefofstate] def newEventMeta(
-    priorState: StateWrapper,
-    data: Map[String, com.google.protobuf.any.Any]
-  ): MetaData = {
-    MetaData()
-      .withRevisionNumber(priorState.getMeta.revisionNumber + 1)
-      .withRevisionDate(Instant.now().toTimestamp)
-      .withData(data)
-      .withEntityId(priorState.getMeta.entityId)
-  }
-
-  /**
-   * processes the write handler request flow
-   *
-   * @param priorState the prior state
-   * @param command the command to process
-   * @param commandHandler the command handler
-   * @param eventHandler the event handler
-   * @param protosValidator the protos validation
-   * @param data additional data
-   * @return
-   */
-  private def process(
-    command: RemoteCommand,
-    priorState: StateWrapper,
-    commandHandler: RemoteCommandHandler,
-    eventHandler: RemoteEventHandler,
-    protosValidator: ProtosValidator,
-    data: Map[String, com.google.protobuf.any.Any]
-  ): Try[(any.Any, any.Any, MetaData)] =
-    for {
-      // send the command to the command handler
-      cmdHandlerResponse <- commandHandler.handleCommand(command, priorState)
-
-      // validate the command handler response
-      _ <- Try(requireNewEvent(cmdHandlerResponse))
-
-      // check whether a valid event is emitted or not
-      _ <- Try(protosValidator.requireValidEvent(cmdHandlerResponse.getEvent))
-
-      // construct a new event meta data
-      newEventMeta <- Try(newEventMeta(priorState, data))
-
-      // call the event handler to obtain the resulting state
-      eventHandlerResponse <- eventHandler.handleEvent(cmdHandlerResponse.getEvent, priorState.getState, newEventMeta)
-
-      // validate the event handler response
-      _ <- Try(requireNewState(eventHandlerResponse))
-
-      // check whether the resulting state is valid or not
-      _ <- Try(protosValidator.requireValidState(eventHandlerResponse.getResultingState))
-    } yield (cmdHandlerResponse.getEvent, eventHandlerResponse.getResultingState, newEventMeta)
 
   /**
    * hanlder for remote commands
@@ -254,45 +173,75 @@ object AggregateRoot {
    * @param data COS plugin data
    * @return a reply effect
    */
-  def handleRemoteCommand(
-    context: ActorContext[AggregateCommand],
-    priorState: StateWrapper,
-    command: RemoteCommand,
-    replyTo: ActorRef[CommandReply],
-    commandHandler: RemoteCommandHandler,
-    eventHandler: RemoteEventHandler,
-    protosValidator: ProtosValidator,
-    data: Map[String, com.google.protobuf.any.Any]
+  def handleRemoteCommand(context: ActorContext[AggregateCommand],
+                          priorState: StateWrapper,
+                          command: RemoteCommand,
+                          replyTo: ActorRef[CommandReply],
+                          commandHandler: RemoteCommandHandler,
+                          eventHandler: RemoteEventHandler,
+                          protosValidator: ProtosValidator,
+                          data: Map[String, com.google.protobuf.any.Any]
   ): ReplyEffect[EventWrapper, StateWrapper] = {
-    process(command, priorState, commandHandler, eventHandler, protosValidator, data) match {
-      case Success((event, newState, meta)) => persistEventAndReply(event, newState, meta, replyTo)
-      case Failure(exception) =>
-        exception match {
-          case _: NoOpException => Effect.reply(replyTo)(CommandReply().withState(priorState))
-          case e                => handleException(e, replyTo)
-        }
+
+    val handlerOutput: Try[WriteHandlerHelpers.WriteTransitions] = commandHandler
+      .handleCommand(command, priorState)
+      .map(_.event match {
+        case Some(newEvent) =>
+          protosValidator.requireValidEvent(newEvent)
+          WriteHandlerHelpers.NewEvent(newEvent)
+
+        case None =>
+          WriteHandlerHelpers.NoOp
+      })
+      .flatMap({
+        case WriteHandlerHelpers.NewEvent(newEvent) =>
+          val newEventMeta: MetaData = MetaData()
+            .withRevisionNumber(priorState.getMeta.revisionNumber + 1)
+            .withRevisionDate(Instant.now().toTimestamp)
+            .withData(data)
+            .withEntityId(priorState.getMeta.entityId)
+
+          val priorStateAny: com.google.protobuf.any.Any = priorState.getState
+
+          eventHandler
+            .handleEvent(newEvent, priorStateAny, newEventMeta)
+            .map(response => {
+              require(response.resultingState.isDefined, "event handler replied with empty state")
+              protosValidator.requireValidState(response.getResultingState)
+              WriteHandlerHelpers.NewState(newEvent, response.getResultingState, newEventMeta)
+            })
+
+        case x =>
+          Success(x)
+      })
+      .recoverWith(makeFailedStatusPf)
+
+    handlerOutput match {
+      case Success(NoOp) =>
+        Effect.reply(replyTo)(CommandReply().withState(priorState))
+
+      case Success(NewState(event, newState, eventMeta)) =>
+        persistEventAndReply(event, newState, eventMeta, replyTo)
+
+      case Failure(e: StatusException) =>
+        OpentracingHelpers
+          .reportErrorToTracer(tracer, e)
+
+        Effect.reply(replyTo)(
+          CommandReply().withError(toRpcStatus(e.getStatus))
+        )
+
+      case x =>
+        // this should never happen, but here for code completeness
+        val errStatus = Status.INTERNAL
+          .withDescription(s"write handler failure, ${x.getClass}")
+
+        OpentracingHelpers.reportErrorToTracer(tracer, errStatus.asException())
+
+        Effect.reply(replyTo)(
+          CommandReply().withError(toRpcStatus(errStatus))
+        )
     }
-  }
-
-  /**
-   * sends a CommandReply with error response
-   *
-   * @param exception the error object
-   * @param replyTo the receiver of the message
-   * @return CommandReply message
-   */
-  private[chiefofstate] def handleException(
-    exception: Throwable,
-    replyTo: ActorRef[CommandReply]
-  ): ReplyEffect[EventWrapper, StateWrapper] = {
-    // propagate the traces
-    OpentracingHelpers
-      .reportErrorToTracer(tracer, exception)
-
-    // send the reply
-    Effect.reply(replyTo)(
-      CommandReply().withError(toRpcStatus(Util.makeStatusException(exception).getStatus))
-    )
   }
 
   /**
@@ -396,6 +345,14 @@ object AggregateRoot {
   }
 }
 
-object WriteHandlerHelper {
-  case class NoOpException() extends RuntimeException
+object WriteHandlerHelpers {
+  sealed trait WriteTransitions
+  case object NoOp extends WriteTransitions
+  case class NewEvent(event: com.google.protobuf.any.Any) extends WriteTransitions
+
+  case class NewState(
+    event: com.google.protobuf.any.Any,
+    state: com.google.protobuf.any.Any,
+    eventMeta: MetaData
+  ) extends WriteTransitions
 }
