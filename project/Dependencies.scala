@@ -25,6 +25,8 @@ object Dependencies {
     val OpenTracing: String = "0.33.0"
     val OpenTracingContrib: String = "0.2.3"
     val OpenTracingJaeger: String = "1.4.0"
+
+    val EmbeddedPostgresVersion = "1.2.9"
   }
 
   import Dependencies.Versions._
@@ -71,6 +73,7 @@ object Dependencies {
     "org.scalatest" %% "scalatest" % ScalaTestVersion % Test,
     "org.scalamock" %% "scalamock" % ScalaMockVersion % Test,
     "io.grpc" % "grpc-testing" % grpcJavaVersion % Test,
+    "io.zonky.test" % "embedded-postgres" % EmbeddedPostgresVersion % Test,
     // opentracing
     "io.opentracing" % "opentracing-mock" % Versions.OpenTracing
   )

@@ -61,29 +61,29 @@ lazy val protogen: Project = project
   )
 
 lazy val protogenTest: Project = project
-.in(file("code/.protogen_test"))
-.enablePlugins(Common)
-.enablePlugins(BuildSettings)
-.enablePlugins(NoPublish)
-.settings(name := "protogen_test")
-.settings(
-  inConfig(Compile)(
-    Seq(
-      PB.protoSources := Seq(
-        file("proto/test")
-      ),
-      PB.includePaths := Seq(
-        file("proto/test"),
-        // includes external protobufs (like google dependencies)
-        baseDirectory.value / "target/protobuf_external"
-      ),
-      PB.targets := Seq(
-        scalapb.gen(
-          flatPackage = false,
-          javaConversions = false,
-          grpc = true
-        ) -> (sourceManaged in Compile).value / "scalapb"
+  .in(file("code/.protogen_test"))
+  .enablePlugins(Common)
+  .enablePlugins(BuildSettings)
+  .enablePlugins(NoPublish)
+  .settings(name := "protogen_test")
+  .settings(
+    inConfig(Compile)(
+      Seq(
+        PB.protoSources := Seq(
+          file("proto/test")
+        ),
+        PB.includePaths := Seq(
+          file("proto/test"),
+          // includes external protobufs (like google dependencies)
+          baseDirectory.value / "target/protobuf_external"
+        ),
+        PB.targets := Seq(
+          scalapb.gen(
+            flatPackage = false,
+            javaConversions = false,
+            grpc = true
+          ) -> (sourceManaged in Compile).value / "scalapb"
+        )
       )
     )
   )
-)
