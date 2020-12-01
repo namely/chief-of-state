@@ -3,27 +3,26 @@ package com.namely.chiefofstate
 import java.net.InetSocketAddress
 
 import akka.actor.typed.ActorSystem
-import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
+import com.namely.chiefofstate.interceptors.{ErrorsServerInterceptor, GrpcHeadersInterceptor}
 import com.namely.chiefofstate.plugin.PluginManager
-import com.namely.chiefofstate.interceptors.GrpcHeadersInterceptor
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.typesafe.config.{Config, ConfigFactory}
 import io.grpc.{ManagedChannel, Server, ServerInterceptors}
 import io.grpc.netty.{NettyChannelBuilder, NettyServerBuilder}
-import org.slf4j.{Logger, LoggerFactory}
-import scala.concurrent.ExecutionContext
 import io.opentracing.Tracer
-import io.opentracing.util.GlobalTracer
 import io.opentracing.contrib.grpc.TracingServerInterceptor
-import com.namely.chiefofstate.interceptors.ErrorsServerInterceptor
+import io.opentracing.util.GlobalTracer
+import org.slf4j.{Logger, LoggerFactory}
+
+import scala.concurrent.ExecutionContext
 
 class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, pluginManager: PluginManager) {
   self =>
@@ -101,13 +100,13 @@ object Application extends App {
   val cosConfig: CosConfig = CosConfig(config)
 
   // instance of eventsAndStatesProtoValidation
-  val eventsAndStateProtoValidation: EventsAndStateProtosValidation = EventsAndStateProtosValidation(
+  val eventsAndStateProtoValidation: ProtosValidator = ProtosValidator(
     cosConfig.writeSideConfig
   )
 
   // boot the actor system
   val actorSystem: ActorSystem[Nothing] =
-    ActorSystem[Nothing](Behaviors.empty, "ChiefOfStateSystem", config)
+    ActorSystem[Nothing](StartupBehaviour(config, cosConfig.createDataStores), "ChiefOfStateSystem", config)
 
   // instance of the clusterSharding
   val sharding: ClusterSharding = ClusterSharding(actorSystem)

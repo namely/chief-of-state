@@ -1,5 +1,7 @@
 package com.namely.chiefofstate
 
+import java.time.Instant
+
 import akka.actor.typed.{ActorRef, Behavior, SupervisorStrategy}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
@@ -15,14 +17,13 @@ import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, GetStateCommand, RemoteCommand, SendCommand}
 import com.namely.protobuf.chiefofstate.v1.persistence.{EventWrapper, StateWrapper}
 import io.grpc.{Status, StatusException}
-import org.slf4j.{Logger, LoggerFactory}
+import io.opentracing.{Span, Tracer}
+import io.opentracing.tag.Tags
 import io.opentracing.util.GlobalTracer
+import org.slf4j.{Logger, LoggerFactory}
+
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
-import io.opentracing.Span
-import io.opentracing.tag.Tags
-import java.time.Instant
-import io.opentracing.Tracer
 
 /**
  *  This is an event sourced actor.
@@ -54,7 +55,7 @@ object AggregateRoot {
     cosConfig: CosConfig,
     commandHandler: RemoteCommandHandler,
     eventHandler: RemoteEventHandler,
-    eventsAndStateProtoValidation: EventsAndStateProtosValidation
+    protosValidator: ProtosValidator
   ): Behavior[AggregateCommand] = {
     Behaviors.setup { context =>
       {
@@ -62,8 +63,7 @@ object AggregateRoot {
           .withEnforcedReplies[AggregateCommand, EventWrapper, StateWrapper](
             persistenceId,
             emptyState = initialState(persistenceId),
-            (state, command) =>
-              handleCommand(context, state, command, commandHandler, eventHandler, eventsAndStateProtoValidation),
+            (state, command) => handleCommand(context, state, command, commandHandler, eventHandler, protosValidator),
             (state, event) => handleEvent(state, event)
           )
           .withTagger(_ => Set(tags(cosConfig.eventsConfig)(shardIndex)))
@@ -89,7 +89,7 @@ object AggregateRoot {
     aggregateCommand: AggregateCommand,
     commandHandler: RemoteCommandHandler,
     eventHandler: RemoteEventHandler,
-    eventsAndStateProtoValidation: EventsAndStateProtosValidation
+    protosValidator: ProtosValidator
   ): ReplyEffect[EventWrapper, StateWrapper] = {
 
     log.debug("begin handle command")
@@ -124,7 +124,7 @@ object AggregateRoot {
                             aggregateCommand.replyTo,
                             commandHandler,
                             eventHandler,
-                            eventsAndStateProtoValidation,
+                            protosValidator,
                             aggregateCommand.data
         )
 
@@ -169,7 +169,7 @@ object AggregateRoot {
    * @param replyTo the actor ref to reply to
    * @param commandHandler a command handler
    * @param eventHandler an event handler
-   * @param eventsAndStateProtoValidation a proto validator
+   * @param protosValidator a proto validator
    * @param data COS plugin data
    * @return a reply effect
    */
@@ -179,7 +179,7 @@ object AggregateRoot {
                           replyTo: ActorRef[CommandReply],
                           commandHandler: RemoteCommandHandler,
                           eventHandler: RemoteEventHandler,
-                          eventsAndStateProtoValidation: EventsAndStateProtosValidation,
+                          protosValidator: ProtosValidator,
                           data: Map[String, com.google.protobuf.any.Any]
   ): ReplyEffect[EventWrapper, StateWrapper] = {
 
@@ -187,7 +187,7 @@ object AggregateRoot {
       .handleCommand(command, priorState)
       .map(_.event match {
         case Some(newEvent) =>
-          eventsAndStateProtoValidation.requireValidEvent(newEvent)
+          protosValidator.requireValidEvent(newEvent)
           WriteHandlerHelpers.NewEvent(newEvent)
 
         case None =>
@@ -207,7 +207,7 @@ object AggregateRoot {
             .handleEvent(newEvent, priorStateAny, newEventMeta)
             .map(response => {
               require(response.resultingState.isDefined, "event handler replied with empty state")
-              eventsAndStateProtoValidation.requireValidState(response.getResultingState)
+              protosValidator.requireValidState(response.getResultingState)
               WriteHandlerHelpers.NewState(newEvent, response.getResultingState, newEventMeta)
             })
 
@@ -309,8 +309,7 @@ object AggregateRoot {
    *
    * @param event the event to persist
    * @param resultingState the resulting state to persist
-   * @param priorMeta the prior meta before the event to be persisted
-   * @param data the additional data to persist
+   * @param eventMeta the prior meta before the event to be persisted
    * @param replyTo the caller ref receiving the reply when persistence is successful
    * @return a reply effect
    */

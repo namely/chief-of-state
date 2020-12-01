@@ -6,7 +6,7 @@ import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened}
 import com.typesafe.config.{Config, ConfigFactory}
 
-class EventsAndStateProtosValidationSpec extends BaseSpec {
+class ProtosValidatorSpec extends BaseSpec {
   "Events and State protos validation" should {
     "pass through successfully when validation is disabled" in {
       val config: Config = ConfigFactory.parseString(s"""
@@ -23,8 +23,8 @@ class EventsAndStateProtosValidationSpec extends BaseSpec {
           """)
       val writeSideConfig: WriteSideConfig = WriteSideConfig(config)
 
-      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
-        EventsAndStateProtosValidation(writeSideConfig)
+      val eventsAndStateProtosValidation: ProtosValidator =
+        ProtosValidator(writeSideConfig)
       val event = AccountOpened()
       val state = Account()
       var isValid = eventsAndStateProtosValidation.validateEvent(Any.pack(event))
@@ -48,8 +48,8 @@ class EventsAndStateProtosValidationSpec extends BaseSpec {
           """)
       val writeSideConfig: WriteSideConfig = WriteSideConfig(config)
 
-      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
-        EventsAndStateProtosValidation(writeSideConfig)
+      val eventsAndStateProtosValidation: ProtosValidator =
+        ProtosValidator(writeSideConfig)
       val event = AccountOpened()
       val state = Account()
       var isValid = eventsAndStateProtosValidation.validateEvent(Any.pack(event))
@@ -73,8 +73,8 @@ class EventsAndStateProtosValidationSpec extends BaseSpec {
           """)
       val writeSideConfig: WriteSideConfig = WriteSideConfig(config)
 
-      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
-        EventsAndStateProtosValidation(writeSideConfig)
+      val eventsAndStateProtosValidation: ProtosValidator =
+        ProtosValidator(writeSideConfig)
       val event = AccountOpened()
       val state = Account()
       var isValid = eventsAndStateProtosValidation.validateEvent(Any.pack(event))
@@ -98,8 +98,8 @@ class EventsAndStateProtosValidationSpec extends BaseSpec {
           """)
       val writeSideConfig: WriteSideConfig = WriteSideConfig(config)
 
-      val eventsAndStateProtosValidation: EventsAndStateProtosValidation =
-        EventsAndStateProtosValidation(writeSideConfig)
+      val eventsAndStateProtosValidation: ProtosValidator =
+        ProtosValidator(writeSideConfig)
 
       val event: AccountOpened = AccountOpened()
       val state: Account = Account()
