@@ -1,31 +1,19 @@
-package com.namely.chiefofstate.telemetry
+package com.namely.chiefofstate.common.telemetry
 
-import com.namely.chiefofstate.helper.{BaseSpec, GrpcHelpers}
-import io.opentracing.contrib.grpc.TracingClientInterceptor
+import com.namely.protobuf.reportbuilder.v1.helloworld.{GreeterGrpc, HelloReply, HelloRequest}
+import com.namely.protobuf.reportbuilder.v1.helloworld.GreeterGrpc.Greeter
+import com.namely.chiefofstate.common.TestSpec
+import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
+import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
 import io.opentracing.log.Fields
 import io.opentracing.mock._
-import com.namely.protobuf.chiefofstate.test.ping_service.PingServiceGrpc
-import io.grpc.ManagedChannel
-import scala.concurrent.Future
-import io.grpc.inprocess.InProcessServerBuilder
-import io.grpc.inprocess.InProcessChannelBuilder
-import io.opentracing.util.GlobalTracer
-import io.grpc.Status
-import com.namely.protobuf.chiefofstate.test.ping_service.Ping
-import scala.util.Try
-import scala.jdk.CollectionConverters._
+
 import scala.concurrent.ExecutionContext.global
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
+import scala.util.Try
 
-class ErrorsClientInterceptorSpec extends BaseSpec {
-  import GrpcHelpers.Closeables
-
-  // define set of resources to close after each test
-  val closeables: Closeables = new Closeables()
-
-  override protected def afterEach(): Unit = {
-    closeables.closeAll()
-    super.afterEach()
-  }
+class ErrorsClientInterceptorSpec extends TestSpec {
 
   "interceptor" should {
     "report a server error" in {
@@ -35,14 +23,14 @@ class ErrorsClientInterceptorSpec extends BaseSpec {
       val serverName: String = InProcessServerBuilder.generateName();
 
       // mock the service return an error
-      val serviceImpl: PingServiceGrpc.PingService = mock[PingServiceGrpc.PingService]
+      val serviceImpl: Greeter = mock[Greeter]
       val err: Throwable = Status.ABORTED.withDescription("inner exception").asException()
 
-      (serviceImpl.send _)
+      (serviceImpl.sayHello _)
         .expects(*)
         .returning(Future.failed(err))
 
-      val service = PingServiceGrpc.bindService(serviceImpl, global)
+      val service: ServerServiceDefinition = Greeter.bindService(serviceImpl, global)
 
       // register a server that intercepts traces and reports errors
       closeables.register(
@@ -54,23 +42,22 @@ class ErrorsClientInterceptorSpec extends BaseSpec {
           .start()
       )
 
-      val errorInterceptor = new ErrorsClientInterceptor(tracer)
+      val errorInterceptor: ErrorsClientInterceptor = new ErrorsClientInterceptor(tracer)
 
-      val channel: ManagedChannel = {
-        closeables.register(
+      val channel: ManagedChannel =
+        closeables.registerChannel(
           InProcessChannelBuilder
             .forName(serverName)
             .directExecutor()
             .intercept(errorInterceptor)
             .build()
         )
-      }
 
       // start a span and send a message that fails
-      val span = tracer.buildSpan("outer").ignoreActiveSpan.start()
+      val span: MockSpan = tracer.buildSpan("outer").ignoreActiveSpan.start()
       tracer.activateSpan(span)
-      val stub = PingServiceGrpc.blockingStub(channel)
-      val actual = Try(stub.send(Ping("foo")))
+      val stub: GreeterGrpc.GreeterBlockingStub = GreeterGrpc.blockingStub(channel)
+      val actual: Try[HelloReply] = Try(stub.sayHello(HelloRequest("foo")))
       span.finish()
 
       actual.isFailure shouldBe true
@@ -85,7 +72,7 @@ class ErrorsClientInterceptorSpec extends BaseSpec {
       finishedSpans.length shouldBe 1
 
       // confirm error is in the logs
-      val logs = finishedSpans.flatMap(_.logEntries().asScala.toSeq).toSeq
+      val logs: Seq[MockSpan.LogEntry] = finishedSpans.flatMap(_.logEntries().asScala.toSeq)
       logs.size shouldBe 1
       logs.head.fields().asScala(Fields.EVENT) shouldBe "error"
       logs.head.fields().asScala(Fields.MESSAGE) shouldBe err.getMessage

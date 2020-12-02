@@ -1,4 +1,4 @@
-package com.namely.chiefofstate.telemetry
+package com.namely.chiefofstate.common.telemetry
 
 import io.grpc.ServerInterceptor
 import io.grpc.{Metadata, ServerCall, ServerCallHandler}
@@ -25,9 +25,10 @@ class ErrorsServerInterceptor(tracer: Tracer) extends ServerInterceptor {
    * @param next the call handler
    * @return a listener
    */
-  override def interceptCall[T, U](call: ServerCall[T, U],
-                                   headers: Metadata,
-                                   next: ServerCallHandler[T, U]
+  override def interceptCall[T, U](
+      call: ServerCall[T, U],
+      headers: Metadata,
+      next: ServerCallHandler[T, U]
   ): Listener[T] = {
 
     import ErrorsServerInterceptor.logger
