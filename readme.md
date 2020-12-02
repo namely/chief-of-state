@@ -100,6 +100,8 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 | COS_JOURNAL_LOGICAL_DELETION | Event deletion is triggered after saving a new snapshot. Old events would be deleted prior to old snapshots being deleted. | false |
 | COS_COMMAND_HANDLER_TIMEOUT | Timeout required for the Aggregate to process command and reply. The value is in seconds. | 5 |
 | COS_JAEGER_ENABLED | Enable tracing (see below for more options) | false |
+| PROMETHEUS_ROUTE | route for prometheus to scrap metrics | "metrics" |
+  | PROMETHEUS_PORT | port for prometheus to scrap metrics | 9102 |
 
 ### Tracing configuration
 
