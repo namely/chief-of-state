@@ -11,6 +11,9 @@ import io.opentracing.Tracer
 import io.opentracing.util.GlobalTracer
 
 case class TelemetryTools(config: Config, serviceName: String) {
+
+  val GRPC_STATUS_LABEL: String = "grpc.status"
+
   val logger: Logger = LoggerFactory.getLogger(getClass)
   // create a composite registry
   val compositeRegistry = new CompositeMeterRegistry()
@@ -22,6 +25,7 @@ case class TelemetryTools(config: Config, serviceName: String) {
     .newMetricsReporter()
     .withRegistry(compositeRegistry)
     .withName(serviceName)
+    .withTagLabel(GRPC_STATUS_LABEL, "")
     .build()
   // create & register jaeger tracer
   val jaegerTracer: Tracer = io.jaegertracing.Configuration.fromEnv().getTracer
