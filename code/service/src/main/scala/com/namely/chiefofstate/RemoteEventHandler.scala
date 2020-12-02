@@ -11,7 +11,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.util.Try
 import io.opentracing.contrib.grpc.TracingClientInterceptor
 import io.opentracing.util.GlobalTracer
-import com.namely.chiefofstate.interceptors.ErrorsClientInterceptor
+import com.namely.chiefofstate.telemetry.ErrorsClientInterceptor
 import com.google.protobuf.any
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 

@@ -1,4 +1,4 @@
-package com.namely.chiefofstate.interceptors
+package com.namely.chiefofstate.telemetry
 
 import io.opentracing.util.GlobalTracer
 import scala.collection.mutable

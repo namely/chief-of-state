@@ -1,4 +1,4 @@
-package com.namely.chiefofstate.interceptors
+package com.namely.chiefofstate.telemetry
 
 import io.grpc.ServerInterceptor
 import io.grpc.{Metadata, ServerCall, ServerCallHandler}

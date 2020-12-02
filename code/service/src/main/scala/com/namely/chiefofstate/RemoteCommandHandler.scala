@@ -16,7 +16,7 @@ import scala.util.Try
 import io.opentracing.util.GlobalTracer
 import io.opentracing.tag.Tags
 import io.opentracing.contrib.grpc.TracingClientInterceptor
-import com.namely.chiefofstate.interceptors.ErrorsClientInterceptor
+import com.namely.chiefofstate.telemetry.ErrorsClientInterceptor
 
 /**
  * handles command via a gRPC call

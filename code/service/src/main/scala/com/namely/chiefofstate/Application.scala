@@ -9,7 +9,7 @@ import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
-import com.namely.chiefofstate.interceptors.{ErrorsServerInterceptor, GrpcHeadersInterceptor}
+import com.namely.chiefofstate.telemetry.{ErrorsServerInterceptor, GrpcHeadersInterceptor}
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService

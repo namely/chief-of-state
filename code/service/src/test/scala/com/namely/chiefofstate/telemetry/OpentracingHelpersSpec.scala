@@ -1,4 +1,4 @@
-package com.namely.chiefofstate.interceptors
+package com.namely.chiefofstate.telemetry
 
 import com.namely.chiefofstate.helper.BaseSpec
 import io.grpc.stub.MetadataUtils

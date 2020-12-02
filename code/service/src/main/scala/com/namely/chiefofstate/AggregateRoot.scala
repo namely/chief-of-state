@@ -11,7 +11,7 @@ import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate.config.{CosConfig, EventsConfig, SnapshotConfig}
 import com.namely.chiefofstate.Util.{makeFailedStatusPf, toRpcStatus, Instants}
-import com.namely.chiefofstate.interceptors.OpentracingHelpers
+import com.namely.chiefofstate.telemetry.OpentracingHelpers
 import com.namely.chiefofstate.WriteHandlerHelpers.{NewState, NoOp}
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, GetStateCommand, RemoteCommand, SendCommand}

@@ -1,4 +1,4 @@
-package com.namely.chiefofstate.interceptors
+package com.namely.chiefofstate.telemetry
 
 import io.opentracing.Tracer
 import io.grpc.ClientInterceptor

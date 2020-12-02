@@ -20,7 +20,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-import com.namely.chiefofstate.interceptors.GrpcHeadersInterceptor
+import com.namely.chiefofstate.telemetry.GrpcHeadersInterceptor
 import io.opentracing.util.GlobalTracer
 import io.opentracing.propagation.Format
 import io.opentracing.propagation.TextMap
@@ -30,7 +30,7 @@ import io.opentracing.propagation.TextMapInjectAdapter
 import scala.jdk.CollectionConverters._
 import scala.collection.mutable
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc
-import com.namely.chiefofstate.interceptors.OpentracingHelpers
+import com.namely.chiefofstate.telemetry.OpentracingHelpers
 import io.opentracing.tag.Tags
 import io.opentracing.Span
 
