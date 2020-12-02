@@ -1,20 +1,14 @@
-package com.namely.chiefofstate.interceptors
+package com.namely.chiefofstate.telemetry
 
 import com.namely.chiefofstate.helper.BaseSpec
-import io.grpc.stub.MetadataUtils
-import io.grpc.Metadata
-import io.opentracing.mock.MockSpan
-import io.opentracing.mock.MockTracer
-import io.opentracing.Span
-import io.opentracing.Tracer
-import io.opentracing.util.GlobalTracer
+import io.opentracing.mock.{MockSpan, MockTracer}
+import io.opentracing.{Span, Tracer}
 import io.opentracing.Tracer.SpanBuilder
-import io.opentracing.tag.Tags
-import scala.util.Try
 import io.opentracing.log.Fields
+import io.opentracing.tag.Tags
+
 import scala.jdk.CollectionConverters._
-import scala.collection.mutable
-import com.namely.chiefofstate.helper.GrpcHelpers
+import scala.util.Try
 
 class OpentracingHelpersSpec extends BaseSpec {
 
@@ -157,7 +151,7 @@ class OpentracingHelpersSpec extends BaseSpec {
       tracer.activeSpan() shouldBe null
       val e = new Exception("its broken")
       val actual: Try[Unit] = OpentracingHelpers.reportErrorToTracer(tracer, e)
-      actual.isFailure shouldBe (true)
+      actual.isFailure shouldBe true
     }
     "tag active span with error" in {
       val tracer: MockTracer = new MockTracer(MockTracer.Propagator.TEXT_MAP)
@@ -181,7 +175,7 @@ class OpentracingHelpersSpec extends BaseSpec {
       val finishedSpan = finishedSpans.head
       val actualTags = finishedSpan.tags().asScala
       val actualLogs = finishedSpan.logEntries().asScala
-      actualLogs.size shouldBe (1)
+      actualLogs.size shouldBe 1
       val logMap = actualLogs.head.fields().asScala
       // assert he tags
       actualTags.get(Tags.ERROR.getKey()) shouldBe Some(true)

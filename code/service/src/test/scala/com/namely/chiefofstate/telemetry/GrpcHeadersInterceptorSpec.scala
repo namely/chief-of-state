@@ -1,22 +1,17 @@
-package com.namely.chiefofstate.interceptors
+package com.namely.chiefofstate.telemetry
 
+import com.namely.protobuf.chiefofstate.test.helloworld.{GreeterGrpc, HelloReply, HelloRequest}
+import com.namely.protobuf.chiefofstate.test.helloworld.GreeterGrpc.Greeter
 import com.namely.chiefofstate.helper.{BaseSpec, GrpcHelpers}
-import io.grpc.inprocess.InProcessChannelBuilder
-import io.grpc.inprocess.InProcessServerBuilder
-import io.grpc.ManagedChannel;
-import io.grpc.internal.AbstractServerImplBuilder
-import scala.collection.mutable
-import com.namely.protobuf.chiefofstate.test.ping_service._
-import scala.concurrent.ExecutionContext.global
+import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
 import io.grpc.stub.MetadataUtils
-import io.grpc.Metadata
+import io.grpc.{ManagedChannel, Metadata}
+
+import scala.concurrent.ExecutionContext.global
 import scala.concurrent.Future
 
 class GrpcHeadersInterceptorSpec extends BaseSpec {
   import GrpcHelpers._
-
-  // define set of resources to close after each test
-  val closeables: Closeables = new Closeables()
 
   override protected def afterEach(): Unit = {
     super.afterEach()
@@ -27,21 +22,21 @@ class GrpcHeadersInterceptorSpec extends BaseSpec {
     "catch the headers" in {
       // Generate a unique in-process server name.
       val serverName: String = InProcessServerBuilder.generateName();
-      val serviceImpl = mock[PingServiceGrpc.PingService]
+      val serviceImpl = mock[Greeter]
 
       // declare a variable and interceptor to capture the headers
       var responseHeaders: Option[Metadata] = None
 
-      (serviceImpl.send _)
+      (serviceImpl.sayHello _)
         .expects(*)
-        .onCall { ping: Ping =>
+        .onCall { hello: HelloRequest =>
           {
             responseHeaders = Option(GrpcHeadersInterceptor.REQUEST_META.get())
-            Future.successful(Pong().withMsg(ping.msg))
+            Future.successful(HelloReply().withMessage(hello.name))
           }
         }
 
-      val service = PingServiceGrpc.bindService(serviceImpl, global)
+      val service = GreeterGrpc.bindService(serviceImpl, global)
 
       closeables.register(
         InProcessServerBuilder
@@ -53,16 +48,15 @@ class GrpcHeadersInterceptorSpec extends BaseSpec {
           .start()
       )
 
-      val channel: ManagedChannel = {
+      val channel: ManagedChannel =
         closeables.register(
           InProcessChannelBuilder
             .forName(serverName)
             .directExecutor()
             .build()
         )
-      }
 
-      val stub = PingServiceGrpc.blockingStub(channel)
+      val stub = GreeterGrpc.blockingStub(channel)
 
       val key = "x-custom-header"
       val value = "value"
@@ -70,10 +64,10 @@ class GrpcHeadersInterceptorSpec extends BaseSpec {
 
       MetadataUtils
         .attachHeaders(stub, requestHeaders)
-        .send(Ping("hi"))
+        .sayHello(HelloRequest("hi"))
 
-      responseHeaders.isDefined shouldBe (true)
-      GrpcHelpers.getStringHeader(responseHeaders.get, key) shouldBe (value)
+      responseHeaders.isDefined shouldBe true
+      GrpcHelpers.getStringHeader(responseHeaders.get, key) shouldBe value
     }
   }
 }

@@ -24,9 +24,6 @@ class RemoteEventHandlerSpec extends BaseSpec {
 
   val grpcConfig: GrpcConfig = GrpcConfig(GrpcClient(5000), GrpcServer("0.0.0.0", 5051))
 
-  // define set of resources to close after each test
-  val closeables: Closeables = new Closeables()
-
   // register a server that intercepts traces and reports errors
   def createServer(serverName: String, service: ServerServiceDefinition): Unit = {
     closeables.register(
@@ -46,10 +43,6 @@ class RemoteEventHandlerSpec extends BaseSpec {
         .directExecutor()
         .build()
     )
-  }
-
-  override def afterEach(): Unit = {
-    closeables.closeAll()
   }
 
   "RemoteEventHandler" should {

@@ -1,15 +1,15 @@
-package com.namely.chiefofstate.interceptors
+package com.namely.chiefofstate.telemetry
 
-import io.opentracing.Tracer
 import io.grpc.ClientInterceptor
 import io.grpc.{CallOptions, Channel, ClientCall, MethodDescriptor}
-import org.slf4j.{Logger, LoggerFactory}
 import io.grpc.ForwardingClientCallListener.SimpleForwardingClientCallListener
 import io.grpc.ForwardingClientCall.SimpleForwardingClientCall
+import io.grpc.ClientCall.Listener
 import io.grpc.Status
 import io.grpc.Metadata
-import io.grpc.ClientCall.Listener
+import io.opentracing.Tracer
 import io.opentracing.Span
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
  * gRPC client intercpetor for ensuring remote errors are logged
@@ -27,9 +27,10 @@ class ErrorsClientInterceptor(tracer: Tracer) extends ClientInterceptor {
    * @param next the channel
    * @return a client call wrapped in the listener
    */
-  override def interceptCall[T, U](method: MethodDescriptor[T, U],
-                                   callOptions: CallOptions,
-                                   next: Channel
+  override def interceptCall[T, U](
+    method: MethodDescriptor[T, U],
+    callOptions: CallOptions,
+    next: Channel
   ): ClientCall[T, U] = {
     import ErrorsClientInterceptor.logger
 

@@ -41,9 +41,6 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
   val actorSystem: ActorSystem[Nothing] = testKit.system
   val replyTimeout: FiniteDuration = FiniteDuration(30, TimeUnit.SECONDS)
 
-  // define set of resources to close after each test
-  val closeables: Closeables = new Closeables()
-
   // register a server that intercepts traces and reports errors
   def createServer(serverName: String, service: ServerServiceDefinition): Unit = {
     closeables.register(

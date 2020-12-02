@@ -13,10 +13,6 @@ import io.grpc.stub.MetadataUtils
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.util.Try
-import io.opentracing.util.GlobalTracer
-import io.opentracing.tag.Tags
-import io.opentracing.contrib.grpc.TracingClientInterceptor
-import com.namely.chiefofstate.interceptors.ErrorsClientInterceptor
 
 /**
  * handles command via a gRPC call
@@ -27,13 +23,6 @@ import com.namely.chiefofstate.interceptors.ErrorsClientInterceptor
 case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: WriteSideHandlerServiceBlockingStub) {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
-
-  lazy val tracingInterceptor = TracingClientInterceptor
-    .newBuilder()
-    .withTracer(GlobalTracer.get())
-    .build()
-
-  lazy val errorsInterceptor = new ErrorsClientInterceptor(GlobalTracer.get())
 
   /**
    * handles the given command and return an eventual response
@@ -63,7 +52,7 @@ case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: 
       })
 
       MetadataUtils
-        .attachHeaders(writeHandlerServicetub.withInterceptors(errorsInterceptor, tracingInterceptor), headers)
+        .attachHeaders(writeHandlerServicetub, headers)
         .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
         .handleCommand(
           HandleCommandRequest()

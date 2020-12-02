@@ -9,7 +9,12 @@ import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
-import com.namely.chiefofstate.interceptors.{ErrorsServerInterceptor, GrpcHeadersInterceptor}
+import com.namely.chiefofstate.telemetry.{
+  ErrorsServerInterceptor,
+  GrpcHeadersInterceptor,
+  TelemetryTools,
+  TracedExecutionContext
+}
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
@@ -23,6 +28,9 @@ import io.opentracing.util.GlobalTracer
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext
+import io.grpc.ServerInterceptor
+import com.namely.chiefofstate.telemetry.ErrorsClientInterceptor
+import io.opentracing.contrib.grpc.TracingClientInterceptor
 
 class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, pluginManager: PluginManager) {
   self =>
@@ -35,33 +43,32 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
    * start the grpc server
    */
   private def start(): Unit = {
-    if (cosConfig.enableJaeger) {
-      // create & register jaeger tracer
-      val jaegerTracer: Tracer = io.jaegertracing.Configuration.fromEnv().getTracer()
-      GlobalTracer.registerIfAbsent(jaegerTracer)
-    }
 
-    val tracer: Tracer = GlobalTracer.get()
+    // create the traced execution context for grpc
+    val grpcEc: ExecutionContext = TracedExecutionContext.get
 
     // create interceptor using the global tracer
     val tracingServerInterceptor = TracingServerInterceptor
       .newBuilder()
-      .withTracer(tracer)
+      .withTracer(GlobalTracer.get())
       .build()
 
+    // instantiate the grpc service, bind do the execution context
+    val serviceImpl = new GrpcServiceImpl(clusterSharding, pluginManager, cosConfig.writeSideConfig, GlobalTracer.get())
+    var service = ChiefOfStateService.bindService(serviceImpl, grpcEc)
+
+    // intercept the service
+    service = ServerInterceptors.intercept(
+      service,
+      new ErrorsServerInterceptor(GlobalTracer.get()),
+      tracingServerInterceptor,
+      GrpcHeadersInterceptor
+    )
+
+    // attach service to netty server
     server = NettyServerBuilder
       .forAddress(new InetSocketAddress(cosConfig.grpcConfig.server.host, cosConfig.grpcConfig.server.port))
-      .addService(
-        ServerInterceptors.intercept(
-          ChiefOfStateService.bindService(
-            new GrpcServiceImpl(clusterSharding, pluginManager, cosConfig.writeSideConfig, tracer),
-            ExecutionContext.global
-          ),
-          new ErrorsServerInterceptor(GlobalTracer.get()),
-          tracingServerInterceptor,
-          GrpcHeadersInterceptor
-        )
-      )
+      .addService(service)
       .build()
       .start()
 
@@ -104,6 +111,9 @@ object Application extends App {
     cosConfig.writeSideConfig
   )
 
+  // start the telemetry tools and register global tracer
+  TelemetryTools(config, "chief-of-state").start()
+
   // boot the actor system
   val actorSystem: ActorSystem[Nothing] =
     ActorSystem[Nothing](StartupBehaviour(config, cosConfig.createDataStores), "ChiefOfStateSystem", config)
@@ -118,6 +128,11 @@ object Application extends App {
       .build()
 
   val writeHandler: WriteSideHandlerServiceBlockingStub = new WriteSideHandlerServiceBlockingStub(channel)
+    .withInterceptors(
+      new ErrorsClientInterceptor(GlobalTracer.get()),
+      TracingClientInterceptor.newBuilder().withTracer(GlobalTracer.get()).build()
+    )
+
   val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(cosConfig.grpcConfig, writeHandler)
   val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandler)
 

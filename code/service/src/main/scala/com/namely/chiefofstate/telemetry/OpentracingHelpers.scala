@@ -1,20 +1,20 @@
-package com.namely.chiefofstate.interceptors
+package com.namely.chiefofstate.telemetry
 
 import io.opentracing.util.GlobalTracer
-import scala.collection.mutable
-import scala.jdk.CollectionConverters._
 import io.opentracing.propagation.TextMapAdapter
 import io.opentracing.propagation.Format
 import io.opentracing.Tracer
 import io.opentracing.SpanContext
 import io.opentracing.Tracer.SpanBuilder
-import scala.util.{Failure, Success, Try}
 import io.opentracing.tag.Tags
-import org.slf4j.{Logger, LoggerFactory}
 import io.opentracing.log.Fields
+import io.opentracing.Span
 import java.io.StringWriter
 import java.io.PrintWriter
-import io.opentracing.Span
+import org.slf4j.{Logger, LoggerFactory}
+import scala.util.{Failure, Success, Try}
+import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 
 object OpentracingHelpers {
 

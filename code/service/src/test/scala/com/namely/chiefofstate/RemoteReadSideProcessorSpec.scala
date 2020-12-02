@@ -20,19 +20,6 @@ import scala.concurrent.ExecutionContext.global
 class RemoteReadSideProcessorSpec extends BaseSpec {
   import GrpcHelpers._
 
-  // define set of resources to close after each test
-  val closeables: Closeables = new Closeables()
-
-  override def beforeEach(): Unit = {
-    closeables.closeAll()
-    super.beforeEach
-  }
-
-  override def afterEach(): Unit = {
-    closeables.closeAll()
-    super.afterEach()
-  }
-
   "RemoteReadSideProcessor" should {
     "handle events as expected" in {
       val accountOpened = AccountOpened()

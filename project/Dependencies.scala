@@ -23,8 +23,13 @@ object Dependencies {
     val LogstashLogbackVersion: String = "6.3"
 
     val OpenTracing: String = "0.33.0"
-    val OpenTracingContrib: String = "0.2.3"
-    val OpenTracingJaeger: String = "1.4.0"
+    val OpenTracingGrpc: String = "0.2.3"
+    val OpenTracingConcurrent: String = "0.4.0"
+    val OpenTracingMetrics: String = "0.3.0"
+    val OpenTracingApiExtensions: String = "0.6.0"
+    val OpenTracingJaeger: String = "1.5.0"
+
+    val Micrometer: String = "1.6.1"
 
     val EmbeddedPostgresVersion = "1.2.9"
   }
@@ -64,8 +69,18 @@ object Dependencies {
     // opentracing
     "io.opentracing" % "opentracing-api" % Versions.OpenTracing,
     "io.opentracing" % "opentracing-noop" % Versions.OpenTracing,
-    "io.opentracing.contrib" % "opentracing-grpc" % Versions.OpenTracingContrib,
-    "io.jaegertracing" % "jaeger-client" % Versions.OpenTracingJaeger
+    "io.opentracing.contrib" % "opentracing-grpc" % Versions.OpenTracingGrpc,
+    "io.jaegertracing" % "jaeger-client" % Versions.OpenTracingJaeger,
+    "io.opentracing.contrib" % "opentracing-concurrent" % Versions.OpenTracingConcurrent,
+    // metrics
+    "io.opentracing.contrib" % "opentracing-metrics" % Versions.OpenTracingMetrics,
+    "io.opentracing.contrib" % "opentracing-metrics-parent" % Versions.OpenTracingMetrics,
+    "io.opentracing.contrib" % "opentracing-metrics-micrometer" % Versions.OpenTracingMetrics,
+    "io.opentracing.contrib" % "opentracing-api-extensions" % Versions.OpenTracingApiExtensions,
+    "io.opentracing.contrib" % "opentracing-api-extensions-tracer" % Versions.OpenTracingApiExtensions,
+    "io.jaegertracing" % "jaeger-micrometer" % Versions.OpenTracingJaeger,
+    "io.micrometer" % "micrometer-core" % Versions.Micrometer,
+    "io.micrometer" % "micrometer-registry-prometheus" % Versions.Micrometer,
   )
 
   val testJars: Seq[ModuleID] = Seq(
@@ -74,8 +89,7 @@ object Dependencies {
     "org.scalamock" %% "scalamock" % ScalaMockVersion % Test,
     "io.grpc" % "grpc-testing" % grpcJavaVersion % Test,
     "io.zonky.test" % "embedded-postgres" % EmbeddedPostgresVersion % Test,
-    // opentracing
-    "io.opentracing" % "opentracing-mock" % Versions.OpenTracing
+    // opentracing test
+    "io.opentracing" % "opentracing-mock" % Versions.OpenTracing % Test,
   )
-
 }
