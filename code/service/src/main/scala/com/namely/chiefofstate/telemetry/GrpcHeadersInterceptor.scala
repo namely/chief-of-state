@@ -20,9 +20,9 @@ object GrpcHeadersInterceptor extends ServerInterceptor {
    * @return
    */
   override def interceptCall[ReqT, RespT](
-      call: ServerCall[ReqT, RespT],
-      headers: Metadata,
-      next: ServerCallHandler[ReqT, RespT]
+    call: ServerCall[ReqT, RespT],
+    headers: Metadata,
+    next: ServerCallHandler[ReqT, RespT]
   ): ServerCall.Listener[ReqT] = {
     val context: Context = Context.current().withValue(REQUEST_META, headers)
     Contexts.interceptCall(context, call, headers, next)

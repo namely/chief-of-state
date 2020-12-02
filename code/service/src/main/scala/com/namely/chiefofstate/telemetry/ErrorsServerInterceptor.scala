@@ -26,9 +26,9 @@ class ErrorsServerInterceptor(tracer: Tracer) extends ServerInterceptor {
    * @return a listener
    */
   override def interceptCall[T, U](
-      call: ServerCall[T, U],
-      headers: Metadata,
-      next: ServerCallHandler[T, U]
+    call: ServerCall[T, U],
+    headers: Metadata,
+    next: ServerCallHandler[T, U]
   ): Listener[T] = {
 
     import ErrorsServerInterceptor.logger

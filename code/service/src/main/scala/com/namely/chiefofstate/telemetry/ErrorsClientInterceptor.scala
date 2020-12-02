@@ -28,9 +28,9 @@ class ErrorsClientInterceptor(tracer: Tracer) extends ClientInterceptor {
    * @return a client call wrapped in the listener
    */
   override def interceptCall[T, U](
-      method: MethodDescriptor[T, U],
-      callOptions: CallOptions,
-      next: Channel
+    method: MethodDescriptor[T, U],
+    callOptions: CallOptions,
+    next: Channel
   ): ClientCall[T, U] = {
     import ErrorsClientInterceptor.logger
 
