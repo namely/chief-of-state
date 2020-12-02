@@ -1,4 +1,4 @@
-package com.namely.chiefofstate.common.telemetry
+package com.namely.chiefofstate.telemetry
 
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import com.sun.net.httpserver.HttpServer

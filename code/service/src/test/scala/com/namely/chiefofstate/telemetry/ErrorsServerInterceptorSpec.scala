@@ -1,8 +1,8 @@
-package com.namely.chiefofstate.common.telemetry
+package com.namely.chiefofstate.telemetry
 
-import com.namely.protobuf.reportbuilder.v1.helloworld.{GreeterGrpc, HelloRequest}
-import com.namely.protobuf.reportbuilder.v1.helloworld.GreeterGrpc.Greeter
-import com.namely.chiefofstate.common.TestSpec
+import com.namely.protobuf.chiefofstate.test.helloworld.{GreeterGrpc, HelloRequest}
+import com.namely.protobuf.chiefofstate.test.helloworld.GreeterGrpc.Greeter
+import com.namely.chiefofstate.helper.BaseSpec
 import io.grpc.{ManagedChannel, Status}
 import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
 import io.opentracing.contrib.grpc.TracingServerInterceptor
@@ -14,7 +14,7 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
-class ErrorsServerInterceptorSpec extends TestSpec {
+class ErrorsServerInterceptorSpec extends BaseSpec {
 
   "server interceptor" should {
     "report inner errors" in {
@@ -55,7 +55,7 @@ class ErrorsServerInterceptorSpec extends TestSpec {
       )
 
       val channel: ManagedChannel =
-        closeables.registerChannel(
+        closeables.register(
           InProcessChannelBuilder
             .forName(serverName)
             .directExecutor()

@@ -28,11 +28,6 @@ object GrpcHelpers {
   class Closeables() {
     val resources: mutable.ListBuffer[Closeable] = mutable.ListBuffer.empty[Closeable]
 
-    def register[T <: Closeable](closeable: T): T = {
-      resources.append(closeable)
-      closeable
-    }
-
     def register(server: io.grpc.Server): io.grpc.Server = {
       val closeable: Closeable = () => {
         server.shutdownNow()
@@ -53,6 +48,11 @@ object GrpcHelpers {
       register(closeable)
 
       channel
+    }
+
+    def register[T <: Closeable](closeable: T): T = {
+      resources.append(closeable)
+      closeable
     }
 
     def closeAll(): Unit = {

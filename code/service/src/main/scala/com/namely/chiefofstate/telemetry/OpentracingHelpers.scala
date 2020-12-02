@@ -1,4 +1,4 @@
-package com.namely.chiefofstate.common.telemetry
+package com.namely.chiefofstate.telemetry
 
 import io.opentracing.util.GlobalTracer
 import io.opentracing.propagation.TextMapAdapter

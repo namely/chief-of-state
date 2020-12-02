@@ -1,8 +1,8 @@
-package com.namely.chiefofstate.common.telemetry
+package com.namely.chiefofstate.telemetry
 
-import com.namely.protobuf.reportbuilder.v1.helloworld.{GreeterGrpc, HelloReply, HelloRequest}
-import com.namely.protobuf.reportbuilder.v1.helloworld.GreeterGrpc.Greeter
-import com.namely.chiefofstate.common.{GrpcHelpers, TestSpec}
+import com.namely.protobuf.chiefofstate.test.helloworld.{GreeterGrpc, HelloReply, HelloRequest}
+import com.namely.protobuf.chiefofstate.test.helloworld.GreeterGrpc.Greeter
+import com.namely.chiefofstate.helper.{BaseSpec, GrpcHelpers}
 import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
 import io.grpc.stub.MetadataUtils
 import io.grpc.{ManagedChannel, Metadata}
@@ -10,11 +10,8 @@ import io.grpc.{ManagedChannel, Metadata}
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.Future
 
-class GrpcHeadersInterceptorSpec extends TestSpec {
+class GrpcHeadersInterceptorSpec extends BaseSpec {
   import GrpcHelpers._
-
-  // define set of resources to close after each test
-  override val closeables: Closeables = new Closeables()
 
   override protected def afterEach(): Unit = {
     super.afterEach()
@@ -52,7 +49,7 @@ class GrpcHeadersInterceptorSpec extends TestSpec {
       )
 
       val channel: ManagedChannel =
-        closeables.registerChannel(
+        closeables.register(
           InProcessChannelBuilder
             .forName(serverName)
             .directExecutor()

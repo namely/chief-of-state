@@ -1,6 +1,6 @@
-package com.namely.chiefofstate.common.telemetry
+package com.namely.chiefofstate.telemetry
 
-import com.namely.chiefofstate.common.TestSpec
+import com.namely.chiefofstate.helper.BaseSpec
 import io.opentracing.mock.{MockSpan, MockTracer}
 import io.opentracing.{Span, Tracer}
 import io.opentracing.Tracer.SpanBuilder
@@ -10,7 +10,7 @@ import io.opentracing.tag.Tags
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
-class OpentracingHelpersSpec extends TestSpec {
+class OpentracingHelpersSpec extends BaseSpec {
 
   ".getTracingHeaders" should {
     "handle a null active span" in {

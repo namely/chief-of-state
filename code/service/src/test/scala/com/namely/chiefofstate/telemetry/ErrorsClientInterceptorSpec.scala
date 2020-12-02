@@ -1,8 +1,8 @@
-package com.namely.chiefofstate.common.telemetry
+package com.namely.chiefofstate.telemetry
 
-import com.namely.protobuf.reportbuilder.v1.helloworld.{GreeterGrpc, HelloReply, HelloRequest}
-import com.namely.protobuf.reportbuilder.v1.helloworld.GreeterGrpc.Greeter
-import com.namely.chiefofstate.common.TestSpec
+import com.namely.protobuf.chiefofstate.test.helloworld.{GreeterGrpc, HelloReply, HelloRequest}
+import com.namely.protobuf.chiefofstate.test.helloworld.GreeterGrpc.Greeter
+import com.namely.chiefofstate.helper.BaseSpec
 import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
 import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
 import io.opentracing.log.Fields
@@ -13,7 +13,7 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
-class ErrorsClientInterceptorSpec extends TestSpec {
+class ErrorsClientInterceptorSpec extends BaseSpec {
 
   "interceptor" should {
     "report a server error" in {
@@ -45,7 +45,7 @@ class ErrorsClientInterceptorSpec extends TestSpec {
       val errorInterceptor: ErrorsClientInterceptor = new ErrorsClientInterceptor(tracer)
 
       val channel: ManagedChannel =
-        closeables.registerChannel(
+        closeables.register(
           InProcessChannelBuilder
             .forName(serverName)
             .directExecutor()

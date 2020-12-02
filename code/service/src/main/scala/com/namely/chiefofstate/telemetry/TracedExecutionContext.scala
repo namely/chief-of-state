@@ -1,4 +1,4 @@
-package com.namely.chiefofstate.common.telemetry
+package com.namely.chiefofstate.telemetry
 
 import java.util.concurrent.ForkJoinPool
 import io.opentracing.contrib.concurrent.TracedExecutorService
@@ -17,7 +17,12 @@ object TracedExecutionContext {
     val threadMultiplier = 10
     val parallelism = Runtime.getRuntime.availableProcessors * threadMultiplier
     // create fork join pool
-    val pool: ForkJoinPool = new ForkJoinPool(parallelism)
+    val pool: ForkJoinPool = new ForkJoinPool(
+      parallelism,
+      ForkJoinPool.defaultForkJoinWorkerThreadFactory,
+      null,
+      true
+    )
     // build the traced executor service
     val tracedEc: ExecutorService = new TracedExecutorService(pool, tracer, true)
     ExecutionContext.fromExecutorService(tracedEc)

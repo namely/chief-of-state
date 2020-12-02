@@ -9,9 +9,6 @@ import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.util.Try
-import io.opentracing.contrib.grpc.TracingClientInterceptor
-import io.opentracing.util.GlobalTracer
-import com.namely.chiefofstate.telemetry.ErrorsClientInterceptor
 import com.google.protobuf.any
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 
@@ -24,13 +21,6 @@ import com.namely.protobuf.chiefofstate.v1.common.MetaData
 case class RemoteEventHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: WriteSideHandlerServiceBlockingStub) {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
-
-  lazy val tracingInterceptor = TracingClientInterceptor
-    .newBuilder()
-    .withTracer(GlobalTracer.get())
-    .build()
-
-  lazy val errorsInterceptor = new ErrorsClientInterceptor(GlobalTracer.get())
 
   /**
    * handles the given event and return an eventual response
@@ -46,7 +36,6 @@ case class RemoteEventHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: Wr
       )
 
       writeHandlerServicetub
-        .withInterceptors(errorsInterceptor, tracingInterceptor)
         .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
         .handleEvent(
           HandleEventRequest()

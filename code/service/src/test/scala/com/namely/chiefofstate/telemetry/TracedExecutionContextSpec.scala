@@ -1,20 +1,21 @@
-package com.namely.chiefofstate.common.telemetry
+package com.namely.chiefofstate.telemetry
 
-import com.namely.chiefofstate.common.{AwaitHelper, TestSpec}
-import io.opentracing.mock.MockTracer
-import io.opentracing.mock.MockSpan
-import scala.jdk.CollectionConverters._
-import scala.concurrent.Future
+import com.namely.chiefofstate.helper.{AwaitHelper, BaseSpec}
+import io.opentracing.mock.{MockSpan, MockTracer}
 import io.opentracing.Span
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
-import java.util.concurrent.Executors
 import scala.concurrent.duration.Duration
+import java.util.concurrent.Executors
+import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 
-class TracedExecutionContextSpec extends TestSpec {
+class TracedExecutionContextSpec extends BaseSpec {
 
   "future callables" should {
     "propagate the span in the wrapped context" in {
       val tracer: MockTracer = new MockTracer(MockTracer.Propagator.TEXT_MAP)
+      tracer.reset()
 
       val span: Span = tracer
         .buildSpan("outer span")
@@ -26,9 +27,21 @@ class TracedExecutionContextSpec extends TestSpec {
       // create the traced execution context
       implicit val ec = TracedExecutionContext.get(tracer)
 
+      val childSpanIds: mutable.ListBuffer[Long] = new mutable.ListBuffer()
+
       // run a future, map through another future, and start spans in each one
-      val someFuture = Future(tracer.buildSpan("oh we tracin").start().finish())
-        .map(_ => tracer.buildSpan("still tracin").start().finish())
+      val someFuture = Future { childSpanIds.clear() }
+        .map(_ => {
+          val childSpan = tracer.buildSpan("oh we tracin").start()
+          childSpanIds.append(childSpan.context().spanId())
+          childSpan.finish()
+        })
+        .map(_ => {
+          val childSpan = tracer.buildSpan("still tracin").start()
+          childSpanIds.append(childSpan.context().spanId())
+          childSpan.finish()
+        })
+        .map(_ => Thread.sleep(100))
 
       span.finish()
 
@@ -43,9 +56,15 @@ class TracedExecutionContextSpec extends TestSpec {
 
         finishedSpans.length shouldBe 3
 
+        // construct a map of spans to their parent
+        val parentMap: Map[Long, Long] = finishedSpans
+          .map(span => span.context.spanId() -> span.parentId())
+          .toMap
+
         // assert that the first span is the parent of second and third span
-        finishedSpans(1).parentId() shouldBe (finishedSpans(0).context.spanId())
-        finishedSpans(2).parentId() shouldBe (finishedSpans(0).context.spanId())
+        childSpanIds.foreach(childSpanId => {
+          parentMap(childSpanId) shouldBe span.context().toSpanId().toLong
+        })
       })
     }
 
@@ -64,6 +83,7 @@ class TracedExecutionContextSpec extends TestSpec {
       tracer.activateSpan(span)
 
       val someFuture = Future(tracer.buildSpan("nope").start().finish())
+        .map(_ => Thread.sleep(100))
 
       span.finish()
 

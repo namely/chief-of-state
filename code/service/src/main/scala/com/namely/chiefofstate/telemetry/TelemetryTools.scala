@@ -1,10 +1,10 @@
-package com.namely.chiefofstate.common.telemetry
+package com.namely.chiefofstate.telemetry
 
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import io.micrometer.prometheus.PrometheusConfig
 import io.opentracing.contrib.metrics.micrometer.MicrometerMetricsReporter
-import com.namely.chiefofstate.common.telemetry.PrometheusServer
+import com.namely.chiefofstate.telemetry.PrometheusServer
 import com.typesafe.config.Config
 import org.slf4j.{Logger, LoggerFactory}
 import io.opentracing.Tracer
