@@ -31,6 +31,7 @@ import scala.concurrent.ExecutionContext
 import io.grpc.ServerInterceptor
 import com.namely.chiefofstate.telemetry.ErrorsClientInterceptor
 import io.opentracing.contrib.grpc.TracingClientInterceptor
+import io.grpc.ClientInterceptor
 
 class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, pluginManager: PluginManager) {
   self =>
@@ -127,11 +128,13 @@ object Application extends App {
       .usePlaintext()
       .build()
 
+  val grpcClientInterceptors: Seq[ClientInterceptor] = Seq(
+    new ErrorsClientInterceptor(GlobalTracer.get()),
+    TracingClientInterceptor.newBuilder().withTracer(GlobalTracer.get()).build()
+  )
+
   val writeHandler: WriteSideHandlerServiceBlockingStub = new WriteSideHandlerServiceBlockingStub(channel)
-    .withInterceptors(
-      new ErrorsClientInterceptor(GlobalTracer.get()),
-      TracingClientInterceptor.newBuilder().withTracer(GlobalTracer.get()).build()
-    )
+    .withInterceptors(grpcClientInterceptors: _*)
 
   val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(cosConfig.grpcConfig, writeHandler)
   val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandler)
@@ -166,8 +169,11 @@ object Application extends App {
           .usePlaintext()
           .build()
 
-      val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(channel)
+      var rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(channel)
+      rpcClient = rpcClient.withInterceptors(grpcClientInterceptors: _*)
+
       val remoteReadSideProcessor: RemoteReadSideProcessor = new RemoteReadSideProcessor(rpcClient)
+
       val readSideProcessor: ReadSideProcessor =
         new ReadSideProcessor(actorSystem, rsconfig.processorId, remoteReadSideProcessor, cosConfig)
 

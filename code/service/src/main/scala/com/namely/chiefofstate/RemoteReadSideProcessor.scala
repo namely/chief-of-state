@@ -7,6 +7,9 @@ import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
 
 import scala.util.Try
+import io.opentracing.Span
+import io.opentracing.tag.Tags
+import io.opentracing.util.GlobalTracer
 
 class RemoteReadSideProcessor(readSideHandlerServiceBlockingStub: ReadSideHandlerServiceBlockingStub) {
   private val COS_EVENT_TAG_HEADER = "x-cos-event-tag"
@@ -28,11 +31,19 @@ class RemoteReadSideProcessor(readSideHandlerServiceBlockingStub: ReadSideHandle
     meta: MetaData
   ): Try[HandleReadSideResponse] = {
     Try {
+      // start the span
+      val span: Span = GlobalTracer.get
+        .buildSpan("RemoteReadSideProcessor.processEvent")
+        .withTag(Tags.COMPONENT.getKey(), this.getClass().getName)
+        .start()
+
+      GlobalTracer.get.activateSpan(span)
+
       val headers = new Metadata()
       headers.put(Metadata.Key.of(COS_ENTITY_ID_HEADER, Metadata.ASCII_STRING_MARSHALLER), meta.entityId)
       headers.put(Metadata.Key.of(COS_EVENT_TAG_HEADER, Metadata.ASCII_STRING_MARSHALLER), eventTag)
 
-      MetadataUtils
+      val response = MetadataUtils
         .attachHeaders(readSideHandlerServiceBlockingStub, headers)
         .handleReadSide(
           HandleReadSideRequest()
@@ -40,6 +51,12 @@ class RemoteReadSideProcessor(readSideHandlerServiceBlockingStub: ReadSideHandle
             .withState(resultingState)
             .withMeta(meta)
         )
+
+      // finish the span
+      span.finish()
+
+      // return the response
+      response
     }
   }
 }
