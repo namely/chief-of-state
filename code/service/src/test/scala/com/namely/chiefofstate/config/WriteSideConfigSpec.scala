@@ -11,6 +11,7 @@ class WriteSideConfigSpec extends BaseSpec {
               write-side {
                 host = "localhost"
                 port = 1000
+                use-tls = true
                 enable-protos-validation = false
                 states-protos = ""
                 events-protos = ""
@@ -27,6 +28,7 @@ class WriteSideConfigSpec extends BaseSpec {
               write-side {
                 host = "localhost"
                 port = 1000
+                use-tls = true
                 enable-protos-validation = false
                 states-proto = ""
                 events-protos = ""

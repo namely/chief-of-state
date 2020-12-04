@@ -113,7 +113,7 @@ object Application extends App {
   )
 
   // start the telemetry tools and register global tracer
-  TelemetryTools(config, "chief-of-state").start()
+  TelemetryTools(config, cosConfig.enableJaeger, "chief-of-state").start()
 
   // boot the actor system
   val actorSystem: ActorSystem[Nothing] =
@@ -123,10 +123,19 @@ object Application extends App {
   val sharding: ClusterSharding = ClusterSharding(actorSystem)
 
   val channel: ManagedChannel =
-    NettyChannelBuilder
-      .forAddress(cosConfig.writeSideConfig.host, cosConfig.writeSideConfig.port)
-      .usePlaintext()
+    NettyHelper
+      .builder(
+        cosConfig.writeSideConfig.host,
+        cosConfig.writeSideConfig.port,
+        cosConfig.writeSideConfig.useTls
+      )
       .build()
+
+  NettyChannelBuilder
+    .forAddress(cosConfig.writeSideConfig.host, cosConfig.writeSideConfig.port)
+    .useTransportSecurity()
+    // .usePlaintext()
+    .build()
 
   val grpcClientInterceptors: Seq[ClientInterceptor] = Seq(
     new ErrorsClientInterceptor(GlobalTracer.get()),
@@ -163,11 +172,10 @@ object Application extends App {
   // read side settings
   if (cosConfig.enableReadSide && ReadSideConfigReader.getReadSideSettings.nonEmpty) {
     ReadSideConfigReader.getReadSideSettings.foreach(rsconfig => {
-      val channel: ManagedChannel =
-        NettyChannelBuilder
-          .forAddress(rsconfig.host.get, rsconfig.port.get)
-          .usePlaintext()
-          .build()
+
+      val channel: ManagedChannel = NettyHelper
+        .builder(rsconfig.host, rsconfig.port, rsconfig.useTls)
+        .build
 
       var rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(channel)
       rpcClient = rpcClient.withInterceptors(grpcClientInterceptors: _*)

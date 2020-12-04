@@ -20,15 +20,20 @@ class ReadSideConfigReaderSpec extends BaseSpec {
       EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__HOST__RS2", "host2")
       EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__PORT__RS2", "2")
       EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__GRPC_SOME_SETTING__RS2", "setting2")
+      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__HOST__RS3", "host3")
+      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__PORT__RS3", "3")
+      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__USE_TLS__RS3", "true")
 
-      val grpcReadSideSetting1: ReadSideConfig = ReadSideConfig("RS1", Some("host1"), Some(1))
+      val grpcReadSideSetting1: ReadSideConfig = ReadSideConfig("RS1", "host1", 1, false)
         .addSetting("GRPC_SOME_SETTING", "setting1")
 
-      val grpcReadSideSetting2: ReadSideConfig = ReadSideConfig("RS2", Some("host2"), Some(2))
+      val grpcReadSideSetting2: ReadSideConfig = ReadSideConfig("RS2", "host2", 2, false)
         .addSetting("GRPC_SOME_SETTING", "setting2")
 
+      val grpcReadSideSetting3: ReadSideConfig = ReadSideConfig("RS3", "host3", 3, true)
+
       val actual: Seq[ReadSideConfig] = ReadSideConfigReader.getReadSideSettings
-      val expected: Seq[ReadSideConfig] = Seq(grpcReadSideSetting1, grpcReadSideSetting2)
+      val expected: Seq[ReadSideConfig] = Seq(grpcReadSideSetting1, grpcReadSideSetting2, grpcReadSideSetting3)
 
       actual.length should be(expected.length)
       actual should contain theSameElementsAs (expected)

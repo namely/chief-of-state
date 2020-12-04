@@ -7,6 +7,7 @@ import com.typesafe.config.Config
  *
  * @param host the gRPC host
  * @param port the gRPC port
+ * @param useTls enable TLS For outbound write handler calls
  * @param eventsProtos the list of the events proto messages package names
  * @param statesProtos the list of the states proto messages package names
  * @param propagatedHeaders the list of gRPC headers to propagate
@@ -14,6 +15,7 @@ import com.typesafe.config.Config
 case class WriteSideConfig(
   host: String,
   port: Int,
+  useTls: Boolean,
   enableProtoValidation: Boolean,
   eventsProtos: Seq[String],
   statesProtos: Seq[String],
@@ -24,6 +26,7 @@ object WriteSideConfig {
 
   private val hostKey: String = "chiefofstate.write-side.host"
   private val portKey: String = "chiefofstate.write-side.port"
+  private val useTlsKey: String = "chiefofstate.write-side.use-tls"
   private val protoValidationKey: String = "chiefofstate.write-side.enable-protos-validation"
   private val eventsProtosKey: String = "chiefofstate.write-side.events-protos"
   private val statesProtosKey: String = "chiefofstate.write-side.states-protos"
@@ -40,6 +43,7 @@ object WriteSideConfig {
     WriteSideConfig(
       config.getString(hostKey),
       config.getInt(portKey),
+      config.getBoolean(useTlsKey),
       config.getBoolean(protoValidationKey),
       config
         .getString(eventsProtosKey)

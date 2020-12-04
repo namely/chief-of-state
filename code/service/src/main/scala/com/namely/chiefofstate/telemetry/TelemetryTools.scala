@@ -10,7 +10,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import io.opentracing.Tracer
 import io.opentracing.util.GlobalTracer
 
-case class TelemetryTools(config: Config, serviceName: String) {
+case class TelemetryTools(config: Config, enableJaeger: Boolean, serviceName: String) {
 
   val GRPC_STATUS_LABEL: String = "grpc.status"
 
@@ -27,10 +27,16 @@ case class TelemetryTools(config: Config, serviceName: String) {
     .withName(serviceName)
     .withTagLabel(GRPC_STATUS_LABEL, "")
     .build()
-  // create & register jaeger tracer
-  val jaegerTracer: Tracer = io.jaegertracing.Configuration.fromEnv().getTracer
+
+  var tracer: Tracer = io.opentracing.noop.NoopTracerFactory.create()
+
+  if (enableJaeger) {
+    // create & register jaeger tracer
+    tracer = io.jaegertracing.Configuration.fromEnv().getTracer
+  }
+
   // wrap tracer for metrics
-  val tracer: Tracer = io.opentracing.contrib.metrics.Metrics.decorate(jaegerTracer, metricsReporter)
+  tracer = io.opentracing.contrib.metrics.Metrics.decorate(tracer, metricsReporter)
   // register tracer globally
   GlobalTracer.registerIfAbsent(tracer)
   // create prometheus scraping server

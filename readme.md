@@ -91,6 +91,7 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 | COS_ENCRYPTION_CLASS | java class to use for encryption | <none> |
 | WRITE_SIDE_HANDLER_SERVICE_HOST | address of the gRPC writeSide handler service | <none> |
 | WRITE_SIDE_HANDLER_SERVICE_PORT | port for the gRPC writeSide handler service | <none> |
+| COS_WRITE_SIDE_USE_TLS | use TLS for outbound gRPC calls to write side | false |
 | HANDLER_SERVICE_ENABLE_PROTO_VALIDATION | enable validation of the handler service states and events proto message FQN. If not set to `true` the validation will be skipped.  | false |
 | HANDLER_SERVICE_STATES_PROTOS | handler service states proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`.  This will be a comma separated list of values | <none> |
 | HANDLER_SERVICE_EVENTS_PROTOS | handler service events proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`. This will be a comma separated list of values | <none> |
@@ -126,6 +127,7 @@ JAEGER_TAGS | no | A comma separated list of `name = value` tracer level tags, w
 - SETTING_NAME - Supported setting names:
   - HOST - Read side host
   - PORT - Read side port
+  - USE_TLS - Use TLS for read side calls
 - READSIDE_ID - Unique id for the read side instance
 
 | environment variable | description | default |

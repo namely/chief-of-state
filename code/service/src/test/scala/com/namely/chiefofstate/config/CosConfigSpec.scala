@@ -32,6 +32,7 @@ class CosConfigSpec extends BaseSpec {
               write-side {
                 host = "localhost"
                 port = 1000
+                use-tls = false
                 enable-protos-validation = false
                 states-protos = ""
                 events-protos = ""
@@ -79,6 +80,7 @@ class CosConfigSpec extends BaseSpec {
               write-side {
                 host = "localhost"
                 port = 1000
+                use-tls = false
                 enable-protos-validation = false
                 states-protos = ""
                 events-protos = ""
