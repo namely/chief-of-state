@@ -1,8 +1,14 @@
 package com.namely.chiefofstate.config
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 object ReadSideConfigReader {
   val READ_SIDE_HOST_KEY: String = "HOST"
   val READ_SIDE_PORT_KEY: String = "PORT"
+  val READ_SIDE_TLS_KEY: String = "USE_TLS"
+
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   /**
    * Extracts read side configurations from environment variables
@@ -38,19 +44,27 @@ object ReadSideConfigReader {
         case (processorId, settings) =>
           val readSideConfig: ReadSideConfig =
             settings.foldLeft(ReadSideConfig(processorId))({
+
+              case (config, (READ_SIDE_HOST_KEY, value)) =>
+                config.copy(host = value)
+
+              case (config, (READ_SIDE_PORT_KEY, value)) =>
+                config.copy(port = value.toInt)
+
+              case (config, (READ_SIDE_TLS_KEY, value)) =>
+                config.copy(useTls = value.toBooleanOption.getOrElse(false))
+
               case (config, (key, value)) =>
-                if (key == READ_SIDE_HOST_KEY) {
-                  config.copy(host = Some(value))
-                } else if (key == READ_SIDE_PORT_KEY) {
-                  config.copy(port = Some(value).map(_.toInt))
-                } else {
-                  config.addSetting(key, value)
-                }
+                config.addSetting(key, value)
             })
 
           // Requires Host and Port to be defined per GrpcReadSideSetting
-          require(readSideConfig.host.isDefined, s"ProcessorId $processorId is missing a HOST")
-          require(readSideConfig.port.isDefined, s"ProcessorId $processorId is missing a PORT")
+          require(readSideConfig.host.nonEmpty, s"ProcessorId $processorId is missing a HOST")
+          require(readSideConfig.port > 0, s"ProcessorId $processorId is missing a PORT")
+
+          logger.info(
+            s"Configuring read side '$processorId', host=${readSideConfig.host}, port=${readSideConfig.port}, useTls=${readSideConfig.useTls}"
+          )
 
           readSideConfig
       })

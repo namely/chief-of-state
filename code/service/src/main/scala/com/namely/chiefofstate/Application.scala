@@ -123,10 +123,17 @@ object Application extends App {
   val sharding: ClusterSharding = ClusterSharding(actorSystem)
 
   val channel: ManagedChannel =
-    NettyChannelBuilder
-      .forAddress(cosConfig.writeSideConfig.host, cosConfig.writeSideConfig.port)
-      .usePlaintext()
-      .build()
+    NettyHelper.buildChannel(
+      cosConfig.writeSideConfig.host,
+      cosConfig.writeSideConfig.port,
+      cosConfig.writeSideConfig.useTls
+    )
+
+  NettyChannelBuilder
+    .forAddress(cosConfig.writeSideConfig.host, cosConfig.writeSideConfig.port)
+    .useTransportSecurity()
+    // .usePlaintext()
+    .build()
 
   val grpcClientInterceptors: Seq[ClientInterceptor] = Seq(
     new ErrorsClientInterceptor(GlobalTracer.get()),
@@ -163,11 +170,9 @@ object Application extends App {
   // read side settings
   if (cosConfig.enableReadSide && ReadSideConfigReader.getReadSideSettings.nonEmpty) {
     ReadSideConfigReader.getReadSideSettings.foreach(rsconfig => {
-      val channel: ManagedChannel =
-        NettyChannelBuilder
-          .forAddress(rsconfig.host.get, rsconfig.port.get)
-          .usePlaintext()
-          .build()
+
+      val channel: ManagedChannel = NettyHelper
+        .buildChannel(rsconfig.host, rsconfig.port, rsconfig.useTls)
 
       var rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(channel)
       rpcClient = rpcClient.withInterceptors(grpcClientInterceptors: _*)

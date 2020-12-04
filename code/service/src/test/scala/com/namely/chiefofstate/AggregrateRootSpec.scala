@@ -90,6 +90,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
               write-side {
                 host = "localhost"
                 port = 6000
+                use-tls = false
                 enable-protos-validation = false
                 states-protos = ""
                 events-protos = ""
@@ -517,6 +518,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
               write-side {
                 host = "localhost"
                 port = 6000
+                use-tls = false
                 enable-protos-validation = true
                 states-protos = ""
                 events-protos = ""
@@ -626,6 +628,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
               write-side {
                 host = "localhost"
                 port = 6000
+                use-tls = false
                 enable-protos-validation = true
                 states-protos = ""
                 events-protos = "chief_of_state.v1.AccountOpened"
@@ -743,6 +746,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
               write-side {
                 host = "localhost"
                 port = 6000
+                use-tls = false
                 enable-protos-validation = true
                 states-protos = ""
                 events-protos = "chief_of_state.v1.AccountOpened"

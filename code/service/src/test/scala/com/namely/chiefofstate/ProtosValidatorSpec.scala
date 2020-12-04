@@ -14,6 +14,7 @@ class ProtosValidatorSpec extends BaseSpec {
               write-side {
                 host = "localhost"
                 port = 1000
+                use-tls = false
                 enable-protos-validation = false
                 states-protos = ""
                 events-protos = ""
@@ -39,6 +40,7 @@ class ProtosValidatorSpec extends BaseSpec {
               write-side {
                 host = "localhost"
                 port = 1000
+                use-tls = false
                 enable-protos-validation = true
                 states-protos = "chief_of_state.v1.Account"
                 events-protos = "chief_of_state.v1.AccountOpened"
@@ -64,6 +66,7 @@ class ProtosValidatorSpec extends BaseSpec {
               write-side {
                 host = "localhost"
                 port = 1000
+                use-tls = false
                 enable-protos-validation = true
                 states-protos = ""
                 events-protos = ""
@@ -89,6 +92,7 @@ class ProtosValidatorSpec extends BaseSpec {
               write-side {
                 host = "localhost"
                 port = 1000
+                use-tls = false
                 enable-protos-validation = true
                 states-protos = ""
                 events-protos = ""
