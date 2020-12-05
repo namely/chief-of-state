@@ -134,14 +134,16 @@ JAEGER_TAGS | no | A comma separated list of `name = value` tracer level tags, w
 |--- | --- | --- |
 | COS_READ_SIDE_CONFIG_<SETTING_NAME>_<READSIDE_ID> | readside configuration settings | <none> |
 
-### Local dev options
+### Local dev additionam env vars
 
 | environment variable | description | default |
 | --- | --- | --- |
 | COS_DOCKER_SERVICE_NAME | name of chief of state in your docker compose | chiefofstate |
 | COS_DOCKER_REPLICA_COUNT | wait for this many replicas before starting (not recommended to change) | 1 |
 
-### Production k8s options
+### Production k8s additional env vars
+
+Add this to your k8 config map `JAVA_OPTS: -Xms256M -Xmx1G -XX:+UseG1GC -Dconfig.resource=kubernetes.conf` to let COS pick up the reference k8 configuration needed to properly boot. Also set the following env to guarantee a smooth cluster startup.
 
 | environment variable | description | default |
 | --- | --- | --- |
