@@ -74,6 +74,8 @@ docker-build:
     # set runtime user to cos
     USER cos
 
+    ENV JAVA_OPTS="-Xms256M -Xmx1G -XX:+UseG1GC"
+
     ENTRYPOINT /opt/docker/bin/entrypoint
     CMD []
 
