@@ -16,7 +16,7 @@ class JournalAndSnapshotMigrationSpec extends BaseSpec {
   }
 
   ".create Journal and Snapshot store" in {
-    val config: Config = ConfigFactory.parseResources("application-test.conf").resolve()
+    val config: Config = ConfigFactory.parseResources("application-test-migration.conf").resolve()
 
     val migration = JournalAndSnapshotMigration(config)
     noException shouldBe thrownBy(migration.createSchemas())
