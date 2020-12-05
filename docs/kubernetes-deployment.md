@@ -1,6 +1,8 @@
 # Deployment to Kubernetes
 
-Chief of State leverages the [Akka Kubernetes Integration](https://doc.akka.io/docs/akka-management/current/kubernetes-deployment/index.html) for cluster bootstrap and node discovery. See below for common configuration.
+Chief of State leverages
+the [Akka Kubernetes Integration](https://doc.akka.io/docs/akka-management/current/kubernetes-deployment/index.html) for
+cluster bootstrap and node discovery. See below for common configuration.
 
 ### Environment Variables
 
@@ -11,10 +13,10 @@ The following env vars can be set in addition to the [general configurations](./
 | COS_DEPLOYMENT_MODE | set to "kubernetes" to instruct COS to leverage the k8s API |
 | POD_IP | IP of the pod running chief of state (see note below) |
 | COS_KUBERNETES_APP_LABEL | Set to the app label of the k8s pod, which Akka will use to discover all sibling nodes in the cluster. |
-| COS_KUBERNETES_REPLICA_COUNT | must match the replica count on your deployment. Defaults to "1" |
-
+| COS_REPLICA_COUNT | must match the replica count on your deployment. Defaults to "1" |
 
 `POD_IP` environment variable can be dynamically set with the following container environment instruction:
+
 ```yaml
 env:
   - name: POD_IP
@@ -29,11 +31,13 @@ env:
 Akka leverages the K8s API to discover sibling nodes in your COS cluster.
 
 Your COS pod requires the following permisions for pods:
+
 - get
 - watch
 - list
 
 This can be accomplished with the following K8s Service Account, Role, and RoleBinding:
+
 ```yaml
 # create the cluster role that can read pods
 kind: Role
@@ -42,9 +46,9 @@ metadata:
   name: pod-reader
   namespace: default
 rules:
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["get", "watch", "list"]
+  - apiGroups: [ "" ]
+    resources: [ "pods" ]
+    verbs: [ "get", "watch", "list" ]
 
 ---
 
@@ -74,6 +78,7 @@ subjects:
 ```
 
 ... then assign the service account to your deployment like so ...
+
 ```yaml
 apiVersion: "apps/v1"
 kind: Deployment
@@ -94,3 +99,34 @@ spec:
       # set the service account for this pod
       serviceAccountName: chief-of-state-sa
 ```
+
+### Readiness and Liveness probe
+
+Chief Of State provides readiness and liveness checks out of the box. See below the paths and port for configuring them.
+
+```yaml
+...
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: management
+  periodSeconds: 10
+  failureThreshold: 3
+  initialDelaySeconds: 10
+livenessProbe:
+  httpGet:
+    path: "/alive"
+    port: management
+  periodSeconds: 10
+  failureThreshold: 5
+  initialDelaySeconds: 20
+ports:
+  # akka-management and bootstrap
+  - name: management
+    containerPort: 8558
+    protocol: TCP
+...
+```
+
+
+
