@@ -102,8 +102,7 @@ spec:
 
 ### Readiness and Liveness probe
 
-Chief Of State provides cluster membership health checks out of the box. The health checks register the following routes
-`/ready` and `/alive` out of the box that can be configured as shown in the following sample kubernetes file.
+Chief Of State provides readiness and liveness checks out of the box. See below the paths and port for configuring them.
 
 ```yaml
 ...
