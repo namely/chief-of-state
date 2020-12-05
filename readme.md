@@ -60,8 +60,6 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 
 - Set the environment variable listed [here](#global-environment-variables) in addition with the [local](#local-dev-options) ones.
 
-- Set the following environment variable `JAVA_OPTS: "-Dconfig.resource=docker.conf"`
-
 - Happy hacking :)
 
 ### Global environment variables
@@ -69,8 +67,10 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 | environment variable | description | default |
 |--- | --- | --- |
 | LOG_LEVEL | The possible values are: _**DEBUG**_, _**INFO**_, _**WARN**_, _**ERROR**_ | DEBUG |
+| JAVA_OPTS | The java options for the underlying jvm application | -Xms256M -Xmx1G -XX:+UseG1GC |
 | COS_ADDRESS | container host | 0.0.0.0 |
 | COS_PORT | container port | 9000 |
+| COS_DEPLOYMENT_MODE | "docker" or "kubernetes" | "docker" |
 | COS_DB_CREATE_TABLES | when enabled create both writeside journal/snapshot store tables and readside offset store if readside settings enabled. | false |
 | COS_DB_USER | journal, snapshot and read side offsets store username | postgres |
 | COS_DB_PASSWORD | journal, snapshot and read side offsets store password | changeme |
@@ -138,15 +138,15 @@ JAEGER_TAGS | no | A comma separated list of `name = value` tracer level tags, w
 
 | environment variable | description | default |
 | --- | --- | --- |
+| COS_DEPLOYMENT_MODE | "docker" | "docker" |
 | COS_DOCKER_SERVICE_NAME | name of chief of state in your docker compose | chiefofstate |
 | COS_DOCKER_REPLICA_COUNT | wait for this many replicas before starting (not recommended to change) | 1 |
 
 ### Production k8s additional env vars
 
-Add this to your k8 config map `JAVA_OPTS: -Xms256M -Xmx1G -XX:+UseG1GC -Dconfig.resource=kubernetes.conf` to let COS pick up the reference k8 configuration needed to properly boot. Also set the following env to guarantee a smooth cluster startup.
-
 | environment variable | description | default |
 | --- | --- | --- |
+| COS_DEPLOYMENT_MODE | set to "kubernetes" to instruct COS to leverage the k8s API | "docker" |
 | POD_IP | IP of the pod running chief of state (see note below) | <none> |
 | COS_KUBERNETES_APP_LABEL | k8s metadata app label. For the kubernetes API this value is substributed into the %s in pod-label-selector
  | <none> |

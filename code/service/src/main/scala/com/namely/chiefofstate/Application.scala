@@ -16,6 +16,7 @@ import com.namely.chiefofstate.telemetry.{
   TracedExecutionContext
 }
 import com.namely.chiefofstate.plugin.PluginManager
+import com.namely.chiefofstate.config.BootConfig
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
@@ -32,6 +33,7 @@ import io.grpc.ServerInterceptor
 import com.namely.chiefofstate.telemetry.ErrorsClientInterceptor
 import io.opentracing.contrib.grpc.TracingClientInterceptor
 import io.grpc.ClientInterceptor
+import akka.actor.Deploy
 
 class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, pluginManager: PluginManager) {
   self =>
@@ -99,7 +101,8 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
 
 object Application extends App {
   // Application config
-  val config: Config = ConfigFactory.load().resolve()
+
+  val config: Config = BootConfig.get()
 
   // Initialize Plugin Manager
   val pluginManager: PluginManager = PluginManager.getPlugins(config)

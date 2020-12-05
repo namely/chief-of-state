@@ -57,7 +57,8 @@ services:
     environment:
       LOG_LEVEL: "INFO"
       LOG_STYLE: "SIMPLE"
-      JAVA_OPTS: "-Dconfig.resource=docker.conf -XX:+UseG1GC"
+      JAVA_OPTS: "-XX:+UseG1GC"
+      COS_DEPLOYMENT_MODE: "docker"
       COS_SERVICE_NAME: "chiefofstate"
       COS_WRITE_SIDE_HOST: host.docker.internal
       COS_WRITE_SIDE_PORT: 50052
