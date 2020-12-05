@@ -71,7 +71,7 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 | LOG_LEVEL | The possible values are: _**DEBUG**_, _**INFO**_, _**WARN**_, _**ERROR**_ | DEBUG |
 | COS_ADDRESS | container host | 0.0.0.0 |
 | COS_PORT | container port | 9000 |
-| COS_STORES_AUTO_CREATE | when enabled create both writeside journal/snapshot store tables and readside offset store if readside settings enabled. | false |
+| COS_DB_CREATE_TABLES | when enabled create both writeside journal/snapshot store tables and readside offset store if readside settings enabled. | false |
 | COS_DB_USER | journal, snapshot and read side offsets store username | postgres |
 | COS_DB_PASSWORD | journal, snapshot and read side offsets store password | changeme |
 | COS_DB_HOST | journal, snapshot and read side offsets store host | localhost |
