@@ -146,7 +146,8 @@ JAEGER_TAGS | no | A comma separated list of `name = value` tracer level tags, w
 | environment variable | description | default |
 | --- | --- | --- |
 | POD_IP | IP of the pod running chief of state (see note below) | <none> |
-| COS_KUBERNETES_APP_LABEL | k8s metadata app label (must match exactly) that lagom uses when bootstrapping the cluster to discover its peers | <none> |
+| COS_KUBERNETES_APP_LABEL | k8s metadata app label. For the kubernetes API this value is substributed into the %s in pod-label-selector
+ | <none> |
 | COS_KUBERNETES_REPLICA_COUNT | must match the replica count on your deployment | 1 |
 
 #### Kubernetes deployment
