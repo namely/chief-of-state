@@ -12,7 +12,7 @@ import slick.jdbc.PostgresProfile
 case class JournalAndSnapshotMigration(config: Config) {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
-  private val dc: DatabaseConfig[PostgresProfile] = DatabaseConfig.forConfig[PostgresProfile]("slick", config)
+  private val dc: DatabaseConfig[PostgresProfile] = DatabaseConfig.forConfig[PostgresProfile]("write-side-slick", config)
   private val journalTableName: String = config.getString("jdbc-read-journal.tables.journal.tableName")
   private val snapshotTableName: String = config.getString("jdbc-snapshot-store.tables.snapshot.tableName")
 
