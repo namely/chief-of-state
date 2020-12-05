@@ -100,7 +100,10 @@ spec:
       serviceAccountName: chief-of-state-sa
 ```
 
-... and then enable the akka management settings in the deployment like so
+### Readiness and Liveness probe
+
+Chief Of State provides cluster membership health checks out of the box. The health checks register the following routes
+`/ready` and `/alive` out of the box that can be configured as shown in the following sample kubernetes file.
 
 ```yaml
 ...
