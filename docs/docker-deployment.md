@@ -4,7 +4,7 @@ The following section describes deployment in docker, including local developmen
 
 ### Docker-specific Environment Variables
 
-The following env vars can be set in addition to the [general configurations](./docs/configuration.md).
+The following env vars can be set in addition to the [general configurations](./configuration.md).
 
 | environment variable | description | default |
 | --- | --- | --- |
