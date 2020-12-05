@@ -134,7 +134,7 @@ JAEGER_TAGS | no | A comma separated list of `name = value` tracer level tags, w
 |--- | --- | --- |
 | COS_READ_SIDE_CONFIG_<SETTING_NAME>_<READSIDE_ID> | readside configuration settings | <none> |
 
-### Local dev additionam env vars
+### Local dev additional env vars
 
 | environment variable | description | default |
 | --- | --- | --- |
