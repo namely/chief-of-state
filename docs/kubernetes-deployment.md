@@ -5,8 +5,9 @@ Chief of State leverages the [Akka Kubernetes Integration](https://doc.akka.io/d
 ### Environment Variables
 
 Ensure the following env vars are set:
-| environment variable | description
-| --- | --- | --- |
+
+| environment variable | description |
+| --- | --- |
 | COS_DEPLOYMENT_MODE | set to "kubernetes" to instruct COS to leverage the k8s API |
 | POD_IP | IP of the pod running chief of state (see note below) |
 | COS_KUBERNETES_APP_LABEL | Set to the app label of the k8s pod, which Akka will use to discover all sibling nodes in the cluster. |
