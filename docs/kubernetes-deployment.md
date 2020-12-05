@@ -4,7 +4,7 @@ Chief of State leverages the [Akka Kubernetes Integration](https://doc.akka.io/d
 
 ### Environment Variables
 
-Ensure the following env vars are set:
+The following env vars can be set in addition to the [general configurations](./configuration.md).
 
 | environment variable | description |
 | --- | --- |
