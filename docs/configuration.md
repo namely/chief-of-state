@@ -11,6 +11,7 @@ See the following deployment-specific guides for relevant configurations:
 | environment variable | description | default |
 |--- | --- | --- |
 | LOG_LEVEL | The possible values are: _**DEBUG**_, _**INFO**_, _**WARN**_, _**ERROR**_ | DEBUG |
+| LOG_STYLE | Logging format: _**STANDARD**_, _**SIMPLE**_, _**JSON**_ | _**JSON**_ |
 | JAVA_OPTS | The java options for the underlying jvm application | -Xms256M -Xmx1G -XX:+UseG1GC |
 | COS_ADDRESS | container host | 0.0.0.0 |
 | COS_PORT | container port | 9000 |
