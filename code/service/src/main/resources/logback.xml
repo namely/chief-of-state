@@ -3,8 +3,9 @@
     <!-- Let us define some env vars -->
     <!-- LOG_LEVEL sets the root logging level -->
     <variable name="LOG_LEVEL" value="${LOG_LEVEL:-WARN}"/>
-    <!-- LOG_STYLE accepts {SIMPLE, STDOUT, ASYNCSTDOUT} -->
-    <variable name="LOG_STYLE" value="${LOG_STYLE:-ASYNCJSON}"/>
+
+    <!-- LOG_STYLE accepts {SIMPLE, STANDARD, JSON} -->
+    <variable name="LOG_STYLE" value="${LOG_STYLE:-JSON}"/>
 
     <!-- define appenders -->
     <appender name="SIMPLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -15,15 +16,15 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%date{"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",UTC} %coloredLevel %logger - %msg%n</pattern>
+            <pattern>%date{"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",UTC} %-5level %logger - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
+    <appender name="STANDARD" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="STDOUT"/>
     </appender>
 
-    <appender name="ASYNCJSON" class="net.logstash.logback.appender.LoggingEventAsyncDisruptorAppender">
+    <appender name="JSON" class="net.logstash.logback.appender.LoggingEventAsyncDisruptorAppender">
         <appender class="ch.qos.logback.core.ConsoleAppender">
             <encoder class="net.logstash.logback.encoder.LogstashEncoder">
                 <timeZone>UTC</timeZone>
