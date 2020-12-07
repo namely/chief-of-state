@@ -1,8 +1,12 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2020 Namely
+ */
+
 package com.namely.chiefofstate
 
 import com.namely.chiefofstate.helper.BaseSpec
-import io.grpc.ManagedChannel
-import io.grpc.netty.NettyChannelBuilder
 
 class NettyHelperSpec extends BaseSpec {
   "buildChannel" should {

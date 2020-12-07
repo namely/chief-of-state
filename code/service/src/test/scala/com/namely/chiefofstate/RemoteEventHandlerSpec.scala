@@ -1,8 +1,15 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2020 Namely
+ */
+
 package com.namely.chiefofstate
 
 import com.google.protobuf.any
 import com.namely.chiefofstate.config.{GrpcClient, GrpcConfig, GrpcServer}
 import com.namely.chiefofstate.helper.BaseSpec
+import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened}
 import com.namely.protobuf.chiefofstate.v1.writeside.{
@@ -11,14 +18,11 @@ import com.namely.protobuf.chiefofstate.v1.writeside.{
   WriteSideHandlerServiceGrpc
 }
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
-import io.grpc.{ManagedChannel, Status}
-import scala.util.Try
-import com.namely.chiefofstate.helper.GrpcHelpers.Closeables
-import io.grpc.ServerServiceDefinition
+import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
 import io.grpc.inprocess._
+
 import scala.concurrent.ExecutionContext.global
-import com.namely.protobuf.chiefofstate.v1.common.MetaData
-import com.google.protobuf.any
+import scala.util.Try
 
 class RemoteEventHandlerSpec extends BaseSpec {
 

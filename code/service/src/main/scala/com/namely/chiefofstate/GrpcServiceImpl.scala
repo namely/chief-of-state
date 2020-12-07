@@ -1,38 +1,28 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2020 Namely
+ */
+
 package com.namely.chiefofstate
 
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
 import akka.util.Timeout
 import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.plugin.PluginManager
+import com.namely.chiefofstate.telemetry.{GrpcHeadersInterceptor, OpentracingHelpers}
 import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
-import com.namely.protobuf.chiefofstate.v1.service.{
-  GetStateRequest,
-  GetStateResponse,
-  ProcessCommandRequest,
-  ProcessCommandResponse
-}
+import com.namely.protobuf.chiefofstate.v1.service._
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import io.grpc.{Metadata, Status, StatusException}
+import io.opentracing.Tracer
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-import com.namely.chiefofstate.telemetry.GrpcHeadersInterceptor
-import io.opentracing.util.GlobalTracer
-import io.opentracing.propagation.Format
-import io.opentracing.propagation.TextMap
-import io.opentracing.Tracer
-import io.opentracing.propagation.TextMapAdapter
-import io.opentracing.propagation.TextMapInjectAdapter
-import scala.jdk.CollectionConverters._
-import scala.collection.mutable
-import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc
-import com.namely.chiefofstate.telemetry.OpentracingHelpers
-import io.opentracing.tag.Tags
-import io.opentracing.Span
 
 class GrpcServiceImpl(clusterSharding: ClusterSharding,
                       pluginManager: PluginManager,

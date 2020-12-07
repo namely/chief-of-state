@@ -1,3 +1,9 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2020 Namely
+ */
+
 package com.namely.chiefofstate
 
 import com.namely.chiefofstate.helper.BaseSpec
@@ -9,16 +15,13 @@ import com.namely.protobuf.chiefofstate.v1.readside.{
 }
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened}
-import io.grpc.{ManagedChannel, Status}
-import io.grpc.netty.NettyChannelBuilder
-import com.namely.chiefofstate.helper.GrpcHelpers
+import io.grpc.Status
 import io.grpc.inprocess._
-import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerService
-import scala.concurrent.Future
+
 import scala.concurrent.ExecutionContext.global
+import scala.concurrent.Future
 
 class RemoteReadSideProcessorSpec extends BaseSpec {
-  import GrpcHelpers._
 
   "RemoteReadSideProcessor" should {
     "handle events as expected" in {

@@ -1,12 +1,18 @@
-package com.namely.chiefofstate
+/*
+ * MIT License
+ *
+ * Copyright (c) 2020 Namely
+ */
 
-import java.nio.charset.StandardCharsets
+package com.namely.chiefofstate
 
 import akka.actor.ExtendedActorSystem
 import akka.actor.typed.{ActorRef, ActorRefResolver}
 import akka.actor.typed.scaladsl.adapter._
 import akka.serialization.SerializerWithStringManifest
 import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, CommandWrapper, SendCommand}
+
+import java.nio.charset.StandardCharsets
 
 sealed class CommandSerializer(val system: ExtendedActorSystem) extends SerializerWithStringManifest {
 

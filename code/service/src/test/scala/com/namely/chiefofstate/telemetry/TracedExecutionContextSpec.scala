@@ -1,3 +1,9 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2020 Namely
+ */
+
 package com.namely.chiefofstate.telemetry
 
 import com.namely.chiefofstate.helper.{AwaitHelper, BaseSpec}

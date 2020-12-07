@@ -1,3 +1,9 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2020 Namely
+ */
+
 package com.namely.chiefofstate.plugin
 
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest

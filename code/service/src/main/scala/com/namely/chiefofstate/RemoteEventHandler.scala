@@ -1,16 +1,20 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2020 Namely
+ */
+
 package com.namely.chiefofstate
 
-import java.util.concurrent.TimeUnit
-
+import com.google.protobuf.any
 import com.namely.chiefofstate.config.GrpcConfig
-import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
+import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.writeside.{HandleEventRequest, HandleEventResponse}
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import org.slf4j.{Logger, LoggerFactory}
 
+import java.util.concurrent.TimeUnit
 import scala.util.Try
-import com.google.protobuf.any
-import com.namely.protobuf.chiefofstate.v1.common.MetaData
 
 /**
  * handles a given event by making a rpc call

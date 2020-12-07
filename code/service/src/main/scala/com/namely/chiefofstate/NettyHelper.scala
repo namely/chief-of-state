@@ -1,9 +1,13 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2020 Namely
+ */
+
 package com.namely.chiefofstate
 
-import io.grpc.ManagedChannel
-import io.grpc.netty.NegotiationType
 import io.grpc.netty.NegotiationType.{PLAINTEXT, TLS}
-import io.grpc.netty.NettyChannelBuilder
+import io.grpc.netty.{NegotiationType, NettyChannelBuilder}
 
 object NettyHelper {
 

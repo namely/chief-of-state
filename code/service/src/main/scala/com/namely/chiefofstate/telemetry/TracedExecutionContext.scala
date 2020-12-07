@@ -1,3 +1,9 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2020 Namely
+ */
+
 package com.namely.chiefofstate.telemetry
 
 import java.util.concurrent.ForkJoinPool

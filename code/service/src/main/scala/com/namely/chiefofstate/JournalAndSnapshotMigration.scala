@@ -1,10 +1,16 @@
-package com.namely.chiefofstate
-import java.sql.{Connection, Statement}
+/*
+ * MIT License
+ *
+ * Copyright (c) 2020 Namely
+ */
 
+package com.namely.chiefofstate
 import com.typesafe.config.Config
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.PostgresProfile
+
+import java.sql.{Connection, Statement}
 
 /**
  * Help create the journal and snapshot stores

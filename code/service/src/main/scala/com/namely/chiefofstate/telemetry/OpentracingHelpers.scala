@@ -1,20 +1,22 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2020 Namely
+ */
+
 package com.namely.chiefofstate.telemetry
 
-import io.opentracing.util.GlobalTracer
-import io.opentracing.propagation.TextMapAdapter
-import io.opentracing.propagation.Format
-import io.opentracing.Tracer
-import io.opentracing.SpanContext
+import io.opentracing.propagation.{Format, TextMapAdapter}
 import io.opentracing.Tracer.SpanBuilder
-import io.opentracing.tag.Tags
 import io.opentracing.log.Fields
-import io.opentracing.Span
-import java.io.StringWriter
-import java.io.PrintWriter
+import io.opentracing.tag.Tags
+import io.opentracing.{Span, SpanContext, Tracer}
 import org.slf4j.{Logger, LoggerFactory}
-import scala.util.{Failure, Success, Try}
+
+import java.io.{PrintWriter, StringWriter}
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
+import scala.util.{Failure, Success, Try}
 
 object OpentracingHelpers {
 

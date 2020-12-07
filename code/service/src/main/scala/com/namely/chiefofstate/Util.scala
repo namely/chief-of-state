@@ -1,6 +1,10 @@
-package com.namely.chiefofstate
+/*
+ * MIT License
+ *
+ * Copyright (c) 2020 Namely
+ */
 
-import java.time.{Instant, LocalDate, ZoneId}
+package com.namely.chiefofstate
 
 import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
@@ -8,6 +12,7 @@ import com.google.protobuf.timestamp.Timestamp
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand.Header
 import io.grpc.{Metadata, Status, StatusException, StatusRuntimeException}
 
+import java.time.{Instant, LocalDate, ZoneId}
 import scala.collection.mutable
 import scala.util.{Failure, Try}
 

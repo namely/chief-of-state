@@ -1,3 +1,9 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2020 Namely
+ */
+
 package com.namely.chiefofstate
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.Behavior

@@ -1,10 +1,15 @@
-package com.namely.chiefofstate.helper
+/*
+ * MIT License
+ *
+ * Copyright (c) 2020 Namely
+ */
 
-import java.io.Closeable
-import java.util.concurrent.TimeUnit
+package com.namely.chiefofstate.helper
 
 import io.grpc._
 
+import java.io.Closeable
+import java.util.concurrent.TimeUnit
 import scala.collection.mutable
 
 object GrpcHelpers {
