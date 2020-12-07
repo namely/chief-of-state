@@ -7,11 +7,13 @@
 
 ![Architecture Diagram](img/architecture.png?raw=true "Title")
 
-Chief-Of-State is a **_gRPC distributed event sourcing_** application that provides scalable, configurable, events and state management strategies to relieve this responsibility from the developers.
+Chief-Of-State is a **_gRPC distributed event sourcing_** application that provides scalable, configurable, events and
+state management strategies to relieve this responsibility from the developers.
 
 Chief-Of-State is language agnostic, which means that services can be written in any language that supports gRPC.
 
-Chief-Of-State can be bundled as a sidecar to the application it is providing events and state management or run it on its own k8 pod.
+Chief-Of-State can be bundled as a sidecar to the application it is providing events and state management or run it on
+its own k8 pod.
 
 ## Features
 
@@ -36,7 +38,9 @@ Chief-Of-State can be bundled as a sidecar to the application it is providing ev
 - Out of the box configurable k8 deployment.
 
 ### Documentation
+
 The following docs are available:
+
 - [Configuration options](./docs/configuration.md)
 - [Docker Deployment](./docs/docker-deployment.md)
 - [Kubernetes Deployment](./docs/kubernetes-deployment.md)
@@ -65,3 +69,22 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 - [.NET Core](https://github.com/namely/cos-banking)
 - [Golang](https://github.com/namely/cos-go-sample)
 - [Python](https://github.com/namely/cos-python-sample)
+
+### License
+
+MIT License
+
+Copyright (c) 2020 Namely
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
