@@ -1,3 +1,9 @@
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 package com.namely.chiefofstate
 import com.typesafe.config.Config
 import org.slf4j.{Logger, LoggerFactory}

@@ -15,7 +15,7 @@ lazy val chiefofstate: Project = project
   .enablePlugins(DockerSettings)
   .enablePlugins(NoPublish)
   .enablePlugins(AutomateHeaderPlugin)
-  .settings(name := "chiefofstate")
+  .settings(name := "chiefofstate", headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax)
   .dependsOn(protogen, chiefofstateplugins, protogenTest % "test->compile")
 
 lazy val chiefofstateplugins = project
@@ -27,7 +27,8 @@ lazy val chiefofstateplugins = project
   .enablePlugins(AutomateHeaderPlugin)
   .settings(
     name := "chiefofstate-plugins",
-    description := "Chief of State Plugins"
+    description := "Chief of State Plugins",
+    headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax
   )
   .dependsOn(protogen)
 
