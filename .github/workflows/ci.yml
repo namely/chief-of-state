@@ -18,14 +18,8 @@ jobs:
       FORCE_COLOR: 1
     steps:
     - uses: actions/checkout@v2
-
-    - name: Checkout submodules # checkout rest
-      shell: bash
-      run: |
-        git config --global url."https://github.com/".insteadOf "git@github.com:"
-        git submodule sync --recursive
-        ls -la ./proto/
-
+      with:
+        submodules: true
     
     - name: check files
       shell: bash
