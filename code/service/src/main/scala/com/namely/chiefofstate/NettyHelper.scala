@@ -1,9 +1,13 @@
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 package com.namely.chiefofstate
 
-import io.grpc.ManagedChannel
-import io.grpc.netty.NegotiationType
+import io.grpc.netty.{NegotiationType, NettyChannelBuilder}
 import io.grpc.netty.NegotiationType.{PLAINTEXT, TLS}
-import io.grpc.netty.NettyChannelBuilder
 
 object NettyHelper {
 

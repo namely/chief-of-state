@@ -1,6 +1,10 @@
-package com.namely.chiefofstate
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
 
-import java.net.InetSocketAddress
+package com.namely.chiefofstate
 
 import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
@@ -8,32 +12,21 @@ import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
-import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
-import com.namely.chiefofstate.telemetry.{
-  ErrorsServerInterceptor,
-  GrpcHeadersInterceptor,
-  TelemetryTools,
-  TracedExecutionContext
-}
+import com.namely.chiefofstate.config.{BootConfig, CosConfig, ReadSideConfigReader}
 import com.namely.chiefofstate.plugin.PluginManager
-import com.namely.chiefofstate.config.BootConfig
+import com.namely.chiefofstate.telemetry._
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
-import com.typesafe.config.{Config, ConfigFactory}
-import io.grpc.{ManagedChannel, Server, ServerInterceptors}
+import com.typesafe.config.Config
+import io.grpc.{ClientInterceptor, ManagedChannel, Server, ServerInterceptors}
 import io.grpc.netty.{NettyChannelBuilder, NettyServerBuilder}
-import io.opentracing.Tracer
-import io.opentracing.contrib.grpc.TracingServerInterceptor
+import io.opentracing.contrib.grpc.{TracingClientInterceptor, TracingServerInterceptor}
 import io.opentracing.util.GlobalTracer
 import org.slf4j.{Logger, LoggerFactory}
 
+import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext
-import io.grpc.ServerInterceptor
-import com.namely.chiefofstate.telemetry.ErrorsClientInterceptor
-import io.opentracing.contrib.grpc.TracingClientInterceptor
-import io.grpc.ClientInterceptor
-import akka.actor.Deploy
 
 class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, pluginManager: PluginManager) {
   self =>

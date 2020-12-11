@@ -1,7 +1,10 @@
-package com.namely.chiefofstate
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
 
-import java.util.UUID
-import java.util.concurrent.TimeUnit
+package com.namely.chiefofstate
 
 import akka.actor.testkit.typed.scaladsl.TestProbe
 import akka.actor.typed.{ActorRef, ActorSystem}
@@ -12,7 +15,6 @@ import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate.config.{CosConfig, EventsConfig}
 import com.namely.chiefofstate.helper.BaseActorSpec
 import com.namely.chiefofstate.AggregateRoot.getEntityId
-import com.namely.chiefofstate.helper.GrpcHelpers.Closeables
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
@@ -25,6 +27,8 @@ import com.typesafe.config.{Config, ConfigFactory}
 import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
 import io.grpc.inprocess._
 
+import java.util.UUID
+import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.Future

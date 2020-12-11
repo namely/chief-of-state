@@ -1,8 +1,14 @@
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 package com.namely.chiefofstate.telemetry
 
+import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.test.helloworld.{GreeterGrpc, HelloRequest}
 import com.namely.protobuf.chiefofstate.test.helloworld.GreeterGrpc.Greeter
-import com.namely.chiefofstate.helper.BaseSpec
 import io.grpc.{ManagedChannel, Status}
 import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
 import io.opentracing.contrib.grpc.TracingServerInterceptor
@@ -22,7 +28,7 @@ class ErrorsServerInterceptorSpec extends BaseSpec {
       val tracer = new MockTracer(MockTracer.Propagator.TEXT_MAP)
 
       // Generate a unique in-process server name.
-      val serverName: String = InProcessServerBuilder.generateName();
+      val serverName: String = InProcessServerBuilder.generateName()
 
       // make a mock service that returns an error
       val serviceImpl: Greeter = mock[Greeter]

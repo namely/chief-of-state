@@ -1,3 +1,9 @@
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 package com.namely.chiefofstate
 
 import com.google.protobuf.any.Any
@@ -14,12 +20,11 @@ import com.namely.protobuf.chiefofstate.v1.writeside.{
   WriteSideHandlerServiceGrpc
 }
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
-import io.grpc.{ManagedChannel, Metadata, Status}
-import scala.util.Try
-import com.namely.chiefofstate.helper.GrpcHelpers.Closeables
+import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
 import io.grpc.inprocess._
-import io.grpc.ServerServiceDefinition
+
 import scala.concurrent.ExecutionContext.global
+import scala.util.Try
 
 class RemoteCommandHandlerSpec extends BaseSpec {
 

@@ -1,6 +1,10 @@
-package com.namely.chiefofstate
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
 
-import java.time.Instant
+package com.namely.chiefofstate
 
 import akka.actor.typed.{ActorRef, Behavior, SupervisorStrategy}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
@@ -22,6 +26,7 @@ import io.opentracing.tag.Tags
 import io.opentracing.util.GlobalTracer
 import org.slf4j.{Logger, LoggerFactory}
 
+import java.time.Instant
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
 

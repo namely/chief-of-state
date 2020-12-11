@@ -1,6 +1,10 @@
-package com.namely.chiefofstate
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
 
-import java.util.concurrent.TimeUnit
+package com.namely.chiefofstate
 
 import com.namely.chiefofstate.config.GrpcConfig
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
@@ -12,6 +16,7 @@ import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
 import org.slf4j.{Logger, LoggerFactory}
 
+import java.util.concurrent.TimeUnit
 import scala.util.Try
 
 /**

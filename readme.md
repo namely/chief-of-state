@@ -2,17 +2,20 @@
 
 [![Build Status](https://jenkins.namely.land/buildStatus/icon?job=chief-of-state/chief-of-state/master)](https://jenkins.namely.land/blue/organizations/jenkins/chief-of-state%2Fchief-of-state)
 [![codecov](https://codecov.io/gh/namely/chief-of-state/branch/master/graph/badge.svg?token=82PZVNR2P1)](https://codecov.io/gh/namely/chief-of-state)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Gitter](https://badges.gitter.im/namely/chief-of-state.svg)](https://gitter.im/namely/chief-of-state?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 ## Overview
 
 ![Architecture Diagram](img/architecture.png?raw=true "Title")
 
-Chief-Of-State is a **_gRPC distributed event sourcing_** application that provides scalable, configurable, events and state management strategies to relieve this responsibility from the developers.
+Chief-Of-State is a **_gRPC distributed event sourcing_** application that provides scalable, configurable, events and
+state management strategies to relieve this responsibility from the developers.
 
 Chief-Of-State is language agnostic, which means that services can be written in any language that supports gRPC.
 
-Chief-Of-State can be bundled as a sidecar to the application it is providing events and state management or run it on its own k8 pod.
+Chief-Of-State can be bundled as a sidecar to the application it is providing events and state management or run it on
+its own k8 pod.
 
 ## Features
 
@@ -37,7 +40,9 @@ Chief-Of-State can be bundled as a sidecar to the application it is providing ev
 - Out of the box configurable k8 deployment.
 
 ### Documentation
+
 The following docs are available:
+
 - [Configuration options](./docs/configuration.md)
 - [Docker Deployment](./docs/docker-deployment.md)
 - [Kubernetes Deployment](./docs/kubernetes-deployment.md)

@@ -1,3 +1,9 @@
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 package com.namely.chiefofstate
 
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
@@ -5,11 +11,11 @@ import com.namely.protobuf.chiefofstate.v1.readside.{HandleReadSideRequest, Hand
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
-
-import scala.util.Try
 import io.opentracing.Span
 import io.opentracing.tag.Tags
 import io.opentracing.util.GlobalTracer
+
+import scala.util.Try
 
 class RemoteReadSideProcessor(readSideHandlerServiceBlockingStub: ReadSideHandlerServiceBlockingStub) {
   private val COS_EVENT_TAG_HEADER = "x-cos-event-tag"

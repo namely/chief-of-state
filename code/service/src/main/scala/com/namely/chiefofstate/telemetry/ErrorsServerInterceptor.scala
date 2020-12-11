@@ -1,14 +1,16 @@
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 package com.namely.chiefofstate.telemetry
 
-import io.grpc.ServerInterceptor
-import io.grpc.{Metadata, ServerCall, ServerCallHandler}
-import io.grpc.ServerCall.Listener
-import io.grpc.ForwardingServerCallListener.SimpleForwardingServerCallListener
+import io.grpc._
 import io.grpc.ForwardingServerCall.SimpleForwardingServerCall
-import io.grpc.Status
+import io.grpc.ServerCall.Listener
+import io.opentracing.{Span, Tracer}
 import org.slf4j.{Logger, LoggerFactory}
-import io.opentracing.Tracer
-import io.opentracing.Span
 
 /**
  * custom server gRPC interceptor for propagating errors to the tracer
@@ -30,8 +32,6 @@ class ErrorsServerInterceptor(tracer: Tracer) extends ServerInterceptor {
     headers: Metadata,
     next: ServerCallHandler[T, U]
   ): Listener[T] = {
-
-    import ErrorsServerInterceptor.logger
 
     next.startCall(
       new ErrorsServerInterceptor.CustomCaller[T, U](tracer, call),

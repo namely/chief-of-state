@@ -5,6 +5,7 @@ dockerImageCreationTask := (Docker / publishLocal in chiefofstate).value
 lazy val root: Project = project
   .in(file("."))
   .enablePlugins(NoPublish)
+  .settings(headerLicense := None)
   .aggregate(protogen, chiefofstate, chiefofstateplugins, protogenTest)
 
 lazy val chiefofstate: Project = project
@@ -13,7 +14,8 @@ lazy val chiefofstate: Project = project
   .enablePlugins(BuildSettings)
   .enablePlugins(DockerSettings)
   .enablePlugins(NoPublish)
-  .settings(name := "chiefofstate")
+  .enablePlugins(AutomateHeaderPlugin)
+  .settings(name := "chiefofstate", headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax)
   .dependsOn(protogen, chiefofstateplugins, protogenTest % "test->compile")
 
 lazy val chiefofstateplugins = project
@@ -22,9 +24,11 @@ lazy val chiefofstateplugins = project
   .enablePlugins(BuildSettings)
   .enablePlugins(DockerSettings)
   .enablePlugins(NoPublish)
+  .enablePlugins(AutomateHeaderPlugin)
   .settings(
     name := "chiefofstate-plugins",
-    description := "Chief of State Plugins"
+    description := "Chief of State Plugins",
+    headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax
   )
   .dependsOn(protogen)
 
@@ -34,6 +38,7 @@ lazy val protogen: Project = project
   .enablePlugins(BuildSettings)
   .enablePlugins(NoPublish)
   .settings(name := "protogen")
+  .settings(headerLicense := None)
   .settings(
     inConfig(Compile)(
       Seq(
@@ -66,6 +71,7 @@ lazy val protogenTest: Project = project
   .enablePlugins(BuildSettings)
   .enablePlugins(NoPublish)
   .settings(name := "protogen_test")
+  .settings(headerLicense := None)
   .settings(
     inConfig(Compile)(
       Seq(

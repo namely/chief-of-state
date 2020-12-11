@@ -1,8 +1,14 @@
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 package com.namely.chiefofstate.telemetry
 
 import com.namely.chiefofstate.helper.BaseSpec
-import io.opentracing.mock.{MockSpan, MockTracer}
 import io.opentracing.{Span, Tracer}
+import io.opentracing.mock.{MockSpan, MockTracer}
 import io.opentracing.Tracer.SpanBuilder
 import io.opentracing.log.Fields
 import io.opentracing.tag.Tags
