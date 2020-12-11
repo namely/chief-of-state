@@ -1,7 +1,8 @@
-import sbt.{compilerPlugin, plugins, url, AutoPlugin, CrossVersion, Developer, Plugins, Resolver, _}
+import sbt.{compilerPlugin, plugins, url, AutoPlugin, CrossVersion, Plugins, Resolver, _}
 import sbt.Keys.{resolvers, _}
 import scoverage.ScoverageKeys.coverageExcludedPackages
 import Dependencies.Versions
+import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{headerLicense, HeaderLicense}
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport.scalafmtOnCompile
 
 object Common extends AutoPlugin {
@@ -15,6 +16,15 @@ object Common extends AutoPlugin {
       organization := "com.namely",
       organizationName := "Namely Inc.",
       organizationHomepage := Some(url("https://www.namely.com/")),
+      startYear := Some(2020),
+      licenses += ("MIT", new URL("https://opensource.org/licenses/MIT")),
+      headerLicense := Some(
+        HeaderLicense.Custom(
+          """|Copyright (c) 2020 Namely Inc.
+             |
+             |""".stripMargin
+        )
+      ),
       developers += Developer(
         "contributors",
         "Contributors",

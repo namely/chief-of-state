@@ -1,9 +1,3 @@
-/*
- * MIT License
- *
- * Copyright (c) 2020 Namely
- */
-
 package com.namely.chiefofstate
 
 import akka.actor.typed.ActorSystem
@@ -19,8 +13,8 @@ import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.R
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.typesafe.config.Config
-import io.grpc.netty.{NettyChannelBuilder, NettyServerBuilder}
 import io.grpc.{ClientInterceptor, ManagedChannel, Server, ServerInterceptors}
+import io.grpc.netty.{NettyChannelBuilder, NettyServerBuilder}
 import io.opentracing.contrib.grpc.{TracingClientInterceptor, TracingServerInterceptor}
 import io.opentracing.util.GlobalTracer
 import org.slf4j.{Logger, LoggerFactory}

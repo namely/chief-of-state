@@ -1,14 +1,8 @@
-/*
- * MIT License
- *
- * Copyright (c) 2020 Namely
- */
-
 package com.namely.chiefofstate.telemetry
 
+import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.test.helloworld.{GreeterGrpc, HelloReply, HelloRequest}
 import com.namely.protobuf.chiefofstate.test.helloworld.GreeterGrpc.Greeter
-import com.namely.chiefofstate.helper.BaseSpec
 import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
 import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
 import io.opentracing.log.Fields

@@ -1,16 +1,10 @@
-/*
- * MIT License
- *
- * Copyright (c) 2020 Namely
- */
-
 package com.namely.chiefofstate.telemetry
 
+import io.opentracing.{Span, SpanContext, Tracer}
 import io.opentracing.propagation.{Format, TextMapAdapter}
 import io.opentracing.Tracer.SpanBuilder
 import io.opentracing.log.Fields
 import io.opentracing.tag.Tags
-import io.opentracing.{Span, SpanContext, Tracer}
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.io.{PrintWriter, StringWriter}

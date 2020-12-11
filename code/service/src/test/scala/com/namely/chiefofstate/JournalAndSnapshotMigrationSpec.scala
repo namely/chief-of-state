@@ -1,9 +1,3 @@
-/*
- * MIT License
- *
- * Copyright (c) 2020 Namely
- */
-
 package com.namely.chiefofstate
 import com.namely.chiefofstate.helper.BaseSpec
 import com.typesafe.config.{Config, ConfigFactory}

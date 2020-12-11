@@ -1,19 +1,13 @@
-/*
- * MIT License
- *
- * Copyright (c) 2020 Namely
- */
-
 package com.namely.chiefofstate.telemetry
 
 import com.namely.chiefofstate.helper.{AwaitHelper, BaseSpec}
 import io.opentracing.mock.{MockSpan, MockTracer}
 import io.opentracing.Span
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.Duration
+
 import java.util.concurrent.Executors
 import scala.collection.mutable
+import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters._
 
 class TracedExecutionContextSpec extends BaseSpec {

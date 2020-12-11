@@ -1,16 +1,8 @@
-/*
- * MIT License
- *
- * Copyright (c) 2020 Namely
- */
-
 package com.namely.chiefofstate.helper
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.ExecutionContext
 import java.util.concurrent.Executors
-import scala.concurrent.Await
-import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 /**
  * test helper to await some condition

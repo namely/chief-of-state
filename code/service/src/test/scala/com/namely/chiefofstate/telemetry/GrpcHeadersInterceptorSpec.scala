@@ -1,17 +1,11 @@
-/*
- * MIT License
- *
- * Copyright (c) 2020 Namely
- */
-
 package com.namely.chiefofstate.telemetry
 
+import com.namely.chiefofstate.helper.{BaseSpec, GrpcHelpers}
 import com.namely.protobuf.chiefofstate.test.helloworld.{GreeterGrpc, HelloReply, HelloRequest}
 import com.namely.protobuf.chiefofstate.test.helloworld.GreeterGrpc.Greeter
-import com.namely.chiefofstate.helper.{BaseSpec, GrpcHelpers}
+import io.grpc.{ManagedChannel, Metadata}
 import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
 import io.grpc.stub.MetadataUtils
-import io.grpc.{ManagedChannel, Metadata}
 
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.Future

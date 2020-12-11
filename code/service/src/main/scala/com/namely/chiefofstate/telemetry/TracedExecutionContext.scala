@@ -1,17 +1,11 @@
-/*
- * MIT License
- *
- * Copyright (c) 2020 Namely
- */
-
 package com.namely.chiefofstate.telemetry
 
-import java.util.concurrent.ForkJoinPool
 import io.opentracing.contrib.concurrent.TracedExecutorService
-import java.util.concurrent.ExecutorService
-import scala.concurrent.ExecutionContext
 import io.opentracing.Tracer
 import io.opentracing.util.GlobalTracer
+
+import java.util.concurrent.{ExecutorService, ForkJoinPool}
+import scala.concurrent.ExecutionContext
 
 /**
  * Creates a traced fork join pool for running the application

@@ -1,20 +1,12 @@
-/*
- * MIT License
- *
- * Copyright (c) 2020 Namely
- */
-
 package com.namely.chiefofstate.telemetry
 
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry
-import io.micrometer.prometheus.PrometheusMeterRegistry
-import io.micrometer.prometheus.PrometheusConfig
-import io.opentracing.contrib.metrics.micrometer.MicrometerMetricsReporter
-import com.namely.chiefofstate.telemetry.PrometheusServer
 import com.typesafe.config.Config
-import org.slf4j.{Logger, LoggerFactory}
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
+import io.micrometer.prometheus.{PrometheusConfig, PrometheusMeterRegistry}
+import io.opentracing.contrib.metrics.micrometer.MicrometerMetricsReporter
 import io.opentracing.Tracer
 import io.opentracing.util.GlobalTracer
+import org.slf4j.{Logger, LoggerFactory}
 
 case class TelemetryTools(config: Config, enableJaeger: Boolean, serviceName: String) {
 

@@ -1,9 +1,3 @@
-/*
- * MIT License
- *
- * Copyright (c) 2020 Namely
- */
-
 package com.namely.chiefofstate
 import com.typesafe.config.Config
 import org.slf4j.{Logger, LoggerFactory}

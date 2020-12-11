@@ -1,22 +1,14 @@
-/*
- * MIT License
- *
- * Copyright (c) 2020 Namely
- */
-
 package com.namely.chiefofstate.telemetry
 
-import io.micrometer.prometheus.PrometheusMeterRegistry
 import com.sun.net.httpserver.HttpServer
-import java.net.InetSocketAddress
+import com.typesafe.config.Config
+import io.micrometer.prometheus.PrometheusMeterRegistry
+import org.slf4j.{Logger, LoggerFactory}
+
 import java.io.OutputStream
-import scala.concurrent.Future
-import scala.util.Success
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import java.net.InetSocketAddress
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
-import scala.concurrent.ExecutionContext
-import com.typesafe.config.{Config, ConfigException}
 
 class PrometheusServer(prometheusRegistry: PrometheusMeterRegistry, route: String, port: Int, ec: ExecutionContext) {
 

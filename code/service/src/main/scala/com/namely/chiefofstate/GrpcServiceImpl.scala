@@ -1,9 +1,3 @@
-/*
- * MIT License
- *
- * Copyright (c) 2020 Namely
- */
-
 package com.namely.chiefofstate
 
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}

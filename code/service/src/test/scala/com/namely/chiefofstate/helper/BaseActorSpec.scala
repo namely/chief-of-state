@@ -1,9 +1,3 @@
-/*
- * MIT License
- *
- * Copyright (c) 2020 Namely
- */
-
 package com.namely.chiefofstate.helper
 
 import akka.actor.testkit.typed.scaladsl.{ActorTestKit, ActorTestKitBase}

@@ -1,20 +1,10 @@
-/*
- * MIT License
- *
- * Copyright (c) 2020 Namely
- */
-
 package com.namely.chiefofstate.telemetry
 
-import io.grpc.ClientInterceptor
-import io.grpc.{CallOptions, Channel, ClientCall, MethodDescriptor}
-import io.grpc.ForwardingClientCallListener.SimpleForwardingClientCallListener
-import io.grpc.ForwardingClientCall.SimpleForwardingClientCall
+import io.grpc._
 import io.grpc.ClientCall.Listener
-import io.grpc.Status
-import io.grpc.Metadata
-import io.opentracing.Tracer
-import io.opentracing.Span
+import io.grpc.ForwardingClientCall.SimpleForwardingClientCall
+import io.grpc.ForwardingClientCallListener.SimpleForwardingClientCallListener
+import io.opentracing.{Span, Tracer}
 import org.slf4j.{Logger, LoggerFactory}
 
 /**
@@ -38,7 +28,6 @@ class ErrorsClientInterceptor(tracer: Tracer) extends ClientInterceptor {
     callOptions: CallOptions,
     next: Channel
   ): ClientCall[T, U] = {
-    import ErrorsClientInterceptor.logger
 
     new ErrorsClientInterceptor.CustomClientCall[T, U](next.newCall(method, callOptions), tracer)
   }
