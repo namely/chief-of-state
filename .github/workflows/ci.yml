@@ -20,11 +20,6 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
-    
-    - name: check files
-      shell: bash
-      run: |
-        ls -la ./proto/
 
     - name: Put back the git branch into git (Earthly uses it for tagging)
       run: |
