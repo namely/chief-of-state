@@ -68,6 +68,4 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 
 ### Sample Projects
 
-- [.NET Core](https://github.com/namely/cos-banking)
-- [Golang](https://github.com/namely/cos-go-sample)
 - [Python](https://github.com/namely/cos-python-sample)
