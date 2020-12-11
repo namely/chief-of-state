@@ -24,6 +24,13 @@ jobs:
       run: |
         git config --global url."https://github.com/".insteadOf "git@github.com:"
         git submodule sync --recursive
+        ls -la ./proto/
+
+    
+    - name: check files
+      shell: bash
+      run: |
+        ls -la ./proto/
 
     - name: Put back the git branch into git (Earthly uses it for tagging)
       run: |
