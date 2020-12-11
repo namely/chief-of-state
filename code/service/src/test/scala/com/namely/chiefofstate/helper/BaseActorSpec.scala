@@ -1,3 +1,9 @@
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 package com.namely.chiefofstate.helper
 
 import akka.actor.testkit.typed.scaladsl.{ActorTestKit, ActorTestKitBase}
