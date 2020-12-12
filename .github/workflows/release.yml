@@ -1,5 +1,7 @@
 # .github/workflows/release.yml
 
+name: Release
+
 on:
   push:
     tags:

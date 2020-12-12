@@ -1,5 +1,7 @@
 # .github/workflows/branch.yml
 
+name: Build
+
 on:
   push:
     branches:
