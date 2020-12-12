@@ -4,6 +4,7 @@
 [![codecov](https://codecov.io/gh/namely/chief-of-state/branch/master/graph/badge.svg?token=82PZVNR2P1)](https://codecov.io/gh/namely/chief-of-state)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Gitter](https://badges.gitter.im/namely/chief-of-state.svg)](https://gitter.im/namely/chief-of-state?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![Docker Hub](https://img.shields.io/badge/docker%20hub-namely-blue)](https://hub.docker.com/repository/docker/namely/chief-of-state)
 
 ## Overview
 
