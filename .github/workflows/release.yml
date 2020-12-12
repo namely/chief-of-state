@@ -31,7 +31,7 @@ jobs:
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         COMMIT_HASH: ${{ github.sha }}
-        VERSION: ${{ github.event.release.tag_name#v }}
+        VERSION: ${{ github.event.release.tag_name | sed -e 's/^v//' }}
         EARTHLY_BUILD_ARGS: "BRANCH_NAME,COMMIT_HASH,VERSION"
         EARTHLY_SECRETS: "CODECOV_TOKEN"
       run: earth --push +all
