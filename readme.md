@@ -59,4 +59,4 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 
 ### Sample Projects
 
-    - [Python](https://github.com/namely/cos-python-sample)
+[Python](https://github.com/namely/cos-python-sample)
