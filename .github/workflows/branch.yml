@@ -1,0 +1,39 @@
+# .github/workflows/branch.yml
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USER }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      GIT_URL_INSTEAD_OF: "https://github.com/=git@github.com:"
+      FORCE_COLOR: 1
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+
+    - uses: nelonoel/branch-name@v1.0.1
+
+    - name: Docker Login
+      run: docker login --username "$DOCKERHUB_USERNAME" --password "$DOCKERHUB_TOKEN"
+
+    - name: Download latest earth
+      run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.3.19/earth-linux-amd64 -O /usr/local/bin/earth && chmod +x /usr/local/bin/earth'"
+
+    - name: Earth Version
+      run: earth --version
+
+    - name: Build
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        COMMIT_HASH: ${{ github.sha }}
+        EARTHLY_BUILD_ARGS: "BRANCH_NAME,COMMIT_HASH"
+        EARTHLY_SECRETS: "CODECOV_TOKEN"
+      run: earth +all

@@ -80,7 +80,7 @@ docker-build:
     CMD []
 
     # build the image and push remotely (if all steps are successful)
-    SAVE IMAGE --push registry.namely.land/namely/chief-of-state:${VERSION}
+    SAVE IMAGE --push namely/chief-of-state:${VERSION}
 
 
 test-local:
@@ -94,7 +94,9 @@ codecov:
     ARG COMMIT_HASH=""
     ARG BRANCH_NAME=""
     ARG BUILD_NUMBER=""
-    RUN curl -s https://codecov.io/bash | bash -s - -B "${BRANCH_NAME}" -C "${COMMIT_HASH}" -b "${BUILD_NUMBER}"
+    RUN curl -s https://codecov.io/bash > codecov.sh && chmod +x codecov.sh
+    RUN --secret CODECOV_TOKEN=+secrets/CODECOV_TOKEN \
+        ./codecov.sh -t "${CODECOV_TOKEN}" -B "${BRANCH_NAME}" -C "${COMMIT_HASH}" -b "${BUILD_NUMBER}"
 
 test-all:
     BUILD +test-local
