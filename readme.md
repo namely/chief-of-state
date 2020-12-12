@@ -19,33 +19,24 @@ its own k8 pod.
 
 ## Features
 
-- Journal and Snapshot serialization using google protocol buffer message format.
-
-- Out of the box clustering and powerful events and domain entities sharding with split-brain-resolver algorithm.
-
-- Out of the box entities passivation mechanism to free resources whenever necessary.
-
-- All events, state serialization using google protocol buffer message format and persisted to postgres.
-
-- Additional meta data are provided to your events via the `MetaData`.
-
-- Commands and Events handlers via gRPC.
-
-- Read Side processor via gRPC (every persisted event is available when the read side is turn on).
-
-- Out of the box Read Side offset management residing in the Chief-Of-State readSide store (postgresql).
-
-- Out of the box observability.
-
-- Out of the box configurable k8 deployment.
+  - Journal and Snapshot serialization using google protocol buffer message format.
+  - Out of the box clustering and powerful events and domain entities sharding with split-brain-resolver algorithm.
+  - Out of the box entities passivation mechanism to free resources whenever necessary.
+  - All events, state serialization using google protocol buffer message format and persisted to postgres.
+  - Additional meta data are provided to your events via the `MetaData`.
+  - Commands and Events handlers via gRPC.
+  - Read Side processor via gRPC (every persisted event is available when the read side is turn on).
+  - Out of the box Read Side offset management residing in the Chief-Of-State readSide store (postgresql).
+  - Out of the box observability.
+  - Out of the box configurable k8 deployment.
 
 ### Documentation
 
 The following docs are available:
 
-- [Configuration options](./docs/configuration.md)
-- [Docker Deployment](./docs/docker-deployment.md)
-- [Kubernetes Deployment](./docs/kubernetes-deployment.md)
+  - [Configuration options](./docs/configuration.md)
+  - [Docker Deployment](./docs/docker-deployment.md)
+  - [Kubernetes Deployment](./docs/kubernetes-deployment.md)
 
 ### Locally build / test
 
@@ -68,4 +59,4 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 
 ### Sample Projects
 
-- [Python](https://github.com/namely/cos-python-sample)
+    - [Python](https://github.com/namely/cos-python-sample)
