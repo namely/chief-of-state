@@ -10,7 +10,7 @@
 
 ![Architecture Diagram](img/architecture.png?raw=true "Title")
 
-Chief-Of-State is a **_gRPC distributed event sourcing_** application that provides scalable, configurable, events and
+Chief-Of-State is a **_gRPC distributed event sourcing_** tool that provides scalable, configurable, events and
 state management strategies to relieve this responsibility from the developers.
 
 Chief-Of-State is language agnostic, which means that services can be written in any language that supports gRPC.
