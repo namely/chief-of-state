@@ -22,9 +22,10 @@ Chief-of-state was built by Namely with the following principles:
 
 ## Anatomy of a chief-of-state app
 
+Developers implement two gRPC interfaces: a write handler for building state and, optionally, many read handlers for reacting to state changes.
+
 ![Architecture Diagram](img/architecture.png?raw=true "Title")
 
-Developers implement two gRPC interfaces: a write handler for building state and, optionally, many read handlers for reacting to state changes.
 ### Write Handler
 
 Developers describe state mutations by implementing two RPC’s in the WriteSideHandlerService:
