@@ -29,13 +29,13 @@ Developers implement two gRPC interfaces: a write handler for building state and
 
 ### Write Handler
 
-Developers describe state mutations by implementing two RPC’s in the WriteSideHandlerService:
+Developers describe state mutations by implementing two RPC’s in the [WriteSideHandlerService](https://github.com/namely/chief-of-state-protos/blob/master/chief_of_state/v1/writeside.proto):
 - `HandleCommand` accepts a command and the prior state of an entity and returns an Event. For example, given a command to UpdateUserEmail and a User, this RPC might return UserEmailUpdated.
 - `HandleEvent` accepts an event and the prior state of an entity and returns a new state. For example, given a UserEmailUpdated event and a User, this RPC would return a new User instance with the email updated.
 
 ### Read Handler
 
-In response to state mutations, COS is able to send changes to many ReadSideHandlerService implementations, which may take any action. COS guarantees at-least-once delivery of events and resulting state to each read side in the order they were persisted.
+In response to state mutations, COS is able to send changes to many [ReadSideHandlerService](https://github.com/namely/chief-of-state-protos/blob/master/chief_of_state/v1/readside.proto) implementations, which may take any action. COS guarantees at-least-once delivery of events and resulting state to each read side in the order they were persisted.
 
 Some potential read side handlers might:
 - Write state changes to a special data store like elastic
