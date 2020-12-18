@@ -8,28 +8,45 @@
 
 ## Overview
 
+Chief-of-state (COS) is a dockerized persistence framework for building modern, clustered, reactive applications.
+COS encourages best practices in CQRS and event-sourcing through simple interfaces and allows developers to describe
+their schema as Protobuf and state transformations as gRPC methods in any language. Under the hood, COS leverages
+Akka to scale out and guarantee performant, reliable persistence.
+
+Chief-of-state was built by Namely with the following principles:
+* Wire format should be the same as persistence (Protobuf is a better schema definition than DDL)
+* Prototypes should scale
+* Developers should never face race conditions or database locks
+* A perfect datastore would offer random access by key, streaming semantics, and atomic writes
+* Interfaces are better than rules
+
+## Anatomy of a chief-of-state app
+
 ![Architecture Diagram](img/architecture.png?raw=true "Title")
 
-Chief-Of-State is a **_gRPC distributed event sourcing_** tool that provides scalable, configurable, events and
-state management strategies to relieve this responsibility from the developers.
+Developers implement two gRPC interfaces: a write handler for building state and, optionally, many read handlers for reacting to state changes.
+### Write Handler
 
-Chief-Of-State is language agnostic, which means that services can be written in any language that supports gRPC.
+Developers describe state mutations by implementing two RPC’s in the WriteSideHandlerService:
+- `HandleCommand` accepts a command and the prior state of an entity and returns an Event. For example, given a command to UpdateUserEmail and a User, this RPC might return UserEmailUpdated.
+- `HandleEvent` accepts an event and the prior state of an entity and returns a new state. For example, given a UserEmailUpdated event and a User, this RPC would return a new User instance with the email updated.
 
-Chief-Of-State can be bundled as a sidecar to the application it is providing events and state management or run it on
-its own k8 pod.
+### Read Handler
+
+In response to state mutations, COS is able to send changes to many ReadSideHandlerService implementations, which may take any action. COS guarantees at-least-once delivery of events and resulting state to each read side in the order they were persisted.
+
+Some potential read side handlers might:
+- Write state changes to a special data store like elastic
+- Publish changes to kafka topics
+- Send notifications to users in response to specific events
 
 ## Features
-
-  - Journal and Snapshot serialization using google protocol buffer message format.
-  - Out of the box clustering and powerful events and domain entities sharding with split-brain-resolver algorithm.
-  - Out of the box entities passivation mechanism to free resources whenever necessary.
-  - All events, state serialization using google protocol buffer message format and persisted to postgres.
-  - Additional meta data are provided to your events via the `MetaData`.
-  - Commands and Events handlers via gRPC.
-  - Read Side processor via gRPC (every persisted event is available when the read side is turn on).
-  - Out of the box Read Side offset management residing in the Chief-Of-State readSide store (postgresql).
-  - Out of the box observability.
-  - Out of the box configurable k8 deployment.
+  - Journal and Snapshot serialization using google protocol buffer message format
+  - Preconfigured Akka clustering and and domain entity sharding with the split-brain-resolver algorithm
+  - Automatic caching and entity passivation
+  - Automatic configuration of postgres storage on boot
+  - Opentelemetry integration for tracing and prometheus metrics
+  - Direct integration to Kubernetes to form a cluster
 
 ### Documentation
 
