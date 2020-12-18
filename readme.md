@@ -18,7 +18,7 @@ Chief-of-state was built by Namely with the following principles:
 * Scaling should not require re-architecture
 * Developers shouldn't face race conditions or database locks
 * Rules should be enforced with interfaces
-* Event sourcing is a valuable, but challenging to implement
+* Event sourcing is valuable, but challenging to implement
 * An ideal event-sourcing datastore would offer random access by key, streaming, and atomic writes
 
 ## Anatomy of a chief-of-state app
