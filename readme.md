@@ -9,9 +9,9 @@
 ## Overview
 
 Chief-of-state (COS) is a dockerized persistence framework for building modern, clustered, reactive applications.
-COS encourages best practices in CQRS and event-sourcing through simple interfaces and allows developers to describe
-their schema as Protobuf and state transformations as gRPC methods in any language. Under the hood, COS leverages
-Akka to scale out and guarantee performant, reliable persistence.
+COS encourages best practices in CQRS and event-sourcing through simple, language-agnostic interfaces via gRPC, and it
+allows developers to describe their schema with Protobuf. Under the hood, COS leverages Akka to scale out and guarantee
+performant, reliable persistence.
 
 Chief-of-state was built by Namely with the following principles:
 * Wire format should be the same as persistence (Protobuf is a better schema definition than DDL)
