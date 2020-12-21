@@ -90,7 +90,7 @@ class RemoteCommandHandlerSpec extends BaseSpec {
       val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(grpcConfig, writeHandlerServicetub)
       val triedHandleCommandResponse: Try[HandleCommandResponse] =
         remoteCommandHandler.handleCommand(remoteCommand, stateWrapper)
-      triedHandleCommandResponse.success.value shouldBe (expected)
+      triedHandleCommandResponse.success.value shouldBe expected
     }
 
     "handle command when there is an exception" in {
