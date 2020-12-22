@@ -9,7 +9,7 @@ object Dependencies {
     val AkkaVersion: String = "2.6.10"
     val SilencerVersion: String = "1.7.1"
     val LogbackVersion: String = "1.2.3"
-    val ScalapbCommonProtoVersion: String = "1.18.0-0"
+    val ScalapbCommonProtoVersion: String = "1.18.1-0"
     val ScalapbValidationVersion: String = "0.1.4"
     val ScalaTestVersion: String = "3.2.2"
     val AkkaManagementVersion: String = "1.0.9"
