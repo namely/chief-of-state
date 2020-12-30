@@ -20,7 +20,7 @@ object Dependencies {
     val ScalaMockVersion: String = "4.4.0"
 
     val JaninoVersion: String = "3.1.2"
-    val LogstashLogbackVersion: String = "6.3"
+    val LogstashLogbackVersion: String = "6.6"
 
     val OpenTracing: String = "0.33.0"
     val OpenTracingGrpc: String = "0.2.3"
