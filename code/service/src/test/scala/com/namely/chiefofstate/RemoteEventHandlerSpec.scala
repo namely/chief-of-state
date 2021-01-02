@@ -85,7 +85,7 @@ class RemoteEventHandlerSpec extends BaseSpec {
       val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(grpcConfig, writeHandlerServicetub)
       val triedHandleEventResponse: Try[HandleEventResponse] =
         remoteEventHandler.handleEvent(event, stateAny, eventMeta)
-      triedHandleEventResponse.success.value shouldBe (expected)
+      triedHandleEventResponse.success.value shouldBe expected
     }
 
     "handle event when there is a failure" in {

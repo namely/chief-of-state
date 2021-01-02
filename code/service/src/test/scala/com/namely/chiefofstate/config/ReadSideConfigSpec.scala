@@ -22,7 +22,7 @@ class ReadSideConfigSpec extends BaseSpec {
       val value: String = "foo"
       val config: ReadSideConfig = ReadSideConfig("test")
       // Gets unset key
-      config.getSetting(settingName) shouldBe (None)
+      config.getSetting(settingName) shouldBe None
       // Adds key
       val addition: ReadSideConfig = config.addSetting(settingName, value)
       // Gets new key value
@@ -30,7 +30,7 @@ class ReadSideConfigSpec extends BaseSpec {
       // Removes key
       val removed: ReadSideConfig = addition.removeSetting(settingName)
       // Gets removed key
-      removed.getSetting(settingName) shouldBe (None)
+      removed.getSetting(settingName) shouldBe None
     }
 
     "return all settings" in {

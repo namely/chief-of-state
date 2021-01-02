@@ -189,8 +189,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
             require(request.getEventMeta.revisionNumber == priorMeta.revisionNumber + 1)
             HandleEventResponse().withResultingState(resultingState)
           }
-            .recoverWith({
-              case e: Throwable => Failure(Util.makeStatusException(e))
+            .recoverWith({ case e: Throwable =>
+              Failure(Util.makeStatusException(e))
             })
           Future.fromTry(output)
         })
@@ -238,7 +238,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(Reply.State(value: StateWrapper), _) =>
-          value.getState shouldBe (resultingState)
+          value.getState shouldBe resultingState
           value.getMeta.revisionNumber shouldBe priorMeta.revisionNumber + 1
           value.getMeta.entityId shouldBe aggregateId
 
