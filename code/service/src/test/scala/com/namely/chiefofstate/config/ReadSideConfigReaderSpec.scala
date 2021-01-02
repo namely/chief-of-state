@@ -42,12 +42,12 @@ class ReadSideConfigReaderSpec extends BaseSpec {
       val expected: Seq[ReadSideConfig] = Seq(grpcReadSideSetting1, grpcReadSideSetting2, grpcReadSideSetting3)
 
       actual.length should be(expected.length)
-      actual should contain theSameElementsAs (expected)
+      actual should contain theSameElementsAs expected
     }
 
     "throw an exception when there is no setting" in {
       val exception: Exception = intercept[Exception](ReadSideConfigReader.getReadSideSettings)
-      exception.getMessage shouldBe ("No readSide configuration is set...")
+      exception.getMessage shouldBe "No readSide configuration is set..."
     }
 
     "throw an exception if one or more of the read side configurations is invalid" in {
@@ -55,7 +55,7 @@ class ReadSideConfigReaderSpec extends BaseSpec {
       EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__PORT__", "0")
 
       val exception: Exception = intercept[Exception](ReadSideConfigReader.getReadSideSettings)
-      exception.getMessage shouldBe ("One or more of the read side configurations is invalid")
+      exception.getMessage shouldBe "One or more of the read side configurations is invalid"
     }
 
     "throw an exception if one or more of the read side configurations does not contain a host" in {
@@ -64,7 +64,7 @@ class ReadSideConfigReaderSpec extends BaseSpec {
       EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__PORT__RS2", "2")
 
       val exception: Exception = intercept[Exception](ReadSideConfigReader.getReadSideSettings)
-      exception.getMessage shouldBe ("requirement failed: ProcessorId RS2 is missing a HOST")
+      exception.getMessage shouldBe "requirement failed: ProcessorId RS2 is missing a HOST"
     }
 
     "throw an exception if one or more of the read side configurations does not contain a port" in {
@@ -73,7 +73,7 @@ class ReadSideConfigReaderSpec extends BaseSpec {
       EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__HOST__RS2", "host2")
 
       val exception: Exception = intercept[Exception](ReadSideConfigReader.getReadSideSettings)
-      exception.getMessage shouldBe ("requirement failed: ProcessorId RS2 is missing a PORT")
+      exception.getMessage shouldBe "requirement failed: ProcessorId RS2 is missing a PORT"
     }
 
     "throw an exception on an invalid setting name" in {
@@ -82,7 +82,7 @@ class ReadSideConfigReaderSpec extends BaseSpec {
       EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG____RS1", "setting1")
 
       val exception: Exception = intercept[Exception](ReadSideConfigReader.getReadSideSettings)
-      exception.getMessage shouldBe ("requirement failed: Setting must be defined in COS_READ_SIDE_CONFIG____RS1")
+      exception.getMessage shouldBe "requirement failed: Setting must be defined in COS_READ_SIDE_CONFIG____RS1"
     }
   }
 }

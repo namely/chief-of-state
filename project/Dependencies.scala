@@ -80,7 +80,7 @@ object Dependencies {
     "io.opentracing.contrib" % "opentracing-api-extensions-tracer" % Versions.OpenTracingApiExtensions,
     "io.jaegertracing" % "jaeger-micrometer" % Versions.OpenTracingJaeger,
     "io.micrometer" % "micrometer-core" % Versions.Micrometer,
-    "io.micrometer" % "micrometer-registry-prometheus" % Versions.Micrometer,
+    "io.micrometer" % "micrometer-registry-prometheus" % Versions.Micrometer
   )
 
   val testJars: Seq[ModuleID] = Seq(
@@ -90,6 +90,6 @@ object Dependencies {
     "io.grpc" % "grpc-testing" % grpcJavaVersion % Test,
     "io.zonky.test" % "embedded-postgres" % EmbeddedPostgresVersion % Test,
     // opentracing test
-    "io.opentracing" % "opentracing-mock" % Versions.OpenTracing % Test,
+    "io.opentracing" % "opentracing-mock" % Versions.OpenTracing % Test
   )
 }

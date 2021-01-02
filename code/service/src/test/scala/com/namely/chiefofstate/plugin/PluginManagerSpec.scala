@@ -144,7 +144,7 @@ class PluginManagerSpec extends BaseSpec {
         val actualError = intercept[StatusException](actual.get)
 
         actualError.getStatus.getCode shouldBe (Status.Code.INTERNAL)
-        actualError.getStatus.getDescription() shouldBe ("test")
+        actualError.getStatus.getDescription() shouldBe "test"
       }
     }
   }

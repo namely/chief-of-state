@@ -82,7 +82,7 @@ class RemoteReadSideProcessorSpec extends BaseSpec {
                                              meta
         )
 
-      triedHandleReadSideResponse.success.value shouldBe (expected)
+      triedHandleReadSideResponse.success.value shouldBe expected
     }
 
     "handle event when there is an exception" in {

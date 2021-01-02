@@ -114,8 +114,8 @@ object Util {
   /**
    * helper to transform Try failures into status exceptions
    */
-  def makeFailedStatusPf[U]: PartialFunction[Throwable, Try[U]] = {
-    case e: Throwable => Failure(makeStatusException(e))
+  def makeFailedStatusPf[U]: PartialFunction[Throwable, Try[U]] = { case e: Throwable =>
+    Failure(makeStatusException(e))
   }
 
   /**

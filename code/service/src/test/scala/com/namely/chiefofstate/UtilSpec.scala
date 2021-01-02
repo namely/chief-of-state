@@ -52,7 +52,7 @@ class UtilSpec extends BaseSpec {
     "be successful" in {
       val accountOpened: AccountOpened = AccountOpened()
       val packageName: String = Util.getProtoFullyQualifiedName(com.google.protobuf.any.Any.pack(accountOpened))
-      packageName shouldBe ("chief_of_state.v1.AccountOpened")
+      packageName shouldBe "chief_of_state.v1.AccountOpened"
     }
   }
   "Transform gRPC metadata into RemoteCommand.Header" should {
@@ -64,7 +64,7 @@ class UtilSpec extends BaseSpec {
       metadata.put(byteHeaderKey, "".getBytes)
 
       val transformed = Util.transformMetadataToRemoteCommandHeader(metadata, Seq("some-header", "byte-header-bin"))
-      transformed.size shouldBe (2)
+      transformed.size shouldBe 2
     }
   }
 
@@ -79,7 +79,7 @@ class UtilSpec extends BaseSpec {
           .get
       }
 
-      actual.getStatus shouldBe (status)
+      actual.getStatus shouldBe status
     }
   }
 
@@ -90,7 +90,7 @@ class UtilSpec extends BaseSpec {
       val exc = new StatusException(status)
       // convert to a status exception of INVALID ARGUMENT
       val actual: StatusException = Util.makeStatusException(exc)
-      actual shouldBe (exc)
+      actual shouldBe exc
     }
     "transform status runtime exceptions" in {
       // define an illegal arg exception
@@ -99,7 +99,7 @@ class UtilSpec extends BaseSpec {
       // convert to a status exception of INVALID ARGUMENT
       val actual: StatusException = Util.makeStatusException(exc)
 
-      actual.getStatus shouldBe (status)
+      actual.getStatus shouldBe status
     }
     "transform illegal argument exceptions" in {
       // define an illegal arg exception
@@ -108,14 +108,14 @@ class UtilSpec extends BaseSpec {
       val actual: StatusException = Util.makeStatusException(exc)
 
       actual.getStatus.getCode shouldBe (io.grpc.Status.Code.INVALID_ARGUMENT)
-      actual.getStatus.getDescription shouldBe ("some illegal thing")
+      actual.getStatus.getDescription shouldBe "some illegal thing"
     }
     "convert general throwables to INTERNAL status" in {
       val exc = new Exception("boom")
       val actual: StatusException = Util.makeStatusException(exc)
 
       actual.getStatus.getCode shouldBe (io.grpc.Status.Code.INTERNAL)
-      actual.getStatus.getDescription shouldBe ("boom")
+      actual.getStatus.getDescription shouldBe "boom"
     }
   }
 
@@ -127,7 +127,7 @@ class UtilSpec extends BaseSpec {
         code = io.grpc.Status.Code.INVALID_ARGUMENT.value(),
         message = "whoops"
       )
-      actual shouldBe (expected)
+      actual shouldBe expected
     }
 
     "handles null status messages" in {
@@ -137,7 +137,7 @@ class UtilSpec extends BaseSpec {
         code = io.grpc.Status.Code.INVALID_ARGUMENT.value(),
         message = ""
       )
-      actual shouldBe (expected)
+      actual shouldBe expected
     }
   }
 
