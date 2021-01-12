@@ -29,7 +29,7 @@ object Dependencies {
     val OpenTracingApiExtensions: String = "0.6.0"
     val OpenTracingJaeger: String = "1.5.0"
 
-    val Micrometer: String = "1.6.2"
+    val Micrometer: String = "1.6.3"
 
     val EmbeddedPostgresVersion = "1.2.9"
   }
