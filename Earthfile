@@ -115,3 +115,4 @@ sbt:
         apt-get update && \
         apt-get install sbt && \
         sbt sbtVersion
+
