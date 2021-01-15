@@ -61,11 +61,11 @@ The following docs are available:
 ### Locally build / test
 
 ```bash
-# install earth cli
+# install earthly cli
 brew install earthly
 
 # locally build the image
-earth +docker-build
+earthly +docker-build
 
 # run local cluster with docker/docker-compose.yml
 docker-compose -f ./docker/docker-compose.yml --project-directory . up -d
@@ -80,3 +80,4 @@ docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 ### Sample Projects
 
 [Python](https://github.com/namely/cos-python-sample)
+
