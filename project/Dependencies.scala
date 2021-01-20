@@ -31,7 +31,7 @@ object Dependencies {
 
     val Micrometer: String = "1.6.2"
 
-    val EmbeddedPostgresVersion = "1.2.9"
+    val EmbeddedPostgresVersion = "1.2.10"
   }
 
   import Dependencies.Versions._
