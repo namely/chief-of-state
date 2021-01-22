@@ -25,3 +25,4 @@ protos/chief_of_state/target
 .vscode/
 metals.sbt
 /tmp/
+.bsp
