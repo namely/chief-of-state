@@ -34,8 +34,7 @@ See the following deployment-specific guides for relevant configurations:
 | COS_READ_SIDE_OFFSET_DB_SCHEMA | readside offset storage db scheme | postgres |
 | COS_READ_SIDE_OFFSET_DB | readside offset storage db name | postgres |
 | COS_READ_SIDE_OFFSET_STORE_TABLE | readside offset storage table name | read_side_offsets |
-| COS_READ_SIDE_OFFSET_USE_LOWERCASE_SCHEMA | It recommended that new application set it to **_true_**. It is **_
-false_** for already running application in production. | false |
+| COS_READ_SIDE_OFFSET_USE_LOWERCASE_SCHEMA | It recommended that old applications set it to **_false_**.  | true |
 | COS_ENCRYPTION_CLASS | java class to use for encryption | <none> |
 | COS_WRITE_SIDE_HOST | address of the gRPC writeSide handler service | <none> |
 | COS_WRITE_SIDE_PORT | port for the gRPC writeSide handler service | <none> |
@@ -70,9 +69,13 @@ JAEGER_AGENT_HOST | no | The hostname for communicating with agent via UDP
 JAEGER_AGENT_PORT | no | The port for communicating with agent via UDP
 JAEGER_ENDPOINT | no | The traces endpoint, in case the client should connect directly to the Collector, like http://jaeger-collector:14268/api/traces
 JAEGER_PROPAGATION | no | Comma separated list of formats to use for propagating the trace context. Defaults to the standard Jaeger format. Valid values are **
+
 jaeger**, **b3**, and **w3c**
-JAEGER_SAMPLER_TYPE | no | The [sampler type](https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration)
-JAEGER_TAGS | no | A comma separated list of `name = value` tracer level tags, which get added to all reported spans. The value can also refer to an environment variable using the format `${envVarName:default}`, where the `:default` is optional, and identifies a value to be used if the environment variable cannot be found
+JAEGER_SAMPLER_TYPE | no |
+The [sampler type](https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration)
+JAEGER_TAGS | no | A comma separated list of `name = value` tracer level tags, which get added to all reported spans.
+The value can also refer to an environment variable using the format `${envVarName:default}`, where the `:default` is
+optional, and identifies a value to be used if the environment variable cannot be found
 
 ### Read side configurations
 
