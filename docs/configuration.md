@@ -3,6 +3,7 @@
 This section describes the environment variables for configuration.
 
 See the following deployment-specific guides for relevant configurations:
+
 - [Docker Deployment](./docker-deployment.md)
 - [Kubernetes Deployment](./kubernetes-deployment.md)
 
@@ -33,12 +34,14 @@ See the following deployment-specific guides for relevant configurations:
 | COS_READ_SIDE_OFFSET_DB_SCHEMA | readside offset storage db scheme | postgres |
 | COS_READ_SIDE_OFFSET_DB | readside offset storage db name | postgres |
 | COS_READ_SIDE_OFFSET_STORE_TABLE | readside offset storage table name | read_side_offsets |
+| COS_READ_SIDE_OFFSET_USE_LOWERCASE_SCHEMA | It recommended that new application set it to **_true_**. It is **_
+false_** for already running application in production. | false |
 | COS_ENCRYPTION_CLASS | java class to use for encryption | <none> |
 | COS_WRITE_SIDE_HOST | address of the gRPC writeSide handler service | <none> |
 | COS_WRITE_SIDE_PORT | port for the gRPC writeSide handler service | <none> |
 | COS_WRITE_SIDE_USE_TLS | use TLS for outbound gRPC calls to write side | false |
 | COS_WRITE_SIDE_PROTO_VALIDATION | enable validation of the handler service states and events proto message FQN. If not set to `true` the validation will be skipped.  | false |
-| COS_WRITE_SIDE_STATE_PROTOS | handler service states proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`.  This will be a comma separated list of values | <none> |
+| COS_WRITE_SIDE_STATE_PROTOS | handler service states proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`. This will be a comma separated list of values | <none> |
 | COS_WRITE_SIDE_EVENT_PROTOS | handler service events proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`. This will be a comma separated list of values | <none> |
 | COS_SERVICE_NAME | service name | chiefofstate |
 | COS_WRITE_PROPAGATED_HEADERS | CSV of gRPC headers to propagate to write side handler | <none> |
@@ -51,11 +54,14 @@ See the following deployment-specific guides for relevant configurations:
 
 ### Tracing configuration
 
-This library leverages the [io.opentracing](https://opentracing.io/guides/java/) library and [Jaeger tracing instrumentation library](https://github.com/jaegertracing/jaeger-client-java).
+This library leverages the [io.opentracing](https://opentracing.io/guides/java/) library
+and [Jaeger tracing instrumentation library](https://github.com/jaegertracing/jaeger-client-java).
 
 To enable tracing, set the env var `COS_JAEGER_ENABLED = true`.
 
-The following options can be configured via environment variables ([click here for more settings](https://github.com/jaegertracing/jaeger-client-java/blob/master/jaeger-core/README.md)).
+The following options can be configured via environment
+variables ([click here for more settings](https://github.com/jaegertracing/jaeger-client-java/blob/master/jaeger-core/README.md))
+.
 
 Property | Required | Description
 --- | --- | ---
@@ -63,16 +69,17 @@ JAEGER_SERVICE_NAME | yes | The service name
 JAEGER_AGENT_HOST | no | The hostname for communicating with agent via UDP
 JAEGER_AGENT_PORT | no | The port for communicating with agent via UDP
 JAEGER_ENDPOINT | no | The traces endpoint, in case the client should connect directly to the Collector, like http://jaeger-collector:14268/api/traces
-JAEGER_PROPAGATION | no | Comma separated list of formats to use for propagating the trace context. Defaults to the standard Jaeger format. Valid values are **jaeger**, **b3**, and **w3c**
+JAEGER_PROPAGATION | no | Comma separated list of formats to use for propagating the trace context. Defaults to the standard Jaeger format. Valid values are **
+jaeger**, **b3**, and **w3c**
 JAEGER_SAMPLER_TYPE | no | The [sampler type](https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration)
 JAEGER_TAGS | no | A comma separated list of `name = value` tracer level tags, which get added to all reported spans. The value can also refer to an environment variable using the format `${envVarName:default}`, where the `:default` is optional, and identifies a value to be used if the environment variable cannot be found
 
 ### Read side configurations
 
 - SETTING_NAME - Supported setting names:
-  - HOST - Read side host
-  - PORT - Read side port
-  - USE_TLS - Use TLS for read side calls
+    - HOST - Read side host
+    - PORT - Read side port
+    - USE_TLS - Use TLS for read side calls
 - READSIDE_ID - Unique id for the read side instance
 
 | environment variable | description | default |
