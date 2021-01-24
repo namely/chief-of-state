@@ -19,7 +19,7 @@ import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.R
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.typesafe.config.Config
-import io.grpc.{ClientInterceptor, ManagedChannel, Server, ServerInterceptors}
+import io.grpc._
 import io.grpc.netty.{NettyChannelBuilder, NettyServerBuilder}
 import io.opentracing.contrib.grpc.{TracingClientInterceptor, TracingServerInterceptor}
 import io.opentracing.util.GlobalTracer
@@ -41,17 +41,18 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
   private def start(): Unit = {
 
     // create the traced execution context for grpc
-    val grpcEc: ExecutionContext = TracedExecutionContext.get
+    val grpcEc: ExecutionContext = TracedExecutionContext.get()
 
     // create interceptor using the global tracer
-    val tracingServerInterceptor = TracingServerInterceptor
+    val tracingServerInterceptor: TracingServerInterceptor = TracingServerInterceptor
       .newBuilder()
       .withTracer(GlobalTracer.get())
       .build()
 
     // instantiate the grpc service, bind do the execution context
-    val serviceImpl = new GrpcServiceImpl(clusterSharding, pluginManager, cosConfig.writeSideConfig, GlobalTracer.get())
-    var service = ChiefOfStateService.bindService(serviceImpl, grpcEc)
+    val serviceImpl: GrpcServiceImpl =
+      new GrpcServiceImpl(clusterSharding, pluginManager, cosConfig.writeSideConfig, GlobalTracer.get())
+    var service: ServerServiceDefinition = ChiefOfStateService.bindService(serviceImpl, grpcEc)
 
     // intercept the service
     service = ServerInterceptors.intercept(
@@ -113,7 +114,7 @@ object Application extends App {
 
   // boot the actor system
   val actorSystem: ActorSystem[Nothing] =
-    ActorSystem[Nothing](StartupBehaviour(config, cosConfig.createDataStores), "ChiefOfStateSystem", config)
+    ActorSystem[Nothing](StartupBehaviour(cosConfig), "ChiefOfStateSystem", config)
 
   // instance of the clusterSharding
   val sharding: ClusterSharding = ClusterSharding(actorSystem)

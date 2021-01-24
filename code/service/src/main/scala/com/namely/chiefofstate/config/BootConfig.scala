@@ -14,15 +14,31 @@ object BootConfig {
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   val DEPLOYMENT_MODE: String = "COS_DEPLOYMENT_MODE"
+  val COS_JOURNAL_USE_LEGACY_SCHEMA: String = "COS_JOURNAL_USE_LEGACY_SCHEMA"
 
   case class DeploymentMode(key: String, file: String)
-  val DEPLOYMENT_MODE_DOCKER = DeploymentMode("docker", "docker.conf")
-  val DEPLOYMENT_MODE_K8S = DeploymentMode("kubernetes", "kubernetes.conf")
+
+  val DEPLOYMENT_MODE_DOCKER: DeploymentMode = DeploymentMode("docker", "docker.conf")
+  val DEPLOYMENT_MODE_K8S: DeploymentMode = DeploymentMode("kubernetes", "kubernetes.conf")
 
   def get(): Config = {
     val mode: DeploymentMode = getDeploymentMode()
+    val useLegacyJournal: Boolean =
+      sys.env.getOrElse(COS_JOURNAL_USE_LEGACY_SCHEMA, "false").toBooleanOption.getOrElse(false)
 
-    ConfigFactory.parseResources(mode.file).resolve()
+    if (useLegacyJournal) {
+      logger.info("journal legacy schema is being used...")
+
+      ConfigFactory
+        .parseResources(mode.file)
+        .withFallback(ConfigFactory.parseResources("legacy.conf"))
+        .resolve()
+    } else {
+
+      ConfigFactory
+        .parseResources(mode.file)
+        .resolve()
+    }
   }
 
   private[config] def getDeploymentMode(): DeploymentMode = {
