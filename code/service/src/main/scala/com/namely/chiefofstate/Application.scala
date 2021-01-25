@@ -52,11 +52,10 @@ class Application(clusterSharding: ClusterSharding, cosConfig: CosConfig, plugin
     // instantiate the grpc service, bind do the execution context
     val serviceImpl: GrpcServiceImpl =
       new GrpcServiceImpl(clusterSharding, pluginManager, cosConfig.writeSideConfig, GlobalTracer.get())
-    var service: ServerServiceDefinition = ChiefOfStateService.bindService(serviceImpl, grpcEc)
 
     // intercept the service
-    service = ServerInterceptors.intercept(
-      service,
+    val service: ServerServiceDefinition = ServerInterceptors.intercept(
+      ChiefOfStateService.bindService(serviceImpl, grpcEc),
       new ErrorsServerInterceptor(GlobalTracer.get()),
       tracingServerInterceptor,
       GrpcHeadersInterceptor
