@@ -19,7 +19,7 @@ object Dependencies {
     val AkkaPersistenceJdbcVersion: String = "4.0.0"
     val ScalaMockVersion: String = "5.1.0"
 
-    val JaninoVersion: String = "3.1.2"
+    val JaninoVersion: String = "3.1.3"
     val LogstashLogbackVersion: String = "6.3"
 
     val OpenTracing: String = "0.33.0"
