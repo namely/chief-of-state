@@ -23,22 +23,9 @@ object BootConfig {
 
   def get(): Config = {
     val mode: DeploymentMode = getDeploymentMode()
-    val useLegacyJournal: Boolean =
-      sys.env.getOrElse(COS_JOURNAL_USE_LEGACY_SCHEMA, "false").toBooleanOption.getOrElse(false)
-
-    if (useLegacyJournal) {
-      logger.info("journal legacy schema is being used...")
-
-      ConfigFactory
-        .parseResources(mode.file)
-        .withFallback(ConfigFactory.parseResources("legacy.conf"))
-        .resolve()
-    } else {
-
-      ConfigFactory
-        .parseResources(mode.file)
-        .resolve()
-    }
+    ConfigFactory
+      .parseResources(mode.file)
+      .resolve()
   }
 
   private[config] def getDeploymentMode(): DeploymentMode = {

@@ -47,20 +47,5 @@ class BootConfigSpec extends BaseSpec {
       val config: Config = BootConfig.get()
       config.getString("deployment-mode") shouldBe "docker"
     }
-
-    "run e2e with journal legacy schema" in {
-      EnvironmentHelper.setEnv(BootConfig.DEPLOYMENT_MODE, BootConfig.DEPLOYMENT_MODE_DOCKER.key)
-      EnvironmentHelper.setEnv(BootConfig.COS_JOURNAL_USE_LEGACY_SCHEMA, "true")
-
-      val config: Config = BootConfig.get()
-      config.getString("deployment-mode") shouldBe "docker"
-      config.getString("jdbc-journal.dao") shouldBe "akka.persistence.jdbc.journal.dao.legacy.ByteArrayJournalDao"
-      config.getString(
-        "jdbc-snapshot-store.dao"
-      ) shouldBe "akka.persistence.jdbc.snapshot.dao.legacy.ByteArraySnapshotDao"
-      config.getString(
-        "jdbc-read-journal.dao"
-      ) shouldBe "akka.persistence.jdbc.query.dao.legacy.ByteArrayReadJournalDao"
-    }
   }
 }
