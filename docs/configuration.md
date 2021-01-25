@@ -34,8 +34,7 @@ See the following deployment-specific guides for relevant configurations:
 | COS_READ_SIDE_OFFSET_DB_SCHEMA | readside offset storage db scheme | postgres |
 | COS_READ_SIDE_OFFSET_DB | readside offset storage db name | postgres |
 | COS_READ_SIDE_OFFSET_STORE_TABLE | readside offset storage table name | read_side_offsets |
-| COS_READ_SIDE_OFFSET_STORE_USE_LOWERCASE_SCHEMA | It is recommended applications before 0.8.0 should set it to **_
-false_**.  | true |
+| COS_READ_SIDE_OFFSET_STORE_USE_LOWERCASE_SCHEMA | Applications before 0.8.0 should set it to **_false_**.  | true |
 | COS_ENCRYPTION_CLASS | java class to use for encryption | <none> |
 | COS_WRITE_SIDE_HOST | address of the gRPC writeSide handler service | <none> |
 | COS_WRITE_SIDE_PORT | port for the gRPC writeSide handler service | <none> |
@@ -47,7 +46,7 @@ false_**.  | true |
 | COS_WRITE_PROPAGATED_HEADERS | CSV of gRPC headers to propagate to write side handler | <none> |
 | COS_WRITE_PERSISTED_HEADERS | CSV of gRPC headers to persist to journal (experimental) | <none> |
 | COS_JOURNAL_LOGICAL_DELETION | Event deletion is triggered after saving a new snapshot. Old events would be deleted prior to old snapshots being deleted. | false |
-| COS_JOURNAL_USE_LEGACY_SCHEMA | It is recommended that applications before 0.8.0 should set it to **_true_** | false |
+| COS_JOURNAL_USE_LEGACY_SCHEMA | Applications before 0.8.0 should set it to **_true_** | false |
 | COS_COMMAND_HANDLER_TIMEOUT | Timeout required for the Aggregate to process command and reply. The value is in seconds. | 5 |
 | COS_JAEGER_ENABLED | Enable tracing (see below for more options) | false |
 | COS_PROMETHEUS_ROUTE | route for prometheus to scrap metrics | "metrics" |
