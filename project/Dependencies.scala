@@ -6,20 +6,20 @@ object Dependencies {
   // Package versions
   object Versions {
     val ScalaVersion: String = "2.13.3"
-    val AkkaVersion: String = "2.6.10"
+    val AkkaVersion: String = "2.6.11"
     val SilencerVersion: String = "1.7.1"
     val LogbackVersion: String = "1.2.3"
     val ScalapbCommonProtoVersion: String = "1.18.1-0"
     val ScalapbValidationVersion: String = "0.1.4"
     val ScalaTestVersion: String = "3.2.3"
     val AkkaManagementVersion: String = "1.0.9"
-    val AkkaProjectionVersion: String = "1.0.0"
+    val AkkaProjectionVersion: String = "1.1.0"
     val PostgresDriverVersion: String = "42.2.18"
     val SlickVersion: String = "3.3.3"
     val AkkaPersistenceJdbcVersion: String = "4.0.0"
     val ScalaMockVersion: String = "5.1.0"
 
-    val JaninoVersion: String = "3.1.2"
+    val JaninoVersion: String = "3.1.3"
     val LogstashLogbackVersion: String = "6.3"
 
     val OpenTracing: String = "0.33.0"
@@ -29,9 +29,9 @@ object Dependencies {
     val OpenTracingApiExtensions: String = "0.6.0"
     val OpenTracingJaeger: String = "1.5.0"
 
-    val Micrometer: String = "1.6.2"
+    val Micrometer: String = "1.6.3"
 
-    val EmbeddedPostgresVersion = "1.2.9"
+    val EmbeddedPostgresVersion: String = "1.2.10"
   }
 
   import Dependencies.Versions._
