@@ -14,7 +14,6 @@ object BootConfig {
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   val DEPLOYMENT_MODE: String = "COS_DEPLOYMENT_MODE"
-  val COS_JOURNAL_USE_LEGACY_SCHEMA: String = "COS_JOURNAL_USE_LEGACY_SCHEMA"
 
   case class DeploymentMode(key: String, file: String)
 
@@ -25,6 +24,7 @@ object BootConfig {
     val mode: DeploymentMode = getDeploymentMode()
     ConfigFactory
       .parseResources(mode.file)
+      .withFallback(ConfigFactory.parseResources("legacy.conf")) // FIXME remove this when migration tool is done
       .resolve()
   }
 
