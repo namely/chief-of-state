@@ -7,15 +7,14 @@
 package com.namely.chiefofstate
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.Behavior
-import com.typesafe.config.Config
+import com.namely.chiefofstate.config.CosConfig
 
 object StartupBehaviour {
-  def apply(config: Config, createStore: Boolean): Behavior[Nothing] = {
+  def apply(cosConfig: CosConfig): Behavior[Nothing] = {
     Behaviors.setup[Nothing] { ctx =>
-      if (createStore) {
+      if (cosConfig.createDataStores) {
         ctx.log.info("kick-starting the journal and snapshot store creation")
-        val migration: JournalAndSnapshotMigration = JournalAndSnapshotMigration(config)
-        migration.createSchemas()
+        SchemasUtil.createIfNotExists(ctx.system.settings.config)
       }
       Behaviors.empty
     }

@@ -16,13 +16,16 @@ object BootConfig {
   val DEPLOYMENT_MODE: String = "COS_DEPLOYMENT_MODE"
 
   case class DeploymentMode(key: String, file: String)
-  val DEPLOYMENT_MODE_DOCKER = DeploymentMode("docker", "docker.conf")
-  val DEPLOYMENT_MODE_K8S = DeploymentMode("kubernetes", "kubernetes.conf")
+
+  val DEPLOYMENT_MODE_DOCKER: DeploymentMode = DeploymentMode("docker", "docker.conf")
+  val DEPLOYMENT_MODE_K8S: DeploymentMode = DeploymentMode("kubernetes", "kubernetes.conf")
 
   def get(): Config = {
     val mode: DeploymentMode = getDeploymentMode()
-
-    ConfigFactory.parseResources(mode.file).resolve()
+    ConfigFactory
+      .parseResources(mode.file)
+      .withFallback(ConfigFactory.parseResources("legacy.conf")) // FIXME remove this when migration tool is done
+      .resolve()
   }
 
   private[config] def getDeploymentMode(): DeploymentMode = {

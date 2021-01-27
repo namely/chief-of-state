@@ -5,11 +5,12 @@
  */
 
 package com.namely.chiefofstate
+
 import com.namely.chiefofstate.helper.BaseSpec
 import com.typesafe.config.{Config, ConfigFactory}
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 
-class JournalAndSnapshotMigrationSpec extends BaseSpec {
+class SchemasUtilSpec extends BaseSpec {
   var pg: EmbeddedPostgres = null
   override protected def beforeAll() = {
     val builder: EmbeddedPostgres.Builder = EmbeddedPostgres.builder()
@@ -22,9 +23,7 @@ class JournalAndSnapshotMigrationSpec extends BaseSpec {
   }
 
   ".create Journal and Snapshot store" in {
-    val config: Config = ConfigFactory.parseResources("application-test-migration.conf").resolve()
-
-    val migration = JournalAndSnapshotMigration(config)
-    noException shouldBe thrownBy(migration.createSchemas())
+    val config: Config = ConfigFactory.parseResources("schemas-util.conf").resolve()
+    noException shouldBe thrownBy(SchemasUtil.createIfNotExists(config))
   }
 }

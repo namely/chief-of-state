@@ -5,6 +5,7 @@
  */
 
 package com.namely.chiefofstate
+
 import com.typesafe.config.Config
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
@@ -13,20 +14,20 @@ import slick.jdbc.PostgresProfile
 import java.sql.{Connection, Statement}
 
 /**
- * Help create the journal and snapshot stores
+ * Utility class to create the necessary schemas for the write side
  */
-case class JournalAndSnapshotMigration(config: Config) {
+object SchemasUtil {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
-  private val dc: DatabaseConfig[PostgresProfile] =
-    DatabaseConfig.forConfig[PostgresProfile]("write-side-slick", config)
-  private val journalTableName: String = config.getString("jdbc-read-journal.tables.journal.tableName")
-  private val snapshotTableName: String = config.getString("jdbc-snapshot-store.tables.snapshot.tableName")
-
-  private def createJournalTableStatement(table: String): Seq[String] = {
+  /**
+   * legacyJournalStatement returns the journal ddl
+   *
+   * @return the sql statement
+   */
+  private def legacyJournalStatement(): Seq[String] = {
     Seq(
       s"""
-     CREATE TABLE IF NOT EXISTS $table (
+     CREATE TABLE IF NOT EXISTS journal (
       ordering        BIGSERIAL,
       persistence_id  VARCHAR(255) NOT NULL,
       sequence_number BIGINT       NOT NULL,
@@ -36,13 +37,18 @@ case class JournalAndSnapshotMigration(config: Config) {
       PRIMARY KEY (persistence_id, sequence_number)
      )""",
       // create index
-      s"""CREATE UNIQUE INDEX IF NOT EXISTS journal_ordering_idx on $table (ordering)"""
+      s"""CREATE UNIQUE INDEX IF NOT EXISTS journal_ordering_idx on journal(ordering)"""
     )
   }
 
-  private def createSnapshotTableStatement(table: String): String =
+  /**
+   * legacySnapshotTableStatement returns the legacy ddl statement
+   *
+   * @return the sql statement
+   */
+  private def legacySnapshotTableStatement(): String =
     s"""
-     CREATE TABLE IF NOT EXISTS $table (
+     CREATE TABLE IF NOT EXISTS snapshot (
       persistence_id  VARCHAR(255) NOT NULL,
       sequence_number BIGINT       NOT NULL,
       created         BIGINT       NOT NULL,
@@ -51,11 +57,14 @@ case class JournalAndSnapshotMigration(config: Config) {
      )"""
 
   /**
-   *  Attempts to create the various write side data stores
+   *  Attempts to create the various write side legacy data stores
    */
-  def createSchemas(): Boolean = {
-    val journalSQLs: Seq[String] = createJournalTableStatement(journalTableName)
-    val snapshotSQL: String = createSnapshotTableStatement(snapshotTableName)
+  private def createLegacySchemas(config: Config): Boolean = {
+    val dc: DatabaseConfig[PostgresProfile] =
+      DatabaseConfig.forConfig[PostgresProfile]("write-side-slick", config)
+
+    val journalSQLs: Seq[String] = legacyJournalStatement()
+    val snapshotSQL: String = legacySnapshotTableStatement()
 
     val conn: Connection = dc.db.createSession().conn
 
@@ -79,4 +88,12 @@ case class JournalAndSnapshotMigration(config: Config) {
       dc.db.close()
     }
   }
+
+  /**
+   * Creates the required schemas for the write side data stores
+   *
+   * @param config the application config
+   * @return true when successful and false when it fails
+   */
+  def createIfNotExists(config: Config): Boolean = createLegacySchemas(config)
 }
