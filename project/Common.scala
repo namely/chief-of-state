@@ -50,7 +50,12 @@ object Common extends AutoPlugin {
         "-P:silencer:globalFilters=Unused import;deprecated",
         "-P:silencer:globalFilters=Marked as deprecated in proto file;Could not find any member to link;unbalanced or unclosed heading"
       ),
-      resolvers ++= Seq(Resolver.jcenterRepo, Resolver.sonatypeRepo("public"), Resolver.sonatypeRepo("snapshots")),
+      resolvers ++= Seq(
+        Resolver.jcenterRepo,
+        Resolver.sonatypeRepo("public"),
+        Resolver.sonatypeRepo("snapshots"),
+        Resolver.jcenterRepo
+      ),
       libraryDependencies ++= Seq(
         compilerPlugin(
           ("com.github.ghik" % "silencer-plugin" % Versions.SilencerVersion)

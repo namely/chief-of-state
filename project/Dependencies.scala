@@ -32,6 +32,9 @@ object Dependencies {
     val Micrometer: String = "1.6.3"
 
     val EmbeddedPostgresVersion: String = "1.2.10"
+
+    val SlickMigrationVersion: String = "0.8.0"
+    val SlickMigrationFlywayVersion: String = "0.7.0"
   }
 
   import Dependencies.Versions._
@@ -80,7 +83,10 @@ object Dependencies {
     "io.opentracing.contrib" % "opentracing-api-extensions-tracer" % Versions.OpenTracingApiExtensions,
     "io.jaegertracing" % "jaeger-micrometer" % Versions.OpenTracingJaeger,
     "io.micrometer" % "micrometer-core" % Versions.Micrometer,
-    "io.micrometer" % "micrometer-registry-prometheus" % Versions.Micrometer
+    "io.micrometer" % "micrometer-registry-prometheus" % Versions.Micrometer,
+    // Migration
+    "io.github.nafg" %% "slick-migration-api" % Versions.SlickMigrationVersion,
+    "io.github.nafg" %% "slick-migration-api-flyway" % Versions.SlickMigrationFlywayVersion
   )
 
   val testJars: Seq[ModuleID] = Seq(

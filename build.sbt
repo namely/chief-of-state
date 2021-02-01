@@ -18,6 +18,16 @@ lazy val chiefofstate: Project = project
   .settings(name := "chiefofstate", headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax)
   .dependsOn(protogen, chiefofstateplugins, protogenTest % "test->compile")
 
+lazy val chiefofstatemigrator: Project = project
+  .in(file("code/migrator"))
+  .enablePlugins(Common)
+  .enablePlugins(BuildSettings)
+  .enablePlugins(DockerSettings)
+  .enablePlugins(NoPublish)
+  .enablePlugins(AutomateHeaderPlugin)
+  .settings(name := "chiefofstate-migrator", headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax)
+  .dependsOn(protogen, protogenTest % "test->compile")
+
 lazy val chiefofstateplugins = project
   .in(file("code/plugin"))
   .enablePlugins(Common)
