@@ -12,20 +12,20 @@ import org.flywaydb.core.api.configuration.FluentConfiguration
  */
 final case class FlywayMigrator(config: Config) {
 
+  private val userKey: String = "write-side-slick.db.user"
+  private val passwordKey: String = "write-side-slick.db.password"
+  private val urlKey: String = "write-side-slick.db.url"
+
+  private val url: String = config.getString(urlKey)
+  private val user: String = config.getString(userKey)
+  private val password: String = config.getString(passwordKey)
+
   /**
    * run the migrations
    *
    * @return the number of migration executed
    */
   def run(): Int = {
-    val userKey: String = "write-side-slick.db.user"
-    val passwordKey: String = "write-side-slick.db.password"
-    val urlKey: String = "write-side-slick.db.url"
-
-    val url: String = config.getString(urlKey)
-    val user: String = config.getString(userKey)
-    val password: String = config.getString(passwordKey)
-
     val flywayConfig: FluentConfiguration = Flyway.configure
       .dataSource(url, user, password)
       .table("cos_schema_history")
