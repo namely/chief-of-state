@@ -33,8 +33,7 @@ object Dependencies {
 
     val EmbeddedPostgresVersion: String = "1.2.10"
 
-    val SlickMigrationVersion: String = "0.8.0"
-    val SlickMigrationFlywayVersion: String = "0.7.0"
+    val FlywayVersion: String = "7.5.2"
   }
 
   import Dependencies.Versions._
@@ -85,8 +84,7 @@ object Dependencies {
     "io.micrometer" % "micrometer-core" % Versions.Micrometer,
     "io.micrometer" % "micrometer-registry-prometheus" % Versions.Micrometer,
     // Migration
-    "io.github.nafg" %% "slick-migration-api" % Versions.SlickMigrationVersion,
-    "io.github.nafg" %% "slick-migration-api-flyway" % Versions.SlickMigrationFlywayVersion
+    "org.flywaydb" % "flyway-core" % Versions.FlywayVersion
   )
 
   val testJars: Seq[ModuleID] = Seq(

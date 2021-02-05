@@ -103,3 +103,16 @@ lazy val protogenTest: Project = project
       )
     )
   )
+
+TaskKey[Unit]("verifyCodeFmt") := {
+  scalafmtCheckAll.all(ScopeFilter(inAnyProject)).result.value.toEither.left.foreach { _ =>
+    throw new MessageOnlyException(
+      "Unformatted Scala code found. Please run 'scalafmtAll' and commit the reformatted code"
+    )
+  }
+  (Compile / scalafmtSbtCheck).result.value.toEither.left.foreach { _ =>
+    throw new MessageOnlyException(
+      "Unformatted sbt code found. Please run 'scalafmtSbt' and commit the reformatted code"
+    )
+  }
+}
