@@ -1,8 +1,15 @@
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 package com.namely.chiefofstate.migrator
 
 import akka.actor.ActorSystem
 import akka.NotUsed
 import akka.persistence.{AtomicWrite, Persistence, PersistentRepr}
+import akka.persistence.journal.EventAdapter
 import akka.stream.scaladsl.{Sink, Source}
 import com.typesafe.config.Config
 
@@ -11,19 +18,16 @@ import scala.collection.immutable.Seq
 import scala.concurrent.Future
 import scala.util.Try
 
-final case class LegacyJournalMigrator(config: Config)(implicit system: ActorSystem) {
+final case class LegacyJournalDataMigrator(config: Config)(implicit system: ActorSystem) {
   import system.dispatcher
 
-  // get the write plugin ID. This will help apply events adapters when reading the journal
-  val writePluginId: String = config.getString("write-plugin")
+  private val storesConfig = StoresConfig(config)
+  private val daos = StoresDaos(storesConfig)
 
-  private val migratorConfig = MigratorConfig(config)
-  private val daos = MigratorDaos(migratorConfig)
-
-  private val eventAdapters = Persistence(system).adaptersFor(writePluginId, config)
+  private val eventAdapters = Persistence(system).adaptersFor("", config)
 
   private def adaptEvents(repr: PersistentRepr): Seq[PersistentRepr] = {
-    val adapter = eventAdapters.get(repr.payload.getClass)
+    val adapter: EventAdapter = eventAdapters.get(repr.payload.getClass)
     adapter.fromJournal(repr.payload, repr.manifest).events.map(repr.withPayload)
   }
 
@@ -37,7 +41,7 @@ final case class LegacyJournalMigrator(config: Config)(implicit system: ActorSys
       .allPersistenceIdsSource(Long.MaxValue)
       .flatMapConcat((persistenceId: String) => {
         daos.legacyReadJournalDao
-          .messagesWithBatch(persistenceId, 0L, Long.MaxValue, migratorConfig.readJournalConfig.maxBufferSize, None)
+          .messagesWithBatch(persistenceId, 0L, Long.MaxValue, storesConfig.readJournalConfig.maxBufferSize, None)
           .mapAsync(1)(reprAndOrdNr => Future.fromTry(reprAndOrdNr))
           .mapConcat { case (repr, _) =>
             adaptEvents(repr)
