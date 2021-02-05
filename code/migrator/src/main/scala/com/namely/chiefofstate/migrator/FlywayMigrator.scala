@@ -11,7 +11,13 @@ import org.flywaydb.core.api.configuration.FluentConfiguration
  * @param config the application config
  */
 final case class FlywayMigrator(config: Config) {
-  def run(): Unit = {
+
+  /**
+   * run the migrations
+   *
+   * @return the number of migration executed
+   */
+  def run(): Int = {
     val userKey: String = "write-side-slick.db.user"
     val passwordKey: String = "write-side-slick.db.password"
     val urlKey: String = "write-side-slick.db.url"
@@ -28,6 +34,6 @@ final case class FlywayMigrator(config: Config) {
 
     val flyway: Flyway = flywayConfig.load
     flyway.baseline()
-    flyway.migrate()
+    flyway.migrate().migrationsExecuted
   }
 }
