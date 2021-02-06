@@ -72,6 +72,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
             akka.cluster.sharding.number-of-shards = 1
             chiefofstate {
              	service-name = "chiefofstate"
+              version = "v0.7.0-0.7.0"
               ask-timeout = 5
               snapshot-criteria {
                 disable-snapshot = false
@@ -500,6 +501,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
             akka.cluster.sharding.number-of-shards = 1
             chiefofstate {
              	service-name = "chiefofstate"
+              version = "v0.7.0-0.7.0"
               ask-timeout = 5
               snapshot-criteria {
                 disable-snapshot = false
@@ -610,6 +612,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
             akka.cluster.sharding.number-of-shards = 1
             chiefofstate {
              	service-name = "chiefofstate"
+              version = "v0.7.0-0.7.0"
               ask-timeout = 5
               snapshot-criteria {
                 disable-snapshot = true
@@ -728,6 +731,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
             akka.cluster.sharding.number-of-shards = 1
             chiefofstate {
              	service-name = "chiefofstate"
+              version = "v0.7.0-0.7.0"
               ask-timeout = 5
               snapshot-criteria {
                 disable-snapshot = true

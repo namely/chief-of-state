@@ -6,7 +6,7 @@ lazy val root: Project = project
   .in(file("."))
   .enablePlugins(NoPublish)
   .settings(headerLicense := None)
-  .aggregate(protogen, chiefofstate, chiefofstateplugins, protogenTest)
+  .aggregate(protogen, chiefofstate, chiefofstateplugins, chiefofstatemigration, protogenTest)
 
 lazy val chiefofstate: Project = project
   .in(file("code/service"))
@@ -16,7 +16,7 @@ lazy val chiefofstate: Project = project
   .enablePlugins(NoPublish)
   .enablePlugins(AutomateHeaderPlugin)
   .settings(name := "chiefofstate", headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax)
-  .dependsOn(protogen, chiefofstateplugins, protogenTest % "test->compile")
+  .dependsOn(protogen, chiefofstateplugins, chiefofstatemigration, protogenTest % "test->compile")
 
 lazy val chiefofstateplugins = project
   .in(file("code/plugin"))
@@ -31,6 +31,16 @@ lazy val chiefofstateplugins = project
     headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax
   )
   .dependsOn(protogen)
+
+lazy val chiefofstatemigration: Project = project
+  .in(file("code/migration"))
+  .enablePlugins(Common)
+  .enablePlugins(BuildSettings)
+  .enablePlugins(DockerSettings)
+  .enablePlugins(NoPublish)
+  .enablePlugins(AutomateHeaderPlugin)
+  .settings(name := "chiefofstate-migration", headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax)
+  .dependsOn(protogen, protogenTest % "test->compile")
 
 lazy val protogen: Project = project
   .in(file("code/.protogen"))

@@ -14,7 +14,7 @@ object StartupBehaviour {
     Behaviors.setup[Nothing] { ctx =>
       if (cosConfig.createDataStores) {
         ctx.log.info("kick-starting the journal and snapshot store creation")
-        SchemasUtil.createIfNotExists(ctx.system.settings.config)
+        // SchemasUtil.createIfNotExists(ctx.system.settings.config)
       }
       Behaviors.empty
     }
