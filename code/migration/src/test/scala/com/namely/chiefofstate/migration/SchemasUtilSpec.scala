@@ -38,9 +38,8 @@ class SchemasUtilSpec
 
   ".create chiefofstate stores" in {
     val config: Config = ConfigFactory.parseResources("schemas-util.conf").resolve()
-    val placeholders = SchemasPlaceholdersV070(config)
-    val schemasUtil = SchemasUtil(config, placeholders)
+    val schemasUtil = SchemasUtil(config)
     val result = schemasUtil.createIfNotExists()
-    result shouldBe true
+    result should contain only ("0.7.0", "0.8.0")
   }
 }

@@ -12,15 +12,15 @@ import org.flywaydb.core.api.Location
 import org.flywaydb.core.api.output.MigrateResult
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.jdk.CollectionConverters.MapHasAsJava
+import scala.jdk.CollectionConverters.{CollectionHasAsScala, MapHasAsJava}
 
 /**
  * SchemasUtils help create all the required schemas needed to smoothly run COS
  *
  * @param config the application configuration
  */
-case class SchemasUtil(config: Config, placeholders: SchemasPlaceholders) {
-  final val log: Logger = LoggerFactory.getLogger(getClass)
+final case class SchemasUtil(config: Config) {
+  val log: Logger = LoggerFactory.getLogger(getClass)
 
   // With COS both read model and write model share the same database
   private val userKey: String = "write-side-slick.db.user"
@@ -32,6 +32,11 @@ case class SchemasUtil(config: Config, placeholders: SchemasPlaceholders) {
   private val cosEventTagPlaceholder: String = "cos:event_tag"
   private val cosStateSnapshotPlaceholder: String = "cos:snapshot"
   private val cosReadSideOffsetPlaceholder: String = "cos:read_side_offsets_store"
+
+  private val cosEventJournalPlaceholderValueKey: String = "jdbc-journal.tables.event_journal.tableName"
+  private val cosEventTagPlaceholderValueKey: String = "jdbc-journal.tables.event_tag.tableName"
+  private val cosStateSnapshotPlaceholderValueKey: String = "jdbc-snapshot-store.tables.snapshot.tableName"
+  private val cosReadSideOffsetPlaceholderValueKey: String = "akka.projection.slick.offset-store.table"
 
   // database credentials
   private val url: String = config.getString(urlKey)
@@ -45,21 +50,22 @@ case class SchemasUtil(config: Config, placeholders: SchemasPlaceholders) {
    *
    * @return  true when successful or false when it failed
    */
-  def createIfNotExists(): Boolean = {
+  def createIfNotExists(): Seq[String] = {
     val flywayConfig: FluentConfiguration = Flyway.configure
       .dataSource(url, user, password)
       .table("cos_schema_history")
       .locations(new Location("classpath:db/migration/postgres"))
       .ignoreMissingMigrations(true)
+      .validateMigrationNaming(true)
       .placeholders(
         Map(
-          cosEventJournalPlaceholder -> placeholders.eventJournalPlaceholderValue,
-          cosEventTagPlaceholder -> placeholders.eventTagPlaceholderValue,
-          cosStateSnapshotPlaceholder -> placeholders.stateSnapshotPlaceholderValue,
-          cosReadSideOffsetPlaceholder -> placeholders.readSideOffsetStorePlaceholderValue
+          cosEventJournalPlaceholder -> config.getString(cosEventJournalPlaceholderValueKey),
+          cosEventTagPlaceholder -> config.getString(cosEventTagPlaceholderValueKey),
+          cosStateSnapshotPlaceholder -> config.getString(cosStateSnapshotPlaceholderValueKey),
+          cosReadSideOffsetPlaceholder -> config.getString(cosReadSideOffsetPlaceholderValueKey)
         ).asJava
       )
-      .baselineVersion("0.7.0") // this is required because we started using flyway at this version of COS
+      .baselineVersion("0.0.0") // this is required because we started using flyway at this version of COS
 
     val flyway: Flyway = flywayConfig.load
     flyway.baseline()
@@ -67,12 +73,7 @@ case class SchemasUtil(config: Config, placeholders: SchemasPlaceholders) {
     // running the migration
     log.info("setting up chiefofstate stores....")
     val result: MigrateResult = flyway.migrate()
-    if (result.migrationsExecuted >= 0) {
-      log.info("chiefofstate stores successfully set..:)")
-      true
-    } else {
-      log.warn("unable to set up chiefofstate stores..")
-      false
-    }
+
+    result.migrations.asScala.toSeq.map(_.version).sortWith(_ > _)
   }
 }
