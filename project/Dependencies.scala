@@ -32,6 +32,7 @@ object Dependencies {
     val Micrometer: String = "1.6.4"
 
     val EmbeddedPostgresVersion: String = "1.2.10"
+    val FlywayVersion: String = "7.5.2"
   }
 
   import Dependencies.Versions._
@@ -66,6 +67,7 @@ object Dependencies {
     "net.logstash.logback" % "logstash-logback-encoder" % Versions.LogstashLogbackVersion,
     "org.codehaus.janino" % "janino" % Versions.JaninoVersion,
     "org.scala-lang" % "scala-reflect" % Versions.ScalaVersion,
+    "org.flywaydb" % "flyway-core" % Versions.FlywayVersion,
     // opentracing
     "io.opentracing" % "opentracing-api" % Versions.OpenTracing,
     "io.opentracing" % "opentracing-noop" % Versions.OpenTracing,

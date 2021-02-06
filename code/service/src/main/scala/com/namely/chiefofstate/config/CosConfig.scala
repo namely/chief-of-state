@@ -30,7 +30,8 @@ final case class CosConfig(
   writeSideConfig: WriteSideConfig,
   createDataStores: Boolean,
   enableReadSide: Boolean,
-  enableJaeger: Boolean
+  enableJaeger: Boolean,
+  version: String
 )
 
 object CosConfig {
@@ -39,6 +40,7 @@ object CosConfig {
   private val createDataStorekey: String = "chiefofstate.create-stores.auto"
   private val enableReadSideKey: String = "chiefofstate.read-side.enabled"
   private val enableJaegerTracing: String = "chiefofstate.tracing.jaeger-enabled"
+  private val versionKey: String = "chiefofstate.version"
 
   /**
    * creates a new CosConfig instance
@@ -58,7 +60,8 @@ object CosConfig {
       WriteSideConfig(config),
       config.getBoolean(createDataStorekey),
       config.getBoolean(enableReadSideKey),
-      config.getBoolean(enableJaegerTracing)
+      config.getBoolean(enableJaegerTracing),
+      config.getString(versionKey)
     )
   }
 }

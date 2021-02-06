@@ -16,6 +16,7 @@ class CosConfigSpec extends BaseSpec {
             akka.cluster.sharding.number-of-shards = 2
             chiefofstate {
              	service-name = "chiefofstate"
+              version = "v0.7.0-0.7.0"
               ask-timeout = 5
               snapshot-criteria {
                 disable-snapshot = false
