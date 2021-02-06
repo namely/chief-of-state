@@ -40,6 +40,8 @@
     <!-- Turn down Slick noise-->
     <logger name="scala.slick" level="ERROR"/>
     <logger name="slick" level="ERROR"/>
+    <logger name="org.flywaydb" level="${LOG_LEVEL}"/>
+    <logger name="org.flywaydb.core.internal.dbsupport.SqlScript" level="${LOG_LEVEL}"/>
 
     <root level="${LOG_LEVEL}">
         <appender-ref ref="${LOG_STYLE}"/>
