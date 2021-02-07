@@ -1,16 +1,16 @@
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 package com.namely.chiefofstate.migration.legacy
 import akka.actor.ActorSystem
 import akka.persistence.{AtomicWrite, Persistence, PersistentRepr}
-import akka.persistence.jdbc.config.{JournalConfig, ReadJournalConfig}
-import akka.persistence.jdbc.db.SlickExtension
-import akka.persistence.jdbc.journal.dao.DefaultJournalDao
-import akka.persistence.jdbc.query.dao.legacy.ByteArrayReadJournalDao
 import akka.persistence.journal.EventAdapter
-import akka.serialization.SerializationExtension
 import akka.stream.scaladsl.Source
 import akka.NotUsed
 import com.typesafe.config.Config
-import slick.jdbc.JdbcBackend
 
 import scala.collection.immutable
 import scala.concurrent.Future
@@ -24,22 +24,6 @@ import scala.util.Try
  * @param system the actor system
  */
 case class MigrateJournal(config: Config)(implicit system: ActorSystem) extends Migrate(config) {
-  import system.dispatcher
-
-  // get the various configuration
-  private val journalConfig = new JournalConfig(config.getConfig("jdbc-journal"))
-  private val readJournalConfig = new ReadJournalConfig(config.getConfig("jdbc-read-journal"))
-
-  private val journaldb: JdbcBackend.Database =
-    SlickExtension(system).database(config.getConfig("jdbc-read-journal")).database
-
-  // get an instance of the legacy read journal dao
-  private val legacyReadJournalDao: ByteArrayReadJournalDao =
-    new ByteArrayReadJournalDao(journaldb, profile, readJournalConfig, SerializationExtension(system))
-
-  // get an instance of the default journal dao
-  private val defaultJournalDao: DefaultJournalDao =
-    new DefaultJournalDao(journaldb, profile, journalConfig, SerializationExtension(system))
 
   private val eventAdapters = Persistence(system).adaptersFor("", config)
 
