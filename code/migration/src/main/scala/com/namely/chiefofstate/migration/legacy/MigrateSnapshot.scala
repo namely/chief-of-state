@@ -1,27 +1,43 @@
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 package com.namely.chiefofstate.migration.legacy
 import akka.actor.ActorSystem
-import akka.persistence.jdbc.config.SnapshotConfig
-import akka.persistence.jdbc.db.SlickExtension
-import akka.persistence.jdbc.snapshot.dao.DefaultSnapshotDao
-import akka.persistence.jdbc.snapshot.dao.legacy.ByteArraySnapshotDao
-import akka.serialization.SerializationExtension
+import akka.persistence.SnapshotMetadata
+import akka.stream.scaladsl.Source
+import akka.NotUsed
 import com.typesafe.config.Config
-import slick.jdbc.JdbcBackend
 
+import scala.concurrent.Future
+
+/**
+ *  migrates the legacy snapshot data onto the new journal schema.
+ *
+ * @param config the application config
+ * @param system the actor system
+ */
 class MigrateSnapshot(config: Config)(implicit system: ActorSystem) extends Migrate(config) {
   import system.dispatcher
 
-  private val snapshotConfig = new SnapshotConfig(config.getConfig("jdbc-snapshot-store"))
-
-  private val snapshotdb: JdbcBackend.Database =
-    SlickExtension(system).database(config.getConfig("jdbc-snapshot-store")).database
-
-  // get the instance of the legacy snapshot dao
-  private val legacySnapshotDao: ByteArraySnapshotDao =
-    new ByteArraySnapshotDao(snapshotdb, profile, snapshotConfig, SerializationExtension(system))
-
-  // get the instance if the default snapshot dao
-  private val defaultSnapshotDao: DefaultSnapshotDao =
-    new DefaultSnapshotDao(snapshotdb, profile, snapshotConfig, SerializationExtension(system))
-
+  /**
+   * write the latest state snapshot into the new snapshot table applying the proper serialization
+   */
+  def migrate(): Source[Option[Future[Unit]], NotUsed] = {
+    legacyReadJournalDao
+      .allPersistenceIdsSource(Long.MaxValue)
+      .mapAsync(1) { persistenceId: String =>
+        legacySnapshotDao
+          .latestSnapshot(persistenceId)
+          .map((o: Option[(SnapshotMetadata, Any)]) => {
+            o.map(result => {
+              val (meta, data) = result
+              defaultSnapshotDao
+                .save(meta, data)
+            })
+          })
+      }
+  }
 }
