@@ -63,9 +63,3 @@ CREATE TABLE cos_versions
     PRIMARY KEY (version)
 );
 
--- Insert the appropriate values into the cos_versions
-INSERT INTO cos_versions(version, migration_version)
-VALUES (('v0.7.0', '0.7.0'),
-        ('v0.8.0', '0.8.0'));
-
-

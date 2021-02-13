@@ -11,11 +11,14 @@ import akka.persistence.journal.EventAdapter
 import akka.stream.scaladsl.{Sink, Source}
 import akka.NotUsed
 import akka.persistence.jdbc.journal.dao.legacy.ByteArrayJournalSerializer
-import akka.persistence.jdbc.journal.JdbcAsyncWriteJournal
 import akka.persistence.jdbc.query.dao.legacy.ReadJournalQueries
 import com.typesafe.config.Config
+import slick.jdbc.PostgresProfile.api._
+import slickProfile.api._
 
-import scala.concurrent.Future
+import scala.collection.immutable
+import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.util.Try
 
 /**
  * migrates the legacy journal data onto the new journal schema.
@@ -25,8 +28,7 @@ import scala.concurrent.Future
  * @param system the actor system
  */
 final case class JournalMigrator(config: Config)(implicit system: ActorSystem) extends Migrator(config) {
-  import profile.api._
-  import system.dispatcher
+  implicit private val ec: ExecutionContextExecutor = system.dispatcher
 
   private val eventAdapters = Persistence(system).adaptersFor("", config)
 
@@ -39,8 +41,6 @@ final case class JournalMigrator(config: Config)(implicit system: ActorSystem) e
   private val serializer: ByteArrayJournalSerializer =
     new ByteArrayJournalSerializer(serialization, readJournalConfig.pluginConfig.tagSeparator)
 
-  private val journalAsyncWrite: JdbcAsyncWriteJournal = new JdbcAsyncWriteJournal(config)
-
   /**
    * reads all the current events in the legacy journal
    *
@@ -52,7 +52,7 @@ final case class JournalMigrator(config: Config)(implicit system: ActorSystem) e
         journaldb.stream(queries.JournalTable.sortBy(_.sequenceNumber).result)
       )
       .via(serializer.deserializeFlow)
-      .mapAsync(1)(reprAndOrdNr => Future.fromTry(reprAndOrdNr))
+      .mapAsync(1)((reprAndOrdNr: Try[(PersistentRepr, Set[String], Long)]) => Future.fromTry(reprAndOrdNr))
       .map { case (repr, _, _) =>
         adaptEvents(repr)
       }
@@ -63,9 +63,11 @@ final case class JournalMigrator(config: Config)(implicit system: ActorSystem) e
    */
   def migrate(): Future[Unit] = {
     allEvents()
-      .mapAsync(1)(list => journalAsyncWrite.asyncWriteMessages(Seq(AtomicWrite(list))))
+      .mapAsync(1)((list: Seq[PersistentRepr]) =>
+        defaultJournalDao.asyncWriteMessages(immutable.Seq(AtomicWrite(collection.immutable.Seq(list: _*))))
+      )
       .limit(Long.MaxValue)
-      .runWith(Sink.seq)
+      .runWith(Sink.seq) // TODO fixme for performance
       .map(_ => ())
   }
 }

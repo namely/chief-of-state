@@ -49,9 +49,6 @@ class ReadSideProcessor(
    * Initialize the projection to start fetching the events that are emitted
    */
   def init(): Unit = {
-    // Let us attempt to create the projection store
-    //if (cosConfig.createDataStores) SlickProjection.createOffsetTableIfNotExists(offsetStoreDatabaseConfig)
-
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
       name = processorId,
       numberOfInstances = AggregateRoot.tags(cosConfig.eventsConfig).size,
