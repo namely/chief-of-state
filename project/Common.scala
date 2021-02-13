@@ -70,6 +70,6 @@ object Common extends AutoPlugin {
         "com.namely.chiefofstate.GrpcHeadersInterceptor;" +
         "com.namely.chiefofstate.Application;" +
         "com.namely.chiefofstate.GrpcServiceImpl;" +
-        "com.namely.chiefofstate.migration.legacy.*;"
+        "com.namely.chiefofstate.migration.*;"
     )
 }
