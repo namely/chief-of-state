@@ -9,10 +9,11 @@ import akka.actor.ActorSystem
 import akka.persistence.SnapshotMetadata
 import akka.persistence.jdbc.snapshot.dao.legacy.{ByteArraySnapshotSerializer, SnapshotQueries}
 import akka.persistence.jdbc.snapshot.dao.legacy.SnapshotTables.SnapshotRow
-import akka.persistence.jdbc.snapshot.JdbcSnapshotStore
 import com.typesafe.config.Config
+import slick.jdbc.PostgresProfile.api._
+import slickProfile.api._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
 
 /**
@@ -22,14 +23,11 @@ import scala.util.{Failure, Success}
  * @param system the actor system
  */
 final case class SnapshotMigrator(config: Config)(implicit system: ActorSystem) extends Migrator(config) {
-  import profile.api._
-  import system.dispatcher
+  implicit private val ec: ExecutionContextExecutor = system.dispatcher
 
   private val queries = new SnapshotQueries(profile, snapshotConfig.legacySnapshotTableConfiguration)
   private val serializer: ByteArraySnapshotSerializer =
     new ByteArraySnapshotSerializer(serialization)
-
-  private val snapshotStore: JdbcSnapshotStore = new JdbcSnapshotStore(config)
 
   private def toSnapshotData(row: SnapshotRow): (SnapshotMetadata, Any) = {
     serializer.deserialize(row) match {
@@ -41,17 +39,53 @@ final case class SnapshotMigrator(config: Config)(implicit system: ActorSystem) 
   /**
    * write the latest state snapshot into the new snapshot table applying the proper serialization
    */
-  def migrate(): Future[Option[Future[Unit]]] = {
+  def migrate(): Future[Seq[Future[Unit]]] = {
     for {
       rows <- snapshotdb
         .run(
           queries.SnapshotTable.sortBy(_.sequenceNumber.desc).result
         )
+    } yield rows
+      .map(toSnapshotData)
+      .map { case (metadata, value) =>
+        defaultSnapshotDao
+          .save(metadata, value)
+      }
+  }
+
+  /**
+   * migrate the latest snapshot
+   */
+  def migrateLatest(): Future[Option[Future[Unit]]] = {
+    for {
+      rows <- snapshotdb
+        .run(
+          queries.SnapshotTable.sortBy(_.sequenceNumber.desc).take(1).result
+        )
     } yield rows.headOption
       .map(toSnapshotData)
       .map { case (metadata, value) =>
-        snapshotStore
-          .saveAsync(metadata, value)
+        defaultSnapshotDao
+          .save(metadata, value)
+      }
+  }
+
+  /**
+   *  migrate snapshot from within a range
+   * @param offset the offset
+   * @param limit the number of data to fetch
+   */
+  def migrate(offset: Int, limit: Int): Future[Seq[Future[Unit]]] = {
+    for {
+      rows <- snapshotdb
+        .run(
+          queries.SnapshotTable.sortBy(_.sequenceNumber.desc).drop(offset).take(limit).result
+        )
+    } yield rows
+      .map(toSnapshotData)
+      .map { case (metadata, value) =>
+        defaultSnapshotDao
+          .save(metadata, value)
       }
   }
 }

@@ -9,14 +9,18 @@ package com.namely.chiefofstate.migration.legacy
 import akka.actor.ActorSystem
 import akka.persistence.jdbc.config.{JournalConfig, ReadJournalConfig, SnapshotConfig}
 import akka.persistence.jdbc.db.SlickExtension
+import akka.persistence.jdbc.journal.dao.DefaultJournalDao
+import akka.persistence.jdbc.snapshot.dao.DefaultSnapshotDao
 import akka.persistence.jdbc.snapshot.dao.legacy.ByteArraySnapshotDao
 import akka.serialization.{Serialization, SerializationExtension}
 import com.typesafe.config.Config
 import slick.basic.DatabaseConfig
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 
+import scala.concurrent.ExecutionContextExecutor
+
 abstract class Migrator(config: Config)(implicit system: ActorSystem) {
-  import system.dispatcher
+  implicit private val ec: ExecutionContextExecutor = system.dispatcher
 
   // let us get the database configuration
   protected val profile: JdbcProfile = DatabaseConfig.forConfig[JdbcProfile]("write-side-slick", config).profile
@@ -35,7 +39,16 @@ abstract class Migrator(config: Config)(implicit system: ActorSystem) {
   protected val snapshotdb: JdbcBackend.Database =
     SlickExtension(system).database(config.getConfig("jdbc-snapshot-store")).database
 
+  // get an instance of the default journal dao
+  protected val defaultJournalDao: DefaultJournalDao =
+    new DefaultJournalDao(journaldb, profile, journalConfig, serialization)
+
   // get the instance of the legacy snapshot dao
   protected val legacySnapshotDao: ByteArraySnapshotDao =
     new ByteArraySnapshotDao(snapshotdb, profile, snapshotConfig, serialization)
+
+  // get the instance if the default snapshot dao
+  protected val defaultSnapshotDao: DefaultSnapshotDao =
+    new DefaultSnapshotDao(snapshotdb, profile, snapshotConfig, serialization)
+
 }
