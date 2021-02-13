@@ -1,19 +1,3 @@
--- readside offset stores tables
-CREATE TABLE IF NOT EXISTS ${cos:read_side_offsets_store}
-(
-    "PROJECTION_NAME" VARCHAR(255) NOT NULL,
-    "PROJECTION_KEY"  VARCHAR(255) NOT NULL,
-    "CURRENT_OFFSET"  VARCHAR(255) NOT NULL,
-    "MANIFEST"        VARCHAR(4)   NOT NULL,
-    "MERGEABLE"       BOOLEAN      NOT NULL,
-    "LAST_UPDATED"    BIGINT       NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS "PROJECTION_NAME_INDEX" ON ${cos:read_side_offsets_store} ("PROJECTION_NAME");
-
-ALTER TABLE ${cos:read_side_offsets_store}
-    add constraint "PK_PROJECTION_ID" primary key ("PROJECTION_NAME", "PROJECTION_KEY");
-
 -- Renaming of the akka projection offset store columns.
 ALTER TABLE ${cos:read_side_offsets_store}
     RENAME COLUMN "PROJECTION_NAME" TO projection_name;
@@ -35,7 +19,7 @@ ALTER TABLE ${cos:read_side_offsets_store}
 
 -- Drop the old primary key index
 ALTER TABLE ${cos:read_side_offsets_store}
-    DROP CONSTRAINT "PK_PROJECTION_ID";
+    DROP CONSTRAINT IF EXISTS "PK_PROJECTION_ID";
 
 -- Drop the old index on the table
 DROP INDEX IF EXISTS "PROJECTION_NAME_INDEX";

@@ -50,7 +50,7 @@ class ReadSideProcessor(
    */
   def init(): Unit = {
     // Let us attempt to create the projection store
-    if (cosConfig.createDataStores) SlickProjection.createOffsetTableIfNotExists(offsetStoreDatabaseConfig)
+    //if (cosConfig.createDataStores) SlickProjection.createOffsetTableIfNotExists(offsetStoreDatabaseConfig)
 
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
       name = processorId,
