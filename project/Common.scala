@@ -68,13 +68,9 @@ object Common extends AutoPlugin {
         "com.namely.chiefofstate.ReadSideProcessor;" +
         "com.namely.chiefofstate.StartNodeBehaviour;" +
         "com.namely.chiefofstate.GrpcHeadersInterceptor;" +
-<<<<<<< HEAD
         "com.namely.chiefofstate.StartNode;" +
         "com.namely.chiefofstate.GrpcServiceImpl;"
-=======
-        "com.namely.chiefofstate.Application;" +
-        "com.namely.chiefofstate.GrpcServiceImpl;" +
         "com.namely.chiefofstate.migration.legacy.*;"
->>>>>>> 14311d2 (Code cleanup and)
+        "com.namely.chiefofstate.migration.*;"
     )
 }
