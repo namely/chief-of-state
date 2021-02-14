@@ -17,7 +17,7 @@ object JdbcConfig {
    *
    * @param config the main application config
    */
-  def getWriteJdbcConfig(config: Config): DatabaseConfig[JdbcProfile] = {
+  def writeJdbcConfig(config: Config): DatabaseConfig[JdbcProfile] = {
     DatabaseConfig.forConfig[JdbcProfile]("write-side-slick", config)
   }
 
@@ -25,7 +25,7 @@ object JdbcConfig {
    * returns the read side databas config
    * @param config the main application config
    */
-  def getReadSideJdbcConfig(config: Config): DatabaseConfig[PostgresProfile] = {
+  def readSideJdbcConfig(config: Config): DatabaseConfig[PostgresProfile] = {
     DatabaseConfig.forConfig[PostgresProfile]("akka.projection.slick", config)
   }
 }

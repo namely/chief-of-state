@@ -99,8 +99,8 @@ object CosSchemas {
 
     implicit val ec: ExecutionContextExecutor = system.executionContext
 
-    val dbconfig: DatabaseConfig[JdbcProfile] = JdbcConfig.getWriteJdbcConfig(config)
-    val readSideJdbcConfig: DatabaseConfig[PostgresProfile] = JdbcConfig.getReadSideJdbcConfig(config)
+    val dbconfig: DatabaseConfig[JdbcProfile] = JdbcConfig.writeJdbcConfig(config)
+    val readSideJdbcConfig: DatabaseConfig[PostgresProfile] = JdbcConfig.readSideJdbcConfig(config)
 
     // let us get the database connection
     val conn: Connection = dbconfig.db.createSession().conn
