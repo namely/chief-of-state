@@ -7,11 +7,11 @@
 package com.namely.chiefofstate.migration.legacy
 import akka.actor.ActorSystem
 import akka.persistence.{AtomicWrite, Persistence, PersistentRepr}
+import akka.persistence.jdbc.journal.dao.legacy.ByteArrayJournalSerializer
+import akka.persistence.jdbc.query.dao.legacy.ReadJournalQueries
 import akka.persistence.journal.EventAdapter
 import akka.stream.scaladsl.{Sink, Source}
 import akka.NotUsed
-import akka.persistence.jdbc.journal.dao.legacy.ByteArrayJournalSerializer
-import akka.persistence.jdbc.query.dao.legacy.ReadJournalQueries
 import com.typesafe.config.Config
 import slick.jdbc.PostgresProfile.api._
 import slickProfile.api._
@@ -30,7 +30,7 @@ import scala.util.Try
 final case class JournalMigrator(config: Config)(implicit system: ActorSystem) extends Migrator(config) {
   implicit private val ec: ExecutionContextExecutor = system.dispatcher
 
-  private val eventAdapters = Persistence(system).adaptersFor("", config)
+  private val eventAdapters = Persistence(system).adaptersFor("jdbc-journal", config)
 
   private def adaptEvents(repr: PersistentRepr): Seq[PersistentRepr] = {
     val adapter: EventAdapter = eventAdapters.get(repr.payload.getClass)
@@ -67,7 +67,7 @@ final case class JournalMigrator(config: Config)(implicit system: ActorSystem) e
         defaultJournalDao.asyncWriteMessages(immutable.Seq(AtomicWrite(collection.immutable.Seq(list: _*))))
       )
       .limit(Long.MaxValue)
-      .runWith(Sink.seq) // TODO fixme for performance
+      .runWith(Sink.seq) // FIXME for performance
       .map(_ => ())
   }
 }
