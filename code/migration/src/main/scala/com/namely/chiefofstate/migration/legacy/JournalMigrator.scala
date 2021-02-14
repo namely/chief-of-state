@@ -18,7 +18,7 @@ import slickProfile.api._
 
 import scala.collection.immutable
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 /**
  * migrates the legacy journal data onto the new journal schema.
@@ -56,6 +56,32 @@ final case class JournalMigrator(config: Config)(implicit system: ActorSystem) e
       .map { case (repr, _, _) =>
         adaptEvents(repr)
       }
+  }
+
+  private def events(): Source[Try[(PersistentRepr, Long)], NotUsed] = {
+    Source
+      .fromPublisher(
+        journaldb.stream(queries.JournalTable.sortBy(_.sequenceNumber).result)
+      )
+      .via(serializer.deserializeFlow)
+      .map {
+        case Success((repr, _, ordering)) => Success(repr -> ordering)
+        case Failure(e)                   => Failure(e)
+      }
+  }
+
+  def migrateLegacyData(): Future[Unit] = {
+    events()
+      .mapAsync(1) {
+        case Failure(exception) => throw exception
+        case Success(data: (PersistentRepr, Long)) =>
+          val (pr, _) = data
+          defaultJournalDao.asyncWriteMessages(Seq(AtomicWrite(Seq(pr))))
+      }
+      .limit(Long.MaxValue)
+      .runWith(Sink.seq) // FIXME for performance
+      .map(_ => ())
+
   }
 
   /**
