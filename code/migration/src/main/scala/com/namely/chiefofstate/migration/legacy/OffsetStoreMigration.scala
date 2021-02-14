@@ -56,7 +56,7 @@ object OffsetStoreMigration {
   }
 
   def renameColumns(config: Config): Boolean = {
-    val readSideJdbcConfig: DatabaseConfig[PostgresProfile] = JdbcConfig.readSideJdbcConfig(config)
+    val readSideJdbcConfig: DatabaseConfig[PostgresProfile] = JdbcConfig.getReadSideConfig(config)
     // let us get the database connection
     val conn: Connection = readSideJdbcConfig.db.createSession().conn
 
