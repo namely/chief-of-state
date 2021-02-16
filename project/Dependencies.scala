@@ -22,20 +22,16 @@ object Dependencies {
     val JaninoVersion: String = "3.1.3"
     val LogstashLogbackVersion: String = "6.3"
 
-    val OpenTracing: String = "0.33.0"
-    val OpenTracingGrpc: String = "0.2.3"
-    val OpenTracingConcurrent: String = "0.4.0"
-    val OpenTracingMetrics: String = "0.3.0"
-    val OpenTracingApiExtensions: String = "0.6.0"
-    val OpenTracingJaeger: String = "1.5.0"
-
-    val Micrometer: String = "1.6.4"
+    val OpenTelemetryVersion: String = "0.16.0"
+    val OpenTelemetryMetricsVersion: String = "0.16.0-alpha"
+    val PrometheusServerVersion: String = "0.9.0"
 
     val EmbeddedPostgresVersion: String = "1.2.10"
   }
 
   import Dependencies.Versions._
 
+  val excludeGRPC = ExclusionRule(organization = "io.grpc")
   val jars: Seq[ModuleID] = Seq(
     "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.10" % ScalapbCommonProtoVersion,
     "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf",
@@ -66,21 +62,16 @@ object Dependencies {
     "net.logstash.logback" % "logstash-logback-encoder" % Versions.LogstashLogbackVersion,
     "org.codehaus.janino" % "janino" % Versions.JaninoVersion,
     "org.scala-lang" % "scala-reflect" % Versions.ScalaVersion,
-    // opentracing
-    "io.opentracing" % "opentracing-api" % Versions.OpenTracing,
-    "io.opentracing" % "opentracing-noop" % Versions.OpenTracing,
-    "io.opentracing.contrib" % "opentracing-grpc" % Versions.OpenTracingGrpc,
-    "io.jaegertracing" % "jaeger-client" % Versions.OpenTracingJaeger,
-    "io.opentracing.contrib" % "opentracing-concurrent" % Versions.OpenTracingConcurrent,
-    // metrics
-    "io.opentracing.contrib" % "opentracing-metrics" % Versions.OpenTracingMetrics,
-    "io.opentracing.contrib" % "opentracing-metrics-parent" % Versions.OpenTracingMetrics,
-    "io.opentracing.contrib" % "opentracing-metrics-micrometer" % Versions.OpenTracingMetrics,
-    "io.opentracing.contrib" % "opentracing-api-extensions" % Versions.OpenTracingApiExtensions,
-    "io.opentracing.contrib" % "opentracing-api-extensions-tracer" % Versions.OpenTracingApiExtensions,
-    "io.jaegertracing" % "jaeger-micrometer" % Versions.OpenTracingJaeger,
-    "io.micrometer" % "micrometer-core" % Versions.Micrometer,
-    "io.micrometer" % "micrometer-registry-prometheus" % Versions.Micrometer
+    // Opentelemetry
+    "io.opentelemetry" % "opentelemetry-api" % OpenTelemetryVersion,
+    "io.opentelemetry" % "opentelemetry-sdk" % OpenTelemetryVersion,
+    "io.opentelemetry.instrumentation" % "opentelemetry-grpc-1.5" % OpenTelemetryVersion,
+    "io.opentelemetry" % "opentelemetry-extension-trace-propagators" % OpenTelemetryVersion,
+    "io.opentelemetry" % "opentelemetry-exporter-otlp-trace" % OpenTelemetryVersion excludeAll excludeGRPC,
+    "io.opentelemetry" % "opentelemetry-exporter-otlp-metrics" % OpenTelemetryMetricsVersion excludeAll excludeGRPC,
+    "io.opentelemetry" % "opentelemetry-exporter-jaeger-thrift" % OpenTelemetryVersion excludeAll excludeGRPC,
+    "io.opentelemetry" % "opentelemetry-exporter-prometheus" % OpenTelemetryMetricsVersion,
+    "io.prometheus" % "simpleclient_httpserver" % PrometheusServerVersion
   )
 
   val testJars: Seq[ModuleID] = Seq(
@@ -88,8 +79,6 @@ object Dependencies {
     "org.scalatest" %% "scalatest" % ScalaTestVersion % Test,
     "org.scalamock" %% "scalamock" % ScalaMockVersion % Test,
     "io.grpc" % "grpc-testing" % grpcJavaVersion % Test,
-    "io.zonky.test" % "embedded-postgres" % EmbeddedPostgresVersion % Test,
-    // opentracing test
-    "io.opentracing" % "opentracing-mock" % Versions.OpenTracing % Test
+    "io.zonky.test" % "embedded-postgres" % EmbeddedPostgresVersion % Test
   )
 }
