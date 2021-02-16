@@ -14,16 +14,16 @@ import akka.persistence.typed.scaladsl._
 import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate.config.{CosConfig, EventsConfig, SnapshotConfig}
-import com.namely.chiefofstate.Util.{makeFailedStatusPf, toRpcStatus, Instants}
-import com.namely.chiefofstate.telemetry.OpentracingHelpers
+import com.namely.chiefofstate.Util.{Instants, makeFailedStatusPf, toRpcStatus}
+import com.namely.chiefofstate.telemetry.TracingHelpers
 import com.namely.chiefofstate.WriteHandlerHelpers.{NewState, NoOp}
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, GetStateCommand, RemoteCommand, SendCommand}
 import com.namely.protobuf.chiefofstate.v1.persistence.{EventWrapper, StateWrapper}
 import io.grpc.{Status, StatusException}
-import io.opentracing.{Span, Tracer}
-import io.opentracing.tag.Tags
-import io.opentracing.util.GlobalTracer
+import io.opentelemetry.api.GlobalOpenTelemetry
+import io.opentelemetry.api.trace.{Span, StatusCode}
+import io.opentelemetry.context.Context
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.time.Instant
@@ -36,8 +36,6 @@ import scala.util.{Failure, Success, Try}
 object AggregateRoot {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
-
-  lazy val tracer: Tracer = GlobalTracer.get()
 
   /**
    * thee aggregate root type key
@@ -101,21 +99,23 @@ object AggregateRoot {
 
     val headers = aggregateCommand.command.tracingHeaders
 
-    val tracer = GlobalTracer.get()
+    log.info(s"aggregate root headers $headers")
 
-    val span: Span = OpentracingHelpers
-      .getChildSpanBuilder(tracer, headers, "AggregateRoot.handleCommand")
-      .withTag(Tags.COMPONENT.getKey(), this.getClass().getName)
-      .start()
+    val ctx = TracingHelpers.getParentSpanContext(Context.current(), headers)
 
-    tracer.activateSpan(span)
+    val span: Span = GlobalOpenTelemetry
+      .getTracer(getClass.getPackage.getName)
+      .spanBuilder("AggregateRoot.handleCommand")
+      .setAttribute("component", this.getClass.getName)
+      .setParent(ctx)
+      .startSpan()
+
+    val scope = span.makeCurrent()
 
     val output: ReplyEffect[EventWrapper, StateWrapper] = aggregateCommand.command.`type` match {
       case SendCommand.Type.Empty =>
         val errStatus = Status.INTERNAL.withDescription("something really bad happens...")
-
-        OpentracingHelpers.reportErrorToTracer(tracer, errStatus.asException())
-
+        span.recordException(errStatus.asException()).setStatus(StatusCode.ERROR)
         Effect
           .reply(aggregateCommand.replyTo)(
             CommandReply()
@@ -137,7 +137,8 @@ object AggregateRoot {
         handleGetStateCommand(getStateCommand, aggregateState, aggregateCommand.replyTo)
     }
 
-    span.finish()
+    span.end()
+    scope.close()
 
     output
   }
@@ -229,9 +230,7 @@ object AggregateRoot {
         persistEventAndReply(event, newState, eventMeta, replyTo)
 
       case Failure(e: StatusException) =>
-        OpentracingHelpers
-          .reportErrorToTracer(tracer, e)
-
+        Span.current().recordException(e).setStatus(StatusCode.ERROR)
         Effect.reply(replyTo)(
           CommandReply().withError(toRpcStatus(e.getStatus))
         )
@@ -241,8 +240,7 @@ object AggregateRoot {
         val errStatus = Status.INTERNAL
           .withDescription(s"write handler failure, ${x.getClass}")
 
-        OpentracingHelpers.reportErrorToTracer(tracer, errStatus.asException())
-
+        Span.current().recordException(errStatus.asException()).setStatus(StatusCode.ERROR)
         Effect.reply(replyTo)(
           CommandReply().withError(toRpcStatus(errStatus))
         )

@@ -11,10 +11,8 @@ import com.namely.protobuf.chiefofstate.v1.readside.{HandleReadSideRequest, Hand
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
-import io.opentracing.Span
-import io.opentracing.tag.Tags
-import io.opentracing.util.GlobalTracer
-
+import io.opentelemetry.api.GlobalOpenTelemetry
+import io.opentelemetry.api.trace.Span
 import scala.util.Try
 
 class RemoteReadSideProcessor(readSideHandlerServiceBlockingStub: ReadSideHandlerServiceBlockingStub) {
@@ -38,12 +36,13 @@ class RemoteReadSideProcessor(readSideHandlerServiceBlockingStub: ReadSideHandle
   ): Try[HandleReadSideResponse] = {
     Try {
       // start the span
-      val span: Span = GlobalTracer.get
-        .buildSpan("RemoteReadSideProcessor.processEvent")
-        .withTag(Tags.COMPONENT.getKey(), this.getClass().getName)
-        .start()
+      val span: Span = GlobalOpenTelemetry
+        .getTracer(getClass.getPackageName)
+        .spanBuilder("RemoteReadSideProcessor.processEvent")
+        .setAttribute("component", this.getClass.getName)
+        .startSpan()
 
-      GlobalTracer.get.activateSpan(span)
+      val scope = span.makeCurrent()
 
       val headers = new Metadata()
       headers.put(Metadata.Key.of(COS_ENTITY_ID_HEADER, Metadata.ASCII_STRING_MARSHALLER), meta.entityId)
@@ -59,7 +58,8 @@ class RemoteReadSideProcessor(readSideHandlerServiceBlockingStub: ReadSideHandle
         )
 
       // finish the span
-      span.finish()
+      scope.close()
+      span.end()
 
       // return the response
       response
