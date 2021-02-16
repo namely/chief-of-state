@@ -10,11 +10,7 @@ import com.typesafe.config.Config
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.propagation.{ContextPropagators, TextMapPropagator}
-import io.opentelemetry.extension.trace.propagation.{
-  B3Propagator,
-  JaegerPropagator,
-  OtTracePropagator
-}
+import io.opentelemetry.extension.trace.propagation.{B3Propagator, JaegerPropagator, OtTracePropagator}
 
 import scala.jdk.CollectionConverters._
 

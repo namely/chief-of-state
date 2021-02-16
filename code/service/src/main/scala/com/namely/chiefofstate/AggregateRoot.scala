@@ -14,7 +14,7 @@ import akka.persistence.typed.scaladsl._
 import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate.config.{CosConfig, EventsConfig, SnapshotConfig}
-import com.namely.chiefofstate.Util.{Instants, makeFailedStatusPf, toRpcStatus}
+import com.namely.chiefofstate.Util.{makeFailedStatusPf, toRpcStatus, Instants}
 import com.namely.chiefofstate.telemetry.TracingHelpers
 import com.namely.chiefofstate.WriteHandlerHelpers.{NewState, NoOp}
 import com.namely.protobuf.chiefofstate.v1.common.MetaData

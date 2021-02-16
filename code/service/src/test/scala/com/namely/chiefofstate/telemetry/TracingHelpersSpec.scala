@@ -30,7 +30,8 @@ class TracingHelpersSpec extends BaseSpec {
 
       val context = Context.current()
 
-      val span: Span = tracer.spanBuilder("foo")
+      val span: Span = tracer
+        .spanBuilder("foo")
         .startSpan()
 
       val actual = TracingHelpers.getTracingHeaders(context)

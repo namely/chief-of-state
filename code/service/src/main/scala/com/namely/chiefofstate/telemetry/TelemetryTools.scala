@@ -51,8 +51,7 @@ case class TelemetryTools(config: Config) {
 
       builder.setEndpoint(endpoint)
       val exporter = builder.build
-      val readerBuilder = IntervalMetricReader
-        .builder
+      val readerBuilder = IntervalMetricReader.builder
         .setMetricProducers(Collections.singleton(meterProvider))
         .setMetricExporter(exporter)
       val reader = readerBuilder.build
