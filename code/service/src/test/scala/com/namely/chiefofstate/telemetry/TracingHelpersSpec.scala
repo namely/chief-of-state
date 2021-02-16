@@ -7,19 +7,21 @@
 package com.namely.chiefofstate.telemetry
 
 import com.namely.chiefofstate.helper.BaseSpec
-import io.opentelemetry.api.{DefaultOpenTelemetry, GlobalOpenTelemetry, OpenTelemetry}
-import io.opentelemetry.api.trace.{Span, SpanContextKey, Tracer}
+import io.opentelemetry.api.{GlobalOpenTelemetry, OpenTelemetry}
+import io.opentelemetry.api.trace.{Span, Tracer}
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.extension.trace.propagation.B3Propagator
+import io.opentelemetry.sdk.OpenTelemetrySdk
 
 class TracingHelpersSpec extends BaseSpec {
 
   val propagators: ContextPropagators = ContextPropagators.create(B3Propagator.builder.injectMultipleHeaders.build)
-  val ot: OpenTelemetry = DefaultOpenTelemetry
+  val ot: OpenTelemetry = OpenTelemetrySdk
     .builder()
-    .setPropagators(propagators)
-    .build()
+    .setPropagators(propagators).build()
+
+  GlobalOpenTelemetry.resetForTest()
   GlobalOpenTelemetry.set(ot)
   val tracer: Tracer = ot.getTracer("testTracer")
 
@@ -49,8 +51,8 @@ class TracingHelpersSpec extends BaseSpec {
       scope.close()
       span.end()
 
-      actual.get("X-B3-SpanId") shouldBe Some(span.getSpanContext.getSpanIdAsHexString)
-      actual.get("X-B3-TraceId") shouldBe Some(span.getSpanContext.getTraceIdAsHexString)
+      actual.get("X-B3-SpanId") shouldBe Some(span.getSpanContext.getSpanId)
+      actual.get("X-B3-TraceId") shouldBe Some(span.getSpanContext.getTraceId)
     }
   }
   ".getParentSpanContext" should {
@@ -61,8 +63,8 @@ class TracingHelpersSpec extends BaseSpec {
       val actual = TracingHelpers.getParentSpanContext(Context.current(), headers)
       val span = Span.fromContext(actual)
       println(s"State ${span.getSpanContext.getTraceState.asMap()}")
-      span.getSpanContext.getSpanIdAsHexString shouldBe spanID
-      span.getSpanContext.getTraceIdAsHexString shouldBe traceID
+      span.getSpanContext.getSpanId shouldBe spanID
+      span.getSpanContext.getTraceId shouldBe traceID
     }
   }
 }

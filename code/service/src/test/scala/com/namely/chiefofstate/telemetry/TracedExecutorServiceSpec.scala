@@ -5,12 +5,13 @@ import io.opentelemetry.api.trace.{Span, Tracer}
 import io.opentelemetry.api.{DefaultOpenTelemetry, GlobalOpenTelemetry, OpenTelemetry}
 import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.extension.trace.propagation.B3Propagator
+import io.opentelemetry.sdk.OpenTelemetrySdk
 
 import java.util.concurrent.Executors
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
-class TracedExecutorServiceSpec extends BaseSpec{
+class TracedExecutorServiceSpec extends BaseSpec {
 
   def performTask(implicit ec: ExecutionContext): Future[(Seq[String], Map[String, String])] = {
     val childSpanIds: mutable.ListBuffer[String] = new mutable.ListBuffer()
@@ -18,23 +19,22 @@ class TracedExecutorServiceSpec extends BaseSpec{
     val parentMap: mutable.HashMap[String, String] = new mutable.HashMap[String, String]()
     val tracer = GlobalOpenTelemetry.getTracer("testTracer")
 
-
     // run a future, map through another future, and start spans in each one
     Future { childSpanIds.clear() }
       .map(_ => {
         val parentSpan = Span.current()
         val childSpan = tracer.spanBuilder("oh we tracing").startSpan()
-        val childSpanID = childSpan.getSpanContext.getSpanIdAsHexString
+        val childSpanID = childSpan.getSpanContext.getSpanId
         childSpanIds.append(childSpanID)
-        parentMap.update(childSpanID, parentSpan.getSpanContext.getSpanIdAsHexString)
+        parentMap.update(childSpanID, parentSpan.getSpanContext.getSpanId)
         childSpan.end()
       })
       .map(_ => {
         val parentSpan = Span.current()
         val childSpan = tracer.spanBuilder("still tracing").startSpan()
-        val childSpanID = childSpan.getSpanContext.getSpanIdAsHexString
+        val childSpanID = childSpan.getSpanContext.getSpanId
         childSpanIds.append(childSpanID)
-        parentMap.update(childSpanID, parentSpan.getSpanContext.getSpanIdAsHexString)
+        parentMap.update(childSpanID, parentSpan.getSpanContext.getSpanId)
         childSpan.end()
       })
       .map(_ => Thread.sleep(100))
@@ -46,14 +46,16 @@ class TracedExecutorServiceSpec extends BaseSpec{
       implicit val ec: ExecutionContext = TracedExecutorService.get()
 
       val propagators: ContextPropagators = ContextPropagators.create(B3Propagator.builder.injectMultipleHeaders.build)
-      val ot: OpenTelemetry = DefaultOpenTelemetry
+      val ot: OpenTelemetry = OpenTelemetrySdk
         .builder()
-        .setPropagators(propagators)
-        .build()
+        .setPropagators(propagators).build()
+
+      GlobalOpenTelemetry.resetForTest()
       GlobalOpenTelemetry.set(ot)
       val tracer: Tracer = ot.getTracer("testTracer")
 
-      val span = tracer.spanBuilder("outer span")
+      val span = tracer
+        .spanBuilder("outer span")
         .startSpan()
 
       val scope = span.makeCurrent()
@@ -73,22 +75,24 @@ class TracedExecutorServiceSpec extends BaseSpec{
 
         // assert that the first span is the parent of second and third span
         childSpanIds.foreach(childSpanId => {
-          parentMap(childSpanId) shouldBe span.getSpanContext.getSpanIdAsHexString
+          parentMap(childSpanId) shouldBe span.getSpanContext.getSpanId
         })
       })
     }
     "not auto propagate the span on a normal execution context" in {
       val threadPool = Executors.newFixedThreadPool(1)
-      implicit val ec = ExecutionContext.fromExecutor(threadPool)
+      implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(threadPool)
       val propagators: ContextPropagators = ContextPropagators.create(B3Propagator.builder.injectMultipleHeaders.build)
-      val ot: OpenTelemetry = DefaultOpenTelemetry
+      val ot: OpenTelemetry = OpenTelemetrySdk
         .builder()
-        .setPropagators(propagators)
-        .build()
+        .setPropagators(propagators).build()
+
+      GlobalOpenTelemetry.resetForTest()
       GlobalOpenTelemetry.set(ot)
       val tracer: Tracer = ot.getTracer("testTracer")
 
-      val span = tracer.spanBuilder("outer span")
+      val span = tracer
+        .spanBuilder("outer span")
         .startSpan()
 
       val scope = span.makeCurrent()
@@ -108,7 +112,7 @@ class TracedExecutorServiceSpec extends BaseSpec{
 
         // assert that the first span is the parent of second and third span
         childSpanIds.foreach(childSpanId => {
-          parentMap(childSpanId) shouldNot be(span.getSpanContext.getSpanIdAsHexString)
+          parentMap(childSpanId) shouldNot be(span.getSpanContext.getSpanId)
         })
       })
     }
