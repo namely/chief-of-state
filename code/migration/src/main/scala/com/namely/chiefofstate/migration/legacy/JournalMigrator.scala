@@ -33,6 +33,15 @@ final case class JournalMigrator(config: Config)(implicit system: ActorSystem) e
   private val serializer: ByteArrayJournalSerializer =
     new ByteArrayJournalSerializer(serialization, readJournalConfig.pluginConfig.tagSeparator)
 
+  /**
+   * Fetch all events from the journal and deserialize them into PersistenceRepr.
+   * <p>
+   * Since the raw event payload is persisted as well as the tags in separate columns to be able
+   * to use the new DAO we need to wrap the PersistenceRepr payload and the unpacked tags into
+   * Tagged message. That way the new DAO will be able to properly unpack the PersistenceRepr and insert
+   * it into the appropriate tables.
+   * </p>
+   */
   private def events(): Source[PersistentRepr, NotUsed] = {
     Source
       .fromPublisher(
