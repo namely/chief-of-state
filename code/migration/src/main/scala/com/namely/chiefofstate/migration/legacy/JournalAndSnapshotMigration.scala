@@ -19,7 +19,7 @@ case class JournalAndSnapshotMigration()(implicit system: ActorSystem) {
     val snapshotMigrator: SnapshotMigrator = SnapshotMigrator(system.settings.config)
 
     Future
-      .sequence(List(journalMigrator.migrateLegacyData(), snapshotMigrator.migrate()))
+      .sequence(List(Future { journalMigrator.migrate() }, snapshotMigrator.migrate()))
       .map(_ => system.log.info("legacy journal and snapshot successfully migrated.. :)"))
   }
 }
