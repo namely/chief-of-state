@@ -54,6 +54,13 @@ object StartNodeBehaviour {
       // get the  COS config
       val cosConfig: CosConfig = CosConfig(config)
 
+      val cluster: Cluster = Cluster(context.system)
+      context.log.info(s"starting node with roles: ${cluster.selfMember.roles}")
+
+      // Start the akka cluster management tool
+      AkkaManagement(context.system).start()
+      ClusterBootstrap(context.system).start()
+
       Try {
         // create data stores and run migrations if necessary
         if (cosConfig.createDataStores) {
@@ -67,8 +74,6 @@ object StartNodeBehaviour {
         case Success(_)         =>
           // We only proceed when the data stores and various migrations are done successfully.
           log.info("Journal and snapshot store created successfully. About to start...")
-          val cluster: Cluster = Cluster(context.system)
-          context.log.info(s"starting node with roles: $cluster.selfMember.roles")
 
           val channel: ManagedChannel =
             NettyHelper
@@ -98,8 +103,6 @@ object StartNodeBehaviour {
           // start the telemetry tools and register global tracer
           TelemetryTools(config, cosConfig.enableJaeger, "chief-of-state").start()
 
-          AkkaManagement(context.system).start()
-          ClusterBootstrap(context.system).start()
           val sharding: ClusterSharding = ClusterSharding(context.system)
 
           sharding.init(
