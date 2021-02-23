@@ -23,7 +23,7 @@ import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.Chief
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.typesafe.config.Config
 import io.grpc._
-import io.grpc.netty.{NettyChannelBuilder, NettyServerBuilder}
+import io.grpc.netty.NettyServerBuilder
 import io.opentracing.contrib.grpc.{TracingClientInterceptor, TracingServerInterceptor}
 import io.opentracing.util.GlobalTracer
 import org.slf4j.{Logger, LoggerFactory}
@@ -78,12 +78,6 @@ object StartNodeBehaviour {
                 cosConfig.writeSideConfig.useTls
               )
               .build()
-
-          NettyChannelBuilder
-            .forAddress(cosConfig.writeSideConfig.host, cosConfig.writeSideConfig.port)
-            .useTransportSecurity()
-            // .usePlaintext()
-            .build()
 
           val grpcClientInterceptors: Seq[ClientInterceptor] = Seq(
             new ErrorsClientInterceptor(GlobalTracer.get()),
