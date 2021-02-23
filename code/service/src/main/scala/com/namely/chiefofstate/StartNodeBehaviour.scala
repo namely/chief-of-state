@@ -1,8 +1,14 @@
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 package com.namely.chiefofstate
 
 import akka.NotUsed
+import akka.actor.typed.{ActorSystem, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.Behavior
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
 import akka.cluster.typed.Cluster
 import akka.management.cluster.bootstrap.ClusterBootstrap
@@ -116,27 +122,31 @@ object StartNodeBehaviour {
           )
 
           // read side settings
-          if (cosConfig.enableReadSide && ReadSideConfigReader.getReadSideSettings.nonEmpty) {
-            ReadSideConfigReader.getReadSideSettings.foreach(rsconfig => {
-              val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(
-                NettyHelper
-                  .builder(rsconfig.host, rsconfig.port, rsconfig.useTls)
-                  .build
-              ).withInterceptors(grpcClientInterceptors: _*)
-
-              val remoteReadSideProcessor: RemoteReadSideProcessor = new RemoteReadSideProcessor(rpcClient)
-
-              val readSideProcessor: ReadSideProcessor =
-                new ReadSideProcessor(context.system, rsconfig.processorId, remoteReadSideProcessor, cosConfig)
-
-              readSideProcessor.init()
-            })
-          }
+          initReadSide(context.system, cosConfig, grpcClientInterceptors)
 
           // start the service
           startService(sharding, config, cosConfig)
       }
       Behaviors.empty
+    }
+  }
+
+  private def initReadSide(system: ActorSystem[_], cosConfig: CosConfig, interceptors: Seq[ClientInterceptor]): Unit = {
+    if (cosConfig.enableReadSide && ReadSideConfigReader.getReadSideSettings.nonEmpty) {
+      ReadSideConfigReader.getReadSideSettings.foreach(rsconfig => {
+        val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(
+          NettyHelper
+            .builder(rsconfig.host, rsconfig.port, rsconfig.useTls)
+            .build
+        ).withInterceptors(interceptors: _*)
+
+        val remoteReadSideProcessor: RemoteReadSideProcessor = new RemoteReadSideProcessor(rpcClient)
+
+        val readSideProcessor: ReadSideProcessor =
+          new ReadSideProcessor(system, rsconfig.processorId, remoteReadSideProcessor, cosConfig)
+
+        readSideProcessor.init()
+      })
     }
   }
 
