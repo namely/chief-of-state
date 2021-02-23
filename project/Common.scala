@@ -69,8 +69,7 @@ object Common extends AutoPlugin {
         "com.namely.chiefofstate.StartNodeBehaviour;" +
         "com.namely.chiefofstate.GrpcHeadersInterceptor;" +
         "com.namely.chiefofstate.StartNode;" +
-        "com.namely.chiefofstate.GrpcServiceImpl;"
-        "com.namely.chiefofstate.migration.legacy.*;"
+        "com.namely.chiefofstate.GrpcServiceImpl;" +
         "com.namely.chiefofstate.migration.*;"
     )
 }
