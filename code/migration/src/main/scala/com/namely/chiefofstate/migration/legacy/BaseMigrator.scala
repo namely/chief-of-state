@@ -10,8 +10,8 @@ import akka.actor.ActorSystem
 import akka.persistence.jdbc.config.{JournalConfig, ReadJournalConfig, SnapshotConfig}
 import akka.persistence.jdbc.db.SlickExtension
 import akka.persistence.jdbc.journal.dao.DefaultJournalDao
-import akka.persistence.jdbc.snapshot.dao.DefaultSnapshotDao
 import akka.persistence.jdbc.snapshot.dao.legacy.ByteArraySnapshotDao
+import akka.persistence.jdbc.snapshot.dao.DefaultSnapshotDao
 import akka.serialization.{Serialization, SerializationExtension}
 import com.typesafe.config.Config
 import slick.basic.DatabaseConfig
@@ -19,7 +19,16 @@ import slick.jdbc.{JdbcBackend, JdbcProfile}
 
 import scala.concurrent.ExecutionContextExecutor
 
-abstract class Migrator(config: Config)(implicit system: ActorSystem) {
+/**
+ * This class is extended by the various migrators
+ * <ul>
+ * <li> [[JournalMigrator]]
+ * </ul> [[SnapshotMigrator]]
+ *
+ * @param config the application configuration
+ * @param system the actor system
+ */
+class BaseMigrator(config: Config)(implicit system: ActorSystem) {
   implicit private val ec: ExecutionContextExecutor = system.dispatcher
 
   // let us get the database configuration
@@ -50,5 +59,4 @@ abstract class Migrator(config: Config)(implicit system: ActorSystem) {
   // get the instance if the default snapshot dao
   protected val defaultSnapshotDao: DefaultSnapshotDao =
     new DefaultSnapshotDao(snapshotdb, profile, snapshotConfig, serialization)
-
 }

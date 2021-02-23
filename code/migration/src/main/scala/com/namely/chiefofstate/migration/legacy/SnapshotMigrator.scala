@@ -18,11 +18,12 @@ import scala.util.{Failure, Success}
 
 /**
  *  migrates the legacy snapshot data onto the new journal schema.
+ *  This is only used prior to COS version 0.8.0
  *
  * @param config the application config
  * @param system the actor system
  */
-final case class SnapshotMigrator(config: Config)(implicit system: ActorSystem) extends Migrator(config) {
+final case class SnapshotMigrator(config: Config)(implicit system: ActorSystem) extends BaseMigrator(config) {
   implicit private val ec: ExecutionContextExecutor = system.dispatcher
 
   private val queries = new SnapshotQueries(profile, snapshotConfig.legacySnapshotTableConfiguration)

@@ -14,7 +14,7 @@ import slick.jdbc.PostgresProfile
 
 import java.sql.{Connection, Statement}
 
-object OffsetStoreMigration {
+object ReadStoreMigrator {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   /**

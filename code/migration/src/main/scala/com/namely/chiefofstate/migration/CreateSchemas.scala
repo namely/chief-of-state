@@ -19,7 +19,7 @@ import java.sql.{Connection, Statement}
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
 @silent
-object CosSchemas {
+object CreateSchemas {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   /**
@@ -91,11 +91,11 @@ object CosSchemas {
   }
 
   /**
-   * creates the various write-side stores
+   * creates the various write-side stores and read-side offset stores
    *
    * @param config the application config
    */
-  def createIfNotExists(config: Config)(implicit system: ActorSystem[_]): Future[Done] = {
+  def ifNotExists(config: Config)(implicit system: ActorSystem[_]): Future[Done] = {
 
     implicit val ec: ExecutionContextExecutor = system.executionContext
 

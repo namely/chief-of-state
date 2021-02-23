@@ -26,7 +26,7 @@ import scala.util.Try
  * @param config the application config
  * @param system the actor system
  */
-final case class JournalMigrator(config: Config)(implicit system: ActorSystem) extends Migrator(config) {
+final case class JournalMigrator(config: Config)(implicit system: ActorSystem) extends BaseMigrator(config) {
   implicit private val ec: ExecutionContextExecutor = system.dispatcher
 
   private val queries: ReadJournalQueries = new ReadJournalQueries(profile, readJournalConfig)
@@ -66,5 +66,4 @@ final case class JournalMigrator(config: Config)(implicit system: ActorSystem) e
       .runWith(Sink.seq) // FIXME for performance
       .map(_ => ())
   }
-
 }
