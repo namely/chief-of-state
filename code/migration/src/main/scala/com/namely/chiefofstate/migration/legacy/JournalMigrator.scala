@@ -6,19 +6,18 @@
 
 package com.namely.chiefofstate.migration.legacy
 import akka.actor.ActorSystem
-import akka.persistence.{AtomicWrite, Persistence, PersistentRepr}
+import akka.persistence.{AtomicWrite, PersistentRepr}
 import akka.persistence.jdbc.journal.dao.legacy.ByteArrayJournalSerializer
 import akka.persistence.jdbc.query.dao.legacy.ReadJournalQueries
-import akka.persistence.journal.EventAdapter
+import akka.persistence.journal.Tagged
 import akka.stream.scaladsl.{Sink, Source}
 import akka.NotUsed
 import com.typesafe.config.Config
 import slick.jdbc.PostgresProfile.api._
 import slickProfile.api._
 
-import scala.collection.immutable
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 /**
  * migrates the legacy journal data onto the new journal schema.
@@ -30,70 +29,33 @@ import scala.util.{Failure, Success, Try}
 final case class JournalMigrator(config: Config)(implicit system: ActorSystem) extends Migrator(config) {
   implicit private val ec: ExecutionContextExecutor = system.dispatcher
 
-  private val eventAdapters = Persistence(system).adaptersFor("jdbc-journal", config)
-
-  private def adaptEvents(repr: PersistentRepr): Seq[PersistentRepr] = {
-    val adapter: EventAdapter = eventAdapters.get(repr.payload.getClass)
-    adapter.fromJournal(repr.payload, repr.manifest).events.map(repr.withPayload)
-  }
-
   private val queries: ReadJournalQueries = new ReadJournalQueries(profile, readJournalConfig)
   private val serializer: ByteArrayJournalSerializer =
     new ByteArrayJournalSerializer(serialization, readJournalConfig.pluginConfig.tagSeparator)
 
-  /**
-   * reads all the current events in the legacy journal
-   *
-   * @return the source of all the events
-   */
-  private def allEvents(): Source[Seq[PersistentRepr], NotUsed] = {
+  private def events(): Source[PersistentRepr, NotUsed] = {
     Source
       .fromPublisher(
         journaldb.stream(queries.JournalTable.sortBy(_.sequenceNumber).result)
       )
       .via(serializer.deserializeFlow)
       .mapAsync(1)((reprAndOrdNr: Try[(PersistentRepr, Set[String], Long)]) => Future.fromTry(reprAndOrdNr))
-      .map { case (repr, _, _) =>
-        adaptEvents(repr)
+      .map { case (repr, tags, _) =>
+        repr.withPayload(Tagged(repr.payload, tags))
       }
-  }
-
-  private def events(): Source[Try[(PersistentRepr, Long)], NotUsed] = {
-    Source
-      .fromPublisher(
-        journaldb.stream(queries.JournalTable.sortBy(_.sequenceNumber).result)
-      )
-      .via(serializer.deserializeFlow)
-      .map {
-        case Success((repr, _, ordering)) => Success(repr -> ordering)
-        case Failure(e)                   => Failure(e)
-      }
-  }
-
-  def migrateLegacyData(): Future[Unit] = {
-    events()
-      .mapAsync(1) {
-        case Failure(exception) => throw exception
-        case Success(data: (PersistentRepr, Long)) =>
-          val (pr, _) = data
-          defaultJournalDao.asyncWriteMessages(Seq(AtomicWrite(Seq(pr))))
-      }
-      .limit(Long.MaxValue)
-      .runWith(Sink.seq) // FIXME for performance
-      .map(_ => ())
-
   }
 
   /**
    * write all legacy events into the new journal tables applying the proper serialization
    */
-  def migrate(): Future[Unit] = {
-    allEvents()
-      .mapAsync(1)((list: Seq[PersistentRepr]) =>
-        defaultJournalDao.asyncWriteMessages(immutable.Seq(AtomicWrite(collection.immutable.Seq(list: _*))))
-      )
+  def migrate(): Unit = {
+    events()
+      .mapAsync(1)((repr: PersistentRepr) => {
+        defaultJournalDao.asyncWriteMessages(Seq(AtomicWrite(Seq(repr))))
+      })
       .limit(Long.MaxValue)
       .runWith(Sink.seq) // FIXME for performance
       .map(_ => ())
   }
+
 }
