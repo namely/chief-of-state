@@ -21,18 +21,15 @@ object BootConfig {
   val DEPLOYMENT_MODE_K8S: DeploymentMode = DeploymentMode("kubernetes", "kubernetes.conf")
 
   def get(): Config = {
-    val mode: DeploymentMode = getDeploymentMode()
+    val mode: DeploymentMode = getDeploymentMode
     ConfigFactory
       .parseResources(mode.file)
       .withFallback(ConfigFactory.parseResources("legacy.conf")) // FIXME remove this when migration tool is done
       .resolve()
   }
 
-  private[config] def getDeploymentMode(): DeploymentMode = {
-    val deploymentMode: String = sys.env
-      .get(DEPLOYMENT_MODE)
-      .getOrElse(DEPLOYMENT_MODE_DOCKER.key)
-
+  private[config] def getDeploymentMode: DeploymentMode = {
+    val deploymentMode: String = sys.env.getOrElse(DEPLOYMENT_MODE, DEPLOYMENT_MODE_DOCKER.key)
     getDeploymentMode(deploymentMode)
   }
 

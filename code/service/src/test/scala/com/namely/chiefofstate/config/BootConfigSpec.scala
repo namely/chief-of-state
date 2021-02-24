@@ -37,7 +37,7 @@ class BootConfigSpec extends BaseSpec {
 
     "read the env var" in {
       EnvironmentHelper.setEnv(BootConfig.DEPLOYMENT_MODE, BootConfig.DEPLOYMENT_MODE_K8S.key)
-      BootConfig.getDeploymentMode() shouldBe BootConfig.DEPLOYMENT_MODE_K8S
+      BootConfig.getDeploymentMode shouldBe BootConfig.DEPLOYMENT_MODE_K8S
     }
   }
 
