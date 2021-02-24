@@ -45,11 +45,11 @@ class CosSchemasSpec extends BaseSpec {
       implicit val ec: ExecutionContextExecutor = testKit.system.executionContext
       val config: Config = ConfigFactory.parseResources("test.conf").resolve()
       whenReady(CosSchemas.checkIfLegacyTablesExist(config)) { result =>
-        val (journal: Seq[String], snapshot: Seq[String]) = result
-        journal.length shouldBe 1
-        journal.head shouldBe null
-        snapshot.length shouldBe 1
-        snapshot.head shouldBe null
+        val (journalResult: Seq[String], snapshotResult: Seq[String]) = result
+        journalResult.length shouldBe 1
+        journalResult.headOption shouldBe Some(null)
+        snapshotResult.length shouldBe 1
+        snapshotResult.headOption shouldBe Some(null)
       }
     }
   }
