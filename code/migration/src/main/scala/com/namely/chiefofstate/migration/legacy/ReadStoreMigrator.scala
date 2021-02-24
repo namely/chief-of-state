@@ -11,8 +11,9 @@ import com.typesafe.config.Config
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.PostgresProfile
+import slick.jdbc.PostgresProfile.api._
 
-import java.sql.{Connection, Statement}
+import scala.concurrent.Future
 
 object ReadStoreMigrator {
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -20,60 +21,44 @@ object ReadStoreMigrator {
   /**
    * rename the read_side_offsets table column names
    */
-  private def columnsRenamingStatement(): Seq[String] = {
-    Seq(
-      s"""
+  private def columnsRenamingStatement() = {
+    DBIO
+      .seq(
+        sqlu"""
         ALTER TABLE read_side_offsets RENAME COLUMN "PROJECTION_NAME" TO projection_name;
       """,
-      s"""
+        sqlu"""
         ALTER TABLE read_side_offsets RENAME COLUMN "PROJECTION_KEY" TO projection_key;
       """,
-      s"""
+        sqlu"""
         ALTER TABLE read_side_offsets RENAME COLUMN "CURRENT_OFFSET" TO current_offset;
       """,
-      s"""
+        sqlu"""
         ALTER TABLE read_side_offsets RENAME COLUMN "MANIFEST" TO manifest;
       """,
-      s"""
+        sqlu"""
         ALTER TABLE read_side_offsets RENAME COLUMN "MERGEABLE" TO mergeable;
       """,
-      s"""
+        sqlu"""
         ALTER TABLE read_side_offsets RENAME COLUMN "LAST_UPDATED" TO last_updated;
       """,
-      s"""
+        sqlu"""
         ALTER TABLE read_side_offsets DROP CONSTRAINT IF EXISTS "PK_PROJECTION_ID";
       """,
-      s"""
+        sqlu"""
         DROP INDEX IF EXISTS "PROJECTION_NAME_INDEX";
       """,
-      s"""
+        sqlu"""
         ALTER TABLE read_side_offsets ADD PRIMARY KEY (projection_name, projection_key);
       """,
-      s"""
+        sqlu"""
          CREATE INDEX IF NOT EXISTS projection_name_index ON read_side_offsets (projection_name);
       """
-    )
+      )
   }
 
-  def renameColumns(config: Config): Boolean = {
+  def renameColumns(config: Config): Future[Unit] = {
     val readSideJdbcConfig: DatabaseConfig[PostgresProfile] = JdbcConfig.getReadSideConfig(config)
-    // let us get the database connection
-    val conn: Connection = readSideJdbcConfig.db.createSession().conn
-
-    try {
-      val stmt: Statement = conn.createStatement()
-      try {
-        log.info("renaming chieofstate readSide Offset stores columns....")
-        columnsRenamingStatement()
-          .map(stmt.execute)
-          .forall(identity)
-      } finally {
-        stmt.close()
-      }
-    } finally {
-      log.info("chieofstate readSide Offset stores columns renamed. Releasing resources....")
-      conn.close()
-      readSideJdbcConfig.db.close()
-    }
+    readSideJdbcConfig.db.run(columnsRenamingStatement().withPinnedSession.transactionally)
   }
 }

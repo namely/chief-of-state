@@ -17,7 +17,7 @@ import slick.sql.SqlAction
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
-object CreateSchemas {
+object CosSchemas {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   private def createEventJournal(): SqlAction[Int, NoStream, Effect] = {
@@ -104,7 +104,7 @@ object CreateSchemas {
    *
    * @param config the application config
    */
-  def ifNotExists(config: Config)(implicit system: ActorSystem[_]): Future[Unit] = {
+  def createIfNotExists(config: Config)(implicit system: ActorSystem[_]): Future[Unit] = {
 
     implicit val ec: ExecutionContextExecutor = system.executionContext
 
@@ -129,5 +129,30 @@ object CreateSchemas {
       _ <- SlickProjection
         .createOffsetTableIfNotExists(readSideJdbcConfig)
     } yield ()
+  }
+
+  /**
+   * checks the existence of the journal and snapshot tables in the given schema.
+   *
+   * @param config the application config
+   * @param system the actor system
+   */
+  def checkIfExists(config: Config)(implicit system: ActorSystem[_]): Future[(Vector[String], Vector[String])] = {
+    implicit val ec: ExecutionContextExecutor = system.executionContext
+    val legacyJournalTableName: String = config.getString("jdbc-journal.tables.legacy_journal.tableName")
+    val legacySnapshotTableName: String = config.getString("jdbc-snapshot-store.tables.legacy_snapshot.tableName")
+    val legacyJournalSchemaName: String = config.getString("jdbc-journal.tables.legacy_journal.schemaName")
+    val legacySnapshotSchemaName: String = config.getString("jdbc-snapshot-store.tables.legacy_snapshot.schemaName")
+
+    val dbconfig: DatabaseConfig[JdbcProfile] = JdbcConfig.getWriteSideConfig(config)
+
+    for {
+      jname <- dbconfig.db.run(
+        sql"""SELECT to_regclass($legacyJournalSchemaName.$legacyJournalTableName)""".as[String]
+      )
+      sname <- dbconfig.db.run(
+        sql"""SELECT to_regclass($legacySnapshotSchemaName.$legacySnapshotTableName)""".as[String]
+      )
+    } yield (jname, sname)
   }
 }

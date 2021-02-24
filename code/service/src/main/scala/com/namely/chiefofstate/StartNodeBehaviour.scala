@@ -17,7 +17,7 @@ import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
-import com.namely.chiefofstate.migration.CreateSchemas
+import com.namely.chiefofstate.migration.CosSchemas
 import com.namely.chiefofstate.migration.legacy.{migrate, DropSchemas}
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.telemetry._
@@ -142,8 +142,8 @@ object StartNodeBehaviour {
 
     if (cosConfig.createDataStores) {
       log.info("kick-starting the journal and snapshot store creation")
-      CreateSchemas
-        .ifNotExists(system.settings.config)
+      CosSchemas
+        .createIfNotExists(system.settings.config)
         .map(_ => {
           log.info("ChiefOfState journal, snapshot and read side offset stores created. :)")
         })
@@ -154,6 +154,7 @@ object StartNodeBehaviour {
     //  We need to find a better way to handle this via some table in the db.
     if (cosConfig.version.equals("0.8.0")) {
       migrate.flatMap(_ => {
+        log.info("legacy journal and snapshot data successfully migrated.. :)")
         DropSchemas
           .ifExists(system.settings.config)
           .map(_ => {

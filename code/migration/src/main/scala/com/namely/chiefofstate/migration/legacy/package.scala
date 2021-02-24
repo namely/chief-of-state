@@ -24,18 +24,10 @@ package object legacy {
     val journalMigrator: JournalMigrator = JournalMigrator(config)
     val snapshotMigrator: SnapshotMigrator = SnapshotMigrator(config)
 
-    // let us rename the read-side-offset store columns
-    ReadStoreMigrator.renameColumns(config)
-
-    Future
-      .sequence(
-        List(Future {
-               journalMigrator.migrate()
-             },
-             snapshotMigrator.migrate()
-        )
-      )
-      .map(_ => system.log.info("legacy journal and snapshot data successfully migrated.. :)"))
+    for {
+      _ <- ReadStoreMigrator.renameColumns(config)
+      _ <- Future(journalMigrator.migrate())
+      _ <- snapshotMigrator.migrate()
+    } yield ()
   }
-
 }
