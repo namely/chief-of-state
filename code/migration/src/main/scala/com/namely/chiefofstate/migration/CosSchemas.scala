@@ -8,6 +8,7 @@ package com.namely.chiefofstate.migration
 
 import akka.actor.typed.ActorSystem
 import akka.projection.slick.SlickProjection
+import com.github.ghik.silencer.silent
 import com.typesafe.config.Config
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
@@ -15,8 +16,9 @@ import slick.jdbc.{JdbcProfile, PostgresProfile}
 import slick.jdbc.PostgresProfile.api._
 import slick.sql.SqlAction
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
+@silent
 object CosSchemas {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -90,8 +92,7 @@ object CosSchemas {
      CREATE TABLE IF NOT EXISTS cos_versions (
       id BIGSERIAL PRIMARY KEY ,
       version VARCHAR(255) NOT NULL,
-      require_migration BOOLEAN DEFAULT FALSE NOT NULL,
-      is_migration_run BOOLEAN DEFAULT FALSE NOT NULL
+      data_migration_version VARCHAR(255) NOT NULL
      )"""
   }
 
@@ -135,24 +136,43 @@ object CosSchemas {
    * checks the existence of the journal and snapshot tables in the given schema.
    *
    * @param config the application config
-   * @param system the actor system
+   * @param ec the scala execution context
    */
-  def checkIfExists(config: Config)(implicit system: ActorSystem[_]): Future[(Vector[String], Vector[String])] = {
-    implicit val ec: ExecutionContextExecutor = system.executionContext
+  def checkIfLegacyTablesExist(
+    config: Config
+  )(implicit ec: ExecutionContext): Future[(Vector[String], Vector[String])] = {
     val legacyJournalTableName: String = config.getString("jdbc-journal.tables.legacy_journal.tableName")
     val legacySnapshotTableName: String = config.getString("jdbc-snapshot-store.tables.legacy_snapshot.tableName")
     val legacyJournalSchemaName: String = config.getString("jdbc-journal.tables.legacy_journal.schemaName")
     val legacySnapshotSchemaName: String = config.getString("jdbc-snapshot-store.tables.legacy_snapshot.schemaName")
 
     val dbconfig: DatabaseConfig[JdbcProfile] = JdbcConfig.getWriteSideConfig(config)
+    val legacyJournalTableNameLookupSql: String = s"$legacyJournalSchemaName.$legacyJournalTableName"
+    val legacySnapshotTableNameLookupSql: String = s"$legacySnapshotSchemaName.$legacySnapshotTableName"
 
     for {
       jname <- dbconfig.db.run(
-        sql"""SELECT to_regclass($legacyJournalSchemaName.$legacyJournalTableName)""".as[String]
+        sql"""SELECT to_regclass($legacyJournalTableNameLookupSql)""".as[String]
       )
       sname <- dbconfig.db.run(
-        sql"""SELECT to_regclass($legacySnapshotSchemaName.$legacySnapshotTableName)""".as[String]
+        sql"""SELECT to_regclass($legacySnapshotTableNameLookupSql)""".as[String]
       )
     } yield (jname, sname)
+  }
+
+  /**
+   * checks the cos_versions table exist or not
+   *
+   * @param config the application config
+   * @param ec the scala execution context
+   * @return the name of the table if exist or null if not
+   */
+  def checkIfCosVersionTableExists(config: Config)(implicit ec: ExecutionContext): Future[Vector[String]] = {
+    val schemaName: String = config.getString("jdbc-journal.tables.event_journal.schemaName")
+    val dbconfig: DatabaseConfig[JdbcProfile] = JdbcConfig.getWriteSideConfig(config)
+    val cosVersionTableNameLookupSql: String = s"$schemaName.cos_versions"
+    dbconfig.db.run(
+      sql"""SELECT to_regclass($cosVersionTableNameLookupSql)""".as[String]
+    )
   }
 }
