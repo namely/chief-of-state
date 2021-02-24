@@ -31,7 +31,6 @@ import org.slf4j.{Logger, LoggerFactory}
 import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext
 import scala.sys.ShutdownHookThread
-import scala.util.{Failure, Success, Try}
 
 /**
  * This helps setup the required engines needed to smoothly run the ChiefOfState sevice.
@@ -61,74 +60,74 @@ object StartNodeBehaviour {
       AkkaManagement(context.system).start()
       ClusterBootstrap(context.system).start()
 
-      Try {
-        // create data stores and run migrations if necessary
-        if (cosConfig.createDataStores) {
-          log.info("kick-starting the journal and snapshot store creation")
-          SchemasUtil.createIfNotExists(config)
-        } else {
-          log.info("No need to create stores")
-        }
-      } match {
-        case Failure(exception) => throw exception
-        case Success(_)         =>
-          // We only proceed when the data stores and various migrations are done successfully.
-          log.info("Journal and snapshot store created successfully. About to start...")
-
-          val channel: ManagedChannel =
-            NettyHelper
-              .builder(
-                cosConfig.writeSideConfig.host,
-                cosConfig.writeSideConfig.port,
-                cosConfig.writeSideConfig.useTls
-              )
-              .build()
-
-          val grpcClientInterceptors: Seq[ClientInterceptor] = Seq(
-            new ErrorsClientInterceptor(GlobalTracer.get()),
-            TracingClientInterceptor.newBuilder().withTracer(GlobalTracer.get()).build()
-          )
-
-          val writeHandler: WriteSideHandlerServiceBlockingStub = new WriteSideHandlerServiceBlockingStub(channel)
-            .withInterceptors(grpcClientInterceptors: _*)
-
-          val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(cosConfig.grpcConfig, writeHandler)
-          val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandler)
-
-          // instance of eventsAndStatesProtoValidation
-          val eventsAndStateProtoValidation: ProtosValidator = ProtosValidator(
-            cosConfig.writeSideConfig
-          )
-
-          // start the telemetry tools and register global tracer
-          TelemetryTools(config, cosConfig.enableJaeger, "chief-of-state").start()
-
-          val sharding: ClusterSharding = ClusterSharding(context.system)
-
-          sharding.init(
-            Entity(typeKey = AggregateRoot.TypeKey) { entityContext =>
-              AggregateRoot(
-                PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
-                Util.getShardIndex(entityContext.entityId, cosConfig.eventsConfig.numShards),
-                cosConfig,
-                remoteCommandHandler,
-                remoteEventHandler,
-                eventsAndStateProtoValidation
-              )
-            }
-          )
-
-          // read side settings
-          initReadSide(context.system, cosConfig, grpcClientInterceptors)
-
-          // start the service
-          startService(sharding, config, cosConfig)
+      // create data stores and run migrations if necessary
+      if (cosConfig.createDataStores) {
+        log.info("kick-starting the journal and snapshot store creation")
+        SchemasUtil.createIfNotExists(config)
+      } else {
+        log.info("No need to create stores")
       }
+
+      // We only proceed when the data stores and various migrations are done successfully.
+      log.info("Journal and snapshot store created successfully. About to start...")
+
+      val channel: ManagedChannel =
+        NettyHelper
+          .builder(
+            cosConfig.writeSideConfig.host,
+            cosConfig.writeSideConfig.port,
+            cosConfig.writeSideConfig.useTls
+          )
+          .build()
+
+      val grpcClientInterceptors: Seq[ClientInterceptor] = Seq(
+        new ErrorsClientInterceptor(GlobalTracer.get()),
+        TracingClientInterceptor.newBuilder().withTracer(GlobalTracer.get()).build()
+      )
+
+      val writeHandler: WriteSideHandlerServiceBlockingStub = new WriteSideHandlerServiceBlockingStub(channel)
+        .withInterceptors(grpcClientInterceptors: _*)
+
+      val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(cosConfig.grpcConfig, writeHandler)
+      val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandler)
+
+      // instance of eventsAndStatesProtoValidation
+      val eventsAndStateProtoValidation: ProtosValidator = ProtosValidator(
+        cosConfig.writeSideConfig
+      )
+
+      // start the telemetry tools and register global tracer
+      TelemetryTools(config, cosConfig.enableJaeger, "chief-of-state").start()
+
+      val sharding: ClusterSharding = ClusterSharding(context.system)
+
+      sharding.init(
+        Entity(typeKey = AggregateRoot.TypeKey) { entityContext =>
+          AggregateRoot(
+            PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
+            Util.getShardIndex(entityContext.entityId, cosConfig.eventsConfig.numShards),
+            cosConfig,
+            remoteCommandHandler,
+            remoteEventHandler,
+            eventsAndStateProtoValidation
+          )
+        }
+      )
+
+      // read side settings
+      startReadSide(context.system, cosConfig, grpcClientInterceptors)
+
+      // start the service
+      startService(sharding, config, cosConfig)
+
       Behaviors.empty
     }
   }
 
-  private def initReadSide(system: ActorSystem[_], cosConfig: CosConfig, interceptors: Seq[ClientInterceptor]): Unit = {
+  private def startReadSide(system: ActorSystem[_],
+                            cosConfig: CosConfig,
+                            interceptors: Seq[ClientInterceptor]
+  ): Unit = {
     if (cosConfig.enableReadSide && ReadSideConfigReader.getReadSideSettings.nonEmpty) {
       ReadSideConfigReader.getReadSideSettings.foreach(rsconfig => {
         val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(
