@@ -6,14 +6,15 @@
 
 package com.namely.chiefofstate.migration.legacy
 
-import akka.persistence.jdbc.config.{LegacyJournalTableConfiguration, LegacySnapshotTableConfiguration}
 import com.namely.chiefofstate.migration.JdbcConfig
 import com.typesafe.config.Config
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
+import slick.jdbc.PostgresProfile.api._
+import slick.sql.SqlAction
 
-import java.sql.{Connection, Statement}
+import scala.concurrent.Future
 
 object DropSchemas {
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -24,33 +25,19 @@ object DropSchemas {
    * @param config the application config
    * @return true when successful or an exception
    */
-  def ifExists(config: Config): Boolean = {
-    val legacyJournalConfig: LegacyJournalTableConfiguration = new LegacyJournalTableConfiguration(config)
-    val legacySnapshotConfig: LegacySnapshotTableConfiguration = new LegacySnapshotTableConfiguration(config)
+  def ifExists(config: Config): Future[Int] = {
+    val legacyJournalTableName: String = config.getString("jdbc-journal.tables.legacy_journal.tableName")
+    val legacySnapshotTableName: String = config.getString("jdbc-snapshot-store.tables.legacy_snapshot.tableName")
     val dbconfig: DatabaseConfig[JdbcProfile] = JdbcConfig.getWriteSideConfig(config)
 
-    val sqlStatement: String =
-      s"""
+    val sqlAction: SqlAction[Int, NoStream, Effect] =
+      sqlu"""
           DROP TABLE IF EXISTS 
-              ${legacyJournalConfig.tableName},
-              ${legacySnapshotConfig.tableName}
+              $legacyJournalTableName,
+              $legacySnapshotTableName
           CASCADE;
       """
 
-    // let us get the database connection
-    val conn: Connection = dbconfig.db.createSession().conn
-    try {
-      val stmt: Statement = conn.createStatement()
-      try {
-        log.info("droping chieofstate legacy journal and snapshot stores....")
-        stmt.execute(sqlStatement)
-      } finally {
-        stmt.close()
-      }
-    } finally {
-      log.info("chieofstate legacy journal and snapshot stores dropped. Releasing resources....")
-      conn.close()
-      dbconfig.db.close()
-    }
+    dbconfig.db.run(sqlAction.withPinnedSession.transactionally)
   }
 }

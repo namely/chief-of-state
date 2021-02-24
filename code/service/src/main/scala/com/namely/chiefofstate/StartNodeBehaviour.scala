@@ -6,7 +6,7 @@
 
 package com.namely.chiefofstate
 
-import akka.NotUsed
+import akka.{actor, NotUsed}
 import akka.actor.typed.{ActorSystem, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter.TypedActorSystemOps
@@ -34,7 +34,6 @@ import org.slf4j.{Logger, LoggerFactory}
 import java.net.InetSocketAddress
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.sys.ShutdownHookThread
-import scala.util.Try
 
 /**
  * This helps setup the required engines needed to smoothly run the ChiefOfState sevice.
@@ -66,60 +65,64 @@ object StartNodeBehaviour {
     AkkaManagement(context.system).start()
     ClusterBootstrap(context.system).start()
 
-    prepDataStores(cosConfig)
-      .map(_ => {
-        // We only proceed when the data stores and various migrations are done successfully.
-        log.info("Journal and snapshot store created successfully. About to start...")
+    // in case of any exception this actor will be stopped and the whole
+    // actor systemm will be shutdown because the supervisory strategy adopted is the
+    // akka.actor.StoppingSupervisorStrategy. This is a bit more brutal but convenient to
+    // our use case instead of the akka.actor.DefaultSupervisorStrategy which is a bit lenient
+    // reference: https://doc.akka.io/docs/akka/2.5/general/supervision.html#user-the-guardian-actor
+    prepareStorage(cosConfig)
 
-        val channel: ManagedChannel =
-          NettyHelper
-            .builder(
-              cosConfig.writeSideConfig.host,
-              cosConfig.writeSideConfig.port,
-              cosConfig.writeSideConfig.useTls
-            )
-            .build()
+    // We only proceed when the data stores and various migrations are done successfully.
+    log.info("Journal and snapshot store created successfully. About to start...")
 
-        val grpcClientInterceptors: Seq[ClientInterceptor] = Seq(
-          new ErrorsClientInterceptor(GlobalTracer.get()),
-          TracingClientInterceptor.newBuilder().withTracer(GlobalTracer.get()).build()
+    val channel: ManagedChannel =
+      NettyHelper
+        .builder(
+          cosConfig.writeSideConfig.host,
+          cosConfig.writeSideConfig.port,
+          cosConfig.writeSideConfig.useTls
         )
+        .build()
 
-        val writeHandler: WriteSideHandlerServiceBlockingStub = new WriteSideHandlerServiceBlockingStub(channel)
-          .withInterceptors(grpcClientInterceptors: _*)
+    val grpcClientInterceptors: Seq[ClientInterceptor] = Seq(
+      new ErrorsClientInterceptor(GlobalTracer.get()),
+      TracingClientInterceptor.newBuilder().withTracer(GlobalTracer.get()).build()
+    )
 
-        val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(cosConfig.grpcConfig, writeHandler)
-        val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandler)
+    val writeHandler: WriteSideHandlerServiceBlockingStub = new WriteSideHandlerServiceBlockingStub(channel)
+      .withInterceptors(grpcClientInterceptors: _*)
 
-        // instance of eventsAndStatesProtoValidation
-        val eventsAndStateProtoValidation: ProtosValidator = ProtosValidator(
-          cosConfig.writeSideConfig
+    val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(cosConfig.grpcConfig, writeHandler)
+    val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandler)
+
+    // instance of eventsAndStatesProtoValidation
+    val eventsAndStateProtoValidation: ProtosValidator = ProtosValidator(
+      cosConfig.writeSideConfig
+    )
+
+    // start the telemetry tools and register global tracer
+    TelemetryTools(config, cosConfig.enableJaeger, "chief-of-state").start()
+
+    val sharding: ClusterSharding = ClusterSharding(context.system)
+
+    sharding.init(
+      Entity(typeKey = AggregateRoot.TypeKey) { entityContext =>
+        AggregateRoot(
+          PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
+          Util.getShardIndex(entityContext.entityId, cosConfig.eventsConfig.numShards),
+          cosConfig,
+          remoteCommandHandler,
+          remoteEventHandler,
+          eventsAndStateProtoValidation
         )
+      }
+    )
 
-        // start the telemetry tools and register global tracer
-        TelemetryTools(config, cosConfig.enableJaeger, "chief-of-state").start()
+    // read side settings
+    startReadSide(context.system, cosConfig, grpcClientInterceptors)
 
-        val sharding: ClusterSharding = ClusterSharding(context.system)
-
-        sharding.init(
-          Entity(typeKey = AggregateRoot.TypeKey) { entityContext =>
-            AggregateRoot(
-              PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
-              Util.getShardIndex(entityContext.entityId, cosConfig.eventsConfig.numShards),
-              cosConfig,
-              remoteCommandHandler,
-              remoteEventHandler,
-              eventsAndStateProtoValidation
-            )
-          }
-        )
-
-        // read side settings
-        startReadSide(context.system, cosConfig, grpcClientInterceptors)
-
-        // start the service
-        startService(sharding, config, cosConfig)
-      })
+    // start the service
+    startService(sharding, config, cosConfig)
 
     Behaviors.empty
   }
@@ -131,27 +134,34 @@ object StartNodeBehaviour {
    * @param system the actor system
    * @param executionContext the execution context
    */
-  private def prepDataStores(
+  private def prepareStorage(
     cosConfig: CosConfig
-  )(implicit system: ActorSystem[_], executionContext: ExecutionContext): Try[Any] = {
-    Try {
-      if (cosConfig.createDataStores) {
-        log.info("kick-starting the journal and snapshot store creation")
-        CreateSchemas
-          .ifNotExists(system.settings.config)
-          .map(_ => {
-            log.info("ChiefOfState journal, snapshot and read side offset stores created. :)")
-          })
-      }
+  )(implicit system: ActorSystem[_], executionContext: ExecutionContext): Unit = {
 
-      // FIXME need to tidy it a bit. But for now it is ok for 0.8.0
-      if (cosConfig.version.equals("0.8.0")) {
-        migrate(system.toClassic)
+    implicit val classicSys: actor.ActorSystem = system.toClassic
 
-        // TODO need to QA it properly. Seems not working as expected yet
-        DropSchemas.ifExists(system.settings.config)
-      }
+    if (cosConfig.createDataStores) {
+      log.info("kick-starting the journal and snapshot store creation")
+      CreateSchemas
+        .ifNotExists(system.settings.config)
+        .map(_ => {
+          log.info("ChiefOfState journal, snapshot and read side offset stores created. :)")
+        })
     }
+
+    // FIXME need to tidy it a bit. But for now it is ok for 0.8.0.
+    //  At the moment this will panic the COS if you restart it after using it the first time.
+    //  We need to find a better way to handle this via some table in the db.
+    if (cosConfig.version.equals("0.8.0")) {
+      migrate.flatMap(_ => {
+        DropSchemas
+          .ifExists(system.settings.config)
+          .map(_ => {
+            log.info("ChiefOfState legacy journal, snapshot successfully dropped. :)")
+          })
+      })
+    }
+    ()
   }
 
   /**

@@ -37,4 +37,5 @@ package object legacy {
       )
       .map(_ => system.log.info("legacy journal and snapshot data successfully migrated.. :)"))
   }
+
 }
