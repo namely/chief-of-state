@@ -10,6 +10,7 @@ import com.typesafe.config.Config
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.PostgresProfile
+import slick.jdbc.PostgresProfile.api._
 
 import java.sql.{Connection, Statement}
 
@@ -24,9 +25,8 @@ object SchemasUtil {
    *
    * @return the sql statement
    */
-  private def legacyJournalStatement(): Seq[String] = {
-    Seq(
-      s"""
+  private def createJournalTable() = {
+    sqlu"""
      CREATE TABLE IF NOT EXISTS journal (
       ordering        BIGSERIAL,
       persistence_id  VARCHAR(255) NOT NULL,
@@ -35,10 +35,11 @@ object SchemasUtil {
       tags            VARCHAR(255) DEFAULT NULL,
       message         BYTEA        NOT NULL,
       PRIMARY KEY (persistence_id, sequence_number)
-     )""",
-      // create index
-      s"""CREATE UNIQUE INDEX IF NOT EXISTS journal_ordering_idx on journal(ordering)"""
-    )
+     )"""
+  }
+
+  private def createJournalIndex() = {
+    sqlu"""CREATE UNIQUE INDEX IF NOT EXISTS journal_ordering_idx on journal(ordering)"""
   }
 
   /**
@@ -46,8 +47,8 @@ object SchemasUtil {
    *
    * @return the sql statement
    */
-  private def legacySnapshotTableStatement(): String =
-    s"""
+  private def createSnapshotTable() =
+    sqlu"""
      CREATE TABLE IF NOT EXISTS snapshot (
       persistence_id  VARCHAR(255) NOT NULL,
       sequence_number BIGINT       NOT NULL,
@@ -59,12 +60,15 @@ object SchemasUtil {
   /**
    *  Attempts to create the various write side legacy data stores
    */
-  private def createLegacySchemas(config: Config): Boolean = {
-    val dc: DatabaseConfig[PostgresProfile] =
+  private def createLegacySchemas(config: Config) = {
+    val dbConfig: DatabaseConfig[PostgresProfile] =
       DatabaseConfig.forConfig[PostgresProfile]("write-side-slick", config)
 
-    val journalSQLs: Seq[String] = legacyJournalStatement()
-    val snapshotSQL: String = legacySnapshotTableStatement()
+    val dbioActions = DBIO.seq(
+      createJournalTable(),
+      createJournalIndex(),
+      createSnapshotTable()
+    )
 
     val conn: Connection = dc.db.createSession().conn
 
