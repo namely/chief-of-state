@@ -6,13 +6,16 @@
 
 package com.namely.chiefofstate
 
+import akka.actor.typed.ActorSystem
+import akka.projection.slick.SlickProjection
 import com.typesafe.config.Config
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
+import slick.sql.SqlAction
 
-import java.sql.{Connection, Statement}
+import scala.concurrent.{ExecutionContextExecutor, Future}
 
 /**
  * Utility class to create the necessary schemas for the write side
@@ -25,7 +28,7 @@ object SchemasUtil {
    *
    * @return the sql statement
    */
-  private def createJournalTable() = {
+  private def createJournalTable(): SqlAction[Int, NoStream, Effect] = {
     sqlu"""
      CREATE TABLE IF NOT EXISTS journal (
       ordering        BIGSERIAL,
@@ -38,7 +41,7 @@ object SchemasUtil {
      )"""
   }
 
-  private def createJournalIndex() = {
+  private def createJournalIndex(): SqlAction[Int, NoStream, Effect] = {
     sqlu"""CREATE UNIQUE INDEX IF NOT EXISTS journal_ordering_idx on journal(ordering)"""
   }
 
@@ -47,7 +50,7 @@ object SchemasUtil {
    *
    * @return the sql statement
    */
-  private def createSnapshotTable() =
+  private def createSnapshotTable(): SqlAction[Int, NoStream, Effect] =
     sqlu"""
      CREATE TABLE IF NOT EXISTS snapshot (
       persistence_id  VARCHAR(255) NOT NULL,
@@ -60,37 +63,29 @@ object SchemasUtil {
   /**
    *  Attempts to create the various write side legacy data stores
    */
-  private def createLegacySchemas(config: Config) = {
+  private def createLegacySchemas(config: Config)(implicit system: ActorSystem[_]) = {
     val dbConfig: DatabaseConfig[PostgresProfile] =
       DatabaseConfig.forConfig[PostgresProfile]("write-side-slick", config)
 
-    val dbioActions = DBIO.seq(
-      createJournalTable(),
-      createJournalIndex(),
-      createSnapshotTable()
-    )
+    implicit val ec: ExecutionContextExecutor = system.executionContext
 
-    val conn: Connection = dc.db.createSession().conn
+    val readSideJdbcConfig: DatabaseConfig[PostgresProfile] =
+      DatabaseConfig.forConfig("akka.projection.slick", config)
 
-    try {
-      val stmt: Statement = conn.createStatement()
-      try {
-        log.info("setting up journal and snapshot stores....")
-        // create the journal table and snapshot journal
-        // if DDLs failed, it will raise an SQLException
-        journalSQLs
-          .map(stmt.execute)
-          .map(_ => stmt.execute(snapshotSQL))
-          .forall(identity)
+    val dbioActions: DBIOAction[Unit, NoStream, Effect with Effect.Transactional] = DBIO
+      .seq(
+        createJournalTable(),
+        createJournalIndex(),
+        createSnapshotTable()
+      )
+      .withPinnedSession
+      .transactionally
 
-      } finally {
-        stmt.close()
-      }
-    } finally {
-      log.info("journal and snapshot stores setup. Releasing resources....")
-      conn.close()
-      dc.db.close()
-    }
+    for {
+      _ <- dbConfig.db.run(dbioActions)
+      _ <- SlickProjection
+        .createOffsetTableIfNotExists(readSideJdbcConfig)
+    } yield ()
   }
 
   /**
@@ -99,5 +94,5 @@ object SchemasUtil {
    * @param config the application config
    * @return true when successful and false when it fails
    */
-  def createIfNotExists(config: Config): Boolean = createLegacySchemas(config)
+  def createIfNotExists(config: Config)(implicit system: ActorSystem[_]): Future[Unit] = createLegacySchemas(config)
 }

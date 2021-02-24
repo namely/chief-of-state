@@ -29,7 +29,7 @@ import io.opentracing.util.GlobalTracer
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.net.InetSocketAddress
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.sys.ShutdownHookThread
 
 /**
@@ -50,6 +50,8 @@ object StartNodeBehaviour {
 
   def apply(config: Config): Behavior[NotUsed] = {
     Behaviors.setup { context =>
+      implicit val ec: ExecutionContextExecutor = context.system.executionContext
+
       // get the  COS config
       val cosConfig: CosConfig = CosConfig(config)
 
@@ -62,8 +64,12 @@ object StartNodeBehaviour {
 
       // create data stores and run migrations if necessary
       if (cosConfig.createDataStores) {
-        log.info("kick-starting the journal and snapshot store creation")
-        SchemasUtil.createIfNotExists(config)
+        log.info("kick-starting the ChiefOfState journal, snapshot and offset stores creation")
+        SchemasUtil
+          .createIfNotExists(config)(context.system)
+          .map(_ => {
+            log.info("ChiefOfState journal, snapshot and offset stores created sucessfully...:)")
+          })
       } else {
         log.info("No need to create stores")
       }
