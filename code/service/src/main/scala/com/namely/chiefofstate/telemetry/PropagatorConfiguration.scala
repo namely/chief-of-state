@@ -6,7 +6,7 @@
 
 package com.namely.chiefofstate.telemetry
 
-import com.typesafe.config.Config
+import com.namely.chiefofstate.config.TelemetryConfig
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.propagation.{ContextPropagators, TextMapPropagator}
@@ -15,11 +15,8 @@ import io.opentelemetry.extension.trace.propagation.{B3Propagator, JaegerPropaga
 import scala.jdk.CollectionConverters._
 
 object PropagatorConfiguration {
-  def configurePropagators(config: Config): ContextPropagators = {
-    val propagators: Seq[TextMapPropagator] = config
-      .getString("chiefofstate.traces.propagator")
-      .split(',')
-      .toSeq
+  def configurePropagators(config: TelemetryConfig): ContextPropagators = {
+    val propagators: Seq[TextMapPropagator] = config.propagators
       .map(getPropagator)
     ContextPropagators.create(TextMapPropagator.composite(propagators.asJava))
   }

@@ -29,7 +29,8 @@ final case class CosConfig(
   grpcConfig: GrpcConfig,
   writeSideConfig: WriteSideConfig,
   createDataStores: Boolean,
-  enableReadSide: Boolean
+  enableReadSide: Boolean,
+  telemetryConfig: TelemetryConfig
 )
 
 object CosConfig {

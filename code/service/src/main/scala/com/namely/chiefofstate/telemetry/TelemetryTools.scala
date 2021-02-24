@@ -6,10 +6,9 @@
 
 package com.namely.chiefofstate.telemetry
 
+import com.namely.chiefofstate.config.CosConfig
 import io.opentelemetry.exporter.otlp.metrics.OtlpGrpcMetricExporter
 import io.opentelemetry.sdk.metrics.`export`.IntervalMetricReader
-
-import com.typesafe.config.Config
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter
@@ -22,11 +21,11 @@ import io.opentelemetry.semconv.resource.attributes.ResourceAttributes
 
 import java.util.Collections
 
-case class TelemetryTools(config: Config) {
+case class TelemetryTools(config: CosConfig) {
 
   def start(): Unit = {
     val propagators: ContextPropagators = PropagatorConfiguration
-      .configurePropagators(config)
+      .configurePropagators(config.telemetryConfig)
 
     val resource = configureResource(config)
 
@@ -44,7 +43,7 @@ case class TelemetryTools(config: Config) {
   }
 
   def configureMetricsExporter(resource: Resource): Unit = {
-    val endpoint = config.getString("chiefofstate.otlp.endpoint")
+    val endpoint = config.telemetryConfig.otlpEndpoint
     if (!endpoint.isBlank) {
       val meterProvider = SdkMeterProvider.builder.setResource(resource).buildAndRegisterGlobal
       val builder = OtlpGrpcMetricExporter.builder()
@@ -61,8 +60,8 @@ case class TelemetryTools(config: Config) {
     }
   }
 
-  def configureProvider(config: Config, resource: Resource): Option[SdkTracerProvider] = {
-    Option(config.getString("chiefofstate.otlp.endpoint"))
+  def configureProvider(config: CosConfig, resource: Resource): Option[SdkTracerProvider] = {
+    Option(config.telemetryConfig.otlpEndpoint)
       .filter(!_.isBlank)
       .map(endpoint => {
         val providerBuilder = SdkTracerProvider.builder()
@@ -84,11 +83,11 @@ case class TelemetryTools(config: Config) {
       })
   }
 
-  def configureResource(config: Config): Resource = {
+  def configureResource(config: CosConfig): Resource = {
     val resourceAttributes = Attributes.builder()
-    resourceAttributes.put(ResourceAttributes.SERVICE_NAME, config.getString("chiefofstate.service-name"))
+    resourceAttributes.put(ResourceAttributes.SERVICE_NAME, config.serviceName)
 
-    Option(config.getString("chiefofstate.namespace"))
+    Option(config.telemetryConfig.namespace)
       .filter(!_.isBlank)
       .foreach(resourceAttributes.put(ResourceAttributes.SERVICE_NAMESPACE, _))
 
