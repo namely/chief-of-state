@@ -17,7 +17,7 @@ import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
-import com.namely.chiefofstate.migration.CosSchemas
+import com.namely.chiefofstate.migration.{CreateSchemas, JdbcConfig}
 import com.namely.chiefofstate.migration.legacy.{migrate, DropSchemas}
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.telemetry._
@@ -30,6 +30,8 @@ import io.grpc.netty.NettyServerBuilder
 import io.opentracing.contrib.grpc.{TracingClientInterceptor, TracingServerInterceptor}
 import io.opentracing.util.GlobalTracer
 import org.slf4j.{Logger, LoggerFactory}
+import slick.basic.DatabaseConfig
+import slick.jdbc.{JdbcProfile, PostgresProfile}
 
 import java.net.InetSocketAddress
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
@@ -139,11 +141,17 @@ object StartNodeBehaviour {
   )(implicit system: ActorSystem[_], executionContext: ExecutionContext): Unit = {
 
     implicit val classicSys: actor.ActorSystem = system.toClassic
+    val config: Config = system.settings.config
+    val writeSideJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
+    val readSideJdbcConfig: DatabaseConfig[PostgresProfile] = JdbcConfig.projectionConfig(config)
+    val createSchemas: CreateSchemas = CreateSchemas(writeSideJdbcConfig, readSideJdbcConfig)
+
+    // let uc check whether the legacy tables exist
 
     if (cosConfig.createDataStores) {
       log.info("kick-starting the journal and snapshot store creation")
-      CosSchemas
-        .createIfNotExists(system.settings.config)
+      createSchemas
+        .ifNotExists()
         .map(_ => {
           log.info("ChiefOfState journal, snapshot and read side offset stores created. :)")
         })

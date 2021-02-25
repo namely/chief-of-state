@@ -13,19 +13,26 @@ import slick.jdbc.{JdbcProfile, PostgresProfile}
 object JdbcConfig {
 
   /**
-   * returns the write side database config
+   * returns the akka journal database config
    *
    * @param config the main application config
    */
-  def getWriteSideConfig(config: Config): DatabaseConfig[JdbcProfile] = {
+  def journalConfig(config: Config): DatabaseConfig[JdbcProfile] = {
     DatabaseConfig.forConfig[JdbcProfile]("write-side-slick", config)
   }
 
   /**
-   * returns the read side databas config
+   * returns the akka projection database config
    * @param config the main application config
    */
-  def getReadSideConfig(config: Config): DatabaseConfig[PostgresProfile] = {
+  def projectionConfig(config: Config): DatabaseConfig[PostgresProfile] = {
     DatabaseConfig.forConfig[PostgresProfile]("akka.projection.slick", config)
   }
+
+  /**
+   * get the Jdbc profile
+   *
+   * @param config the main application config
+   */
+  def journalJdbcProfile(config: Config): JdbcProfile = journalConfig(config).profile
 }

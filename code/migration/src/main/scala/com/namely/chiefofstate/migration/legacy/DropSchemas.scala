@@ -28,7 +28,7 @@ object DropSchemas {
   def ifExists(config: Config): Future[Int] = {
     val legacyJournalTableName: String = config.getString("jdbc-journal.tables.legacy_journal.tableName")
     val legacySnapshotTableName: String = config.getString("jdbc-snapshot-store.tables.legacy_snapshot.tableName")
-    val dbconfig: DatabaseConfig[JdbcProfile] = JdbcConfig.getWriteSideConfig(config)
+    val dbconfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
 
     val sqlAction: SqlAction[Int, NoStream, Effect] =
       sqlu"""

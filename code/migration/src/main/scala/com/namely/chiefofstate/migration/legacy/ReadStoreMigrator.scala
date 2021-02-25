@@ -58,7 +58,7 @@ object ReadStoreMigrator {
   }
 
   def renameColumns(config: Config): Future[Unit] = {
-    val readSideJdbcConfig: DatabaseConfig[PostgresProfile] = JdbcConfig.getReadSideConfig(config)
+    val readSideJdbcConfig: DatabaseConfig[PostgresProfile] = JdbcConfig.projectionConfig(config)
     readSideJdbcConfig.db.run(columnsRenamingStatement().withPinnedSession.transactionally)
   }
 }
