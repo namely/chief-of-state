@@ -76,7 +76,7 @@ object StartNodeBehaviour {
       }
 
       // start the telemetry tools and register global tracer
-      TelemetryTools(config).start()
+      TelemetryTools(cosConfig).start()
 
       val tracer = GlobalOpenTelemetry.get().getTracer("com.namely.chiefofstate")
 
