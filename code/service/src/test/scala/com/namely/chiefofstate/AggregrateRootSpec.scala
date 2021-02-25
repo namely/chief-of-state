@@ -107,8 +107,10 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
               create-stores {
                 auto = true
               }
-              tracing {
-                jaeger-enabled = false
+              telemetry {
+                namespace = ""
+                otlp_endpoint = ""
+                trace_propagators = "b3multi"
               }
             }
           """)
@@ -535,8 +537,10 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
               create-stores {
                 auto = true
               }
-              tracing {
-                jaeger-enabled = false
+              telemetry {
+                namespace = ""
+                otlp_endpoint = ""
+                trace_propagators = "b3multi"
               }
             }
           """)
@@ -645,8 +649,10 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
               create-stores {
                 auto = true
               }
-              tracing {
-                jaeger-enabled = false
+              telemetry {
+                namespace = ""
+                otlp_endpoint = ""
+                trace_propagators = "b3multi"
               }
             }
           """)
@@ -763,8 +769,10 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
               create-stores {
                 auto = true
               }
-              tracing {
-                jaeger-enabled = false
+              telemetry {
+                namespace = ""
+                otlp_endpoint = ""
+                trace_propagators = "b3multi"
               }
             }
           """)

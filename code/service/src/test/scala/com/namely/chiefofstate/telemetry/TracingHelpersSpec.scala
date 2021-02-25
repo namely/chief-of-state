@@ -29,13 +29,11 @@ class TracingHelpersSpec extends BaseSpec {
   ".getTracingHeaders" should {
     "handle a null active span" in {
 
-      val context = Context.current()
-
       val span: Span = tracer
         .spanBuilder("foo")
         .startSpan()
 
-      val actual = TracingHelpers.getTracingHeaders(context)
+      val actual = TracingHelpers.getTracingHeaders(Context.current())
 
       span.end()
 
