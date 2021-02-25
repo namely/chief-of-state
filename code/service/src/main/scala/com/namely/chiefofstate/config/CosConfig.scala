@@ -56,7 +56,8 @@ object CosConfig {
       GrpcConfig(config),
       WriteSideConfig(config),
       config.getBoolean(createDataStorekey),
-      config.getBoolean(enableReadSideKey)
+      config.getBoolean(enableReadSideKey),
+      TelemetryConfig(config)
     )
   }
 }

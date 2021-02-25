@@ -174,10 +174,7 @@ object StartNodeBehaviour {
 
     // instantiate the grpc service, bind do the execution context
     val serviceImpl: GrpcServiceImpl =
-      new GrpcServiceImpl(clusterSharding,
-                          PluginManager.getPlugins(config),
-                          cosConfig.writeSideConfig
-      )
+      new GrpcServiceImpl(clusterSharding, PluginManager.getPlugins(config), cosConfig.writeSideConfig)
 
     // intercept the service
     val service: ServerServiceDefinition = ServerInterceptors.intercept(

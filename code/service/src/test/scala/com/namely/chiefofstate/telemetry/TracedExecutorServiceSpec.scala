@@ -48,7 +48,8 @@ class TracedExecutorServiceSpec extends BaseSpec {
       val propagators: ContextPropagators = ContextPropagators.create(B3Propagator.builder.injectMultipleHeaders.build)
       val ot: OpenTelemetry = OpenTelemetrySdk
         .builder()
-        .setPropagators(propagators).build()
+        .setPropagators(propagators)
+        .build()
 
       GlobalOpenTelemetry.resetForTest()
       GlobalOpenTelemetry.set(ot)
@@ -85,7 +86,8 @@ class TracedExecutorServiceSpec extends BaseSpec {
       val propagators: ContextPropagators = ContextPropagators.create(B3Propagator.builder.injectMultipleHeaders.build)
       val ot: OpenTelemetry = OpenTelemetrySdk
         .builder()
-        .setPropagators(propagators).build()
+        .setPropagators(propagators)
+        .build()
 
       GlobalOpenTelemetry.resetForTest()
       GlobalOpenTelemetry.set(ot)
