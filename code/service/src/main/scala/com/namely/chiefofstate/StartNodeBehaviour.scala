@@ -17,8 +17,8 @@ import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
-import com.namely.chiefofstate.migration.{CreateSchemas, JdbcConfig}
-import com.namely.chiefofstate.migration.legacy.{migrate, DropSchemas}
+import com.namely.chiefofstate.migration.{CreateSchemas, DbQuery, DropSchemas, JdbcConfig}
+import com.namely.chiefofstate.migration.legacy.{LegacyMigrator, ReadStoreMigrator}
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.telemetry._
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
@@ -34,7 +34,8 @@ import slick.basic.DatabaseConfig
 import slick.jdbc.{JdbcProfile, PostgresProfile}
 
 import java.net.InetSocketAddress
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.duration.Duration
 import scala.sys.ShutdownHookThread
 
 /**
@@ -73,9 +74,6 @@ object StartNodeBehaviour {
     // our use case instead of the akka.actor.DefaultSupervisorStrategy which is a bit lenient
     // reference: https://doc.akka.io/docs/akka/2.5/general/supervision.html#user-the-guardian-actor
     prepareStorage(cosConfig)
-
-    // We only proceed when the data stores and various migrations are done successfully.
-    log.info("Journal and snapshot store created successfully. About to start...")
 
     val channel: ManagedChannel =
       NettyHelper
@@ -139,38 +137,43 @@ object StartNodeBehaviour {
   private def prepareStorage(
     cosConfig: CosConfig
   )(implicit system: ActorSystem[_], executionContext: ExecutionContext): Unit = {
+    system.log.info("kick-starting the preparation of ChiefOfState Stores...")
 
     implicit val classicSys: actor.ActorSystem = system.toClassic
     val config: Config = system.settings.config
-    val writeSideJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
-    val readSideJdbcConfig: DatabaseConfig[PostgresProfile] = JdbcConfig.projectionConfig(config)
-    val createSchemas: CreateSchemas = CreateSchemas(writeSideJdbcConfig, readSideJdbcConfig)
 
-    // let uc check whether the legacy tables exist
+    val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
+    val projectionJdbcConfig: DatabaseConfig[PostgresProfile] = JdbcConfig.projectionConfig(config)
+    val createSchemas: CreateSchemas = CreateSchemas(journalJdbcConfig, projectionJdbcConfig)
+    val dropSchemas: DropSchemas = migration.DropSchemas(journalJdbcConfig)
+    val legacyMigrator: LegacyMigrator = LegacyMigrator(config, projectionJdbcConfig)
+    val dbQuery: DbQuery = DbQuery(config, journalJdbcConfig)
+    val readStoreMigrator: ReadStoreMigrator = ReadStoreMigrator(config, projectionJdbcConfig)
 
-    if (cosConfig.createDataStores) {
-      log.info("kick-starting the journal and snapshot store creation")
-      createSchemas
-        .ifNotExists()
-        .map(_ => {
-          log.info("ChiefOfState journal, snapshot and read side offset stores created. :)")
-        })
+    val legacyStoresExist: Boolean = Await.result(dbQuery.checkIfLegacyTablesExist(), Duration.Inf)
+    if (legacyStoresExist) {
+      system.log.info("ChiefOfState legacy stores exist...")
+      val future: Future[Unit] = for {
+        _ <- dropSchemas.journalStoresIfExist()
+        _ <- createSchemas.journalStoresIfNotExists()
+        _ <- legacyMigrator.run()
+        _ <- dropSchemas.legacyJournalStoresIfExist()
+        _ <- readStoreMigrator.renameColumns() // This seems not working
+      } yield ()
+      Await.result(future, Duration.Inf)
+    } else {
+      Await.result(
+        createSchemas
+          .journalStoresIfNotExists()
+          .flatMap(_ =>
+            createSchemas
+              .readSideOffsetStoreIfNotExist()
+              .map(_ => ())
+          ),
+        Duration.Inf
+      )
     }
-
-    // FIXME need to tidy it a bit. But for now it is ok for 0.8.0.
-    //  At the moment this will panic the COS if you restart it after using it the first time.
-    //  We need to find a better way to handle this via some table in the db.
-    if (cosConfig.version.equals("0.8.0")) {
-      migrate.flatMap(_ => {
-        log.info("legacy journal and snapshot data successfully migrated.. :)")
-        DropSchemas
-          .ifExists(system.settings.config)
-          .map(_ => {
-            log.info("ChiefOfState legacy journal, snapshot successfully dropped. :)")
-          })
-      })
-    }
-    ()
+    system.log.info("ChiefOfState Stores successfully prepared. :)")
   }
 
   /**

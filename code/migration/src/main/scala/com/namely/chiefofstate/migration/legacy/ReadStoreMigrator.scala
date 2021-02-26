@@ -6,7 +6,6 @@
 
 package com.namely.chiefofstate.migration.legacy
 
-import com.namely.chiefofstate.migration.JdbcConfig
 import com.typesafe.config.Config
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
@@ -15,7 +14,7 @@ import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.Future
 
-object ReadStoreMigrator {
+case class ReadStoreMigrator(config: Config, readSideJdbcConfig: DatabaseConfig[PostgresProfile]) {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   /**
@@ -57,8 +56,7 @@ object ReadStoreMigrator {
       )
   }
 
-  def renameColumns(config: Config): Future[Unit] = {
-    val readSideJdbcConfig: DatabaseConfig[PostgresProfile] = JdbcConfig.projectionConfig(config)
+  def renameColumns(): Future[Unit] = {
     readSideJdbcConfig.db.run(columnsRenamingStatement().withPinnedSession.transactionally)
   }
 }

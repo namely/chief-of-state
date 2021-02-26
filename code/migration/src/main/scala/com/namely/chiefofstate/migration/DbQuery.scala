@@ -10,7 +10,8 @@ import com.typesafe.config.Config
 import slick.basic.DatabaseConfig
 import slick.jdbc.{GetResult, JdbcProfile}
 import slick.jdbc.PostgresProfile.api._
-import slick.sql.{SqlAction, SqlStreamingAction}
+import slick.jdbc.meta.MTable
+import slick.sql.SqlStreamingAction
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -19,23 +20,22 @@ case class DbQuery(config: Config, journalJdbcConfig: DatabaseConfig[JdbcProfile
   /**
    * checks the existence of the journal and snapshot tables in the given schema.
    */
-  def checkIfLegacyTablesExist(): Future[(Vector[String], Vector[String])] = {
-    val legacyJournalTableName: String = config.getString("jdbc-journal.tables.legacy_journal.tableName")
-    val legacySnapshotTableName: String = config.getString("jdbc-snapshot-store.tables.legacy_snapshot.tableName")
-    val legacyJournalSchemaName: String = config.getString("jdbc-journal.tables.legacy_journal.schemaName")
-    val legacySnapshotSchemaName: String = config.getString("jdbc-snapshot-store.tables.legacy_snapshot.schemaName")
+  def checkIfLegacyTablesExist(): Future[Boolean] = {
+    // journal tables
+    val journalTables: Seq[String] = Seq(
+      config.getString("jdbc-journal.tables.legacy_journal.tableName"),
+      config.getString("jdbc-snapshot-store.tables.legacy_snapshot.tableName")
+    )
 
-    val legacyJournalTableNameLookupSql: String = s"$legacyJournalSchemaName.$legacyJournalTableName"
-    val legacySnapshotTableNameLookupSql: String = s"$legacySnapshotSchemaName.$legacySnapshotTableName"
+    // get the tables lookup query
+    val query: DBIOAction[Boolean, NoStream, Effect.Read with Effect with Effect.Transactional] = MTable.getTables
+      .flatMap { tables =>
+        DBIO.successful(journalTables.forall(tables.map(_.name.name).contains))
+      }
+      .withPinnedSession
+      .transactionally
 
-    for {
-      jname <- journalJdbcConfig.db.run(
-        sql"""SELECT to_regclass($legacyJournalTableNameLookupSql)""".as[String]
-      )
-      sname <- journalJdbcConfig.db.run(
-        sql"""SELECT to_regclass($legacySnapshotTableNameLookupSql)""".as[String]
-      )
-    } yield (jname, sname)
+    journalJdbcConfig.db.run(query)
   }
 
   /**
@@ -43,17 +43,22 @@ case class DbQuery(config: Config, journalJdbcConfig: DatabaseConfig[JdbcProfile
    *
    * @return the name of the table if exist or null if not
    */
-  def checkIfCosMigrationsTableExists(): Future[Vector[String]] = {
-    val schemaName: String = config.getString("jdbc-journal.tables.event_journal.schemaName")
-    val cosVersionTableNameLookupSql: String = s"$schemaName.cos_migrations"
-    journalJdbcConfig.db.run(
-      sql"""SELECT to_regclass($cosVersionTableNameLookupSql)""".as[String]
-    )
+  def checkIfCosMigrationsTableExists(): Future[Boolean] = {
+    // get the table lookup query
+    val query: DBIOAction[Boolean, NoStream, Effect.Read with Effect with Effect.Transactional] = MTable.getTables
+      .flatMap { tables =>
+        DBIO.successful(tables.exists(_.name.name.equals("cos_migrations")))
+      }
+      .withPinnedSession
+      .transactionally
+
+    journalJdbcConfig.db.run(query)
   }
 
   def addCosMigrationHistory(migrationHistory: History): Future[Int] = {
-    val sqlStmt: SqlAction[Int, NoStream, Effect] =
-      sqlu"INSERT INTO cos_migrations VALUES (${migrationHistory.version}, ${migrationHistory.description}, ${migrationHistory.isSuccessful}, ${migrationHistory.cosVersion}, ${migrationHistory.created})"
+    val sqlStmt: DBIOAction[Int, NoStream, Effect] =
+      sqlu"INSERT INTO cos_migrations VALUES (${migrationHistory.version}, ${migrationHistory.description}, ${migrationHistory.isSuccessful}, ${migrationHistory.cosVersion}, ${migrationHistory.created})".withPinnedSession
+    journalJdbcConfig.db.run(sqlStmt)
     journalJdbcConfig.db.run(sqlStmt)
   }
 
@@ -71,7 +76,8 @@ case class DbQuery(config: Config, journalJdbcConfig: DatabaseConfig[JdbcProfile
       History
     ], NoStream, Effect] =
       sql"""
-            SELECT * FROM cos_migrations ORDER BY version DESC
+            SELECT id, version, description, is_successful, cos_version, created
+              FROM cos_migrations ORDER BY version DESC
         """.as[History].headOption
     journalJdbcConfig.db.run(sqlStmt)
   }

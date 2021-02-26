@@ -4,28 +4,30 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.namely.chiefofstate.migration
+package com.namely.chiefofstate.migration.legacy
 
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
+import slick.basic.DatabaseConfig
+import slick.jdbc.PostgresProfile
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
-package object legacy {
+case class LegacyMigrator(config: Config, projectionJdbcConfig: DatabaseConfig[PostgresProfile])(implicit
+  system: ActorSystem
+) {
+  implicit private val ec: ExecutionContextExecutor = system.dispatcher
 
   /**
-   * migrate the legacy journal and snpashot data
+   * executes the migration
+   * @return
    */
-  def migrate(implicit system: ActorSystem): Future[Unit] = {
-    implicit val ec: ExecutionContextExecutor = system.dispatcher
-
-    system.log.info("migration legacy journal and snapshot into the new journal and schemas")
+  def run(): Future[Unit] = {
     val config: Config = system.settings.config
     val journalMigrator: JournalMigrator = JournalMigrator(config)
     val snapshotMigrator: SnapshotMigrator = SnapshotMigrator(config)
 
     for {
-      _ <- ReadStoreMigrator.renameColumns(config)
       _ <- Future(journalMigrator.migrate())
       _ <- snapshotMigrator.migrate()
     } yield ()

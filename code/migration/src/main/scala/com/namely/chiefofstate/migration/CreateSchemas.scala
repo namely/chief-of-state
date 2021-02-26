@@ -8,16 +8,19 @@ package com.namely.chiefofstate.migration
 
 import akka.actor.typed.ActorSystem
 import akka.projection.slick.SlickProjection
+import akka.Done
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.{JdbcProfile, PostgresProfile}
 import slick.jdbc.PostgresProfile.api._
 import slick.sql.SqlAction
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.annotation.unused
+import scala.concurrent.Future
 
-case class CreateSchemas(writeSideJdbcConfig: DatabaseConfig[JdbcProfile],
-                         readSideJdbcConfig: DatabaseConfig[PostgresProfile]
+@unused
+case class CreateSchemas(journalJdbcConfig: DatabaseConfig[JdbcProfile],
+                         projectionJdbcConfig: DatabaseConfig[PostgresProfile]
 ) {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -46,7 +49,7 @@ case class CreateSchemas(writeSideJdbcConfig: DatabaseConfig[JdbcProfile],
   }
 
   private def createEventJournalIndex(): SqlAction[Int, NoStream, Effect] = {
-    sqlu"""CREATE UNIQUE INDEX event_journal_ordering_idx ON event_journal(ordering)"""
+    sqlu"""CREATE UNIQUE INDEX IF NOT EXISTS event_journal_ordering_idx ON event_journal(ordering)"""
   }
 
   private def createEventTag(): SqlAction[Int, NoStream, Effect] = {
@@ -104,16 +107,13 @@ case class CreateSchemas(writeSideJdbcConfig: DatabaseConfig[JdbcProfile],
   }
 
   private def createCosMigrationsIndex(): SqlAction[Int, NoStream, Effect] = {
-    sqlu"""CREATE UNIQUE INDEX cos_migrations_version_idx ON cos_migrations(version)"""
+    sqlu"""CREATE UNIQUE INDEX IF NOT EXISTS cos_migrations_version_idx ON cos_migrations(version)"""
   }
 
   /**
    * creates the various write-side stores and read-side offset stores
    */
-  def ifNotExists()(implicit system: ActorSystem[_]): Future[Unit] = {
-
-    implicit val ec: ExecutionContextExecutor = system.executionContext
-
+  def journalStoresIfNotExists(): Future[Unit] = {
     val ddlSeq: DBIOAction[Unit, NoStream, _root_.slick.jdbc.PostgresProfile.api.Effect with Effect.Transactional] =
       DBIO
         .seq(
@@ -127,10 +127,16 @@ case class CreateSchemas(writeSideJdbcConfig: DatabaseConfig[JdbcProfile],
         .withPinnedSession
         .transactionally
 
-    for {
-      _ <- writeSideJdbcConfig.db.run(ddlSeq)
-      _ <- SlickProjection
-        .createOffsetTableIfNotExists(readSideJdbcConfig)
-    } yield ()
+    journalJdbcConfig.db.run(ddlSeq)
+  }
+
+  /**
+   * creates the read side offset stores
+   *
+   * @param system the actor system
+   */
+  def readSideOffsetStoreIfNotExist()(implicit system: ActorSystem[_]): Future[Done] = {
+    SlickProjection
+      .createOffsetTableIfNotExists(projectionJdbcConfig)
   }
 }
