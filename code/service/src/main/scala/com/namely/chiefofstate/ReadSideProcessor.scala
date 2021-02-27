@@ -40,7 +40,7 @@ class ReadSideProcessor(
 
   implicit val sys: ActorSystem[_] = actorSystem
 
-  val offsetStoreDatabaseConfig: DatabaseConfig[PostgresProfile] =
+  val databaseConfig: DatabaseConfig[PostgresProfile] =
     DatabaseConfig.forConfig("akka.projection.slick", actorSystem.settings.config)
 
   val baseTag: String = cosConfig.eventsConfig.eventTag
@@ -52,7 +52,7 @@ class ReadSideProcessor(
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
       name = processorId,
       numberOfInstances = AggregateRoot.tags(cosConfig.eventsConfig).size,
-      behaviorFactory = n => ProjectionBehavior(exactlyOnceProjection(s"$baseTag$n")),
+      behaviorFactory = n => ProjectionBehavior(projection(s"$baseTag$n")),
       settings = ShardedDaemonProcessSettings(actorSystem),
       stopMessage = Some(ProjectionBehavior.Stop)
     )
@@ -64,12 +64,12 @@ class ReadSideProcessor(
    * @param tagName the event tag
    * @return the projection instance
    */
-  protected def exactlyOnceProjection(tagName: String): ExactlyOnceProjection[Offset, EventEnvelope[EventWrapper]] = {
+  protected def projection(tagName: String): ExactlyOnceProjection[Offset, EventEnvelope[EventWrapper]] = {
     SlickProjection
       .exactlyOnce(
         projectionId = ProjectionId(processorId, tagName),
         sourceProvider(tagName),
-        offsetStoreDatabaseConfig,
+        databaseConfig,
         handler = () => new ReadSideEventsConsumer(tagName, processorId, remoteReadProcessor)
       )
   }
