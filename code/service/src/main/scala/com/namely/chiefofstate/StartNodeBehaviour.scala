@@ -18,7 +18,7 @@ import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
 import com.namely.chiefofstate.migration.{CreateSchemas, DbQuery, DropSchemas, JdbcConfig}
-import com.namely.chiefofstate.migration.legacy.{LegacyMigrator, ReadStoreMigrator}
+import com.namely.chiefofstate.migration.legacy.LegacyMigrator
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.telemetry._
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
@@ -148,7 +148,6 @@ object StartNodeBehaviour {
     val dropSchemas: DropSchemas = migration.DropSchemas(journalJdbcConfig)
     val legacyMigrator: LegacyMigrator = LegacyMigrator(config, projectionJdbcConfig)
     val dbQuery: DbQuery = DbQuery(config, journalJdbcConfig)
-    val readStoreMigrator: ReadStoreMigrator = ReadStoreMigrator(config, projectionJdbcConfig)
 
     val legacyStoresExist: Boolean = Await.result(dbQuery.checkIfLegacyTablesExist(), Duration.Inf)
     if (legacyStoresExist) {
@@ -158,18 +157,15 @@ object StartNodeBehaviour {
         _ <- createSchemas.journalStoresIfNotExists()
         _ <- legacyMigrator.run()
         _ <- dropSchemas.legacyJournalStoresIfExist()
-        _ <- readStoreMigrator.renameColumns() // This seems not working
+        _ <- createSchemas.readSideOffsetStoreIfNotExist()
       } yield ()
       Await.result(future, Duration.Inf)
     } else {
       Await.result(
-        createSchemas
-          .journalStoresIfNotExists()
-          .flatMap(_ =>
-            createSchemas
-              .readSideOffsetStoreIfNotExist()
-              .map(_ => ())
-          ),
+        for {
+          _ <- createSchemas.journalStoresIfNotExists()
+          _ <- createSchemas.readSideOffsetStoreIfNotExist()
+        } yield (),
         Duration.Inf
       )
     }
