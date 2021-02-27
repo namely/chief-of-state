@@ -42,10 +42,10 @@ trait Version {
   def beforeUpgrade(): Try[Unit] = Success {}
 
   /**
-    * optional method that runs after the upgrade is completed and version number
-    * has been persisted to the db. use this method to conduct actions like
-    * removing tables that are no longer needed, etc.
-    */
+   * optional method that runs after the upgrade is completed and version number
+   * has been persisted to the db. use this method to conduct actions like
+   * removing tables that are no longer needed, etc.
+   */
   def afterUpgrade(): Try[Unit] = Success {}
 }
 
