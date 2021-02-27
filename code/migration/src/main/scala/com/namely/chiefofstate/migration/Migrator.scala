@@ -57,11 +57,6 @@ class Migrator(val config: Config) {
     this.versions.clone.filter(_.versionNumber >= startAt).dequeueAll.reverse
   }
 
-  // get a version by ID
-  def getVersion(versionNumber): Option[Version] = {
-
-  }
-
   /**
    * runs before all migration steps, used to configure the migrator state, etc.
    */
