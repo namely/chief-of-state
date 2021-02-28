@@ -31,10 +31,10 @@ class MigratorSpec extends BaseSpec {
   override def beforeEach() = {
     super.beforeEach()
 
-    val cfg: Config = getDbConfig("public")
-    val dbConfig = DatabaseConfig.forConfig[JdbcProfile]("jdbc-default", cfg)
+    val dbConfig = getDbConfig("public")
 
-    val stmt = sqlu"drop schema if exists #$cosSchema cascade".andThen(sqlu"create schema #$cosSchema")
+    val stmt = sqlu"drop schema if exists #$cosSchema cascade"
+      .andThen(sqlu"create schema #$cosSchema")
 
     val future = dbConfig.db.run(stmt)
 
@@ -46,7 +46,7 @@ class MigratorSpec extends BaseSpec {
     pg.close()
   }
 
-  def getDbConfig(schemaName: String): Config = {
+  def getTypesafeConfig(schemaName: String): Config = {
 
     val cfgString: String = s"""
       jdbc-default {
@@ -66,6 +66,11 @@ class MigratorSpec extends BaseSpec {
     """
 
     ConfigFactory.parseString(cfgString)
+  }
+
+  def getDbConfig(schemaName: String): DatabaseConfig[JdbcProfile] = {
+    val cfg = getTypesafeConfig(schemaName)
+    DatabaseConfig.forConfig[JdbcProfile]("jdbc-default", cfg)
   }
 
   // test helper to get a mock version
@@ -155,10 +160,7 @@ class MigratorSpec extends BaseSpec {
 
   ".createMigrationsTable" should {
     "create the table if not exists" in {
-      val config: Config = getDbConfig(cosSchema)
-
-      val dbConfig: DatabaseConfig[JdbcProfile] =
-        DatabaseConfig.forConfig[JdbcProfile]("jdbc-default", config)
+      val dbConfig: DatabaseConfig[JdbcProfile] = getDbConfig(cosSchema)
 
       val actual = Migrator.createMigrationsTable(dbConfig)
 
@@ -167,10 +169,7 @@ class MigratorSpec extends BaseSpec {
       DbUtil.tableExists(dbConfig, Migrator.COS_MIGRATIONS_TABLE) shouldBe true
     }
     "no-op if table exists" in {
-      val config: Config = getDbConfig(cosSchema)
-
-      val dbConfig: DatabaseConfig[JdbcProfile] =
-        DatabaseConfig.forConfig[JdbcProfile]("jdbc-default", config)
+      val dbConfig: DatabaseConfig[JdbcProfile] = getDbConfig(cosSchema)
 
       // assert doesn't exist
       DbUtil.tableExists(dbConfig, Migrator.COS_MIGRATIONS_TABLE) shouldBe false
@@ -186,18 +185,36 @@ class MigratorSpec extends BaseSpec {
 
   ".getCurrentVersionNumber" should {
     "return the latest version" in {
-      // TODO
+      val dbConfig: DatabaseConfig[JdbcProfile] = getDbConfig(cosSchema)
+
+      // create the migrations table
+      Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
+
+      val stmt = Migrator
+        .setCurrentVersionNumber(dbConfig, 2, true)
+        .andThen(Migrator.setCurrentVersionNumber(dbConfig, 3, false))
+        .andThen(Migrator.setCurrentVersionNumber(dbConfig, 4, false))
+
+      Await.ready(dbConfig.db.run(stmt), Duration.Inf)
+
+      val actual: Option[Int] = Migrator.getCurrentVersionNumber(dbConfig)
+
+      actual shouldBe Some(4)
     }
     "return None for no prior version" in {
-      // TODO
+      val dbConfig: DatabaseConfig[JdbcProfile] = getDbConfig(cosSchema)
+
+      // create the migrations table
+      Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
+
+      val actual: Option[Int] = Migrator.getCurrentVersionNumber(dbConfig)
+
+      actual shouldBe None
     }
   }
   ".setCurrentVersionNumber" should {
     "write versions to db" in {
-      val config: Config = getDbConfig(cosSchema)
-
-      val dbConfig: DatabaseConfig[JdbcProfile] =
-        DatabaseConfig.forConfig[JdbcProfile]("jdbc-default", config)
+      val dbConfig: DatabaseConfig[JdbcProfile] = getDbConfig(cosSchema)
 
       // create the migrations table
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
@@ -206,9 +223,7 @@ class MigratorSpec extends BaseSpec {
         .setCurrentVersionNumber(dbConfig, 2, true)
         .andThen(Migrator.setCurrentVersionNumber(dbConfig, 3, false))
 
-      val future = dbConfig.db.run(stmt)
-
-      Await.ready(future, Duration.Inf)
+      Await.ready(dbConfig.db.run(stmt), Duration.Inf)
 
       val readFuture = dbConfig.db.run(sql"""
       select version_number, is_snapshot

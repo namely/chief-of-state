@@ -23,11 +23,7 @@ object DbUtil {
    * @return true if the table exists
    */
   def tableExists(dbConfig: DatabaseConfig[JdbcProfile], tableName: String): Boolean = {
-    // get the table lookup query
     val tables = Await.result(dbConfig.db.run(MTable.getTables), Duration.Inf)
-    println("**************")
-    println(tables.filter(_.name.name.equals(tableName)))
-    println("**************")
     tables.exists(_.name.name.equals(tableName))
   }
 

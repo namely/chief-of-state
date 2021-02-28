@@ -178,11 +178,14 @@ object Migrator {
    * @return optional version number as an int
    */
   private[migration] def getCurrentVersionNumber(dbConfig: DatabaseConfig[JdbcProfile]): Option[Int] = {
-    val sqlStmt = sql"""SELECT max(version_number) from cos_migrations"""
-      .as[Int]
-      .headOption
+    val sqlStmt = sql"SELECT version_number from #$COS_MIGRATIONS_TABLE".as[Int]
 
-    Await.result(dbConfig.db.run(sqlStmt), Duration.Inf)
+    val result = Await.result(dbConfig.db.run(sqlStmt), Duration.Inf).toSeq
+
+    result match {
+      case Seq()    => None
+      case versions => Some(versions.max)
+    }
   }
 
   /**
