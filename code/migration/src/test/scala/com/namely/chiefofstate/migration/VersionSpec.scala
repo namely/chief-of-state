@@ -7,12 +7,13 @@
 package com.namely.chiefofstate.migration
 
 import scala.util.{Success, Try}
+import slick.dbio.{DBIO, DBIOAction}
 
 class VersionSpec extends BaseSpec {
 
   case class SomeVersion(versionNumber: Int) extends Version {
-    def snapshot(): Try[Unit] = Success {}
-    def upgrade(): Try[Unit] = Success {}
+    def snapshot(): DBIO[Unit] = DBIOAction.successful {}
+    def upgrade(): DBIO[Unit] = DBIOAction.successful {}
   }
 
   "VersionOrdering" should {

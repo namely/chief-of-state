@@ -106,6 +106,8 @@ class Migrator(val config: Config) {
 object Migrator {
   private[migration] val logger: Logger = LoggerFactory.getLogger(getClass)
 
+  val COS_MIGRATIONS_TABLE: String = "cos_migrations"
+
   /**
    * run version snapshot and set version in db
    *
@@ -134,9 +136,17 @@ object Migrator {
   private[migration] def upgradeVersion(dbConfig: DatabaseConfig[JdbcProfile], version: Version): Try[Unit] = {
     version
       .beforeUpgrade()
-      // TODO: make "upgrade()" and "setCurrentVersion()" run in one db transaction
-      .flatMap(_ => version.upgrade())
-      .flatMap(_ => setCurrentVersionNumber(dbConfig, version.versionNumber, false))
+      // run upgrade
+      .flatMap(_ => {
+        val stmt = version
+          .upgrade()
+          .andThen(setCurrentVersionNumber(dbConfig, version.versionNumber, false))
+          .withPinnedSession
+          .transactionally
+
+        val future: Future[Int] = dbConfig.db.run(stmt)
+        Try(Await.result(future, Duration.Inf))
+      })
       // finally conduct afterUpgrade
       .flatMap(_ => version.afterUpgrade())
   }
@@ -150,7 +160,7 @@ object Migrator {
   private[migration] def createMigrationsTable(dbConfig: DatabaseConfig[JdbcProfile]): Try[Unit] = {
 
     val stmt = sqlu"""
-     CREATE TABLE IF NOT EXISTS cos_migrations (
+     CREATE TABLE IF NOT EXISTS #$COS_MIGRATIONS_TABLE (
       version_number int primary key not null,
       upgraded_at bigint,
       is_snapshot boolean
@@ -193,7 +203,5 @@ object Migrator {
         INSERT INTO cos_migrations(version_number, upgraded_at, is_snapshot)
         VALUES ($versionNumber, $currentTs, $isSnapshot)
       """
-
-    //Try(Await.result(dbConfig.db.run(sqlStmt), Duration.Inf))
   }
 }

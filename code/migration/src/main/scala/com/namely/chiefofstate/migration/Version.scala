@@ -6,7 +6,7 @@
 
 package com.namely.chiefofstate.migration
 
-import slick.dbio.DBIOAction
+import slick.dbio.DBIO
 
 import scala.util.{Success, Try}
 
@@ -23,16 +23,16 @@ trait Version {
    * run in the same db transaction that commits the version number to the
    * database.
    *
-   * @return Success if migration step ran successfully
+   * @return a DBIO that runs this upgrade
    */
-  def upgrade(): Try[Unit]
+  def upgrade(): DBIO[Unit]
 
   /**
    * implement this method to snapshot this version (run if no prior versions found)
    *
-   * @return Success if snapshot successful, else failure
+   * @return a DBIO that creates the version snapshot
    */
-  def snapshot(): DBIOAction[Unit]
+  def snapshot(): DBIO[Unit]
 
   /**
    * optional method to run prior to upgrade, which can be used for expensive
