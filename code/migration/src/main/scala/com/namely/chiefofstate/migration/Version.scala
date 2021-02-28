@@ -6,6 +6,8 @@
 
 package com.namely.chiefofstate.migration
 
+import slick.dbio.DBIOAction
+
 import scala.util.{Success, Try}
 
 /**
@@ -30,7 +32,7 @@ trait Version {
    *
    * @return Success if snapshot successful, else failure
    */
-  def snapshot(): Try[Unit]
+  def snapshot(): DBIOAction[Unit]
 
   /**
    * optional method to run prior to upgrade, which can be used for expensive

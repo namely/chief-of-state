@@ -6,24 +6,21 @@
 
 package com.namely.chiefofstate.migration
 
-import scala.collection.mutable
-import scala.util.Success
-import org.slf4j.{Logger, LoggerFactory}
-import scala.util.Failure
 import com.typesafe.config.Config
-import slick.jdbc.{JdbcProfile, PostgresProfile}
-import slick.jdbc.PostgresProfile.api._
-import slick.sql.SqlAction
-import java.time.Instant
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
+import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
-import scala.util.{Failure, Success, Try}
-import scala.collection.mutable.PriorityQueue
+import slick.jdbc.PostgresProfile.api._
+import slick.sql.SqlAction
+
+import java.time.Instant
+import scala.collection.mutable
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
+import scala.util.Try
 
 class Migrator(val config: Config) {
-  import Migrator.{createMigrationsTable, getCurrentVersionNumber, logger, setCurrentVersionNumber}
+  import Migrator.{createMigrationsTable, getCurrentVersionNumber, logger}
 
   // create the priority queue of versions sorted by version number
   private[migration] val versions: mutable.PriorityQueue[Version] = {
@@ -117,10 +114,14 @@ object Migrator {
    * @return success/failure
    */
   private[migration] def snapshotVersion(dbConfig: DatabaseConfig[JdbcProfile], version: Version): Try[Unit] = {
-    // TODO: make these 1 db transaction
-    version
+    val stmt = version
       .snapshot()
-      .flatMap(_ => setCurrentVersionNumber(dbConfig, version.versionNumber, true))
+      .andThen(setCurrentVersionNumber(dbConfig, version.versionNumber, true))
+      .withPinnedSession
+      .transactionally
+
+    val future: Future[Int] = dbConfig.db.run(stmt)
+    Try(Await.result(future, Duration.Inf))
   }
 
   /**
@@ -185,15 +186,14 @@ object Migrator {
   private[migration] def setCurrentVersionNumber(dbConfig: DatabaseConfig[JdbcProfile],
                                                  versionNumber: Int,
                                                  isSnapshot: Boolean
-  ): Try[Unit] = {
+  ): SqlAction[Int, NoStream, Effect] = {
     val currentTs: Long = Instant.now().toEpochMilli()
 
-    val sqlStmt: DBIOAction[Int, NoStream, Effect] =
-      sqlu"""
+    sqlu"""
         INSERT INTO cos_migrations(version_number, upgraded_at, is_snapshot)
         VALUES ($versionNumber, $currentTs, $isSnapshot)
-      """.withPinnedSession
+      """
 
-    Try(Await.result(dbConfig.db.run(sqlStmt), Duration.Inf))
+    //Try(Await.result(dbConfig.db.run(sqlStmt), Duration.Inf))
   }
 }
