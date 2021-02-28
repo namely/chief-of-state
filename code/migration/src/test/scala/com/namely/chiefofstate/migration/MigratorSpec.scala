@@ -67,10 +67,10 @@ class MigratorSpec extends BaseSpec {
     map.clear()
   }
 
-  def getTypesafeConfig(schemaName: String): Config = {
+  def getTypesafeConfig(schemaName: String, rootKey: String = "jdbc-default"): Config = {
 
     val cfgString: String = s"""
-      jdbc-default {
+      $rootKey {
         profile = "slick.jdbc.PostgresProfile$$"
         db {
           connectionPool = disabled
@@ -101,7 +101,7 @@ class MigratorSpec extends BaseSpec {
     (() => mockVersion.versionNumber)
       .expects()
       .returning(versionNumber)
-      .atLeastOnce
+      .anyNumberOfTimes
 
     mockVersion
   }
@@ -308,12 +308,39 @@ class MigratorSpec extends BaseSpec {
 
       // create the versions table
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
-      // confirm no prior version
-      Migrator.getCurrentVersionNumber(dbConfig) shouldBe None
+      val setStmt = Migrator.setCurrentVersionNumber(dbConfig, versionNumber - 1, true)
+      Await.ready(dbConfig.db.run(setStmt), Duration.Inf)
+      // confirm prior version
+      Migrator.getCurrentVersionNumber(dbConfig) shouldBe Some(versionNumber - 1)
       // run and persist the snapshot
       Migrator.upgradeVersion(dbConfig, version).isSuccess shouldBe true
       // confirm version number in DB
       Migrator.getCurrentVersionNumber(dbConfig) shouldBe Some(versionNumber)
+    }
+    "fail if no prior version" in {
+      val dbConfig = getDbConfig(cosSchema)
+      // create the versions table
+      Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
+      // confirm no prior version
+      Migrator.getCurrentVersionNumber(dbConfig) shouldBe None
+      // test failure
+      val version: Version = getMockVersion(2)
+      val actual = Migrator.upgradeVersion(dbConfig, version)
+      actual.failed.get.getMessage().endsWith("no prior version, cannot upgrade") shouldBe true
+    }
+    "fail if skipping versions" in {
+      val dbConfig = getDbConfig(cosSchema)
+      // create the versions table
+      Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
+      // set prior version
+      val setStmt = Migrator.setCurrentVersionNumber(dbConfig, 1, true)
+      Await.ready(dbConfig.db.run(setStmt), Duration.Inf)
+      // confirm no prior version
+      Migrator.getCurrentVersionNumber(dbConfig) shouldBe Some(1)
+      // test failure
+      val version = getMockVersion(3)
+      val actual = Migrator.upgradeVersion(dbConfig, version)
+      actual.failed.get.getMessage().endsWith("cannot upgrade from version 1 to 3") shouldBe true
     }
   }
 
@@ -441,6 +468,21 @@ class MigratorSpec extends BaseSpec {
       // check error
       actual.isFailure shouldBe true
       actual.failed.get.getMessage.endsWith("cannot be 'X'") shouldBe true
+    }
+  }
+  "public constructor" should {
+    "have all expected version numbers with no gaps" in {
+      val config: Config = getTypesafeConfig("cos", "write-side-slick")
+      val migrator = Migrator(config)
+
+      val versions = migrator.getVersions().map(_.versionNumber)
+
+      if (versions.size > 1) {
+        versions.tail.foldLeft(versions.head)((priorVersion, versionNumber) => {
+          (priorVersion + 1) shouldBe versionNumber
+          versionNumber
+        })
+      }
     }
   }
 }

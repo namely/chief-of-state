@@ -19,7 +19,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
-class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
+class Migrator private[migration] (val journalDbConfig: DatabaseConfig[JdbcProfile]) {
   import Migrator.logger
 
   // create the priority queue of versions sorted by version number
@@ -34,7 +34,7 @@ class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
    * @param version the Version to add
    * @return the runner with that Version added
    */
-  def addVersion(version: Version): Migrator = {
+  private[migration] def addVersion(version: Version): Migrator = {
     this.versions.addOne(version)
     logger.debug(s"added version ${version.versionNumber}")
     this
@@ -46,7 +46,7 @@ class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
    * @param startAt inclusive lowest version number, defaults to 0
    * @return sequence of versions in ascending order
    */
-  def getVersions(startAt: Int = 0): Seq[Version] = {
+  private[migration] def getVersions(startAt: Int = 0): Seq[Version] = {
     this.versions.clone.filter(_.versionNumber >= startAt).dequeueAll.reverse
   }
 
@@ -106,6 +106,13 @@ object Migrator {
 
   val COS_MIGRATIONS_INITIAL_VERSION: String = "COS_MIGRATIONS_INITIAL_VERSION"
 
+  // public constructor that hard-codes version numbers in
+  def apply(config: Config): Migrator = {
+    val dbConfig = JdbcConfig.journalConfig(config)
+    val migrator: Migrator = new Migrator(dbConfig)
+    migrator
+  }
+
   /**
    * run version snapshot and set version in db
    *
@@ -132,8 +139,16 @@ object Migrator {
    * @return success/failure
    */
   private[migration] def upgradeVersion(dbConfig: DatabaseConfig[JdbcProfile], version: Version): Try[Unit] = {
-    version
-      .beforeUpgrade()
+    Try {
+      // check prior version number
+      val priorVersionNumber: Int = getCurrentVersionNumber(dbConfig).getOrElse(-1)
+      require(priorVersionNumber > 0, "no prior version, cannot upgrade")
+      require(
+        priorVersionNumber + 1 == version.versionNumber,
+        s"cannot upgrade from version $priorVersionNumber to ${version.versionNumber}"
+      )
+    }
+      .flatMap(_ => version.beforeUpgrade())
       // run upgrade
       .flatMap(_ => {
         val stmt = version
