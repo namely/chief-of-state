@@ -212,7 +212,7 @@ object Migrator {
    * @param journalDbConfig the DatabaseConfig to use
    * @return success/failure
    */
-  def setInitialVersion(journalDbConfig: DatabaseConfig[JdbcProfile]): Try[Unit] = {
+  private[migration] def setInitialVersion(journalDbConfig: DatabaseConfig[JdbcProfile]): Try[Unit] = {
     Try {
       // if no prior version number, allow providing via env var
       if (getCurrentVersionNumber(journalDbConfig).isEmpty) {
