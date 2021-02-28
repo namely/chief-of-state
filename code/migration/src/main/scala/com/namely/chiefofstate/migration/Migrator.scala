@@ -19,18 +19,14 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
-class Migrator(val config: Config) {
-  import Migrator.{createMigrationsTable, getCurrentVersionNumber, logger}
+class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
+  import Migrator.logger
 
   // create the priority queue of versions sorted by version number
   private[migration] val versions: mutable.PriorityQueue[Version] = {
     implicit val versionOrdering = Version.VersionOrdering
     new mutable.PriorityQueue()
   }
-
-  // lazily create the journal db connection
-  private[migration] lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
-    JdbcConfig.journalConfig(config)
 
   /**
    * add one version to the runner and return the runner
@@ -58,11 +54,11 @@ class Migrator(val config: Config) {
    * runs before all migration steps, used to configure the migrator state, etc.
    */
   private[migration] def beforeAll(): Try[Unit] = {
-
     // create the versions table
-    createMigrationsTable(journalJdbcConfig)
-    // TODO: figure out if the migraiton has been run before and insert a version number
-    // to represent the version before this tool existed
+    Migrator
+      .createMigrationsTable(journalDbConfig)
+      // set initial version if provided
+      .flatMap(_ => Migrator.setInitialVersion(journalDbConfig))
   }
 
   /**
@@ -76,13 +72,13 @@ class Migrator(val config: Config) {
       // run before all step
       .beforeAll()
       // get last version
-      .map(_ => getCurrentVersionNumber(journalJdbcConfig))
+      .map(_ => Migrator.getCurrentVersionNumber(journalDbConfig))
       // use the version number to upgrade/snapshot
       .flatMap({
         // if no prior version, snapshot using the last one
         case None =>
           val lastVersion: Version = getVersions().last
-          Migrator.upgradeVersion(this.journalJdbcConfig, lastVersion)
+          Migrator.snapshotVersion(this.journalDbConfig, lastVersion)
 
         // if there is a prior version, run each subsequent upgrade
         case Some(versionNumber) =>
@@ -96,7 +92,7 @@ class Migrator(val config: Config) {
             output
               .flatMap(_ => {
                 logger.info(s"upgrading to version ${version.versionNumber}")
-                Migrator.upgradeVersion(this.journalJdbcConfig, version)
+                Migrator.upgradeVersion(this.journalDbConfig, version)
               })
           })
       })
@@ -107,6 +103,8 @@ object Migrator {
   private[migration] val logger: Logger = LoggerFactory.getLogger(getClass)
 
   val COS_MIGRATIONS_TABLE: String = "cos_migrations"
+
+  val COS_MIGRATIONS_INITIAL_VERSION: String = "COS_MIGRATIONS_INITIAL_VERSION"
 
   /**
    * run version snapshot and set version in db
@@ -206,5 +204,34 @@ object Migrator {
         INSERT INTO cos_migrations(version_number, upgraded_at, is_snapshot)
         VALUES ($versionNumber, $currentTs, $isSnapshot)
       """
+  }
+
+  /**
+   * allows user to provide an initial version number via env var
+   *
+   * @param journalDbConfig the DatabaseConfig to use
+   * @return success/failure
+   */
+  def setInitialVersion(journalDbConfig: DatabaseConfig[JdbcProfile]): Try[Unit] = {
+    Try {
+      // if no prior version number, allow providing via env var
+      if (getCurrentVersionNumber(journalDbConfig).isEmpty) {
+        // if provided, bootstrap to this version number
+        if (sys.env.keySet.contains(COS_MIGRATIONS_INITIAL_VERSION)) {
+          val envValue: String = sys.env
+            .getOrElse(COS_MIGRATIONS_INITIAL_VERSION, "")
+            .trim()
+
+          require(envValue.nonEmpty, s"${COS_MIGRATIONS_INITIAL_VERSION} setting provided empty")
+          require(Try(envValue.toInt).isSuccess, s"${COS_MIGRATIONS_INITIAL_VERSION} cannot be '$envValue'")
+
+          val versionNumber: Int = envValue.toInt
+
+          logger.info(s"initializing migration history with version number: $versionNumber")
+          val stmt = setCurrentVersionNumber(journalDbConfig, versionNumber, true)
+          Await.result(journalDbConfig.db.run(stmt), Duration.Inf)
+        }
+      }
+    }
   }
 }
