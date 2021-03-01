@@ -13,11 +13,11 @@ import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.{Await, ExecutionContextExecutor, Future}
+import scala.concurrent.{Await, ExecutionContextExecutor}
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
-case class V1__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
+case class V2__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
                        projectionJdbcConfig: DatabaseConfig[JdbcProfile]
 )(implicit system: ActorSystem[_])
     extends Version {
@@ -25,7 +25,7 @@ case class V1__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
-  override def versionNumber: Int = 1
+  override def versionNumber: Int = 2
 
   /**
    * implement this method to upgrade the application to this version. This is
@@ -36,7 +36,7 @@ case class V1__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
    */
   override def upgrade(): DBIO[Unit] = {
     log.info(s"migrating ChiefOfState stores to $versionNumber")
-    DBIO.successful {}
+    SchemasUtil.dropLegacyJournalTables(journalJdbcConfig).flatMap(_ => DBIO.successful {})
   }
 
   /**
@@ -44,12 +44,13 @@ case class V1__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
    *
    * @return a DBIO that creates the version snapshot
    */
-  override def snapshot(): DBIO[Unit] = DBIO.successful {}
+  override def snapshot(): DBIO[Unit] = DBIO.failed(new Exception("Blast..."))
 
   /**
    * performs the following actions:
    * <p>
    *   <ul>
+   *     <li> attempt to drop the new journal and snapshot tables in case a previous migration failed
    *     <li> create the new journal and snapshot tables
    *     <li> migrate the data from the old journal into the newly created journal table
    *     <li> migrate the data from the old snapshot into the newly crated snapshot table
@@ -62,20 +63,21 @@ case class V1__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
   override def beforeUpgrade(): Try[Unit] = {
     val journalMigrator: MigrateJournal = MigrateJournal(system)
     val snapshotMigrator: MigrateSnapshot = MigrateSnapshot(system)
-    val execution: Future[Unit] = for {
-      _ <- SchemasUtil.createJournalTables(journalJdbcConfig)
-      _ <- Future(journalMigrator.run())
-      _ <- snapshotMigrator.run()
-      _ <- SchemasUtil.createReadSideOffsetTable(projectionJdbcConfig)
-    } yield ()
-
-    Try(Await.result(execution, Duration.Inf))
+    Try {
+      SchemasUtil.createJournalTables(journalJdbcConfig)
+      journalMigrator.run()
+      Await.result(snapshotMigrator.run(), Duration.Inf)
+      SchemasUtil.createReadSideOffsetTable(projectionJdbcConfig)
+    }
   }
 
   /**
    * executed when migration done. It deletes the old journal and snapshot tables
    */
   override def afterUpgrade(): Try[Unit] = {
-    Try(SchemasUtil.dropLegacyJournalTables(journalJdbcConfig))
+    val run = journalJdbcConfig.db.run(SchemasUtil.dropLegacyJournalTables(journalJdbcConfig))
+    Try(
+      Await.result(run, Duration.Inf)
+    )
   }
 }

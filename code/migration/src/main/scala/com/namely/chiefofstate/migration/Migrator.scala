@@ -7,7 +7,7 @@
 package com.namely.chiefofstate.migration
 
 import akka.actor.typed.ActorSystem
-import com.namely.chiefofstate.migration.versions.v1.V1__Version
+import com.namely.chiefofstate.migration.versions.v1.V2__Version
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -69,9 +69,7 @@ class Migrator private[migration] (val journalDbConfig: DatabaseConfig[JdbcProfi
    * run the migration, including setup and all steps
    */
   def run(): Try[Unit] = {
-
     logger.info(s"starting migrator")
-
     this
       // run before all step
       .beforeAll()
@@ -95,7 +93,6 @@ class Migrator private[migration] (val journalDbConfig: DatabaseConfig[JdbcProfi
           versionsToUpgrade.foldLeft(Try {})((output, version) => {
             output
               .flatMap(_ => {
-                logger.info(s"upgrading to version ${version.versionNumber}")
                 Migrator.upgradeVersion(this.journalDbConfig, version)
               })
           })
@@ -118,7 +115,7 @@ object Migrator {
     val migrator: Migrator = new Migrator(journalJdbcConfig, projectionJdbcConfig, actorSystem)
 
     migrator.addVersion(
-      V1__Version(journalJdbcConfig, projectionJdbcConfig)(actorSystem)
+      V2__Version(journalJdbcConfig, projectionJdbcConfig)(actorSystem)
     )
   }
 
@@ -130,6 +127,8 @@ object Migrator {
    * @return success/failure
    */
   private[migration] def snapshotVersion(dbConfig: DatabaseConfig[JdbcProfile], version: Version): Try[Unit] = {
+    logger.info(s"Snapshotting version ${version.versionNumber}")
+
     val stmt = version
       .snapshot()
       .andThen(setCurrentVersionNumber(dbConfig, version.versionNumber, true))
@@ -148,6 +147,7 @@ object Migrator {
    * @return success/failure
    */
   private[migration] def upgradeVersion(dbConfig: DatabaseConfig[JdbcProfile], version: Version): Try[Unit] = {
+    logger.info(s"upgrading to version ${version.versionNumber}")
     Try {
       // check prior version number
       val priorVersionNumber: Int = getCurrentVersionNumber(dbConfig).getOrElse(-1)
@@ -202,7 +202,7 @@ object Migrator {
   private[migration] def getCurrentVersionNumber(dbConfig: DatabaseConfig[JdbcProfile]): Option[Int] = {
     val sqlStmt = sql"SELECT version_number from #$COS_MIGRATIONS_TABLE".as[Int]
 
-    val result = Await.result(dbConfig.db.run(sqlStmt), Duration.Inf).toSeq
+    val result = Await.result(dbConfig.db.run(sqlStmt), Duration.Inf)
 
     result match {
       case Seq()    => None

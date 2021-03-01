@@ -11,7 +11,8 @@ import slick.jdbc.JdbcProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.sql.SqlAction
 
-import scala.concurrent.Future
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 object SchemasUtil {
 
@@ -111,7 +112,7 @@ object SchemasUtil {
   /**
    * creates the various write-side stores and read-side offset stores
    */
-  def createJournalTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Future[Unit] = {
+  def createJournalTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
     val ddlSeq = DBIO
       .seq(
         createEventJournalStmt,
@@ -121,13 +122,14 @@ object SchemasUtil {
       )
       .withPinnedSession
       .transactionally
-    journalJdbcConfig.db.run(ddlSeq)
+
+    Await.result(journalJdbcConfig.db.run(ddlSeq), Duration.Inf)
   }
 
   /**
    * creates the read side offset store table
    */
-  def createReadSideOffsetTable(projectionJdbcConfig: DatabaseConfig[JdbcProfile]): Future[Unit] = {
+  def createReadSideOffsetTable(projectionJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
     val ddlSeq = DBIO
       .seq(
         createReadSideOffsetStmt,
@@ -135,7 +137,8 @@ object SchemasUtil {
       )
       .withPinnedSession
       .transactionally
-    projectionJdbcConfig.db.run(ddlSeq)
+
+    Await.result(projectionJdbcConfig.db.run(ddlSeq), Duration.Inf)
   }
 
   /**
@@ -143,14 +146,35 @@ object SchemasUtil {
    *
    * @param journalJdbcConfig the database config
    */
-  def dropLegacyJournalTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Future[Int] = {
-    journalJdbcConfig.db.run(
-      sqlu"""
+  def dropLegacyJournalTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]) = {
+    sqlu"""
              DROP TABLE IF EXISTS 
                 journal,
                 snapshot
              CASCADE 
-            """.withPinnedSession.transactionally
-    )
+            """
+  }
+
+  /**
+   * drops the journal and snapshot tables
+   */
+  def dropJournalTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
+    val stmt = DBIO
+      .seq(
+        sqlu"""
+             DROP TABLE IF EXISTS
+                event_journal,
+                event_tag,
+                state_snapshot
+             CASCADE
+            """,
+        sqlu"""
+        DROP INDEX IF EXISTS event_journal_ordering_idx;
+      """
+      )
+      .withPinnedSession
+      .transactionally
+
+    Await.result(journalJdbcConfig.db.run(stmt), Duration.Inf)
   }
 }

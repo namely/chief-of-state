@@ -53,7 +53,6 @@ case class MigrateJournal(system: ActorSystem[_]) extends Migrate {
       .mapAsync(1)((repr: PersistentRepr) => {
         defaultJournalDao.asyncWriteMessages(Seq(AtomicWrite(Seq(repr))))
       })
-      .limit(Long.MaxValue)
       .runWith(Sink.seq) // FIXME for performance
       .map(_ => ())
   }

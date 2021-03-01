@@ -30,7 +30,7 @@ import io.opentracing.util.GlobalTracer
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.net.InetSocketAddress
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
+import scala.concurrent.ExecutionContext
 import scala.sys.ShutdownHookThread
 
 /**
@@ -51,8 +51,6 @@ object StartNodeBehaviour {
 
   def apply(config: Config): Behavior[NotUsed] = {
     Behaviors.setup { context =>
-      implicit val ec: ExecutionContextExecutor = context.system.executionContext
-
       // get the  COS config
       val cosConfig: CosConfig = CosConfig(config)
 
@@ -65,16 +63,7 @@ object StartNodeBehaviour {
 
       // create and run the migrator
       val migrator: Migrator = Migrator(context.system)
-      migrator.run()
-
-      // FIXME: move this into V1 migration version or remove it.
-      // create data stores and run migrations if necessary
-      log.info("kick-starting the ChiefOfState journal, snapshot and offset stores creation")
-      SchemasUtil
-        .createIfNotExists(config)(context.system)
-        .map(_ => {
-          log.info("ChiefOfState journal, snapshot and offset stores created sucessfully...:)")
-        })
+      migrator.run().get
 
       // We only proceed when the data stores and various migrations are done successfully.
       log.info("Journal and snapshot store created successfully. About to start...")
