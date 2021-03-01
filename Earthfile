@@ -46,6 +46,7 @@ code:
     # copy code
     COPY --chown $BUILD_USR:root code/service/src ./code/service/src
     COPY --chown $BUILD_USR:root code/plugin/src ./code/plugin/src
+    COPY --chown $BUILD_USR:root code/migration/src ./code/migration/src
 
 docker-stage:
     # package the jars/executables
@@ -85,8 +86,6 @@ docker-build:
 
 test-local:
     FROM +code
-    ARG CODECOV_TOKEN=""
-    ENV CODECOV_TOKEN=${CODECOV_TOKEN}
     RUN sbt coverage test coverageAggregate
 
 codecov:
@@ -115,4 +114,3 @@ sbt:
         apt-get update && \
         apt-get install sbt && \
         sbt sbtVersion
-
