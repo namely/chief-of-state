@@ -26,5 +26,4 @@ object DbUtil {
     val tables = Await.result(dbConfig.db.run(MTable.getTables), Duration.Inf)
     tables.exists(_.name.name.equals(tableName))
   }
-
 }
