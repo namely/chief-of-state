@@ -326,7 +326,7 @@ class MigratorSpec extends BaseSpec {
       // test failure
       val version: Version = getMockVersion(2)
       val actual = Migrator.upgradeVersion(dbConfig, version)
-      actual.failed.get.getMessage().endsWith("no prior version, cannot upgrade") shouldBe true
+      actual.failed.map(_.getMessage().endsWith("no prior version, cannot upgrade")) shouldBe Success(true)
     }
     "fail if skipping versions" in {
       val dbConfig = getDbConfig(cosSchema)
@@ -340,7 +340,7 @@ class MigratorSpec extends BaseSpec {
       // test failure
       val version = getMockVersion(3)
       val actual = Migrator.upgradeVersion(dbConfig, version)
-      actual.failed.get.getMessage().endsWith("cannot upgrade from version 1 to 3") shouldBe true
+      actual.failed.map(_.getMessage().endsWith("cannot upgrade from version 1 to 3")) shouldBe Success(true)
     }
   }
 
@@ -455,7 +455,7 @@ class MigratorSpec extends BaseSpec {
       val actual = Migrator.setInitialVersion(dbConfig)
       // check error
       actual.isFailure shouldBe true
-      actual.failed.get.getMessage.endsWith("setting provided empty") shouldBe true
+      actual.failed.map(_.getMessage.endsWith("setting provided empty")) shouldBe Success(true)
     }
     "prevents non-int version number" in {
       val dbConfig: DatabaseConfig[JdbcProfile] = getDbConfig(cosSchema)
@@ -467,7 +467,7 @@ class MigratorSpec extends BaseSpec {
       val actual = Migrator.setInitialVersion(dbConfig)
       // check error
       actual.isFailure shouldBe true
-      actual.failed.get.getMessage.endsWith("cannot be 'X'") shouldBe true
+      actual.failed.map(_.getMessage.endsWith("cannot be 'X'")) shouldBe Success(true)
     }
   }
   "public constructor" should {

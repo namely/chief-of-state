@@ -16,7 +16,7 @@ lazy val chiefofstate: Project = project
   .enablePlugins(NoPublish)
   .enablePlugins(AutomateHeaderPlugin)
   .settings(name := "chiefofstate", headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax)
-  .dependsOn(protogen, chiefofstateplugins, protogenTest % "test->compile")
+  .dependsOn(protogen, chiefofstateplugins, protogenTest % "test->compile", migration)
 
 lazy val chiefofstateplugins = project
   .in(file("code/plugin"))
