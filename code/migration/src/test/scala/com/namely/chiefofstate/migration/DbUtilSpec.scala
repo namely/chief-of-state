@@ -15,4 +15,6 @@ import scala.concurrent.duration.Duration
 import slick.jdbc.PostgresProfile.api._
 import scala.annotation.migration
 
-class DbUtilSpec extends BaseSpec {}
+class DbUtilSpec extends BaseSpec {
+  // TODO: add tests for this util
+}

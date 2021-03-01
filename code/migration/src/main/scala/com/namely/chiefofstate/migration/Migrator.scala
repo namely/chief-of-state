@@ -20,7 +20,7 @@ import scala.concurrent.duration.Duration
 import scala.util.Try
 
 class Migrator private[migration] (val journalDbConfig: DatabaseConfig[JdbcProfile]) {
-  import Migrator.logger
+  val logger: Logger = Migrator.logger
 
   // create the priority queue of versions sorted by version number
   private[migration] val versions: mutable.PriorityQueue[Version] = {
