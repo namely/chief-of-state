@@ -46,6 +46,7 @@ code:
     # copy code
     COPY --chown $BUILD_USR:root code/service/src ./code/service/src
     COPY --chown $BUILD_USR:root code/plugin/src ./code/plugin/src
+    COPY --chown $BUILD_USR:root code/migration/src ./code/migration/src
 
 docker-stage:
     # package the jars/executables
