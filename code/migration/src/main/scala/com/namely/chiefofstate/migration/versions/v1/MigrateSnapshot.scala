@@ -34,9 +34,7 @@ case class MigrateSnapshot(system: ActorSystem[_]) extends Migrate {
   def run(): Future[Seq[Future[Unit]]] = {
     for {
       rows <- snapshotdb
-        .run(
-          queries.SnapshotTable.sortBy(_.sequenceNumber.desc).result
-        )
+        .run(queries.SnapshotTable.result)
     } yield rows
       .map(toSnapshotData)
       .map { case (metadata, value) =>
