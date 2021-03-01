@@ -85,8 +85,6 @@ docker-build:
 
 test-local:
     FROM +code
-    ARG CODECOV_TOKEN=""
-    ENV CODECOV_TOKEN=${CODECOV_TOKEN}
     RUN sbt coverage test coverageAggregate
 
 codecov:
@@ -115,4 +113,3 @@ sbt:
         apt-get update && \
         apt-get install sbt && \
         sbt sbtVersion
-
