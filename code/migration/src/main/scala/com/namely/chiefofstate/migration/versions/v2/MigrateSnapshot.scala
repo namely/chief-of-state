@@ -15,6 +15,8 @@ import slickProfile.api._
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 case class MigrateSnapshot(system: ActorSystem[_]) extends Migrate {
   private val queries = new SnapshotQueries(profile, snapshotConfig.legacySnapshotTableConfiguration)
@@ -31,15 +33,17 @@ case class MigrateSnapshot(system: ActorSystem[_]) extends Migrate {
   /**
    * Write the state snapshot data into the new snapshot table applying the proper serialization
    */
-  def run(): Future[Seq[Future[Unit]]] = {
-    for {
-      rows <- snapshotdb
-        .run(queries.SnapshotTable.result)
-    } yield rows
-      .map(toSnapshotData)
-      .map { case (metadata, value) =>
-        defaultSnapshotDao
-          .save(metadata, value)
-      }
+  def run(): Unit = {
+    val future = snapshotdb
+      // stream read rows from snapshot table
+      .stream(queries.SnapshotTable.result)
+      // transform each row async as a future
+      .mapResult(toSnapshotData)
+      // for each transformed row, write to the destination
+      .foreach({
+        case (metadata, value) => defaultSnapshotDao.save(metadata, value)
+      })
+
+    Await.result(future, Duration.Inf)
   }
 }

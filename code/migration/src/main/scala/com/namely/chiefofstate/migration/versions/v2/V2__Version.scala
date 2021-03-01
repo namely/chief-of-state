@@ -66,7 +66,7 @@ case class V2__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
     Try {
       SchemasUtil.createJournalTables(journalJdbcConfig)
       journalMigrator.run()
-      Await.result(snapshotMigrator.run(), Duration.Inf)
+      snapshotMigrator.run()
       SchemasUtil.createReadSideOffsetTable(projectionJdbcConfig)
     }
   }
