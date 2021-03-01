@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.namely.chiefofstate.migration.versions.v1
+package com.namely.chiefofstate.migration.versions.v2
 
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -148,10 +148,10 @@ object SchemasUtil {
    */
   def dropLegacyJournalTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]) = {
     sqlu"""
-             DROP TABLE IF EXISTS 
+             DROP TABLE IF EXISTS
                 journal,
                 snapshot
-             CASCADE 
+             CASCADE
             """
   }
 

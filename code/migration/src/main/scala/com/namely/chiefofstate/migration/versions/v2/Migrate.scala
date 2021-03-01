@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.namely.chiefofstate.migration.versions.v1
+package com.namely.chiefofstate.migration.versions.v2
 
 import akka.actor
 import akka.actor.typed.ActorSystem
