@@ -16,6 +16,7 @@ import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
+import com.namely.chiefofstate.migration.Migrator
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.telemetry._
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
@@ -31,7 +32,6 @@ import org.slf4j.{Logger, LoggerFactory}
 import java.net.InetSocketAddress
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.sys.ShutdownHookThread
-import com.namely.chiefofstate.migration.Migrator
 
 /**
  * This helps setup the required engines needed to smoothly run the ChiefOfState sevice.
@@ -64,21 +64,17 @@ object StartNodeBehaviour {
       ClusterBootstrap(context.system).start()
 
       // create and run the migrator
-      val migrator: Migrator = Migrator(config)
+      val migrator: Migrator = Migrator(context.system)
       migrator.run()
 
       // FIXME: move this into V1 migration version or remove it.
       // create data stores and run migrations if necessary
-      if (cosConfig.createDataStores) {
-        log.info("kick-starting the ChiefOfState journal, snapshot and offset stores creation")
-        SchemasUtil
-          .createIfNotExists(config)(context.system)
-          .map(_ => {
-            log.info("ChiefOfState journal, snapshot and offset stores created sucessfully...:)")
-          })
-      } else {
-        log.info("No need to create stores")
-      }
+      log.info("kick-starting the ChiefOfState journal, snapshot and offset stores creation")
+      SchemasUtil
+        .createIfNotExists(config)(context.system)
+        .map(_ => {
+          log.info("ChiefOfState journal, snapshot and offset stores created sucessfully...:)")
+        })
 
       // We only proceed when the data stores and various migrations are done successfully.
       log.info("Journal and snapshot store created successfully. About to start...")

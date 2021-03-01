@@ -1,3 +1,9 @@
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 package com.namely.chiefofstate.migration.versions.v1
 
 import slick.basic.DatabaseConfig
@@ -12,7 +18,7 @@ object SchemasUtil {
   /**
    * event_journal DDL statement
    */
-  private val createEventJournalSql: SqlAction[Int, NoStream, Effect] = {
+  private val createEventJournalStmt: SqlAction[Int, NoStream, Effect] = {
     sqlu"""
         CREATE TABLE IF NOT EXISTS event_journal(
           ordering BIGSERIAL,
@@ -39,14 +45,14 @@ object SchemasUtil {
   /**
    * event_journal index Sql statement
    */
-  private val createEventJournalIndexSql: SqlAction[Int, NoStream, Effect] = {
+  private val createEventJournalIndexStmt: SqlAction[Int, NoStream, Effect] = {
     sqlu"""CREATE UNIQUE INDEX IF NOT EXISTS event_journal_ordering_idx ON event_journal(ordering)"""
   }
 
   /**
    * event_tag DDL statement
    */
-  private val createEventTagSql: SqlAction[Int, NoStream, Effect] = {
+  private val createEventTagStmt: SqlAction[Int, NoStream, Effect] = {
     sqlu"""
         CREATE TABLE IF NOT EXISTS event_tag(
             event_id BIGINT,
@@ -63,7 +69,7 @@ object SchemasUtil {
   /**
    * state_snapshot DDL statement
    */
-  private val createSnapshotSql: SqlAction[Int, NoStream, Effect] = {
+  private val createSnapshotStmt: SqlAction[Int, NoStream, Effect] = {
     sqlu"""
      CREATE TABLE IF NOT EXISTS state_snapshot (
       persistence_id VARCHAR(255) NOT NULL,
@@ -82,19 +88,69 @@ object SchemasUtil {
      )"""
   }
 
+  private val createReadSideOffsetStmt: SqlAction[Int, NoStream, Effect] = {
+    sqlu"""
+           CREATE TABLE IF NOT EXISTS read_side_offsets (
+              "PROJECTION_NAME" VARCHAR(255) NOT NULL,
+              "PROJECTION_KEY" VARCHAR(255) NOT NULL,
+              "CURRENT_OFFSET" VARCHAR(255) NOT NULL,
+              "MANIFEST" VARCHAR(4) NOT NULL,
+              "MERGEABLE" BOOLEAN NOT NULL,
+              "LAST_UPDATED" BIGINT NOT NULL,
+              PRIMARY KEY("PROJECTION_NAME", "PROJECTION_KEY")
+          )
+          """
+  }
+
+  private val createReadSideOffsetTableIndexStmt: SqlAction[Int, NoStream, Effect] = {
+    sqlu"""
+             CREATE INDEX IF NOT EXISTS "PROJECTION_NAME_INDEX" ON read_side_offsets ("PROJECTION_NAME")
+            """
+  }
+
   /**
    * creates the various write-side stores and read-side offset stores
    */
-  def createIfExists(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Future[Unit] = {
+  def createJournalTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Future[Unit] = {
     val ddlSeq = DBIO
       .seq(
-        createEventJournalSql,
-        createEventJournalIndexSql,
-        createEventTagSql,
-        createSnapshotSql
+        createEventJournalStmt,
+        createEventJournalIndexStmt,
+        createEventTagStmt,
+        createSnapshotStmt
       )
       .withPinnedSession
       .transactionally
     journalJdbcConfig.db.run(ddlSeq)
+  }
+
+  /**
+   * creates the read side offset store table
+   */
+  def createReadSideOffsetTable(projectionJdbcConfig: DatabaseConfig[JdbcProfile]): Future[Unit] = {
+    val ddlSeq = DBIO
+      .seq(
+        createReadSideOffsetStmt,
+        createReadSideOffsetTableIndexStmt
+      )
+      .withPinnedSession
+      .transactionally
+    projectionJdbcConfig.db.run(ddlSeq)
+  }
+
+  /**
+   * drops the legacy journal and snapshot tables
+   *
+   * @param journalJdbcConfig the database config
+   */
+  def dropLegacyJournalTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Future[Int] = {
+    journalJdbcConfig.db.run(
+      sqlu"""
+             DROP TABLE IF EXISTS 
+                journal,
+                snapshot
+             CASCADE 
+            """.withPinnedSession.transactionally
+    )
   }
 }

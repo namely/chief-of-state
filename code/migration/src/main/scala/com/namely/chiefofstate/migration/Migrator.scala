@@ -6,7 +6,8 @@
 
 package com.namely.chiefofstate.migration
 
-import com.typesafe.config.Config
+import akka.actor.typed.ActorSystem
+import com.namely.chiefofstate.migration.versions.v1.V1__Version
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -19,7 +20,10 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
-class Migrator private[migration] (val journalDbConfig: DatabaseConfig[JdbcProfile]) {
+class Migrator private[migration] (val journalDbConfig: DatabaseConfig[JdbcProfile],
+                                   val projectionJdbcConfig: DatabaseConfig[JdbcProfile],
+                                   val actorSystem: ActorSystem[_]
+) {
   val logger: Logger = Migrator.logger
 
   // create the priority queue of versions sorted by version number
@@ -107,10 +111,15 @@ object Migrator {
   val COS_MIGRATIONS_INITIAL_VERSION: String = "COS_MIGRATIONS_INITIAL_VERSION"
 
   // public constructor that hard-codes version numbers in
-  def apply(config: Config): Migrator = {
-    val dbConfig = JdbcConfig.journalConfig(config)
-    val migrator: Migrator = new Migrator(dbConfig)
-    migrator
+  def apply(actorSystem: ActorSystem[_]): Migrator = {
+    val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(actorSystem.settings.config)
+    val projectionJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.projectionConfig(actorSystem.settings.config)
+
+    val migrator: Migrator = new Migrator(journalJdbcConfig, projectionJdbcConfig, actorSystem)
+
+    migrator.addVersion(
+      V1__Version(journalJdbcConfig, projectionJdbcConfig)(actorSystem)
+    )
   }
 
   /**

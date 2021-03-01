@@ -6,21 +6,23 @@
 
 package com.namely.chiefofstate.migration
 
-import com.typesafe.config.{Config, ConfigFactory}
+import akka.actor.testkit.typed.scaladsl.ActorTestKit
+import com.namely.chiefofstate.migration.helper.TestConfig.{getDbConfig, getTypesafeConfig}
+import com.typesafe.config.Config
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import slick.basic.DatabaseConfig
-import slick.jdbc.{JdbcProfile, PostgresProfile}
+import slick.dbio.DBIOAction
+import slick.jdbc.JdbcProfile
+import slick.jdbc.PostgresProfile.api._
+
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import slick.jdbc.PostgresProfile.api._
-import scala.annotation.migration
-import slick.dbio.{DBIO, DBIOAction}
 import scala.util.Success
 
 class MigratorSpec extends BaseSpec {
 
   var pg: EmbeddedPostgres = _
-
+  val testKit: ActorTestKit = ActorTestKit()
   val cosSchema: String = "cos"
 
   override def beforeAll() = {
@@ -47,6 +49,7 @@ class MigratorSpec extends BaseSpec {
 
   override protected def afterAll() = {
     super.afterAll()
+    testKit.shutdownTestKit()
     pg.close()
     clearEnv()
   }
@@ -67,33 +70,6 @@ class MigratorSpec extends BaseSpec {
     map.clear()
   }
 
-  def getTypesafeConfig(schemaName: String, rootKey: String = "jdbc-default"): Config = {
-
-    val cfgString: String = s"""
-      $rootKey {
-        profile = "slick.jdbc.PostgresProfile$$"
-        db {
-          connectionPool = disabled
-          driver = "org.postgresql.Driver"
-          user = "postgres"
-          password = "changeme"
-          serverName = "locahost"
-          portNumber = 25432
-          databaseName = "postgres"
-          schemaName = "$schemaName"
-          url = "jdbc:postgresql://localhost:25432/postgres?currentSchema=$schemaName"
-        }
-      }
-    """
-
-    ConfigFactory.parseString(cfgString)
-  }
-
-  def getDbConfig(schemaName: String): DatabaseConfig[JdbcProfile] = {
-    val cfg = getTypesafeConfig(schemaName)
-    DatabaseConfig.forConfig[JdbcProfile]("jdbc-default", cfg)
-  }
-
   // test helper to get a mock version
   def getMockVersion(versionNumber: Int): Version = {
     val mockVersion = mock[Version]
@@ -109,7 +85,7 @@ class MigratorSpec extends BaseSpec {
   ".addVersion" should {
     "add to the versions queue in order" in {
       val dbConfig = getDbConfig(cosSchema)
-      val migrator: Migrator = new Migrator(dbConfig)
+      val migrator: Migrator = new Migrator(dbConfig, null, testKit.system)
 
       // add versions out of order
       migrator.addVersion(getMockVersion(2))
@@ -129,7 +105,7 @@ class MigratorSpec extends BaseSpec {
   ".getVersions" should {
     "filter versions" in {
       val dbConfig = getDbConfig(cosSchema)
-      val migrator: Migrator = new Migrator(dbConfig)
+      val migrator: Migrator = new Migrator(dbConfig, null, testKit.system)
 
       // add versions
       migrator.addVersion(getMockVersion(1))
@@ -151,7 +127,7 @@ class MigratorSpec extends BaseSpec {
   ".beforeAll" should {
     "create the versions table" in {
       val dbConfig = getDbConfig(cosSchema)
-      val migrator = new Migrator(dbConfig)
+      val migrator = new Migrator(dbConfig, null, testKit.system)
 
       DbUtil.tableExists(dbConfig, Migrator.COS_MIGRATIONS_TABLE) shouldBe false
 
@@ -164,7 +140,7 @@ class MigratorSpec extends BaseSpec {
       setEnv(Migrator.COS_MIGRATIONS_INITIAL_VERSION, "3")
 
       val dbConfig = getDbConfig(cosSchema)
-      val migrator = new Migrator(dbConfig)
+      val migrator = new Migrator(dbConfig, null, testKit.system)
 
       migrator.beforeAll().isSuccess shouldBe true
 
@@ -189,7 +165,7 @@ class MigratorSpec extends BaseSpec {
         .once()
 
       // define a migrator with two versions
-      val migrator = (new Migrator(dbConfig))
+      val migrator = new Migrator(dbConfig, null, testKit.system)
         .addVersion(version1)
         .addVersion(version2)
 
@@ -208,7 +184,7 @@ class MigratorSpec extends BaseSpec {
       Migrator.getCurrentVersionNumber(dbConfig) shouldBe Some(1)
 
       // define a migrator
-      val migrator = new Migrator(dbConfig)
+      val migrator = new Migrator(dbConfig, null, testKit.system)
 
       // define 3 dynamic versions
       (2 to 4).foreach(versionNumber => {
@@ -242,7 +218,7 @@ class MigratorSpec extends BaseSpec {
       val dbConfig = getDbConfig(cosSchema)
 
       // define a migrator with versions that should not run (nothing mocked)
-      val migrator = new Migrator(dbConfig)
+      val migrator = new Migrator(dbConfig, null, testKit.system)
         .addVersion(getMockVersion(1))
         .addVersion(getMockVersion(2))
         .addVersion(getMockVersion(3))
@@ -472,8 +448,12 @@ class MigratorSpec extends BaseSpec {
   }
   "public constructor" should {
     "have all expected version numbers with no gaps" in {
-      val config: Config = getTypesafeConfig("cos", "write-side-slick")
-      val migrator = Migrator(config)
+      val writeConfig: Config = getTypesafeConfig("cos", "write-side-slick")
+      val readConfig: Config = getTypesafeConfig("cos", "akka.projection.slick")
+      val journalConfig = JdbcConfig.journalConfig(writeConfig)
+      val projectionConfig = JdbcConfig.projectionConfig(readConfig)
+
+      val migrator = new Migrator(journalConfig, projectionConfig, null)
 
       val versions = migrator.getVersions().map(_.versionNumber)
 

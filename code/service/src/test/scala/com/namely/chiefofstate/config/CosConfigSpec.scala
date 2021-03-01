@@ -51,9 +51,6 @@ class CosConfigSpec extends BaseSpec {
               tracing {
                 jaeger-enabled = false
               }
-              create-stores {
-                auto = true
-              }
             }
           """)
       noException shouldBe thrownBy(CosConfig(config))
@@ -97,9 +94,6 @@ class CosConfigSpec extends BaseSpec {
               }
               tracing {
                 jaeger-enabled = false
-              }
-              create-stores {
-                auto = true
               }
             }
           """)
