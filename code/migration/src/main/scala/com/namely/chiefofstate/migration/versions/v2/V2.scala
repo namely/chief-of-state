@@ -15,7 +15,7 @@ import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, ExecutionContextExecutor}
 import scala.concurrent.duration.Duration
 import scala.util.{Success, Try}
 
@@ -29,7 +29,7 @@ import scala.util.{Success, Try}
 case class V2(journalJdbcConfig: DatabaseConfig[JdbcProfile], projectionJdbcConfig: DatabaseConfig[JdbcProfile])(
   implicit system: ActorSystem[_]
 ) extends Version {
-
+  implicit val ec: ExecutionContextExecutor = system.executionContext
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   override def versionNumber: Int = 2
@@ -43,7 +43,7 @@ case class V2(journalJdbcConfig: DatabaseConfig[JdbcProfile], projectionJdbcConf
    */
   override def upgrade(): DBIO[Unit] = {
     log.info(s"finalizing ChiefOfState migration: #$versionNumber")
-    DBIO.successful(SchemasUtil.dropLegacyJournalTables(journalJdbcConfig))
+    SchemasUtil.dropLegacyJournalTablesStmt.flatMap(_ => DBIO.successful {})
   }
 
   /**
