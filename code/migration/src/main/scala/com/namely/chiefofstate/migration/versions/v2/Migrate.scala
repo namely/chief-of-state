@@ -43,7 +43,8 @@ trait Migrate {
   // the various databases
   val journaldb: JdbcBackend.Database =
     SlickExtension(system).database(system.settings.config.getConfig("jdbc-read-journal")).database
-  val snapshotdb: JdbcBackend.Database =
+
+    val snapshotdb: JdbcBackend.Database =
     SlickExtension(system).database(system.settings.config.getConfig("jdbc-snapshot-store")).database
 
   // get an instance of the default journal dao

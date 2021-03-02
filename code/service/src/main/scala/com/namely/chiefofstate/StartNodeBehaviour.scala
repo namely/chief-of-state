@@ -32,6 +32,10 @@ import org.slf4j.{Logger, LoggerFactory}
 import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext
 import scala.sys.ShutdownHookThread
+import com.namely.chiefofstate.migration.versions.v2.V2__Version
+import slick.basic.DatabaseConfig
+import com.namely.chiefofstate.migration.JdbcConfig
+import slick.jdbc.JdbcProfile
 
 /**
  * This helps setup the required engines needed to smoothly run the ChiefOfState sevice.
@@ -62,7 +66,20 @@ object StartNodeBehaviour {
       ClusterBootstrap(context.system).start()
 
       // create and run the migrator
-      val migrator: Migrator = Migrator(context.system)
+      val migrator: Migrator = {
+        val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
+          JdbcConfig.journalConfig(config)
+
+        val projectionJdbcConfig: DatabaseConfig[JdbcProfile] =
+          JdbcConfig.projectionConfig(config)
+
+        // TODO: think about a smarter constructor for the migrator
+        val v2 = V2__Version(journalJdbcConfig, projectionJdbcConfig)(context.system)
+
+        (new Migrator(journalJdbcConfig))
+          .addVersion(v2)
+      }
+
       migrator.run().get
 
       // We only proceed when the data stores and various migrations are done successfully.

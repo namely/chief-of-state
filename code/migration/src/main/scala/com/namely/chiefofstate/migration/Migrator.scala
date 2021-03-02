@@ -20,10 +20,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
-class Migrator private[migration] (val journalDbConfig: DatabaseConfig[JdbcProfile],
-                                   val projectionJdbcConfig: DatabaseConfig[JdbcProfile],
-                                   val actorSystem: ActorSystem[_]
-) {
+class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
   val logger: Logger = Migrator.logger
 
   // create the priority queue of versions sorted by version number
@@ -38,7 +35,7 @@ class Migrator private[migration] (val journalDbConfig: DatabaseConfig[JdbcProfi
    * @param version the Version to add
    * @return the runner with that Version added
    */
-  private[migration] def addVersion(version: Version): Migrator = {
+  def addVersion(version: Version): Migrator = {
     this.versions.addOne(version)
     logger.debug(s"added version ${version.versionNumber}")
     this
@@ -106,18 +103,6 @@ object Migrator {
   val COS_MIGRATIONS_TABLE: String = "cos_migrations"
 
   val COS_MIGRATIONS_INITIAL_VERSION: String = "COS_MIGRATIONS_INITIAL_VERSION"
-
-  // public constructor that hard-codes version numbers in
-  def apply(actorSystem: ActorSystem[_]): Migrator = {
-    val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(actorSystem.settings.config)
-    val projectionJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.projectionConfig(actorSystem.settings.config)
-
-    val migrator: Migrator = new Migrator(journalJdbcConfig, projectionJdbcConfig, actorSystem)
-
-    migrator.addVersion(
-      V2__Version(journalJdbcConfig, projectionJdbcConfig)(actorSystem)
-    )
-  }
 
   /**
    * run version snapshot and set version in db
