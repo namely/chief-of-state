@@ -89,26 +89,6 @@ object SchemasUtil {
      )"""
   }
 
-  private val createReadSideOffsetStmt: SqlAction[Int, NoStream, Effect] = {
-    sqlu"""
-           CREATE TABLE IF NOT EXISTS read_side_offsets (
-              "PROJECTION_NAME" VARCHAR(255) NOT NULL,
-              "PROJECTION_KEY" VARCHAR(255) NOT NULL,
-              "CURRENT_OFFSET" VARCHAR(255) NOT NULL,
-              "MANIFEST" VARCHAR(4) NOT NULL,
-              "MERGEABLE" BOOLEAN NOT NULL,
-              "LAST_UPDATED" BIGINT NOT NULL,
-              PRIMARY KEY("PROJECTION_NAME", "PROJECTION_KEY")
-          )
-          """
-  }
-
-  private val createReadSideOffsetTableIndexStmt: SqlAction[Int, NoStream, Effect] = {
-    sqlu"""
-             CREATE INDEX IF NOT EXISTS "PROJECTION_NAME_INDEX" ON read_side_offsets ("PROJECTION_NAME")
-            """
-  }
-
   /**
    * creates the various write-side stores and read-side offset stores
    */
@@ -124,21 +104,6 @@ object SchemasUtil {
       .transactionally
 
     Await.result(journalJdbcConfig.db.run(ddlSeq), Duration.Inf)
-  }
-
-  /**
-   * creates the read side offset store table
-   */
-  def createReadSideOffsetTable(projectionJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
-    val ddlSeq = DBIO
-      .seq(
-        createReadSideOffsetStmt,
-        createReadSideOffsetTableIndexStmt
-      )
-      .withPinnedSession
-      .transactionally
-
-    Await.result(projectionJdbcConfig.db.run(ddlSeq), Duration.Inf)
   }
 
   /**
