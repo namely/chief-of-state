@@ -46,35 +46,22 @@ See the following deployment-specific guides for relevant configurations:
 | COS_WRITE_PERSISTED_HEADERS | CSV of gRPC headers to persist to journal (experimental) | <none> |
 | COS_JOURNAL_LOGICAL_DELETION | Event deletion is triggered after saving a new snapshot. Old events would be deleted prior to old snapshots being deleted. | false |
 | COS_COMMAND_HANDLER_TIMEOUT | Timeout required for the Aggregate to process command and reply. The value is in seconds. | 5 |
-| COS_JAEGER_ENABLED | Enable tracing (see below for more options) | false |
-| COS_PROMETHEUS_ROUTE | route for prometheus to scrap metrics | "metrics" |
-| COS_PROMETHEUS_PORT | port for prometheus to scrap metrics | 9102 |
 
-### Tracing configuration
+### Telemetry configuration
 
-This library leverages the [io.opentracing](https://opentracing.io/guides/java/) library
-and [Jaeger tracing instrumentation library](https://github.com/jaegertracing/jaeger-client-java).
+This library leverages the [io.opentelemetry](https://opentelemetry.io/docs/java/) library
+for both metrics and tracing instrumentation. We only bundle in the [OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) gRPC exporter which
+should be used to push metrics and traces to an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/)
+that should then propagate the same to desired monitoring services. Collection of telemetry data will be auto enabled
+when a collector endpoint is configured.
 
-To enable tracing, set the env var `COS_JAEGER_ENABLED = true`.
-
-The following options can be configured via environment
-variables ([click here for more settings](https://github.com/jaegertracing/jaeger-client-java/blob/master/jaeger-core/README.md))
-.
+The following options can be configured via environment variables.
 
 Property | Required | Description
 --- | --- | ---
-JAEGER_SERVICE_NAME | yes | The service name
-JAEGER_AGENT_HOST | no | The hostname for communicating with agent via UDP
-JAEGER_AGENT_PORT | no | The port for communicating with agent via UDP
-JAEGER_ENDPOINT | no | The traces endpoint, in case the client should connect directly to the Collector, like http://jaeger-collector:14268/api/traces
-JAEGER_PROPAGATION | no | Comma separated list of formats to use for propagating the trace context. Defaults to the standard Jaeger format. Valid values are **
-
-jaeger**, **b3**, and **w3c**
-JAEGER_SAMPLER_TYPE | no |
-The [sampler type](https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration)
-JAEGER_TAGS | no | A comma separated list of `name = value` tracer level tags, which get added to all reported spans.
-The value can also refer to an environment variable using the format `${envVarName:default}`, where the `:default` is
-optional, and identifies a value to be used if the environment variable cannot be found
+COS_TELEMETRY_NAMESPACE | no | Namespace to be used to differentiate different chief of state deployments
+COS_TELEMETRY_COLLECTOR_ENDPOINT | no | The grpc endpoint to be use to connect to an [opentelemetry collector](https://opentelemetry.io/docs/collector/) eg.`http://otlp.collector:4317`
+COS_TRACE_PROPAGATORS | no | A comma separated list of [propagators](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/context/api-propagators.md#propagators-distribution) to enable. Defaults to `b3multi`. Valid values are **b3**, **b3multi**, **tracecontext**, **baggage**, **jaeger** and **ottracer**
 
 ### Read side configurations
 
