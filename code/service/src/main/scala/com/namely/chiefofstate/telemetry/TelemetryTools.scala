@@ -23,6 +23,10 @@ import java.util.Collections
 
 case class TelemetryTools(config: CosConfig) {
 
+  /** Create an open telemetry SDK and configure it to instrument the service for trace and metrics collection.
+   *
+   *  This sets the created SDK as the Global Open Telemetry instance enabling use of the global tracer.
+   */
   def start(): Unit = {
     val propagators: ContextPropagators = PropagatorConfiguration
       .configurePropagators(config.telemetryConfig)
@@ -42,6 +46,9 @@ case class TelemetryTools(config: CosConfig) {
     sdkBuilder.buildAndRegisterGlobal()
   }
 
+  /** Configure a metrics exporter.
+   * @param resource a Resource instance representing the instrumented target.
+   */
   def configureMetricsExporter(resource: Resource): Unit = {
     val endpoint = config.telemetryConfig.otlpEndpoint
     if (!endpoint.isBlank) {
@@ -60,6 +67,12 @@ case class TelemetryTools(config: CosConfig) {
     }
   }
 
+  /** Configure the Tracer Provider that will be used to process trace entries.
+   *
+   * @param config the config object which holds the provider settings
+   * @param resource a Resource instance representing the instrumented target
+   * @return a Tracer provider configured to export metrics using OTLP
+   */
   def configureProvider(config: CosConfig, resource: Resource): Option[SdkTracerProvider] = {
     Option(config.telemetryConfig.otlpEndpoint)
       .filter(!_.isBlank)
@@ -83,6 +96,11 @@ case class TelemetryTools(config: CosConfig) {
       })
   }
 
+  /** Create a resource instance that will hold details of the service being instrumented.
+   *
+   * @param config the config object to be used to extract the service details
+   * @return a resource representing the current instrumentation target.
+   */
   def configureResource(config: CosConfig): Resource = {
     val resourceAttributes = Attributes.builder()
     resourceAttributes.put(ResourceAttributes.SERVICE_NAME, config.serviceName)

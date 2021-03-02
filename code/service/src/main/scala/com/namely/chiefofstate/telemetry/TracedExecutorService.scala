@@ -73,6 +73,10 @@ class TracedExecutorService(delegate: ExecutorService) extends ExecutorService {
 }
 
 object TracedExecutorService {
+  /**
+   * Returns an Execution Context created from a ForkJoinPool wrapped in a TracedExecutorService
+   * to ensure that tasks executed in the ForkJoinPool propagate the current telemetry Context.
+   */
   def get(): ExecutionContext = {
     // compute parallelism as 10x the CPU cores
     // TODO: maybe raise this
