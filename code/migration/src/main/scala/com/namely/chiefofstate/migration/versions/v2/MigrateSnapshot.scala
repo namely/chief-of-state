@@ -30,7 +30,6 @@ import akka.persistence.jdbc.snapshot.dao
 
 case class MigrateSnapshot(system: ActorSystem[_]) extends Migrate {
 
-
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   private val queries = new SnapshotQueries(profile, snapshotConfig.legacySnapshotTableConfiguration)
@@ -58,7 +57,8 @@ case class MigrateSnapshot(system: ActorSystem[_]) extends Migrate {
     // use above query to build a database publisher of legacy "SnapshotRow"
     val dbPublisher: DatabasePublisher[OldSnapshotRow] = snapshotdb.stream(query)
 
-    val streamFuture = Source.fromPublisher(dbPublisher)
+    val streamFuture = Source
+      .fromPublisher(dbPublisher)
       // group into fetchsize to use all records in memory
       .grouped(fetchSize)
       // convert to new snapshot type
@@ -71,51 +71,53 @@ case class MigrateSnapshot(system: ActorSystem[_]) extends Migrate {
           .map(x => Option(x))
 
         // reduce to a single insert and run it
-        inserts.foldLeft[Option[DBIOAction[Int, NoStream, Effect.Write]]](None)((agg, someInsert) => {
-          agg match {
-            case None => someInsert
-            case Some(prior) => someInsert.map(_.andThen(prior))
-          }
-        })
-        .map(_.withPinnedSession.transactionally)
-        .map(snapshotdb.run)
+        inserts
+          .foldLeft[Option[DBIOAction[Int, NoStream, Effect.Write]]](None)((agg, someInsert) => {
+            agg match {
+              case None        => someInsert
+              case Some(prior) => someInsert.map(_.andThen(prior))
+            }
+          })
+          .map(_.withPinnedSession.transactionally)
+          .map(snapshotdb.run)
       })
 
     Await.result(streamFuture, Duration.Inf)
   }
 
   /**
-    * converts the old snapshot to the new one
-    *
-    * @param old
-    * @return
-    */
+   * converts the old snapshot to the new one
+   *
+   * @param old prior snapshot in old format
+   * @return new snapshot in new format
+   */
   private def convertSnapshot(old: OldSnapshotRow): SnapshotRow = {
     val transformed: Try[SnapshotRow] = serializer
       .deserialize(old)
-      .flatMap({
-        case (meta, snapshot) =>
-          val serializedMetadata = meta.metadata
-            .flatMap(m => AkkaSerialization.serialize(serialization, m).toOption)
+      .flatMap({ case (meta, snapshot) =>
+        val serializedMetadata = meta.metadata
+          .flatMap(m => AkkaSerialization.serialize(serialization, m).toOption)
 
-          AkkaSerialization
-            .serialize(serialization, payload = snapshot)
-            .map(serializedSnapshot =>
-              SnapshotRow(
-                meta.persistenceId,
-                meta.sequenceNr,
-                meta.timestamp,
-                serializedSnapshot.serId,
-                serializedSnapshot.serManifest,
-                serializedSnapshot.payload,
-                serializedMetadata.map(_.serId),
-                serializedMetadata.map(_.serManifest),
-                serializedMetadata.map(_.payload)))
+        AkkaSerialization
+          .serialize(serialization, payload = snapshot)
+          .map(serializedSnapshot =>
+            SnapshotRow(
+              meta.persistenceId,
+              meta.sequenceNr,
+              meta.timestamp,
+              serializedSnapshot.serId,
+              serializedSnapshot.serManifest,
+              serializedSnapshot.payload,
+              serializedMetadata.map(_.serId),
+              serializedMetadata.map(_.serManifest),
+              serializedMetadata.map(_.payload)
+            )
+          )
       })
 
-      transformed match {
-        case Failure(e) => throw e
-        case Success(output) => output
-      }
+    transformed match {
+      case Failure(e)      => throw e
+      case Success(output) => output
+    }
   }
 }

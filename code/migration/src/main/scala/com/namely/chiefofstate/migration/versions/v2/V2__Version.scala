@@ -15,7 +15,7 @@ import slick.jdbc.JdbcProfile
 
 import scala.concurrent.{Await, ExecutionContextExecutor}
 import scala.concurrent.duration.Duration
-import scala.util.{Try, Success}
+import scala.util.{Success, Try}
 
 case class V2__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
                        projectionJdbcConfig: DatabaseConfig[JdbcProfile]
@@ -65,15 +65,12 @@ case class V2__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
     val snapshotMigrator: MigrateSnapshot = MigrateSnapshot(system)
     Try {
       log.info("creating new tables")
-      Thread.sleep(1000 * 10)
       SchemasUtil.createJournalTables(journalJdbcConfig)
 
       log.info("migrating journal")
-      Thread.sleep(1000 * 10)
       journalMigrator.run()
 
       log.info("migrating snapshots")
-      Thread.sleep(1000 * 10)
       snapshotMigrator.run()
     }
   }
