@@ -32,6 +32,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import java.net.InetSocketAddress
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.sys.ShutdownHookThread
+import com.namely.chiefofstate.migration.Migrator
 
 /**
  * This helps setup the required engines needed to smoothly run the ChiefOfState sevice.
@@ -63,6 +64,11 @@ object StartNodeBehaviour {
       AkkaManagement(context.system).start()
       ClusterBootstrap(context.system).start()
 
+      // create and run the migrator
+      val migrator: Migrator = Migrator(config)
+      migrator.run()
+
+      // FIXME: move this into V1 migration version or remove it.
       // create data stores and run migrations if necessary
       if (cosConfig.createDataStores) {
         log.info("kick-starting the ChiefOfState journal, snapshot and offset stores creation")
