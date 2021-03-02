@@ -14,21 +14,18 @@ import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Success, Try}
 
 /**
- * V2 migration
+ * V2 migration moves the legacy journal data into the new journal
  *
  * @param journalJdbcConfig the journal configuration
  * @param projectionJdbcConfig the projection configuration
  * @param system the actor system
  */
-case class V2__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
-                       projectionJdbcConfig: DatabaseConfig[JdbcProfile]
-)(implicit system: ActorSystem[_])
-    extends Version {
-  implicit private val ec: ExecutionContextExecutor = system.executionContext
+case class V2(journalJdbcConfig: DatabaseConfig[JdbcProfile], projectionJdbcConfig: DatabaseConfig[JdbcProfile])(
+  implicit system: ActorSystem[_]
+) extends Version {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -43,7 +40,7 @@ case class V2__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
    */
   override def upgrade(): DBIO[Unit] = {
     log.info(s"finalizing ChiefOfState $versionNumber migration")
-    SchemasUtil.dropLegacyJournalTables(journalJdbcConfig).flatMap(_ => DBIO.successful {})
+    DBIO.successful(SchemasUtil.dropLegacyJournalTables(journalJdbcConfig))
   }
 
   /**
@@ -61,7 +58,6 @@ case class V2__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
    *     <li> create the new journal and snapshot tables
    *     <li> migrate the data from the old journal into the newly created journal table
    *     <li> migrate the data from the old snapshot into the newly crated snapshot table
-   *     <li> create the read side offset store table
    *   </ul>
    * </p>
    *
@@ -74,6 +70,9 @@ case class V2__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
     val snapshotMigrator: MigrateSnapshot = MigrateSnapshot(system, profile, serialization)
 
     Try {
+      log.info("performing some sanity check...")
+      SchemasUtil.dropJournalTables(journalJdbcConfig)
+
       log.info("creating new ChiefOfState journal tables")
       SchemasUtil.createJournalTables(journalJdbcConfig)
 

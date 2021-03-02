@@ -17,7 +17,8 @@ import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
 import com.namely.chiefofstate.migration.{JdbcConfig, Migrator}
-import com.namely.chiefofstate.migration.versions.v2.V2__Version
+import com.namely.chiefofstate.migration.versions.v1.V1
+import com.namely.chiefofstate.migration.versions.v2.V2
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.telemetry._
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
@@ -74,9 +75,11 @@ object StartNodeBehaviour {
           JdbcConfig.projectionConfig(config)
 
         // TODO: think about a smarter constructor for the migrator
-        val v2: V2__Version = V2__Version(journalJdbcConfig, projectionJdbcConfig)(context.system)
+        val v1: V1 = V1(projectionJdbcConfig)(context.system)
+        val v2: V2 = V2(journalJdbcConfig, projectionJdbcConfig)(context.system)
 
         new Migrator(journalJdbcConfig)
+          .addVersion(v1)
           .addVersion(v2)
       }
 

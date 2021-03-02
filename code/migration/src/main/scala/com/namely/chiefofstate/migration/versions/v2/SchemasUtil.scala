@@ -11,7 +11,7 @@ import slick.jdbc.JdbcProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.sql.SqlAction
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 
 object SchemasUtil {
@@ -111,13 +111,13 @@ object SchemasUtil {
    *
    * @param journalJdbcConfig the database config
    */
-  def dropLegacyJournalTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]) = {
-    sqlu"""
+  def dropLegacyJournalTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Future[Int] = {
+    journalJdbcConfig.db.run(sqlu"""
              DROP TABLE IF EXISTS
                 journal,
                 snapshot
              CASCADE
-            """
+            """.withPinnedSession)
   }
 
   /**

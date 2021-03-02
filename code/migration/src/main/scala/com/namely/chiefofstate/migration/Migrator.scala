@@ -134,7 +134,7 @@ object Migrator {
     Try {
       // check prior version number
       val priorVersionNumber: Int = getCurrentVersionNumber(dbConfig).getOrElse(-1)
-      require(priorVersionNumber > 0, "no prior version, cannot upgrade")
+      require(priorVersionNumber >= 0, "no prior version, cannot upgrade")
       require(
         priorVersionNumber + 1 == version.versionNumber,
         s"cannot upgrade from version $priorVersionNumber to ${version.versionNumber}"
