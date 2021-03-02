@@ -7,6 +7,7 @@
 package com.namely.chiefofstate.migration.versions.v2
 
 import akka.actor.typed.ActorSystem
+import akka.projection.slick.SlickProjection
 import akka.serialization.{Serialization, SerializationExtension}
 import com.namely.chiefofstate.migration.Version
 import org.slf4j.{Logger, LoggerFactory}
@@ -14,6 +15,8 @@ import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import scala.util.{Success, Try}
 
 /**
@@ -48,7 +51,15 @@ case class V2(journalJdbcConfig: DatabaseConfig[JdbcProfile], projectionJdbcConf
    *
    * @return a DBIO that creates the version snapshot
    */
-  override def snapshot(): DBIO[Unit] = DBIO.failed(new RuntimeException("snaphotting not allowed in this version"))
+  override def snapshot(): DBIO[Unit] = {
+    log.info("creating new ChiefOfState journal tables")
+    SchemasUtil.createJournalTables(journalJdbcConfig)
+
+    log.info("creating ChiefOfState read side offset tables")
+    Await.result(SlickProjection.createOffsetTableIfNotExists(projectionJdbcConfig), Duration.Inf)
+
+    DBIO.successful {}
+  }
 
   /**
    * performs the following actions:
