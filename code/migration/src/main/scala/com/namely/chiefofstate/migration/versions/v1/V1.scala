@@ -36,7 +36,7 @@ case class V1(
    * @return a DBIO that runs this upgrade
    */
   override def upgrade(): DBIO[Unit] = {
-    log.info(s"finalizing ChiefOfState $versionNumber migration")
+    log.info(s"finalizing ChiefOfState migration: #$versionNumber")
     val tableName: String = system.settings.config.getString("akka.projection.slick.offset-store.table")
     DBIO.successful(RenameColumns.rename(projectionJdbcConfig, tableName))
   }

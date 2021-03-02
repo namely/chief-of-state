@@ -39,7 +39,7 @@ case class V2(journalJdbcConfig: DatabaseConfig[JdbcProfile], projectionJdbcConf
    * @return a DBIO that runs this upgrade
    */
   override def upgrade(): DBIO[Unit] = {
-    log.info(s"finalizing ChiefOfState $versionNumber migration")
+    log.info(s"finalizing ChiefOfState migration: #$versionNumber")
     DBIO.successful(SchemasUtil.dropLegacyJournalTables(journalJdbcConfig))
   }
 
