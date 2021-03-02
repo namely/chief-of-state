@@ -6,38 +6,51 @@
 
 package com.namely.chiefofstate.migration.versions.v2
 
+import akka.{actor, Done}
 import akka.actor.typed.ActorSystem
+import akka.actor.typed.scaladsl.adapter.TypedActorSystemOps
+import akka.persistence.jdbc.config.SnapshotConfig
+import akka.persistence.jdbc.db.SlickExtension
+import akka.persistence.jdbc.journal.dao.AkkaSerialization
+import akka.persistence.jdbc.snapshot.dao
 import akka.persistence.jdbc.snapshot.dao.legacy.{ByteArraySnapshotSerializer, SnapshotQueries}
 import akka.persistence.jdbc.snapshot.dao.legacy.SnapshotTables.{SnapshotRow => OldSnapshotRow}
 import akka.persistence.jdbc.snapshot.dao.SnapshotTables.SnapshotRow
-import akka.persistence.SnapshotMetadata
+import akka.serialization.Serialization
+import akka.stream.scaladsl.Source
+import org.slf4j.{Logger, LoggerFactory}
+import slick.basic.DatabasePublisher
+import slick.jdbc.{JdbcBackend, JdbcProfile, ResultSetConcurrency, ResultSetType}
 import slick.jdbc.PostgresProfile.api._
 import slickProfile.api._
 
-import scala.concurrent.Future
-import scala.util.{Failure, Success}
-import scala.concurrent.Await
+import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.concurrent.duration.Duration
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import slick.jdbc.ResultSetType
-import slick.jdbc.ResultSetConcurrency
-import slick.basic.DatabasePublisher
-import akka.stream.scaladsl.Source
-import akka.persistence.jdbc.journal.dao.AkkaSerialization
-import scala.util.Try
-import akka.persistence.jdbc.snapshot.dao
+import scala.util.{Failure, Success, Try}
 
-case class MigrateSnapshot(system: ActorSystem[_]) extends Migrate {
-
+/**
+ * Migrates the legacy snapshot data into the new snapshot table
+ *
+ * @param system the actor system
+ * @param profile the jdbc profile
+ * @param serialization the akka serialization
+ */
+case class MigrateSnapshot(system: ActorSystem[_], profile: JdbcProfile, serialization: Serialization) {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
+  implicit val ec: ExecutionContextExecutor = system.executionContext
+  implicit val classicSys: actor.ActorSystem = system.toClassic
+
+  private val snapshotConfig: SnapshotConfig = new SnapshotConfig(
+    system.settings.config.getConfig("jdbc-snapshot-store")
+  )
+
   private val queries = new SnapshotQueries(profile, snapshotConfig.legacySnapshotTableConfiguration)
-
   private val newQueries = new dao.SnapshotQueries(profile, snapshotConfig.snapshotTableConfiguration)
-
   private val serializer: ByteArraySnapshotSerializer =
     new ByteArraySnapshotSerializer(serialization)
+  private val snapshotdb: JdbcBackend.Database =
+    SlickExtension(system).database(system.settings.config.getConfig("jdbc-snapshot-store")).database
 
   /**
    * Write the state snapshot data into the new snapshot table applying the proper serialization
@@ -57,7 +70,7 @@ case class MigrateSnapshot(system: ActorSystem[_]) extends Migrate {
     // use above query to build a database publisher of legacy "SnapshotRow"
     val dbPublisher: DatabasePublisher[OldSnapshotRow] = snapshotdb.stream(query)
 
-    val streamFuture = Source
+    val streamFuture: Future[Done] = Source
       .fromPublisher(dbPublisher)
       // group into fetchsize to use all records in memory
       .grouped(fetchSize)

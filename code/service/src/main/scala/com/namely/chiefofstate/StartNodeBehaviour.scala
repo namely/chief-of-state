@@ -16,7 +16,8 @@ import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
-import com.namely.chiefofstate.migration.Migrator
+import com.namely.chiefofstate.migration.{JdbcConfig, Migrator}
+import com.namely.chiefofstate.migration.versions.v2.V2__Version
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.telemetry._
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
@@ -28,14 +29,13 @@ import io.grpc.netty.NettyServerBuilder
 import io.opentracing.contrib.grpc.{TracingClientInterceptor, TracingServerInterceptor}
 import io.opentracing.util.GlobalTracer
 import org.slf4j.{Logger, LoggerFactory}
+import slick.basic.DatabaseConfig
+import slick.jdbc.JdbcProfile
 
 import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext
 import scala.sys.ShutdownHookThread
-import com.namely.chiefofstate.migration.versions.v2.V2__Version
-import slick.basic.DatabaseConfig
-import com.namely.chiefofstate.migration.JdbcConfig
-import slick.jdbc.JdbcProfile
+import scala.util.{Failure, Success}
 
 /**
  * This helps setup the required engines needed to smoothly run the ChiefOfState sevice.
@@ -74,16 +74,17 @@ object StartNodeBehaviour {
           JdbcConfig.projectionConfig(config)
 
         // TODO: think about a smarter constructor for the migrator
-        val v2 = V2__Version(journalJdbcConfig, projectionJdbcConfig)(context.system)
+        val v2: V2__Version = V2__Version(journalJdbcConfig, projectionJdbcConfig)(context.system)
 
-        (new Migrator(journalJdbcConfig))
+        new Migrator(journalJdbcConfig)
           .addVersion(v2)
       }
 
-      migrator.run().get
-
-      // We only proceed when the data stores and various migrations are done successfully.
-      log.info("Journal and snapshot store created successfully. About to start...")
+      migrator.run() match {
+        case Failure(exception) => throw exception // we want to panic here.
+        case Success(_) => // We only proceed when the data stores and various migrations are done successfully.
+          log.info("ChiefOfState migration successfully done. About to start...")
+      }
 
       val channel: ManagedChannel =
         NettyHelper

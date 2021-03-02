@@ -7,16 +7,23 @@
 package com.namely.chiefofstate.migration.versions.v2
 
 import akka.actor.typed.ActorSystem
+import akka.serialization.{Serialization, SerializationExtension}
 import com.namely.chiefofstate.migration.Version
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.{Await, ExecutionContextExecutor}
-import scala.concurrent.duration.Duration
+import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Success, Try}
 
+/**
+ * V2 migration
+ *
+ * @param journalJdbcConfig the journal configuration
+ * @param projectionJdbcConfig the projection configuration
+ * @param system the actor system
+ */
 case class V2__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
                        projectionJdbcConfig: DatabaseConfig[JdbcProfile]
 )(implicit system: ActorSystem[_])
@@ -35,7 +42,7 @@ case class V2__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
    * @return a DBIO that runs this upgrade
    */
   override def upgrade(): DBIO[Unit] = {
-    log.info(s"finalizing upgrade")
+    log.info(s"finalizing ChiefOfState $versionNumber migration")
     SchemasUtil.dropLegacyJournalTables(journalJdbcConfig).flatMap(_ => DBIO.successful {})
   }
 
@@ -44,7 +51,7 @@ case class V2__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
    *
    * @return a DBIO that creates the version snapshot
    */
-  override def snapshot(): DBIO[Unit] = DBIO.failed(new Exception("Blast..."))
+  override def snapshot(): DBIO[Unit] = DBIO.failed(new RuntimeException("snaphotting not allowed in this version"))
 
   /**
    * performs the following actions:
@@ -61,16 +68,19 @@ case class V2__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
    *  @return Success if the method succeeds
    */
   override def beforeUpgrade(): Try[Unit] = {
-    val journalMigrator: MigrateJournal = MigrateJournal(system)
-    val snapshotMigrator: MigrateSnapshot = MigrateSnapshot(system)
+    val serialization: Serialization = SerializationExtension(system)
+    val profile: JdbcProfile = journalJdbcConfig.profile
+    val journalMigrator: MigrateJournal = MigrateJournal(system, profile, serialization)
+    val snapshotMigrator: MigrateSnapshot = MigrateSnapshot(system, profile, serialization)
+
     Try {
-      log.info("creating new tables")
+      log.info("creating new ChiefOfState journal tables")
       SchemasUtil.createJournalTables(journalJdbcConfig)
 
-      log.info("migrating journal")
+      log.info("migrating ChiefOfState old journal data to the new journal table")
       journalMigrator.run()
 
-      log.info("migrating snapshots")
+      log.info("migrating ChiefOfState old snapshot data onto the new snapshot table")
       snapshotMigrator.run()
     }
   }

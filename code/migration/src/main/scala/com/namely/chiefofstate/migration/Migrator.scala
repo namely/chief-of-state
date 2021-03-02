@@ -6,8 +6,6 @@
 
 package com.namely.chiefofstate.migration
 
-import akka.actor.typed.ActorSystem
-import com.namely.chiefofstate.migration.versions.v2.V2__Version
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
