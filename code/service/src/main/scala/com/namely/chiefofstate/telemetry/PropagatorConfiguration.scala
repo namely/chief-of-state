@@ -14,6 +14,9 @@ import io.opentelemetry.extension.trace.propagation.{B3Propagator, JaegerPropaga
 
 import scala.jdk.CollectionConverters._
 
+/** PropagatorConfiguration is a helper class that provides for a way to customize the trace propagators
+ *  to be used in the service.
+ */
 object PropagatorConfiguration {
   def configurePropagators(config: TelemetryConfig): ContextPropagators = {
     val propagators: Seq[TextMapPropagator] = config.propagators
