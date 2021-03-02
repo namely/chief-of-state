@@ -15,7 +15,7 @@ import slick.jdbc.JdbcProfile
 
 import scala.concurrent.{Await, ExecutionContextExecutor}
 import scala.concurrent.duration.Duration
-import scala.util.Try
+import scala.util.{Success, Try}
 
 case class V2__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
                        projectionJdbcConfig: DatabaseConfig[JdbcProfile]
@@ -35,7 +35,7 @@ case class V2__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
    * @return a DBIO that runs this upgrade
    */
   override def upgrade(): DBIO[Unit] = {
-    log.info(s"migrating ChiefOfState stores to $versionNumber")
+    log.info(s"finalizing upgrade")
     SchemasUtil.dropLegacyJournalTables(journalJdbcConfig).flatMap(_ => DBIO.successful {})
   }
 
@@ -64,20 +64,19 @@ case class V2__Version(journalJdbcConfig: DatabaseConfig[JdbcProfile],
     val journalMigrator: MigrateJournal = MigrateJournal(system)
     val snapshotMigrator: MigrateSnapshot = MigrateSnapshot(system)
     Try {
+      log.info("creating new tables")
       SchemasUtil.createJournalTables(journalJdbcConfig)
+
+      log.info("migrating journal")
       journalMigrator.run()
+
+      log.info("migrating snapshots")
       snapshotMigrator.run()
-      SchemasUtil.createReadSideOffsetTable(projectionJdbcConfig)
     }
   }
 
   /**
    * executed when migration done. It deletes the old journal and snapshot tables
    */
-  override def afterUpgrade(): Try[Unit] = {
-    val run = journalJdbcConfig.db.run(SchemasUtil.dropLegacyJournalTables(journalJdbcConfig))
-    Try(
-      Await.result(run, Duration.Inf)
-    )
-  }
+  override def afterUpgrade(): Try[Unit] = Success {}
 }
