@@ -27,6 +27,8 @@ object Dependencies {
     val PrometheusServerVersion: String = "0.10.0"
 
     val EmbeddedPostgresVersion: String = "1.2.10"
+
+    val TestContainers: String = "0.39.3"
   }
 
   import Dependencies.Versions._
@@ -79,6 +81,9 @@ object Dependencies {
     "org.scalatest" %% "scalatest" % ScalaTestVersion % Test,
     "org.scalamock" %% "scalamock" % ScalaMockVersion % Test,
     "io.grpc" % "grpc-testing" % grpcJavaVersion % Test,
-    "io.zonky.test" % "embedded-postgres" % EmbeddedPostgresVersion % Test
+    "io.zonky.test" % "embedded-postgres" % EmbeddedPostgresVersion % Test,
+    // test containers
+    "com.dimafeng" %% "testcontainers-scala-scalatest" % Versions.TestContainers % Test,
+    "com.dimafeng" %% "testcontainers-scala-postgresql" % Versions.TestContainers % Test
   )
 }
