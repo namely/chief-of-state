@@ -16,7 +16,6 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
   override val container: PostgreSQLContainer = PostgreSQLContainer
     .Def(
       dockerImageName = DockerImageName.parse("postgres"),
-      databaseName = "postgres",
       urlParams = Map("currentSchema" -> cosSchema)
     )
     .createContainer()

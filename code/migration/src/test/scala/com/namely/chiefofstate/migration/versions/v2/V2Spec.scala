@@ -16,7 +16,6 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
   override val container: PostgreSQLContainer = PostgreSQLContainer
     .Def(
       dockerImageName = DockerImageName.parse("postgres"),
-      databaseName = "postgres",
       urlParams = Map("currentSchema" -> cosSchema)
     )
     .createContainer()
@@ -30,6 +29,7 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
       .getConnection(container.jdbcUrl, container.username, container.password)
   }
 
+  // helper to drop the schema
   def recreateSchema(): Unit = {
     val statement = getConnection().createStatement()
     statement.addBatch(s"drop schema if exists $cosSchema cascade")
