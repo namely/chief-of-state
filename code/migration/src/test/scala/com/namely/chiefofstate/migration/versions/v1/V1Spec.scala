@@ -12,7 +12,6 @@ import com.namely.chiefofstate.migration.{BaseSpec, DbUtil}
 import com.namely.chiefofstate.migration.helper.TestConfig
 import com.namely.chiefofstate.migration.versions.v1.V1.{
   createTempTable,
-  getOffSetRowResult,
   insertInto,
   OFFSET_STORE_TEMP_TABLE,
   OffsetRow
@@ -91,7 +90,12 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
     "write-side-slick"
   )
 
-  def createOldStore(projectionJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
+  /**
+   * creates the read side offset store table
+   *
+   * @param projectionJdbcConfig the the projection db config
+   */
+  def create(projectionJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
     val stmt = DBIO.seq(
       sqlu"""
         CREATE TABLE IF NOT EXISTS read_side_offsets(
@@ -109,7 +113,12 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
     Await.result(projectionJdbcConfig.db.run(stmt), Duration.Inf)
   }
 
-  def seedOldStore(projectionJdbcConfig: DatabaseConfig[JdbcProfile]): Int = {
+  /**
+   * insert some data into the offset stores table
+   *
+   * @param projectionJdbcConfig the projection db config
+   */
+  def insert(projectionJdbcConfig: DatabaseConfig[JdbcProfile]): Int = {
     val data: Seq[OffsetRow] = Seq(
       OffsetRow(
         projectionName = "some-projection",
@@ -139,28 +148,28 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
     insertInto("read_side_offsets", projectionJdbcConfig, data)
   }
 
-  def queryTempTable(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Int = {
-    val sqlStmt: SqlStreamingAction[Vector[OffsetRow], OffsetRow, Effect] =
+  /**
+   * get the number of records in the temp table
+   *
+   * @param journalJdbcConfig the database connection
+   * @return the number of records
+   */
+  def count(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Int = {
+    val sqlStmt: SqlStreamingAction[Vector[Int], Int, Effect] =
       sql"""
-            SELECT
-                c.projection_name,
-                c.projection_key,
-                c.current_offset,
-                c.manifest,
-                c.mergeable,
-                c.last_updated
+            SELECT count(c.*)
             FROM #$OFFSET_STORE_TEMP_TABLE as c
-        """.as[OffsetRow]
+        """.as[Int]
 
-    Await.result(journalJdbcConfig.db.run(sqlStmt), Duration.Inf).length
+    Await.result(journalJdbcConfig.db.run(sqlStmt), Duration.Inf).headOption.getOrElse(0)
   }
 
-  override def beforeEach() = {
+  override def beforeEach(): Unit = {
     recreateSchema(journalPg)
     recreateSchema(projectionPg)
   }
 
-  override protected def afterAll() = {
+  override protected def afterAll(): Unit = {
     testKit.shutdownTestKit()
   }
 
@@ -169,15 +178,15 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
       val v1: V1 = V1(journalJdbcConfig, projectionJdbcConfig, "read_side_offsets")
 
       // create the old read side offset store
-      noException shouldBe thrownBy(createOldStore(projectionJdbcConfig))
+      noException shouldBe thrownBy(create(projectionJdbcConfig))
 
       // seed the old read side offset store with some data
-      seedOldStore(projectionJdbcConfig) shouldBe 3
+      insert(projectionJdbcConfig) shouldBe 3
 
       // then run beforeUpgrade
       v1.beforeUpgrade().isSuccess shouldBe true
 
-      queryTempTable(journalJdbcConfig) shouldBe 3
+      count(journalJdbcConfig) shouldBe 3
     }
   }
   ".afterUpgrade" should {
@@ -187,7 +196,7 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
 
       // create the actual offset store table
       // create the old read side offset store
-      noException shouldBe thrownBy(createOldStore(projectionJdbcConfig))
+      noException shouldBe thrownBy(create(projectionJdbcConfig))
 
       v1.afterUpgrade().isSuccess shouldBe true
 
@@ -203,7 +212,7 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
 
       // create the actual offset store table
       // create the old read side offset store
-      noException shouldBe thrownBy(createOldStore(projectionJdbcConfig))
+      noException shouldBe thrownBy(create(projectionJdbcConfig))
 
       v1.afterUpgrade().isSuccess shouldBe true
     }
@@ -230,7 +239,7 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
       val v1: V1 = V1(journalJdbcConfig, projectionJdbcConfig, "read_side_offsets")
 
       // create the old read side offset store
-      noException shouldBe thrownBy(createOldStore(journalJdbcConfig))
+      noException shouldBe thrownBy(create(journalJdbcConfig))
 
       // create the temp table
       createTempTable(journalJdbcConfig) shouldBe {}

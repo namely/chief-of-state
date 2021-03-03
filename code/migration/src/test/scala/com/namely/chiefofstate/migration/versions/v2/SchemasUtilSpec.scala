@@ -6,16 +6,16 @@
 
 package com.namely.chiefofstate.migration.versions.v2
 
-import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import com.namely.chiefofstate.migration.BaseSpec
+import com.namely.chiefofstate.migration.{BaseSpec, DbUtil}
+import com.namely.chiefofstate.migration.helper.TestConfig
 import org.testcontainers.utility.DockerImageName
+import slick.basic.DatabaseConfig
+import slick.jdbc.JdbcProfile
 
-import java.sql.{Connection, DriverManager, Statement}
+import java.sql.{Connection, DriverManager}
 
-class V2Spec extends BaseSpec with ForAllTestContainer {
-
-  val testKit: ActorTestKit = ActorTestKit()
+class SchemasUtilSpec extends BaseSpec with ForAllTestContainer {
 
   val cosSchema: String = "cos"
 
@@ -25,6 +25,14 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
       urlParams = Map("currentSchema" -> cosSchema)
     )
     .createContainer()
+
+  // journal jdbc config
+  lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] = TestConfig.dbConfigFromUrl(
+    container.jdbcUrl,
+    container.username,
+    container.password,
+    "write-side-slick"
+  )
 
   /**
    * create connection to the container db for test statements
@@ -39,7 +47,7 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
 
   // helper to drop the schema
   def recreateSchema(): Unit = {
-    val statement: Statement = getConnection.createStatement()
+    val statement = getConnection.createStatement()
     statement.addBatch(s"drop schema if exists $cosSchema cascade")
     statement.addBatch(s"create schema $cosSchema")
     statement.executeBatch()
@@ -49,9 +57,12 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
     recreateSchema()
   }
 
-  override protected def afterAll(): Unit = {
-    testKit.shutdownTestKit()
+  "An instance of SchemasUtils" should {
+    "create the journal tables" in {
+      SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
+      DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
+      DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
+      DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
+    }
   }
-
-  // TODO: add tests
 }
