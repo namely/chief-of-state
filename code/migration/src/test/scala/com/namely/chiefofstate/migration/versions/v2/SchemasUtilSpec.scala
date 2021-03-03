@@ -64,5 +64,17 @@ class SchemasUtilSpec extends BaseSpec with ForAllTestContainer {
       DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
       DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
     }
+
+    " drop the journal tables" in {
+      SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
+      DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
+      DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
+      DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
+
+      SchemasUtil.dropJournalTables(journalJdbcConfig) shouldBe {}
+      DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe false
+      DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe false
+      DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe false
+    }
   }
 }
