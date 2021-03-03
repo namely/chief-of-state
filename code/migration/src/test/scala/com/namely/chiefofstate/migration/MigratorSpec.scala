@@ -17,8 +17,7 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.Success
-import com.dimafeng.testcontainers.ForAllTestContainer
-import com.dimafeng.testcontainers.PostgreSQLContainer
+import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import org.testcontainers.utility.DockerImageName
 import java.sql.DriverManager
 
