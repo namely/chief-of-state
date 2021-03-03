@@ -24,7 +24,7 @@ object Dependencies {
 
     val OpenTelemetryVersion: String = "0.17.1"
     val OpenTelemetryMetricsVersion: String = "0.16.0-alpha"
-    val PrometheusServerVersion: String = "0.9.0"
+    val PrometheusServerVersion: String = "0.10.0"
 
     val EmbeddedPostgresVersion: String = "1.2.10"
   }
