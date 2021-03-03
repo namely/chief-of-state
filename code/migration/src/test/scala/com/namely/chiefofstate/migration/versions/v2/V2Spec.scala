@@ -12,6 +12,7 @@ import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import org.testcontainers.utility.DockerImageName
 import java.sql.DriverManager
 import java.sql.Connection
+import com.namely.chiefofstate.migration.BaseSpec
 
 class V2Spec extends BaseSpec with ForAllTestContainer {
 
@@ -46,14 +47,11 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
   }
 
   override def beforeEach() = {
-    super.beforeEach()
     recreateSchema()
   }
 
   override protected def afterAll() = {
-    super.afterAll()
     testKit.shutdownTestKit()
-    clearEnv()
   }
 
   // TODO: add tests

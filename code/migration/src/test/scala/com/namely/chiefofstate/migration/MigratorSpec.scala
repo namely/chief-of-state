@@ -7,7 +7,7 @@
 package com.namely.chiefofstate.migration
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import com.namely.chiefofstate.migration.helper.TestConfig.{dbConfigFromUrl, getDbConfig, getTypesafeConfig}
+import com.namely.chiefofstate.migration.helper.TestConfig
 import com.typesafe.config.Config
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIOAction
@@ -87,9 +87,11 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
     mockVersion
   }
 
+  def getDbConfig() = TestConfig.dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
+
   ".addVersion" should {
     "add to the versions queue in order" in {
-      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
+      val dbConfig = getDbConfig()
       val migrator: Migrator = new Migrator(dbConfig)
 
       // add versions out of order
@@ -109,7 +111,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
 
   ".getVersions" should {
     "filter versions" in {
-      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
+      val dbConfig = getDbConfig()
       val migrator: Migrator = new Migrator(dbConfig)
 
       // add versions
@@ -131,7 +133,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
 
   ".beforeAll" should {
     "create the versions table" in {
-      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
+      val dbConfig = getDbConfig()
       val migrator = new Migrator(dbConfig)
 
       DbUtil.tableExists(dbConfig, Migrator.COS_MIGRATIONS_TABLE) shouldBe false
@@ -144,7 +146,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
     "writes the initial value if provided" in {
       setEnv(Migrator.COS_MIGRATIONS_INITIAL_VERSION, "3")
 
-      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
+      val dbConfig = getDbConfig()
       val migrator = new Migrator(dbConfig)
 
       migrator.beforeAll().isSuccess shouldBe true
@@ -155,7 +157,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
 
   ".run" should {
     "run latest snapshot" in {
-      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
+      val dbConfig = getDbConfig()
 
       // add some versions
       val version1 = getMockVersion(1)
@@ -181,7 +183,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       Migrator.getCurrentVersionNumber(dbConfig) shouldBe Some(2)
     }
     "upgrade all available versions" in {
-      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
+      val dbConfig = getDbConfig()
 
       // set db version number
       Migrator.createMigrationsTable(dbConfig)
@@ -220,7 +222,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       Migrator.getCurrentVersionNumber(dbConfig) shouldBe Some(4)
     }
     "no-op if no new versions to run" in {
-      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
+      val dbConfig = getDbConfig()
 
       // define a migrator with versions that should not run (nothing mocked)
       val migrator = new Migrator(dbConfig)
@@ -241,7 +243,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
 
   ".snapshotVersion" should {
     "run version snapshot and set version number" in {
-      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
+      val dbConfig = getDbConfig()
       val versionNumber = 3
 
       // create a mock version that tracks if snapshot was run
@@ -265,7 +267,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
 
   ".upgradeVersion" should {
     "run version upgrade and set version number" in {
-      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
+      val dbConfig = getDbConfig()
 
       val versionNumber = 5
 
@@ -299,7 +301,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       Migrator.getCurrentVersionNumber(dbConfig) shouldBe Some(versionNumber)
     }
     "fail if no prior version" in {
-      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
+      val dbConfig = getDbConfig()
       // create the versions table
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
       // confirm no prior version
@@ -310,7 +312,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       actual.failed.map(_.getMessage().endsWith("no prior version, cannot upgrade")) shouldBe Success(true)
     }
     "fail if skipping versions" in {
-      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
+      val dbConfig = getDbConfig()
       // create the versions table
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
       // set prior version
