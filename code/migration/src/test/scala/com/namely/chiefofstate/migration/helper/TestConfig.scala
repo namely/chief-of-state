@@ -11,28 +11,7 @@ import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 object TestConfig {
-  def getTypesafeConfig(schemaName: String, rootKey: String = "jdbc-default"): Config = {
-
-    val cfgString: String = s"""
-      $rootKey {
-        profile = "slick.jdbc.PostgresProfile$$"
-        db {
-          connectionPool = disabled
-          driver = "org.postgresql.Driver"
-          user = "postgres"
-          password = "changeme"
-          serverName = "locahost"
-          portNumber = 25432
-          databaseName = "postgres"
-          schemaName = "$schemaName"
-          url = "jdbc:postgresql://localhost:25432/postgres?currentSchema=$schemaName"
-        }
-      }
-    """
-
-    ConfigFactory.parseString(cfgString)
-  }
-
+  // get a typesafe config for a given jdbc url
   def getTypesafeConfigUrl(rootKey: String = "jdbc-default", url: String, user: String, password: String): Config = {
 
     val cfgString: String = s"""
@@ -51,11 +30,7 @@ object TestConfig {
     ConfigFactory.parseString(cfgString)
   }
 
-  def getDbConfig(schemaName: String): DatabaseConfig[JdbcProfile] = {
-    val cfg = getTypesafeConfig(schemaName)
-    DatabaseConfig.forConfig[JdbcProfile]("jdbc-default", cfg)
-  }
-
+  // construct a database config for a given jdbc url
   def dbConfigFromUrl(url: String,
                       user: String,
                       password: String,

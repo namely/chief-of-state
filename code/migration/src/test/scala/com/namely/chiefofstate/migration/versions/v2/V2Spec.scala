@@ -1,3 +1,9 @@
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 package com.namely.chiefofstate.migration.versions.v2
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
@@ -20,7 +26,9 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
     )
     .createContainer()
 
-  /** create connection to the container db for test statements */
+  /**
+   * create connection to the container db for test statements
+   */
   def getConnection(): Connection = {
     // load the driver
     Class.forName("org.postgresql.Driver")
