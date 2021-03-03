@@ -77,16 +77,6 @@ test-local:
     END
 
 
-test-containers:
-    FROM +code
-
-    USER root
-    RUN chown -R root:root .
-
-    WITH DOCKER --pull postgres
-        RUN sbt "testOnly com.namely.chiefofstate.migration.MigratorSpec"
-    END
-
 codecov:
     FROM +test-local
     ARG COMMIT_HASH=""
@@ -105,14 +95,13 @@ sbt:
     FROM openjdk:11-jdk-stretch
 
     # Install sbt
-    ARG SBT_VERSION=1.3.6
+    ARG SBT_VERSION=1.4.7
     RUN \
         curl -L -o sbt.deb https://dl.bintray.com/sbt/debian/sbt-${SBT_VERSION}.deb && \
         dpkg -i sbt.deb && \
         rm sbt.deb && \
         apt-get update && \
-        apt-get install sbt && \
-        sbt sbtVersion
+        apt-get install sbt
 
     # install docker tools
     # https://docs.docker.com/engine/install/debian/
