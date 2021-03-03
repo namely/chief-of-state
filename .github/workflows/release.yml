@@ -50,5 +50,4 @@ jobs:
         VERSION: ${{ steps.version.outputs.VERSION }}
         EARTHLY_BUILD_ARGS: "BRANCH_NAME,COMMIT_HASH,VERSION"
         EARTHLY_SECRETS: "CODECOV_TOKEN"
-      run: earthly --push +all
-
+      run: earthly -P +all

@@ -18,20 +18,10 @@ code:
         chmod 777 /$BUILD_DIR
 
     WORKDIR $BUILD_DIR
-    # USER $BUILD_USR
 
     # copy configurations
     COPY .scalafmt.conf build.sbt .
-    COPY -dir \
-        project/build.properties \
-        project/BuildSettings.scala \
-        project/Common.scala \
-        project/Dependencies.scala \
-        project/DockerSettings.scala \
-        project/plugins.sbt \
-        project/Publish.scala \
-        project/protoc.sbt \
-        ./project/
+    COPY -dir project .
 
     # clean & install dependencies
     RUN sbt clean cleanFiles update
@@ -41,9 +31,7 @@ code:
     RUN sbt protocGenerate
 
     # copy code
-    COPY code/service/src ./code/service/src
-    COPY code/plugin/src ./code/plugin/src
-    COPY code/migration/src ./code/migration/src
+    COPY -dir code .
 
 docker-stage:
     # package the jars/executables
