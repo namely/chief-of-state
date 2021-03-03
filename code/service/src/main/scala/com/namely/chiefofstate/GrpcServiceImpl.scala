@@ -10,26 +10,22 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
 import akka.util.Timeout
 import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.plugin.PluginManager
-import com.namely.chiefofstate.telemetry.{GrpcHeadersInterceptor, OpentracingHelpers}
+import com.namely.chiefofstate.telemetry.{GrpcHeadersInterceptor, TracingHelpers}
 import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.service._
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import io.grpc.{Metadata, Status, StatusException}
-import io.opentracing.Tracer
+import io.opentelemetry.context.Context
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-class GrpcServiceImpl(clusterSharding: ClusterSharding,
-                      pluginManager: PluginManager,
-                      writeSideConfig: WriteSideConfig,
-                      tracer: Tracer
-)(implicit
-  val askTimeout: Timeout
+class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
+  implicit val askTimeout: Timeout
 ) extends ChiefOfStateService {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -45,7 +41,9 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding,
     // fetch the gRPC metadata
     val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
 
-    val tracingHeaders = OpentracingHelpers.getTracingHeaders(tracer)
+    val tracingHeaders = TracingHelpers.getTracingHeaders(Context.current())
+
+    log.debug(s"Adding tracing headers to command $tracingHeaders")
 
     // ascertain the entity ID
     requireEntityId(entityId)
@@ -72,11 +70,11 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding,
    * Used to get the current state of that entity
    */
   override def getState(request: GetStateRequest): Future[GetStateResponse] = {
-    log.debug(ChiefOfStateServiceGrpc.METHOD_GET_STATE.getFullMethodName())
+    log.debug(ChiefOfStateServiceGrpc.METHOD_GET_STATE.getFullMethodName)
 
     val entityId: String = request.entityId
 
-    val tracingHeaders = OpentracingHelpers.getTracingHeaders(tracer)
+    val tracingHeaders = TracingHelpers.getTracingHeaders(Context.current())
 
     // ascertain the entity id
     requireEntityId(entityId)

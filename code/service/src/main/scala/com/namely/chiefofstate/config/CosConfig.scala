@@ -29,14 +29,13 @@ final case class CosConfig(
   grpcConfig: GrpcConfig,
   writeSideConfig: WriteSideConfig,
   enableReadSide: Boolean,
-  enableJaeger: Boolean
+  telemetryConfig: TelemetryConfig
 )
 
 object CosConfig {
   private val serviceNameKey: String = "chiefofstate.service-name"
   private val askTimeoutKey: String = "chiefofstate.ask-timeout"
   private val enableReadSideKey: String = "chiefofstate.read-side.enabled"
-  private val enableJaegerTracing: String = "chiefofstate.tracing.jaeger-enabled"
 
   /**
    * creates a new CosConfig instance
@@ -55,7 +54,7 @@ object CosConfig {
       GrpcConfig(config),
       WriteSideConfig(config),
       config.getBoolean(enableReadSideKey),
-      config.getBoolean(enableJaegerTracing)
+      TelemetryConfig(config)
     )
   }
 }

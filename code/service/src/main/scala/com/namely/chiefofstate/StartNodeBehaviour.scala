@@ -27,8 +27,9 @@ import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc
 import com.typesafe.config.Config
 import io.grpc._
 import io.grpc.netty.NettyServerBuilder
-import io.opentracing.contrib.grpc.{TracingClientInterceptor, TracingServerInterceptor}
-import io.opentracing.util.GlobalTracer
+import io.opentelemetry.api.GlobalOpenTelemetry
+import io.opentelemetry.instrumentation.grpc.v1_5.client.TracingClientInterceptor
+import io.opentelemetry.instrumentation.grpc.v1_5.server.TracingServerInterceptor
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -88,6 +89,14 @@ object StartNodeBehaviour {
         case Success(_) => // We only proceed when the data stores and various migrations are done successfully.
           log.info("ChiefOfState migration successfully done. About to start...")
       }
+      
+      // start the telemetry tools and register global tracer
+      TelemetryTools(cosConfig).start()
+
+      val tracer = GlobalOpenTelemetry.get().getTracer("com.namely.chiefofstate")
+
+      // We only proceed when the data stores and various migrations are done successfully.
+      log.info("Journal and snapshot store created successfully. About to start...")
 
       val channel: ManagedChannel =
         NettyHelper
@@ -99,8 +108,7 @@ object StartNodeBehaviour {
           .build()
 
       val grpcClientInterceptors: Seq[ClientInterceptor] = Seq(
-        new ErrorsClientInterceptor(GlobalTracer.get()),
-        TracingClientInterceptor.newBuilder().withTracer(GlobalTracer.get()).build()
+        TracingClientInterceptor.newInterceptor(tracer)
       )
 
       val writeHandler: WriteSideHandlerServiceBlockingStub = new WriteSideHandlerServiceBlockingStub(channel)
@@ -113,9 +121,6 @@ object StartNodeBehaviour {
       val eventsAndStateProtoValidation: ProtosValidator = ProtosValidator(
         cosConfig.writeSideConfig
       )
-
-      // start the telemetry tools and register global tracer
-      TelemetryTools(config, cosConfig.enableJaeger, "chief-of-state").start()
 
       val sharding: ClusterSharding = ClusterSharding(context.system)
 
@@ -174,26 +179,21 @@ object StartNodeBehaviour {
     implicit val askTimeout: Timeout = cosConfig.askTimeout
 
     // create the traced execution context for grpc
-    val grpcEc: ExecutionContext = TracedExecutionContext.get()
+    val grpcEc: ExecutionContext = TracedExecutorService.get()
+
+    val tracer = GlobalOpenTelemetry.get().getTracer("com.namely.chiefofstate")
 
     // create interceptor using the global tracer
-    val tracingServerInterceptor: TracingServerInterceptor = TracingServerInterceptor
-      .newBuilder()
-      .withTracer(GlobalTracer.get())
-      .build()
+    val tracingServerInterceptor: ServerInterceptor = TracingServerInterceptor
+      .newInterceptor(tracer)
 
     // instantiate the grpc service, bind do the execution context
     val serviceImpl: GrpcServiceImpl =
-      new GrpcServiceImpl(clusterSharding,
-                          PluginManager.getPlugins(config),
-                          cosConfig.writeSideConfig,
-                          GlobalTracer.get()
-      )
+      new GrpcServiceImpl(clusterSharding, PluginManager.getPlugins(config), cosConfig.writeSideConfig)
 
     // intercept the service
     val service: ServerServiceDefinition = ServerInterceptors.intercept(
       ChiefOfStateService.bindService(serviceImpl, grpcEc),
-      new ErrorsServerInterceptor(GlobalTracer.get()),
       tracingServerInterceptor,
       GrpcHeadersInterceptor
     )
