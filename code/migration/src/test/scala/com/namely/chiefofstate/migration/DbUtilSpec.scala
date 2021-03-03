@@ -7,7 +7,6 @@
 package com.namely.chiefofstate.migration
 
 import com.typesafe.config.{Config, ConfigFactory}
-import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import slick.basic.DatabaseConfig
 import slick.jdbc.{JdbcProfile, PostgresProfile}
 import scala.concurrent.Await

@@ -1,6 +1,7 @@
 parallelExecution in test := false
 enablePlugins(DockerComposePlugin)
 dockerImageCreationTask := (Docker / publishLocal in chiefofstate).value
+Test / fork := true
 
 lazy val root: Project = project
   .in(file("."))

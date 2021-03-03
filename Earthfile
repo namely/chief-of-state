@@ -11,21 +11,18 @@ code:
 
     # create user & working dir for sbt
     ARG BUILD_DIR="/build"
-    ARG BUILD_USR="builder"
 
     USER root
 
     RUN mkdir $BUILD_DIR && \
-        chmod 777 /$BUILD_DIR && \
-        useradd -s /bin/bash -d $BUILD_DIR $BUILD_USR && \
-        chown -R $BUILD_USR:root $BUILD_DIR
+        chmod 777 /$BUILD_DIR
 
     WORKDIR $BUILD_DIR
-    USER $BUILD_USR
+    # USER $BUILD_USR
 
     # copy configurations
-    COPY --chown $BUILD_USR:root .scalafmt.conf build.sbt .
-    COPY --chown $BUILD_USR:root -dir \
+    COPY .scalafmt.conf build.sbt .
+    COPY -dir \
         project/build.properties \
         project/BuildSettings.scala \
         project/Common.scala \
@@ -40,13 +37,13 @@ code:
     RUN sbt clean cleanFiles update
 
     # copy proto definitions & generate
-    COPY --chown $BUILD_USR:root -dir proto .
+    COPY -dir proto .
     RUN sbt protocGenerate
 
     # copy code
-    COPY --chown $BUILD_USR:root code/service/src ./code/service/src
-    COPY --chown $BUILD_USR:root code/plugin/src ./code/plugin/src
-    COPY --chown $BUILD_USR:root code/migration/src ./code/migration/src
+    COPY code/service/src ./code/service/src
+    COPY code/plugin/src ./code/plugin/src
+    COPY code/migration/src ./code/migration/src
 
 docker-stage:
     # package the jars/executables
@@ -86,7 +83,21 @@ docker-build:
 
 test-local:
     FROM +code
-    RUN sbt coverage test coverageAggregate
+    # run with docker to enable testcontainers
+    WITH DOCKER --pull postgres
+        RUN sbt coverage test coverageAggregate
+    END
+
+
+test-containers:
+    FROM +code
+
+    USER root
+    RUN chown -R root:root .
+
+    WITH DOCKER --pull postgres
+        RUN sbt "testOnly com.namely.chiefofstate.migration.MigratorSpec"
+    END
 
 codecov:
     FROM +test-local
@@ -114,3 +125,25 @@ sbt:
         apt-get update && \
         apt-get install sbt && \
         sbt sbtVersion
+
+    # install docker tools
+    # https://docs.docker.com/engine/install/debian/
+    RUN apt-get remove -y docker docker-engine docker.io containerd runc || true
+
+    RUN apt-get update
+
+    RUN apt-get install -y \
+        apt-transport-https \
+        ca-certificates \
+        curl \
+        gnupg-agent \
+        software-properties-common
+
+    RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+    RUN echo \
+        "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
+        $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+    RUN apt-get update
+    RUN apt-get install -y docker-ce docker-ce-cli containerd.io

@@ -11,6 +11,7 @@ import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport.scalafmtOnCompile
 
 object Common extends AutoPlugin {
+
   override def requires: Plugins = plugins.JvmPlugin
 
   override def trigger = allRequirements
@@ -70,6 +71,7 @@ object Common extends AutoPlugin {
         "com.namely.chiefofstate.GrpcHeadersInterceptor;" +
         "com.namely.chiefofstate.StartNode;" +
         "com.namely.chiefofstate.GrpcServiceImpl;" +
-        "com.namely.chiefofstate.migration.versions.*;"
+        "com.namely.chiefofstate.migration.versions.*;",
+      fork in Test := true
     )
 }

@@ -33,8 +33,35 @@ object TestConfig {
     ConfigFactory.parseString(cfgString)
   }
 
+  def getTypesafeConfigUrl(rootKey: String = "jdbc-default", url: String, user: String, password: String): Config = {
+
+    val cfgString: String = s"""
+      $rootKey {
+        profile = "slick.jdbc.PostgresProfile$$"
+        db {
+          connectionPool = disabled
+          driver = "org.postgresql.Driver"
+          user = "$user"
+          password = "$password"
+          url = "$url"
+        }
+      }
+    """
+
+    ConfigFactory.parseString(cfgString)
+  }
+
   def getDbConfig(schemaName: String): DatabaseConfig[JdbcProfile] = {
     val cfg = getTypesafeConfig(schemaName)
     DatabaseConfig.forConfig[JdbcProfile]("jdbc-default", cfg)
+  }
+
+  def dbConfigFromUrl(url: String,
+                      user: String,
+                      password: String,
+                      rootKey: String = "jdbc-default"
+  ): DatabaseConfig[JdbcProfile] = {
+    val cfg = getTypesafeConfigUrl(rootKey, url, user, password)
+    DatabaseConfig.forConfig[JdbcProfile](rootKey, cfg)
   }
 }

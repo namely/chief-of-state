@@ -81,7 +81,6 @@ object Dependencies {
     "org.scalatest" %% "scalatest" % ScalaTestVersion % Test,
     "org.scalamock" %% "scalamock" % ScalaMockVersion % Test,
     "io.grpc" % "grpc-testing" % grpcJavaVersion % Test,
-    "io.zonky.test" % "embedded-postgres" % EmbeddedPostgresVersion % Test,
     // test containers
     "com.dimafeng" %% "testcontainers-scala-scalatest" % Versions.TestContainers % Test,
     "com.dimafeng" %% "testcontainers-scala-postgresql" % Versions.TestContainers % Test

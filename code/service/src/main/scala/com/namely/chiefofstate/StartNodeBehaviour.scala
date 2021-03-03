@@ -89,7 +89,7 @@ object StartNodeBehaviour {
         case Success(_) => // We only proceed when the data stores and various migrations are done successfully.
           log.info("ChiefOfState migration successfully done. About to start...")
       }
-      
+
       // start the telemetry tools and register global tracer
       TelemetryTools(cosConfig).start()
 

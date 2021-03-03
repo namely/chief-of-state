@@ -7,9 +7,8 @@
 package com.namely.chiefofstate.migration
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import com.namely.chiefofstate.migration.helper.TestConfig.{getDbConfig, getTypesafeConfig}
+import com.namely.chiefofstate.migration.helper.TestConfig.{dbConfigFromUrl, getDbConfig, getTypesafeConfig}
 import com.typesafe.config.Config
-import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
@@ -18,39 +17,51 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.Success
+import com.dimafeng.testcontainers.ForAllTestContainer
+import com.dimafeng.testcontainers.PostgreSQLContainer
+import org.testcontainers.utility.DockerImageName
+import java.sql.DriverManager
 
-class MigratorSpec extends BaseSpec {
+class MigratorSpec extends BaseSpec with ForAllTestContainer {
 
-  var pg: EmbeddedPostgres = _
-  val testKit: ActorTestKit = ActorTestKit()
   val cosSchema: String = "cos"
+
+  override val container: PostgreSQLContainer = PostgreSQLContainer
+    .Def(
+      dockerImageName = DockerImageName.parse("postgres"),
+      databaseName = "postgres",
+      urlParams = Map("currentSchema" -> cosSchema)
+    )
+    .createContainer()
+
+  val testKit: ActorTestKit = ActorTestKit()
 
   override def beforeAll() = {
     super.beforeAll()
-    val builder: EmbeddedPostgres.Builder = EmbeddedPostgres.builder()
-    builder.setPort(25432)
-    pg = builder.start()
+  }
+
+  def recreateSchema(): Unit = {
+    // load the driver
+    Class.forName("org.postgresql.Driver")
+
+    val connection = DriverManager
+      .getConnection(container.jdbcUrl, container.username, container.password)
+
+    val statement = connection.createStatement()
+    statement.addBatch(s"drop schema if exists $cosSchema cascade")
+    statement.addBatch(s"create schema $cosSchema")
+    statement.executeBatch()
   }
 
   override def beforeEach() = {
     super.beforeEach()
-
-    val dbConfig = getDbConfig("public")
-
-    val stmt = sqlu"drop schema if exists #$cosSchema cascade"
-      .andThen(sqlu"create schema #$cosSchema")
-
-    val future = dbConfig.db.run(stmt)
-
-    Await.result(future, Duration.Inf)
-
+    recreateSchema()
     clearEnv()
   }
 
   override protected def afterAll() = {
     super.afterAll()
     testKit.shutdownTestKit()
-    pg.close()
     clearEnv()
   }
 
@@ -84,7 +95,7 @@ class MigratorSpec extends BaseSpec {
 
   ".addVersion" should {
     "add to the versions queue in order" in {
-      val dbConfig = getDbConfig(cosSchema)
+      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
       val migrator: Migrator = new Migrator(dbConfig)
 
       // add versions out of order
@@ -104,7 +115,7 @@ class MigratorSpec extends BaseSpec {
 
   ".getVersions" should {
     "filter versions" in {
-      val dbConfig = getDbConfig(cosSchema)
+      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
       val migrator: Migrator = new Migrator(dbConfig)
 
       // add versions
@@ -126,7 +137,7 @@ class MigratorSpec extends BaseSpec {
 
   ".beforeAll" should {
     "create the versions table" in {
-      val dbConfig = getDbConfig(cosSchema)
+      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
       val migrator = new Migrator(dbConfig)
 
       DbUtil.tableExists(dbConfig, Migrator.COS_MIGRATIONS_TABLE) shouldBe false
@@ -139,7 +150,7 @@ class MigratorSpec extends BaseSpec {
     "writes the initial value if provided" in {
       setEnv(Migrator.COS_MIGRATIONS_INITIAL_VERSION, "3")
 
-      val dbConfig = getDbConfig(cosSchema)
+      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
       val migrator = new Migrator(dbConfig)
 
       migrator.beforeAll().isSuccess shouldBe true
@@ -150,7 +161,7 @@ class MigratorSpec extends BaseSpec {
 
   ".run" should {
     "run latest snapshot" in {
-      val dbConfig = getDbConfig(cosSchema)
+      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
 
       // add some versions
       val version1 = getMockVersion(1)
@@ -176,7 +187,7 @@ class MigratorSpec extends BaseSpec {
       Migrator.getCurrentVersionNumber(dbConfig) shouldBe Some(2)
     }
     "upgrade all available versions" in {
-      val dbConfig = getDbConfig(cosSchema)
+      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
 
       // set db version number
       Migrator.createMigrationsTable(dbConfig)
@@ -215,7 +226,7 @@ class MigratorSpec extends BaseSpec {
       Migrator.getCurrentVersionNumber(dbConfig) shouldBe Some(4)
     }
     "no-op if no new versions to run" in {
-      val dbConfig = getDbConfig(cosSchema)
+      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
 
       // define a migrator with versions that should not run (nothing mocked)
       val migrator = new Migrator(dbConfig)
@@ -236,7 +247,7 @@ class MigratorSpec extends BaseSpec {
 
   ".snapshotVersion" should {
     "run version snapshot and set version number" in {
-      val dbConfig = getDbConfig(cosSchema)
+      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
       val versionNumber = 3
 
       // create a mock version that tracks if snapshot was run
@@ -260,7 +271,7 @@ class MigratorSpec extends BaseSpec {
 
   ".upgradeVersion" should {
     "run version upgrade and set version number" in {
-      val dbConfig = getDbConfig(cosSchema)
+      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
 
       val versionNumber = 5
 
@@ -294,7 +305,7 @@ class MigratorSpec extends BaseSpec {
       Migrator.getCurrentVersionNumber(dbConfig) shouldBe Some(versionNumber)
     }
     "fail if no prior version" in {
-      val dbConfig = getDbConfig(cosSchema)
+      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
       // create the versions table
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
       // confirm no prior version
@@ -305,7 +316,7 @@ class MigratorSpec extends BaseSpec {
       actual.failed.map(_.getMessage().endsWith("no prior version, cannot upgrade")) shouldBe Success(true)
     }
     "fail if skipping versions" in {
-      val dbConfig = getDbConfig(cosSchema)
+      val dbConfig = dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
       // create the versions table
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
       // set prior version
@@ -322,7 +333,8 @@ class MigratorSpec extends BaseSpec {
 
   ".createMigrationsTable" should {
     "create the table if not exists" in {
-      val dbConfig: DatabaseConfig[JdbcProfile] = getDbConfig(cosSchema)
+      val dbConfig: DatabaseConfig[JdbcProfile] =
+        dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
 
       val actual = Migrator.createMigrationsTable(dbConfig)
 
@@ -331,7 +343,8 @@ class MigratorSpec extends BaseSpec {
       DbUtil.tableExists(dbConfig, Migrator.COS_MIGRATIONS_TABLE) shouldBe true
     }
     "no-op if table exists" in {
-      val dbConfig: DatabaseConfig[JdbcProfile] = getDbConfig(cosSchema)
+      val dbConfig: DatabaseConfig[JdbcProfile] =
+        dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
 
       // assert doesn't exist
       DbUtil.tableExists(dbConfig, Migrator.COS_MIGRATIONS_TABLE) shouldBe false
@@ -347,7 +360,8 @@ class MigratorSpec extends BaseSpec {
 
   ".getCurrentVersionNumber" should {
     "return the latest version" in {
-      val dbConfig: DatabaseConfig[JdbcProfile] = getDbConfig(cosSchema)
+      val dbConfig: DatabaseConfig[JdbcProfile] =
+        dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
 
       // create the migrations table
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
@@ -364,7 +378,8 @@ class MigratorSpec extends BaseSpec {
       actual shouldBe Some(4)
     }
     "return None for no prior version" in {
-      val dbConfig: DatabaseConfig[JdbcProfile] = getDbConfig(cosSchema)
+      val dbConfig: DatabaseConfig[JdbcProfile] =
+        dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
 
       // create the migrations table
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
@@ -376,7 +391,8 @@ class MigratorSpec extends BaseSpec {
   }
   ".setCurrentVersionNumber" should {
     "write versions to db" in {
-      val dbConfig: DatabaseConfig[JdbcProfile] = getDbConfig(cosSchema)
+      val dbConfig: DatabaseConfig[JdbcProfile] =
+        dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
 
       // create the migrations table
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
@@ -402,7 +418,8 @@ class MigratorSpec extends BaseSpec {
 
   ".setInitialVersion" should {
     "no-op if no env set" in {
-      val dbConfig: DatabaseConfig[JdbcProfile] = getDbConfig(cosSchema)
+      val dbConfig: DatabaseConfig[JdbcProfile] =
+        dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
       // create the migrations table
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
       // write no value
@@ -411,7 +428,8 @@ class MigratorSpec extends BaseSpec {
       Migrator.getCurrentVersionNumber(dbConfig) shouldBe None
     }
     "sets an initial version" in {
-      val dbConfig: DatabaseConfig[JdbcProfile] = getDbConfig(cosSchema)
+      val dbConfig: DatabaseConfig[JdbcProfile] =
+        dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
       // set initial version as env var
       setEnv(Migrator.COS_MIGRATIONS_INITIAL_VERSION, "3")
       // create the migrations table
@@ -422,7 +440,8 @@ class MigratorSpec extends BaseSpec {
       Migrator.getCurrentVersionNumber(dbConfig) shouldBe Some(3)
     }
     "prevents empty version number" in {
-      val dbConfig: DatabaseConfig[JdbcProfile] = getDbConfig(cosSchema)
+      val dbConfig: DatabaseConfig[JdbcProfile] =
+        dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
       // set initial version as env var
       setEnv(Migrator.COS_MIGRATIONS_INITIAL_VERSION, "")
       // create the migrations table
@@ -434,7 +453,8 @@ class MigratorSpec extends BaseSpec {
       actual.failed.map(_.getMessage.endsWith("setting provided empty")) shouldBe Success(true)
     }
     "prevents non-int version number" in {
-      val dbConfig: DatabaseConfig[JdbcProfile] = getDbConfig(cosSchema)
+      val dbConfig: DatabaseConfig[JdbcProfile] =
+        dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
       // set initial version as env var
       setEnv(Migrator.COS_MIGRATIONS_INITIAL_VERSION, "X")
       // create the migrations table
@@ -445,24 +465,5 @@ class MigratorSpec extends BaseSpec {
       actual.isFailure shouldBe true
       actual.failed.map(_.getMessage.endsWith("cannot be 'X'")) shouldBe Success(true)
     }
-  }
-  "public constructor" should {
-    // "have all expected version numbers with no gaps" in {
-    //   val writeConfig: Config = getTypesafeConfig("cos", "write-side-slick")
-    //   val readConfig: Config = getTypesafeConfig("cos", "akka.projection.slick")
-    //   val journalConfig = JdbcConfig.journalConfig(writeConfig)
-    //   val projectionConfig = JdbcConfig.projectionConfig(readConfig)
-
-    //   val migrator = Migrator(journalConfig, projectionConfig, null)
-
-    //   val versions = migrator.getVersions().map(_.versionNumber)
-
-    //   if (versions.size > 1) {
-    //     versions.tail.foldLeft(versions.head)((priorVersion, versionNumber) => {
-    //       (priorVersion + 1) shouldBe versionNumber
-    //       versionNumber
-    //     })
-    //   }
-    // }
   }
 }
