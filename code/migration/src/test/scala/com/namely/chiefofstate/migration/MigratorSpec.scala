@@ -35,10 +35,6 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
 
   val testKit: ActorTestKit = ActorTestKit()
 
-  override def beforeAll() = {
-    super.beforeAll()
-  }
-
   def recreateSchema(): Unit = {
     // load the driver
     Class.forName("org.postgresql.Driver")
