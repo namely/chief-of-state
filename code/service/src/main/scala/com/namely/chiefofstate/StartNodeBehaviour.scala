@@ -76,7 +76,8 @@ object StartNodeBehaviour {
           JdbcConfig.projectionConfig(config)
 
         // TODO: think about a smarter constructor for the migrator
-        val v1: V1 = V1(journalJdbcConfig, projectionJdbcConfig)(context.system)
+        val offsetStoreTableName: String = config.getString("akka.projection.slick.offset-store.table")
+        val v1: V1 = V1(journalJdbcConfig, projectionJdbcConfig, offsetStoreTableName)
         val v2: V2 = V2(journalJdbcConfig, projectionJdbcConfig)(context.system)
 
         new Migrator(journalJdbcConfig)

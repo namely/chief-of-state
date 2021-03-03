@@ -30,6 +30,32 @@ object TestConfig {
     ConfigFactory.parseString(cfgString)
   }
 
+  def getProjectionConfig(url: String,
+                          user: String,
+                          password: String,
+                          tableName: String,
+                          useLowerCase: Boolean
+  ): Config = {
+    val cfgString: String = s"""
+      akka.projection.slick {
+        profile = "slick.jdbc.PostgresProfile$$"
+        db {
+          connectionPool = disabled
+          driver = "org.postgresql.Driver"
+          user = "$user"
+          password = "$password"
+          url = "$url"
+        }
+        offset-store {
+          table = $tableName
+          use-lowercase-schema = $useLowerCase
+        }
+      }
+    """
+
+    ConfigFactory.parseString(cfgString)
+  }
+
   // construct a database config for a given jdbc url
   def dbConfigFromUrl(url: String,
                       user: String,
