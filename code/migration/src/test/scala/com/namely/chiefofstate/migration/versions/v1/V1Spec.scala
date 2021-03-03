@@ -7,12 +7,11 @@
 package com.namely.chiefofstate.migration.versions.v1
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import com.typesafe.config.Config
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import org.testcontainers.utility.DockerImageName
-import java.sql.DriverManager
-import java.sql.Connection
 import com.namely.chiefofstate.migration.BaseSpec
+import org.testcontainers.utility.DockerImageName
+
+import java.sql.{Connection, DriverManager}
 
 class V1Spec extends BaseSpec with ForAllTestContainer {
 
