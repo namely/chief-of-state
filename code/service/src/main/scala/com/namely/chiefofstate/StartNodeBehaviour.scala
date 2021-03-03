@@ -75,7 +75,7 @@ object StartNodeBehaviour {
           JdbcConfig.projectionConfig(config)
 
         // TODO: think about a smarter constructor for the migrator
-        val v1: V1 = V1(projectionJdbcConfig)(context.system)
+        val v1: V1 = V1(journalJdbcConfig, projectionJdbcConfig)(context.system)
         val v2: V2 = V2(journalJdbcConfig, projectionJdbcConfig)(context.system)
 
         new Migrator(journalJdbcConfig)

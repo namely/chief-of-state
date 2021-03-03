@@ -98,5 +98,7 @@ case class V2(journalJdbcConfig: DatabaseConfig[JdbcProfile], projectionJdbcConf
   /**
    * executed when migration done. It deletes the old journal and snapshot tables
    */
-  override def afterUpgrade(): Try[Unit] = Success {}
+  override def afterUpgrade(): Try[Unit] = Success {
+    log.info(s"ChiefOfState migration: #$versionNumber completed")
+  }
 }
