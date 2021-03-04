@@ -58,8 +58,8 @@ case class V1(
         val dropStmt: DBIOAction[Int, NoStream, Effect with Effect.Transactional] =
           sqlu"""DROP TABLE IF EXISTS #$offsetStoreTable""".withPinnedSession.transactionally
         Await.result(projectionJdbcConfig.db.run(dropStmt), Duration.Inf)
-        log.info(s"ChiefOfState migration: #$versionNumber completed")
       }
+      log.info(s"ChiefOfState migration: #$versionNumber completed")
     }
   }
 
