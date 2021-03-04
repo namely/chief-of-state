@@ -53,9 +53,6 @@ class CosConfigSpec extends BaseSpec {
                 otlp_endpoint = ""
                 trace_propagators = "b3multi"
               }
-              create-stores {
-                auto = true
-              }
             }
           """)
       noException shouldBe thrownBy(CosConfig(config))
@@ -99,9 +96,6 @@ class CosConfigSpec extends BaseSpec {
               }
               tracing {
                 jaeger-enabled = false
-              }
-              create-stores {
-                auto = true
               }
             }
           """)

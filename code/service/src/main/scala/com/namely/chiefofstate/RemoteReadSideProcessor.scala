@@ -37,7 +37,7 @@ class RemoteReadSideProcessor(readSideHandlerServiceBlockingStub: ReadSideHandle
     Try {
       // start the span
       val span: Span = GlobalOpenTelemetry
-        .getTracer(getClass.getPackageName)
+        .getTracer(getClass.getPackage().getName())
         .spanBuilder("RemoteReadSideProcessor.processEvent")
         .setAttribute("component", this.getClass.getName)
         .startSpan()

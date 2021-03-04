@@ -1,6 +1,5 @@
 import sbt.{compilerPlugin, plugins, url, AutoPlugin, CrossVersion, Plugins, Resolver, _}
 import sbt.Keys.{resolvers, _}
-import scoverage.ScoverageKeys.coverageExcludedPackages
 import Dependencies.Versions
 import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{
   headerLicense,
@@ -9,8 +8,10 @@ import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{
   HeaderLicenseStyle
 }
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport.scalafmtOnCompile
+import scoverage.ScoverageKeys.coverageExcludedPackages
 
 object Common extends AutoPlugin {
+
   override def requires: Plugins = plugins.JvmPlugin
 
   override def trigger = allRequirements
@@ -64,11 +65,10 @@ object Common extends AutoPlugin {
       testOptions in Test += Tests.Argument("-oDF"),
       logBuffered in Test := false,
       coverageExcludedPackages := "<empty>;com.namely.protobuf.*;" +
-        "com.namely.chiefofstate.ReadSideEventsConsumer;" +
-        "com.namely.chiefofstate.ReadSideProcessor;" +
         "com.namely.chiefofstate.StartNodeBehaviour;" +
         "com.namely.chiefofstate.GrpcHeadersInterceptor;" +
         "com.namely.chiefofstate.StartNode;" +
-        "com.namely.chiefofstate.GrpcServiceImpl;"
+        "com.namely.chiefofstate.GrpcServiceImpl;",
+      fork in Test := true
     )
 }

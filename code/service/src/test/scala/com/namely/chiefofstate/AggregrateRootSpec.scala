@@ -41,7 +41,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       akka.persistence.snapshot-store.local.dir = "tmp/snapshot"
     """) {
 
-  var cosConfig: CosConfig = null
+  var cosConfig: CosConfig = _
   val actorSystem: ActorSystem[Nothing] = testKit.system
   val replyTimeout: FiniteDuration = FiniteDuration(30, TimeUnit.SECONDS)
 
@@ -103,9 +103,6 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
               read-side {
                 # set this value to true whenever a readSide config is set
                 enabled = false
-              }
-              create-stores {
-                auto = true
               }
               telemetry {
                 namespace = ""
@@ -534,9 +531,6 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                 # set this value to true whenever a readSide config is set
                 enabled = false
               }
-              create-stores {
-                auto = true
-              }
               telemetry {
                 namespace = ""
                 otlp_endpoint = ""
@@ -645,9 +639,6 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
               read-side {
                 # set this value to true whenever a readSide config is set
                 enabled = false
-              }
-              create-stores {
-                auto = true
               }
               telemetry {
                 namespace = ""
@@ -765,9 +756,6 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
               read-side {
                 # set this value to true whenever a readSide config is set
                 enabled = false
-              }
-              create-stores {
-                auto = true
               }
               telemetry {
                 namespace = ""

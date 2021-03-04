@@ -14,7 +14,8 @@ import io.opentelemetry.extension.trace.propagation.{B3Propagator, JaegerPropaga
 
 import scala.jdk.CollectionConverters._
 
-/** PropagatorConfiguration is a helper object that provides for a way to select the trace propagators
+/**
+ * PropagatorConfiguration is a helper object that provides for a way to select the trace propagators
  *  to be used in the service.
  */
 object PropagatorConfiguration {

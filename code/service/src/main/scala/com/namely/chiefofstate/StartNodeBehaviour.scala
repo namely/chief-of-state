@@ -16,6 +16,9 @@ import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
+import com.namely.chiefofstate.migration.{JdbcConfig, Migrator}
+import com.namely.chiefofstate.migration.versions.v1.V1
+import com.namely.chiefofstate.migration.versions.v2.V2
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.telemetry._
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
@@ -28,11 +31,13 @@ import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.instrumentation.grpc.v1_5.client.TracingClientInterceptor
 import io.opentelemetry.instrumentation.grpc.v1_5.server.TracingServerInterceptor
 import org.slf4j.{Logger, LoggerFactory}
+import slick.basic.DatabaseConfig
+import slick.jdbc.JdbcProfile
 
 import java.net.InetSocketAddress
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
+import scala.concurrent.ExecutionContext
 import scala.sys.ShutdownHookThread
-import com.namely.chiefofstate.migration.Migrator
+import scala.util.{Failure, Success}
 
 /**
  * This helps setup the required engines needed to smoothly run the ChiefOfState sevice.
@@ -52,8 +57,6 @@ object StartNodeBehaviour {
 
   def apply(config: Config): Behavior[NotUsed] = {
     Behaviors.setup { context =>
-      implicit val ec: ExecutionContextExecutor = context.system.executionContext
-
       // get the  COS config
       val cosConfig: CosConfig = CosConfig(config)
 
@@ -65,20 +68,27 @@ object StartNodeBehaviour {
       ClusterBootstrap(context.system).start()
 
       // create and run the migrator
-      val migrator: Migrator = Migrator(config)
-      migrator.run()
+      val migrator: Migrator = {
+        val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
+          JdbcConfig.journalConfig(config)
 
-      // FIXME: move this into V1 migration version or remove it.
-      // create data stores and run migrations if necessary
-      if (cosConfig.createDataStores) {
-        log.info("kick-starting the ChiefOfState journal, snapshot and offset stores creation")
-        SchemasUtil
-          .createIfNotExists(config)(context.system)
-          .map(_ => {
-            log.info("ChiefOfState journal, snapshot and offset stores created sucessfully...:)")
-          })
-      } else {
-        log.info("No need to create stores")
+        val projectionJdbcConfig: DatabaseConfig[JdbcProfile] =
+          JdbcConfig.projectionConfig(config)
+
+        // TODO: think about a smarter constructor for the migrator
+        val offsetStoreTableName: String = config.getString("akka.projection.slick.offset-store.table")
+        val v1: V1 = V1(journalJdbcConfig, projectionJdbcConfig, offsetStoreTableName)
+        val v2: V2 = V2(journalJdbcConfig, projectionJdbcConfig)(context.system)
+
+        new Migrator(journalJdbcConfig)
+          .addVersion(v1)
+          .addVersion(v2)
+      }
+
+      migrator.run() match {
+        case Failure(exception) => throw exception // we want to panic here.
+        case Success(_) => // We only proceed when the data stores and various migrations are done successfully.
+          log.info("ChiefOfState migration successfully done. About to start...")
       }
 
       // start the telemetry tools and register global tracer

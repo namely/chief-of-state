@@ -26,7 +26,7 @@ object Dependencies {
     val OpenTelemetryMetricsVersion: String = "0.16.0-alpha"
     val PrometheusServerVersion: String = "0.10.0"
 
-    val EmbeddedPostgresVersion: String = "1.2.10"
+    val TestContainers: String = "0.39.3"
   }
 
   import Dependencies.Versions._
@@ -67,9 +67,9 @@ object Dependencies {
     "io.opentelemetry" % "opentelemetry-sdk" % OpenTelemetryVersion,
     "io.opentelemetry.instrumentation" % "opentelemetry-grpc-1.5" % OpenTelemetryVersion,
     "io.opentelemetry" % "opentelemetry-extension-trace-propagators" % OpenTelemetryVersion,
-    "io.opentelemetry" % "opentelemetry-exporter-otlp-trace" % OpenTelemetryVersion excludeAll excludeGRPC,
-    "io.opentelemetry" % "opentelemetry-exporter-otlp-metrics" % OpenTelemetryMetricsVersion excludeAll excludeGRPC,
-    "io.opentelemetry" % "opentelemetry-exporter-jaeger-thrift" % OpenTelemetryVersion excludeAll excludeGRPC,
+    ("io.opentelemetry" % "opentelemetry-exporter-otlp-trace" % OpenTelemetryVersion).excludeAll(excludeGRPC),
+    ("io.opentelemetry" % "opentelemetry-exporter-otlp-metrics" % OpenTelemetryMetricsVersion).excludeAll(excludeGRPC),
+    ("io.opentelemetry" % "opentelemetry-exporter-jaeger-thrift" % OpenTelemetryVersion).excludeAll(excludeGRPC),
     "io.opentelemetry" % "opentelemetry-exporter-prometheus" % OpenTelemetryMetricsVersion,
     "io.prometheus" % "simpleclient_httpserver" % PrometheusServerVersion
   )
@@ -79,6 +79,8 @@ object Dependencies {
     "org.scalatest" %% "scalatest" % ScalaTestVersion % Test,
     "org.scalamock" %% "scalamock" % ScalaMockVersion % Test,
     "io.grpc" % "grpc-testing" % grpcJavaVersion % Test,
-    "io.zonky.test" % "embedded-postgres" % EmbeddedPostgresVersion % Test
+    // test containers
+    "com.dimafeng" %% "testcontainers-scala-scalatest" % Versions.TestContainers % Test,
+    "com.dimafeng" %% "testcontainers-scala-postgresql" % Versions.TestContainers % Test
   )
 }
