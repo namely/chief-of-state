@@ -70,7 +70,10 @@ object Common extends AutoPlugin {
         "com.namely.chiefofstate.StartNodeBehaviour;" +
         "com.namely.chiefofstate.GrpcHeadersInterceptor;" +
         "com.namely.chiefofstate.StartNode;" +
-        "com.namely.chiefofstate.GrpcServiceImpl;",
+        "com.namely.chiefofstate.GrpcServiceImpl;" +
+        "com.namely.chiefofstate.migration.versions.v2.MigrateSnapshot" +
+        "com.namely.chiefofstate.migration.versions.v2.MigrateJournal;" +
+        "com.namely.chiefofstate.migration.versions.v2.V2",
       fork in Test := true
     )
 }
