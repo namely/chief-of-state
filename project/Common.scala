@@ -8,6 +8,7 @@ import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{
   HeaderLicenseStyle
 }
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport.scalafmtOnCompile
+import scoverage.ScoverageKeys.coverageExcludedPackages
 
 object Common extends AutoPlugin {
 
@@ -63,6 +64,11 @@ object Common extends AutoPlugin {
       // show full stack traces and test case durations
       testOptions in Test += Tests.Argument("-oDF"),
       logBuffered in Test := false,
+      coverageExcludedPackages := "<empty>;com.namely.protobuf.*;" +
+        "com.namely.chiefofstate.StartNodeBehaviour;" +
+        "com.namely.chiefofstate.GrpcHeadersInterceptor;" +
+        "com.namely.chiefofstate.StartNode;" +
+        "com.namely.chiefofstate.GrpcServiceImpl;",
       fork in Test := true
     )
 }
