@@ -9,10 +9,12 @@ package com.namely.chiefofstate.migration.versions.v2
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.namely.chiefofstate.migration.BaseSpec
+import org.scalatest.Ignore
 import org.testcontainers.utility.DockerImageName
 
 import java.sql.{Connection, DriverManager, Statement}
 
+@Ignore
 class V2Spec extends BaseSpec with ForAllTestContainer {
 
   val testKit: ActorTestKit = ActorTestKit()
