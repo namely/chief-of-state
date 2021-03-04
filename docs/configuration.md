@@ -62,8 +62,7 @@ Property | Required | Description
 --- | --- | ---
 COS_TELEMETRY_NAMESPACE | no | Namespace to be used to differentiate different chief of state deployments
 COS_TELEMETRY_COLLECTOR_ENDPOINT | no | The grpc endpoint to be use to connect to an [opentelemetry collector](https://opentelemetry.io/docs/collector/) eg.`http://otlp.collector:4317`
-COS_TRACE_PROPAGATORS | no | A comma separated list of [propagators](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/context/api-propagators.md#propagators-distribution) to enable. Defaults to `b3multi`. Valid values are **
-b3**, **b3multi**, **tracecontext**, **baggage**, **jaeger** and **ottracer**
+COS_TRACE_PROPAGATORS | no | A comma separated list of [propagators](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/context/api-propagators.md#propagators-distribution) to enable. Defaults to `b3multi`. Valid values are **b3**, **b3multi**, **tracecontext**, **baggage**, **jaeger** and **ottracer**
 
 ### Read side configurations
 
