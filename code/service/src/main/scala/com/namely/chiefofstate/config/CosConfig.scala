@@ -28,17 +28,14 @@ final case class CosConfig(
   eventsConfig: EventsConfig,
   grpcConfig: GrpcConfig,
   writeSideConfig: WriteSideConfig,
-  createDataStores: Boolean,
   enableReadSide: Boolean,
-  enableJaeger: Boolean
+  telemetryConfig: TelemetryConfig
 )
 
 object CosConfig {
   private val serviceNameKey: String = "chiefofstate.service-name"
   private val askTimeoutKey: String = "chiefofstate.ask-timeout"
-  private val createDataStorekey: String = "chiefofstate.create-stores.auto"
   private val enableReadSideKey: String = "chiefofstate.read-side.enabled"
-  private val enableJaegerTracing: String = "chiefofstate.tracing.jaeger-enabled"
 
   /**
    * creates a new CosConfig instance
@@ -56,9 +53,8 @@ object CosConfig {
       EventsConfig(config),
       GrpcConfig(config),
       WriteSideConfig(config),
-      config.getBoolean(createDataStorekey),
       config.getBoolean(enableReadSideKey),
-      config.getBoolean(enableJaegerTracing)
+      TelemetryConfig(config)
     )
   }
 }

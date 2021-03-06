@@ -26,3 +26,4 @@ protos/chief_of_state/target
 metals.sbt
 /tmp/
 .bsp
+code/*/tmp

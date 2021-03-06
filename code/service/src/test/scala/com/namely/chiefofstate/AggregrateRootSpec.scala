@@ -41,7 +41,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       akka.persistence.snapshot-store.local.dir = "tmp/snapshot"
     """) {
 
-  var cosConfig: CosConfig = null
+  var cosConfig: CosConfig = _
   val actorSystem: ActorSystem[Nothing] = testKit.system
   val replyTimeout: FiniteDuration = FiniteDuration(30, TimeUnit.SECONDS)
 
@@ -104,11 +104,10 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                 # set this value to true whenever a readSide config is set
                 enabled = false
               }
-              create-stores {
-                auto = true
-              }
-              tracing {
-                jaeger-enabled = false
+              telemetry {
+                namespace = ""
+                otlp_endpoint = ""
+                trace_propagators = "b3multi"
               }
             }
           """)
@@ -532,11 +531,10 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                 # set this value to true whenever a readSide config is set
                 enabled = false
               }
-              create-stores {
-                auto = true
-              }
-              tracing {
-                jaeger-enabled = false
+              telemetry {
+                namespace = ""
+                otlp_endpoint = ""
+                trace_propagators = "b3multi"
               }
             }
           """)
@@ -642,11 +640,10 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                 # set this value to true whenever a readSide config is set
                 enabled = false
               }
-              create-stores {
-                auto = true
-              }
-              tracing {
-                jaeger-enabled = false
+              telemetry {
+                namespace = ""
+                otlp_endpoint = ""
+                trace_propagators = "b3multi"
               }
             }
           """)
@@ -760,11 +757,10 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                 # set this value to true whenever a readSide config is set
                 enabled = false
               }
-              create-stores {
-                auto = true
-              }
-              tracing {
-                jaeger-enabled = false
+              telemetry {
+                namespace = ""
+                otlp_endpoint = ""
+                trace_propagators = "b3multi"
               }
             }
           """)

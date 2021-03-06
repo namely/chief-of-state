@@ -6,12 +6,12 @@
 
 package com.namely.chiefofstate.migration
 
+import slick.basic.DatabaseConfig
+import slick.jdbc.meta.MTable
+import slick.jdbc.JdbcProfile
+
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import slick.dbio.DBIO
-import slick.jdbc.meta.MTable
-import slick.basic.DatabaseConfig
-import slick.jdbc.JdbcProfile
 
 object DbUtil {
 

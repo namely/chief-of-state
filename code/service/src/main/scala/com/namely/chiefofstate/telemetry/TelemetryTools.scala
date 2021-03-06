@@ -6,67 +6,114 @@
 
 package com.namely.chiefofstate.telemetry
 
-import com.typesafe.config.Config
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry
-import io.micrometer.prometheus.{PrometheusConfig, PrometheusMeterRegistry}
-import io.opentracing.contrib.metrics.micrometer.MicrometerMetricsReporter
-import io.opentracing.Tracer
-import io.opentracing.util.GlobalTracer
-import org.slf4j.{Logger, LoggerFactory}
+import com.namely.chiefofstate.config.CosConfig
+import io.opentelemetry.exporter.otlp.metrics.OtlpGrpcMetricExporter
+import io.opentelemetry.sdk.metrics.`export`.IntervalMetricReader
+import io.opentelemetry.api.common.Attributes
+import io.opentelemetry.context.propagation.ContextPropagators
+import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter
+import io.opentelemetry.sdk.OpenTelemetrySdk
+import io.opentelemetry.sdk.metrics.SdkMeterProvider
+import io.opentelemetry.sdk.resources.Resource
+import io.opentelemetry.sdk.trace.SdkTracerProvider
+import io.opentelemetry.sdk.trace.`export`.BatchSpanProcessor
+import io.opentelemetry.semconv.resource.attributes.ResourceAttributes
 
-case class TelemetryTools(config: Config, enableJaeger: Boolean, serviceName: String) {
+import java.util.Collections
 
-  val GRPC_STATUS_LABEL: String = "grpc.status"
-
-  val logger: Logger = LoggerFactory.getLogger(getClass)
-  // create a composite registry
-  val compositeRegistry = new CompositeMeterRegistry()
-  // create prometheus registry
-  val prometheusRegistry: PrometheusMeterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
-  compositeRegistry.add(prometheusRegistry)
-  // create metrics reporter
-  val metricsReporter: MicrometerMetricsReporter = MicrometerMetricsReporter
-    .newMetricsReporter()
-    .withRegistry(compositeRegistry)
-    .withName(serviceName)
-    .withTagLabel(GRPC_STATUS_LABEL, "")
-    .build()
-
-  var tracer: Tracer = io.opentracing.noop.NoopTracerFactory.create()
-
-  if (enableJaeger) {
-    // create & register jaeger tracer
-    tracer = io.jaegertracing.Configuration.fromEnv().getTracer
-  }
-
-  // wrap tracer for metrics
-  tracer = io.opentracing.contrib.metrics.Metrics.decorate(tracer, metricsReporter)
-  // register tracer globally
-  GlobalTracer.registerIfAbsent(tracer)
-  // create prometheus scraping server
-  val prometheusServer: PrometheusServer = PrometheusServer(prometheusRegistry, config)
+case class TelemetryTools(config: CosConfig) {
 
   /**
-   * start all telemetry tools
+   * Create an open telemetry SDK and configure it to instrument the service for trace and metrics collection.
    *
-   * @return
+   *  This sets the created SDK as the Global Open Telemetry instance enabling use of the global tracer.
    */
-  def start(): TelemetryTools = {
-    logger.debug("starting telemetry tools")
-    this.prometheusServer.start()
+  def start(): Unit = {
+    val propagators: ContextPropagators = PropagatorConfiguration
+      .configurePropagators(config.telemetryConfig)
 
-    sys.addShutdownHook {
-      stop()
-    }
+    val resource = configureResource(config)
 
-    this
+    configureMetricsExporter(resource)
+
+    val tracerProvider = configureProvider(config, resource)
+
+    val sdkBuilder = OpenTelemetrySdk
+      .builder()
+      .setPropagators(propagators)
+
+    tracerProvider.map(sdkBuilder.setTracerProvider)
+
+    sdkBuilder.buildAndRegisterGlobal()
   }
 
   /**
-   * stop all telemetry tools
+   * Configure a metrics exporter.
+   * @param resource a Resource instance representing the instrumented target.
    */
-  def stop(): Unit = {
-    logger.debug("stopping telemetry tools")
-    this.prometheusServer.stop()
+  def configureMetricsExporter(resource: Resource): Unit = {
+    val endpoint: String = config.telemetryConfig.otlpEndpoint
+    if (endpoint.nonEmpty) {
+      val meterProvider = SdkMeterProvider.builder.setResource(resource).buildAndRegisterGlobal
+      val builder = OtlpGrpcMetricExporter.builder()
+
+      builder.setEndpoint(endpoint)
+      val exporter = builder.build
+      val readerBuilder = IntervalMetricReader.builder
+        .setMetricProducers(Collections.singleton(meterProvider))
+        .setMetricExporter(exporter)
+      val reader = readerBuilder.build
+      sys.addShutdownHook {
+        reader.shutdown()
+      }
+    }
   }
+
+  /**
+   * Configure the Tracer Provider that will be used to process trace entries.
+   *
+   * @param config the config object which holds the provider settings
+   * @param resource a Resource instance representing the instrumented target
+   * @return a Tracer provider configured to export metrics using OTLP
+   */
+  def configureProvider(config: CosConfig, resource: Resource): Option[SdkTracerProvider] = {
+    Option(config.telemetryConfig.otlpEndpoint)
+      .filter(_.nonEmpty)
+      .map(endpoint => {
+        val providerBuilder = SdkTracerProvider.builder()
+        providerBuilder.setResource(resource)
+
+        val exporter = OtlpGrpcSpanExporter.builder
+          .setEndpoint(endpoint)
+          .build()
+
+        val processor = BatchSpanProcessor.builder(exporter).build()
+        providerBuilder.addSpanProcessor(processor)
+
+        val provider = providerBuilder.build()
+
+        sys.addShutdownHook {
+          provider.shutdown()
+        }
+        provider
+      })
+  }
+
+  /**
+   * Create a resource instance that will hold details of the service being instrumented.
+   *
+   * @param config the config object to be used to extract the service details
+   * @return a resource representing the current instrumentation target.
+   */
+  def configureResource(config: CosConfig): Resource = {
+    val resourceAttributes = Attributes.builder()
+    resourceAttributes.put(ResourceAttributes.SERVICE_NAME, config.serviceName)
+
+    Option(config.telemetryConfig.namespace)
+      .filter(_.nonEmpty)
+      .foreach(resourceAttributes.put(ResourceAttributes.SERVICE_NAMESPACE, _))
+
+    Resource.getDefault.merge(Resource.create(resourceAttributes.build()))
+  }
+
 }

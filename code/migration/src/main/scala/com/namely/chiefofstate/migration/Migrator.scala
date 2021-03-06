@@ -6,7 +6,6 @@
 
 package com.namely.chiefofstate.migration
 
-import com.typesafe.config.Config
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -19,7 +18,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
-class Migrator private[migration] (val journalDbConfig: DatabaseConfig[JdbcProfile]) {
+class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
   val logger: Logger = Migrator.logger
 
   // create the priority queue of versions sorted by version number
@@ -34,7 +33,7 @@ class Migrator private[migration] (val journalDbConfig: DatabaseConfig[JdbcProfi
    * @param version the Version to add
    * @return the runner with that Version added
    */
-  private[migration] def addVersion(version: Version): Migrator = {
+  def addVersion(version: Version): Migrator = {
     this.versions.addOne(version)
     logger.debug(s"added version ${version.versionNumber}")
     this
@@ -65,9 +64,7 @@ class Migrator private[migration] (val journalDbConfig: DatabaseConfig[JdbcProfi
    * run the migration, including setup and all steps
    */
   def run(): Try[Unit] = {
-
     logger.info(s"starting migrator")
-
     this
       // run before all step
       .beforeAll()
@@ -91,7 +88,6 @@ class Migrator private[migration] (val journalDbConfig: DatabaseConfig[JdbcProfi
           versionsToUpgrade.foldLeft(Try {})((output, version) => {
             output
               .flatMap(_ => {
-                logger.info(s"upgrading to version ${version.versionNumber}")
                 Migrator.upgradeVersion(this.journalDbConfig, version)
               })
           })
@@ -106,13 +102,6 @@ object Migrator {
 
   val COS_MIGRATIONS_INITIAL_VERSION: String = "COS_MIGRATIONS_INITIAL_VERSION"
 
-  // public constructor that hard-codes version numbers in
-  def apply(config: Config): Migrator = {
-    val dbConfig = JdbcConfig.journalConfig(config)
-    val migrator: Migrator = new Migrator(dbConfig)
-    migrator
-  }
-
   /**
    * run version snapshot and set version in db
    *
@@ -121,6 +110,8 @@ object Migrator {
    * @return success/failure
    */
   private[migration] def snapshotVersion(dbConfig: DatabaseConfig[JdbcProfile], version: Version): Try[Unit] = {
+    logger.info(s"Snapshotting version ${version.versionNumber}")
+
     val stmt = version
       .snapshot()
       .andThen(setCurrentVersionNumber(dbConfig, version.versionNumber, true))
@@ -139,10 +130,11 @@ object Migrator {
    * @return success/failure
    */
   private[migration] def upgradeVersion(dbConfig: DatabaseConfig[JdbcProfile], version: Version): Try[Unit] = {
+    logger.info(s"upgrading to version ${version.versionNumber}")
     Try {
       // check prior version number
       val priorVersionNumber: Int = getCurrentVersionNumber(dbConfig).getOrElse(-1)
-      require(priorVersionNumber > 0, "no prior version, cannot upgrade")
+      require(priorVersionNumber >= 0, "no prior version, cannot upgrade")
       require(
         priorVersionNumber + 1 == version.versionNumber,
         s"cannot upgrade from version $priorVersionNumber to ${version.versionNumber}"
@@ -193,7 +185,7 @@ object Migrator {
   private[migration] def getCurrentVersionNumber(dbConfig: DatabaseConfig[JdbcProfile]): Option[Int] = {
     val sqlStmt = sql"SELECT version_number from #$COS_MIGRATIONS_TABLE".as[Int]
 
-    val result = Await.result(dbConfig.db.run(sqlStmt), Duration.Inf).toSeq
+    val result = Await.result(dbConfig.db.run(sqlStmt), Duration.Inf)
 
     result match {
       case Seq()    => None

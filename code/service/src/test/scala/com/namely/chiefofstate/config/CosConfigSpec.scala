@@ -48,11 +48,10 @@ class CosConfigSpec extends BaseSpec {
                 # set this value to true whenever a readSide config is set
                 enabled = false
               }
-              tracing {
-                jaeger-enabled = false
-              }
-              create-stores {
-                auto = true
+              telemetry {
+                namespace = ""
+                otlp_endpoint = ""
+                trace_propagators = "b3multi"
               }
             }
           """)
@@ -97,9 +96,6 @@ class CosConfigSpec extends BaseSpec {
               }
               tracing {
                 jaeger-enabled = false
-              }
-              create-stores {
-                auto = true
               }
             }
           """)
