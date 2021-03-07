@@ -6,7 +6,7 @@
 
 package com.namely.chiefofstate.migration.versions.v1
 
-import com.namely.chiefofstate.migration.{DbUtil, Migrator, Version}
+import com.namely.chiefofstate.migration.{DbUtil, Migrator, StringImprovements, Version}
 import com.namely.chiefofstate.migration.versions.v1.V1.{insertInto, OFFSET_STORE_TEMP_TABLE, OffsetRow}
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
@@ -52,11 +52,13 @@ case class V1(
   }
 
   override def afterUpgrade(): Try[Unit] = {
+    // get the correct table name
+    val table: String = tableName()
     Try {
       if (!DbUtil.tableExists(projectionJdbcConfig, Migrator.COS_MIGRATIONS_TABLE)) {
         log.info(s"dropping the read side offset store from the old database connection")
         val dropStmt: DBIOAction[Int, NoStream, Effect with Effect.Transactional] =
-          sqlu"""DROP TABLE IF EXISTS #$offsetStoreTable""".withPinnedSession.transactionally
+          sqlu"""DROP TABLE IF EXISTS #$table""".withPinnedSession.transactionally
         Await.result(projectionJdbcConfig.db.run(dropStmt), Duration.Inf)
       }
       log.info(s"ChiefOfState migration: #$versionNumber completed")
@@ -71,16 +73,18 @@ case class V1(
    * @return a DBIO that runs this upgrade
    */
   override def upgrade(): DBIO[Unit] = {
+    // get the correct table name
+    val table: String = tableName()
     log.info(s"finalizing ChiefOfState migration: #$versionNumber")
     DBIO.seq(
       // dropping the old table in the new projection connection
-      sqlu"""DROP TABLE IF EXISTS #$offsetStoreTable""",
+      sqlu"""DROP TABLE IF EXISTS #$table""",
       // renaming the temporary table in the new projection connection
-      sqlu"""ALTER TABLE IF EXISTS #$OFFSET_STORE_TEMP_TABLE RENAME TO #$offsetStoreTable""",
+      sqlu"""ALTER TABLE IF EXISTS #$OFFSET_STORE_TEMP_TABLE RENAME TO #$table""",
       // dropping the temporary table index
       sqlu"""DROP INDEX IF EXISTS #${OFFSET_STORE_TEMP_TABLE}_index""",
       // creating the required index on the renamed table
-      sqlu"""CREATE INDEX IF NOT EXISTS projection_name_index ON #$offsetStoreTable (projection_name)"""
+      sqlu"""CREATE INDEX IF NOT EXISTS projection_name_index ON #$table (projection_name)"""
     )
   }
 
@@ -98,6 +102,7 @@ case class V1(
    * @return the number of the record inserted into the table
    */
   private def migrate(): Int = {
+    val table: String = tableName()
     // read all the data from the old read side offset store
     val sqlStmt: SqlStreamingAction[Vector[OffsetRow], OffsetRow, Effect] =
       sql"""
@@ -108,7 +113,7 @@ case class V1(
                 c."MANIFEST",
                 c."MERGEABLE",
                 c."LAST_UPDATED"
-            FROM #$offsetStoreTable as c
+            FROM #$table as c
         """.as[OffsetRow]
 
     // let us fetch the data
@@ -116,6 +121,15 @@ case class V1(
 
     // let us insert the data into the temporary table
     insertInto(OFFSET_STORE_TEMP_TABLE, journalJdbcConfig, data)
+  }
+
+  /**
+   * returns the read side offset store correct table name that
+   * can be used sql statement.
+   */
+  private def tableName(): String = {
+    if (offsetStoreTable.isUpper) offsetStoreTable.quote
+    else offsetStoreTable
   }
 }
 
