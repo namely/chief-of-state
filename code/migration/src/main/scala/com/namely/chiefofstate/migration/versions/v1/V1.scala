@@ -53,7 +53,7 @@ case class V1(
 
   override def afterUpgrade(): Try[Unit] = {
     // get the correct table name
-    val table: String = tableName()
+    val table: String = transformTableName()
     Try {
       if (!DbUtil.tableExists(projectionJdbcConfig, Migrator.COS_MIGRATIONS_TABLE)) {
         log.info(s"dropping the read side offset store from the old database connection")
@@ -74,7 +74,7 @@ case class V1(
    */
   override def upgrade(): DBIO[Unit] = {
     // get the correct table name
-    val table: String = tableName()
+    val table: String = transformTableName()
     log.info(s"finalizing ChiefOfState migration: #$versionNumber")
     DBIO.seq(
       // dropping the old table in the new projection connection
@@ -102,7 +102,7 @@ case class V1(
    * @return the number of the record inserted into the table
    */
   private def migrate(): Int = {
-    val table: String = tableName()
+    val table: String = transformTableName()
     // read all the data from the old read side offset store
     val sqlStmt: SqlStreamingAction[Vector[OffsetRow], OffsetRow, Effect] =
       sql"""
@@ -127,7 +127,7 @@ case class V1(
    * returns the read side offset store correct table name that
    * can be used sql statement.
    */
-  private def tableName(): String = {
+  private def transformTableName(): String = {
     if (offsetStoreTable.isUpper) offsetStoreTable.quote
     else offsetStoreTable
   }
