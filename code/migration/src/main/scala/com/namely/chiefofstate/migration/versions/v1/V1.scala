@@ -7,13 +7,13 @@
 package com.namely.chiefofstate.migration.versions.v1
 
 import com.namely.chiefofstate.migration.{DbUtil, Migrator, StringImprovements, Version}
-import com.namely.chiefofstate.migration.versions.v1.V1.{insertInto, OFFSET_STORE_TEMP_TABLE, OffsetRow}
+import com.namely.chiefofstate.migration.versions.v1.V1.{createTable, insertInto, tempTable, OffsetRow}
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
 import slick.jdbc.{GetResult, JdbcProfile, PostgresProfile}
 import slick.jdbc.PostgresProfile.api._
-import slick.sql.SqlStreamingAction
+import slick.sql.SqlAction
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -24,7 +24,6 @@ import scala.util.Try
  * uppercase to lower case
  *
  * @param projectionJdbcConfig the projection configuration
- * @param system the actor system
  */
 case class V1(
   journalJdbcConfig: DatabaseConfig[JdbcProfile],
@@ -43,8 +42,11 @@ case class V1(
    */
   override def beforeUpgrade(): Try[Unit] = {
     Try {
+      // let us first drop the temporary table if exist
+      DbUtil.dropTableIfExists(tempTable, journalJdbcConfig)
+
       log.info("creating new ChiefOfState read side offset store temporary table")
-      V1.createTempTable(journalJdbcConfig)
+      createTable(journalJdbcConfig)
 
       log.info("moving the data accross read side store databases")
       migrate()
@@ -57,9 +59,7 @@ case class V1(
     Try {
       if (!DbUtil.tableExists(projectionJdbcConfig, Migrator.COS_MIGRATIONS_TABLE)) {
         log.info(s"dropping the read side offset store from the old database connection")
-        val dropStmt: DBIOAction[Int, NoStream, Effect with Effect.Transactional] =
-          sqlu"""DROP TABLE IF EXISTS #$table""".withPinnedSession.transactionally
-        Await.result(projectionJdbcConfig.db.run(dropStmt), Duration.Inf)
+        DbUtil.dropTableIfExists(table, projectionJdbcConfig)
       }
       log.info(s"ChiefOfState migration: #$versionNumber completed")
     }
@@ -80,9 +80,9 @@ case class V1(
       // dropping the old table in the new projection connection
       sqlu"""DROP TABLE IF EXISTS #$table""",
       // renaming the temporary table in the new projection connection
-      sqlu"""ALTER TABLE IF EXISTS #$OFFSET_STORE_TEMP_TABLE RENAME TO #$table""",
+      sqlu"""ALTER TABLE IF EXISTS #$tempTable RENAME TO #$table""",
       // dropping the temporary table index
-      sqlu"""DROP INDEX IF EXISTS #${OFFSET_STORE_TEMP_TABLE}_index""",
+      sqlu"""DROP INDEX IF EXISTS #${tempTable}_index""",
       // creating the required index on the renamed table
       sqlu"""CREATE INDEX IF NOT EXISTS projection_name_index ON #$table (projection_name)"""
     )
@@ -102,9 +102,20 @@ case class V1(
    * @return the number of the record inserted into the table
    */
   private def migrate(): Int = {
+    // let us fetch the records
+    val data: Seq[OffsetRow] = fetchOffsetRows()
+
+    // let us insert the data into the temporary table
+    insertInto(tempTable, journalJdbcConfig, data)
+  }
+
+  /**
+   * fetches all records in the old offset store table
+   */
+  private def fetchOffsetRows(): Seq[OffsetRow] = {
     val table: String = transformTableName()
     // read all the data from the old read side offset store
-    val sqlStmt: SqlStreamingAction[Vector[OffsetRow], OffsetRow, Effect] =
+    val query: DBIOAction[Vector[OffsetRow], Streaming[OffsetRow], Effect] =
       sql"""
             SELECT
                 c."PROJECTION_NAME",
@@ -114,13 +125,11 @@ case class V1(
                 c."MERGEABLE",
                 c."LAST_UPDATED"
             FROM #$table as c
-        """.as[OffsetRow]
+        """
+        .as[OffsetRow]
+        .withPinnedSession
 
-    // let us fetch the data
-    val data: Seq[OffsetRow] = Await.result(projectionJdbcConfig.db.run(sqlStmt), Duration.Inf)
-
-    // let us insert the data into the temporary table
-    insertInto(OFFSET_STORE_TEMP_TABLE, journalJdbcConfig, data)
+    Await.result(projectionJdbcConfig.db.run(query), Duration.Inf)
   }
 
   /**
@@ -135,17 +144,17 @@ case class V1(
 
 object V1 {
   // offset store temporary table name
-  private[v1] val OFFSET_STORE_TEMP_TABLE: String = "v1_offset_store_temp"
+  private[v1] val tempTable: String = "v1_offset_store_temp"
 
   /**
    * creates the temporary offset store table in the write side database
    *
    * @param journalJdbcConfig the database config
    */
-  private[v1] def createTempTable(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
-    val tableCreationStmt =
+  private[v1] def createTable(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
+    val tableCreationStmt: SqlAction[Int, NoStream, Effect] =
       sqlu"""
-        CREATE TABLE IF NOT EXISTS #$OFFSET_STORE_TEMP_TABLE(
+        CREATE TABLE IF NOT EXISTS #$tempTable(
           projection_name VARCHAR(255) NOT NULL,
           projection_key VARCHAR(255) NOT NULL,
           current_offset VARCHAR(255) NOT NULL,
@@ -155,8 +164,8 @@ object V1 {
           PRIMARY KEY(projection_name, projection_key)
         )"""
 
-    val indexCreationStmt =
-      sqlu"""CREATE INDEX IF NOT EXISTS #${OFFSET_STORE_TEMP_TABLE}_index ON #$OFFSET_STORE_TEMP_TABLE (projection_name)"""
+    val indexCreationStmt: SqlAction[Int, NoStream, Effect] =
+      sqlu"""CREATE INDEX IF NOT EXISTS #${tempTable}_index ON #$tempTable (projection_name)"""
 
     val ddlSeq: DBIOAction[Unit, NoStream, PostgresProfile.api.Effect with Effect.Transactional] = DBIO
       .seq(
@@ -178,13 +187,19 @@ object V1 {
    * @return the number of record inserted
    */
   private[v1] def insertInto(tableName: String, dbConfig: DatabaseConfig[JdbcProfile], data: Seq[OffsetRow]): Int = {
-    def insertToStmt(offsetRow: OffsetRow, tableName: String): DBIO[Int] = {
-      sqlu"INSERT INTO #$tableName VALUES (${offsetRow.projectionName}, ${offsetRow.projectionKey}, ${offsetRow.offsetStr}, ${offsetRow.manifest}, ${offsetRow.mergeable}, ${offsetRow.lastUpdated})"
-    }
-
-    val combined: DBIO[Seq[Int]] = DBIO.sequence(data.map(row => {
-      insertToStmt(row, tableName)
-    }))
+    // let us build the insert statement
+    val combined: DBIO[Seq[Int]] = DBIO
+      .sequence(
+        data
+          .map(row => {
+            sqlu"""
+                INSERT INTO #$tableName
+                VALUES (${row.projectionName}, ${row.projectionKey}, ${row.currentOffset}, ${row.manifest}, ${row.mergeable}, ${row.lastUpdated})
+            """
+          })
+      )
+      .withPinnedSession
+      .transactionally
 
     Await.result(dbConfig.db.run(combined), Duration.Inf).sum
   }
@@ -192,7 +207,7 @@ object V1 {
   private[v1] case class OffsetRow(
     projectionName: String,
     projectionKey: String,
-    offsetStr: String,
+    currentOffset: String,
     manifest: String,
     mergeable: Boolean,
     lastUpdated: Long
