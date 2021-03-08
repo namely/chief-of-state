@@ -10,12 +10,7 @@ import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import com.dimafeng.testcontainers.{ForAllTestContainer, MultipleContainers, PostgreSQLContainer}
 import com.namely.chiefofstate.migration.{BaseSpec, DbUtil}
 import com.namely.chiefofstate.migration.helper.TestConfig
-import com.namely.chiefofstate.migration.versions.v1.V1.{
-  createTempTable,
-  insertInto,
-  OFFSET_STORE_TEMP_TABLE,
-  OffsetRow
-}
+import com.namely.chiefofstate.migration.versions.v1.V1.{createTable, insertInto, tempTable, OffsetRow}
 import com.namely.chiefofstate.migration.Migrator.createMigrationsTable
 import com.typesafe.config.Config
 import org.testcontainers.utility.DockerImageName
@@ -123,7 +118,7 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
       OffsetRow(
         projectionName = "some-projection",
         projectionKey = "chiefofstate0",
-        offsetStr = "38",
+        currentOffset = "38",
         manifest = "SEQ",
         mergeable = false,
         lastUpdated = 1614684500617L
@@ -131,7 +126,7 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
       OffsetRow(
         projectionName = "some-projection",
         projectionKey = "chiefofstate1",
-        offsetStr = "123",
+        currentOffset = "123",
         manifest = "SEQ",
         mergeable = false,
         lastUpdated = 1614684500618L
@@ -139,7 +134,7 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
       OffsetRow(
         projectionName = "some-projection",
         projectionKey = "chiefofstate8",
-        offsetStr = "167",
+        currentOffset = "167",
         manifest = "SEQ",
         mergeable = false,
         lastUpdated = Instant.now().toEpochMilli
@@ -158,7 +153,7 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
     val sqlStmt: SqlStreamingAction[Vector[Int], Int, Effect] =
       sql"""
             SELECT count(c.*)
-            FROM #$OFFSET_STORE_TEMP_TABLE as c
+            FROM #$tempTable as c
         """.as[Int]
 
     Await.result(journalJdbcConfig.db.run(sqlStmt), Duration.Inf).headOption.getOrElse(0)
@@ -223,7 +218,7 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
       val v1: V1 = V1(journalJdbcConfig, projectionJdbcConfig, "read_side_offsets")
 
       // create the temp table
-      createTempTable(journalJdbcConfig) shouldBe {}
+      createTable(journalJdbcConfig) shouldBe {}
 
       // before upgrade the read_side_offset table does not exist on the new connection
       DbUtil.tableExists(journalJdbcConfig, "read_side_offsets") shouldBe false
@@ -242,7 +237,7 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
       noException shouldBe thrownBy(create(journalJdbcConfig))
 
       // create the temp table
-      createTempTable(journalJdbcConfig) shouldBe {}
+      createTable(journalJdbcConfig) shouldBe {}
 
       // before upgrade the read_side_offset table does not exist on the new connection
       DbUtil.tableExists(journalJdbcConfig, "read_side_offsets") shouldBe true
