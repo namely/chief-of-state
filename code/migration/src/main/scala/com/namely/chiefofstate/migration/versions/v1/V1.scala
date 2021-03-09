@@ -7,7 +7,7 @@
 package com.namely.chiefofstate.migration.versions.v1
 
 import com.namely.chiefofstate.migration.{DbUtil, Migrator, StringImprovements, Version}
-import com.namely.chiefofstate.migration.versions.v1.V1.{createTable, insertInto, tempTable, OffsetRow}
+import com.namely.chiefofstate.migration.versions.v1.V1.{createTable, insertInto, offsetTableName, tempTable, OffsetRow}
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
@@ -28,7 +28,7 @@ import scala.util.Try
 case class V1(
   journalJdbcConfig: DatabaseConfig[JdbcProfile],
   projectionJdbcConfig: DatabaseConfig[JdbcProfile],
-  offsetStoreTable: String
+  priorOffsetStoreTable: String
 ) extends Version {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -53,18 +53,6 @@ case class V1(
     }
   }
 
-  override def afterUpgrade(): Try[Unit] = {
-    // get the correct table name
-    val table: String = transformTableName()
-    Try {
-      if (!DbUtil.tableExists(projectionJdbcConfig, Migrator.COS_MIGRATIONS_TABLE)) {
-        log.info(s"dropping the read side offset store from the old database connection")
-        DbUtil.dropTableIfExists(table, projectionJdbcConfig)
-      }
-      log.info(s"ChiefOfState migration: #$versionNumber completed")
-    }
-  }
-
   /**
    * implement this method to upgrade the application to this version. This is
    * run in the same db transaction that commits the version number to the
@@ -74,17 +62,15 @@ case class V1(
    */
   override def upgrade(): DBIO[Unit] = {
     // get the correct table name
-    val table: String = transformTableName()
+    val oldTable: String = transformTableName()
     log.info(s"finalizing ChiefOfState migration: #$versionNumber")
     DBIO.seq(
       // dropping the old table in the new projection connection
-      sqlu"""DROP TABLE IF EXISTS #$table""",
+      sqlu"""DROP TABLE IF EXISTS #$oldTable CASCADE""",
       // renaming the temporary table in the new projection connection
-      sqlu"""ALTER TABLE IF EXISTS #$tempTable RENAME TO #$table""",
-      // dropping the temporary table index
-      sqlu"""DROP INDEX IF EXISTS #${tempTable}_index""",
+      sqlu"""ALTER TABLE #$tempTable RENAME TO #$offsetTableName""",
       // creating the required index on the renamed table
-      sqlu"""CREATE INDEX IF NOT EXISTS projection_name_index ON #$table (projection_name)"""
+      sqlu"""CREATE INDEX #${offsetTableName}_projection_name_index ON #$offsetTableName (projection_name)"""
     )
   }
 
@@ -104,6 +90,8 @@ case class V1(
   private def migrate(): Int = {
     // let us fetch the records
     val data: Seq[OffsetRow] = fetchOffsetRows()
+
+    log.info(s"num records migrating to $tempTable: ${data.size}")
 
     // let us insert the data into the temporary table
     insertInto(tempTable, journalJdbcConfig, data)
@@ -137,14 +125,16 @@ case class V1(
    * can be used sql statement.
    */
   private def transformTableName(): String = {
-    if (offsetStoreTable.isUpper) offsetStoreTable.quote
-    else offsetStoreTable
+    if (priorOffsetStoreTable.isUpper) priorOffsetStoreTable.quote
+    else priorOffsetStoreTable
   }
 }
 
 object V1 {
   // offset store temporary table name
   private[v1] val tempTable: String = "v1_offset_store_temp"
+  // offset store final table name
+  private[v1] val offsetTableName: String = "read_side_offsets"
 
   /**
    * creates the temporary offset store table in the write side database
@@ -152,9 +142,8 @@ object V1 {
    * @param journalJdbcConfig the database config
    */
   private[v1] def createTable(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
-    val tableCreationStmt: SqlAction[Int, NoStream, Effect] =
-      sqlu"""
-        CREATE TABLE IF NOT EXISTS #$tempTable(
+    val stmt = sqlu"""
+        CREATE TABLE #$tempTable(
           projection_name VARCHAR(255) NOT NULL,
           projection_key VARCHAR(255) NOT NULL,
           current_offset VARCHAR(255) NOT NULL,
@@ -162,20 +151,9 @@ object V1 {
           mergeable BOOLEAN NOT NULL,
           last_updated BIGINT NOT NULL,
           PRIMARY KEY(projection_name, projection_key)
-        )"""
+        )""".withPinnedSession.transactionally
 
-    val indexCreationStmt: SqlAction[Int, NoStream, Effect] =
-      sqlu"""CREATE INDEX IF NOT EXISTS #${tempTable}_index ON #$tempTable (projection_name)"""
-
-    val ddlSeq: DBIOAction[Unit, NoStream, PostgresProfile.api.Effect with Effect.Transactional] = DBIO
-      .seq(
-        tableCreationStmt,
-        indexCreationStmt
-      )
-      .withPinnedSession
-      .transactionally
-
-    Await.result(journalJdbcConfig.db.run(ddlSeq), Duration.Inf)
+    Await.result(journalJdbcConfig.db.run(stmt), Duration.Inf)
   }
 
   /**
