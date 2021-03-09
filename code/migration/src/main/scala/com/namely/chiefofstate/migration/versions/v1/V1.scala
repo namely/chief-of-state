@@ -93,18 +93,6 @@ case class V1(
 
     log.info(s"num records migrating to $tempTable: ${data.size}")
 
-    // ensure there are no duplicates per key in the query resultset
-    data
-      .groupBy(row => (row.projectionName, row.projectionKey))
-      .map({ case (k, records) => (k, records.size) })
-      .foreach({
-        case ((projectionName, projectionKey), recordCount) => {
-          require(recordCount == 1,
-                  s"too many records for key, name=$projectionName, key=$projectionKey, count=$recordCount"
-          )
-        }
-      })
-
     // let us insert the data into the temporary table
     insertInto(tempTable, journalJdbcConfig, data)
   }
