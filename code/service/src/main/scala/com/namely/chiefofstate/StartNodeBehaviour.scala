@@ -75,7 +75,7 @@ object StartNodeBehaviour {
         val projectionJdbcConfig: DatabaseConfig[JdbcProfile] =
           JdbcConfig.projectionConfig(config)
 
-        // TODO: think about a sma  rter constructor for the migrator
+        // TODO: think about a smarter constructor for the migrator
         // get the projection config
         val priorProjectionJdbcConfig: DatabaseConfig[JdbcProfile] =
           JdbcConfig.projectionConfig(config, "chiefofstate.migration.v1.slick")
