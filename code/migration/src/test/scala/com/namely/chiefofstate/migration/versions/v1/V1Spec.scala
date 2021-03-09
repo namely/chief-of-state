@@ -186,34 +186,6 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
       count(journalJdbcConfig) shouldBe 3
     }
   }
-  ".afterUpgrade" should {
-    "drop the table on the old connection" in {
-      // given an instance of V1 version
-      val v1: V1 = V1(journalJdbcConfig, projectionJdbcConfig, "read_side_offsets")
-
-      // create the actual offset store table
-      // create the old read side offset store
-      noException shouldBe thrownBy(createOldOffsetTable(projectionJdbcConfig))
-
-      v1.afterUpgrade().isSuccess shouldBe true
-
-      DbUtil.tableExists(projectionJdbcConfig, "read_side_offsets") shouldBe false
-
-    }
-    "do nothing if on the new connection" in {
-      // given an instance of V1 version
-      val v1: V1 = V1(journalJdbcConfig, projectionJdbcConfig, "read_side_offsets")
-
-      // create cos migrations table
-      noException shouldBe thrownBy(createMigrationsTable(projectionJdbcConfig))
-
-      // create the actual offset store table
-      // create the old read side offset store
-      noException shouldBe thrownBy(createOldOffsetTable(projectionJdbcConfig))
-
-      v1.afterUpgrade().isSuccess shouldBe true
-    }
-  }
   ".upgrade" should {
     "drop the old table and index" in {
       // given an instance of V1 version

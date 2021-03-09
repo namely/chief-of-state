@@ -53,18 +53,6 @@ case class V1(
     }
   }
 
-  override def afterUpgrade(): Try[Unit] = {
-    // get the correct table name
-    val table: String = transformTableName()
-    Try {
-      if (!DbUtil.tableExists(projectionJdbcConfig, Migrator.COS_MIGRATIONS_TABLE)) {
-        log.info(s"dropping the read side offset store from the old database connection")
-        DbUtil.dropTableIfExists(table, projectionJdbcConfig)
-      }
-      log.info(s"ChiefOfState migration: #$versionNumber completed")
-    }
-  }
-
   /**
    * implement this method to upgrade the application to this version. This is
    * run in the same db transaction that commits the version number to the
