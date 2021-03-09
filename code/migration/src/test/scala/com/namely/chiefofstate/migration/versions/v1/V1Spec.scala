@@ -71,7 +71,6 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
       projectionPg.jdbcUrl,
       projectionPg.username,
       projectionPg.password,
-      "read_side_offsets",
       false
     )
     DatabaseConfig.forConfig[JdbcProfile]("akka.projection.slick", cfg)
@@ -90,19 +89,22 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
    *
    * @param projectionJdbcConfig the the projection db config
    */
-  def create(projectionJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
+  def createOldOffsetTable(projectionJdbcConfig: DatabaseConfig[JdbcProfile],
+                           tableName: String = "read_side_offsets",
+                           indexName: String = "projection_name_index"
+  ): Unit = {
     val stmt = DBIO.seq(
       sqlu"""
-        CREATE TABLE IF NOT EXISTS read_side_offsets(
-         "PROJECTION_NAME" VARCHAR(255) NOT NULL,
-        "PROJECTION_KEY" VARCHAR(255) NOT NULL,
-        "CURRENT_OFFSET" VARCHAR(255) NOT NULL,
-        "MANIFEST" VARCHAR(4) NOT NULL,
-        "MERGEABLE" BOOLEAN NOT NULL,
-        "LAST_UPDATED" BIGINT NOT NULL,
-        PRIMARY KEY("PROJECTION_NAME", "PROJECTION_KEY")
+        CREATE TABLE #$tableName(
+          "PROJECTION_NAME" VARCHAR(255) NOT NULL,
+          "PROJECTION_KEY" VARCHAR(255) NOT NULL,
+          "CURRENT_OFFSET" VARCHAR(255) NOT NULL,
+          "MANIFEST" VARCHAR(4) NOT NULL,
+          "MERGEABLE" BOOLEAN NOT NULL,
+          "LAST_UPDATED" BIGINT NOT NULL,
+          PRIMARY KEY("PROJECTION_NAME", "PROJECTION_KEY")
         )""",
-      sqlu"""CREATE INDEX IF NOT EXISTS "PROJECTION_NAME_INDEX" ON read_side_offsets ("PROJECTION_NAME")"""
+      sqlu"""CREATE INDEX #$indexName ON #$tableName ("PROJECTION_NAME")"""
     )
 
     Await.result(projectionJdbcConfig.db.run(stmt), Duration.Inf)
@@ -173,7 +175,7 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
       val v1: V1 = V1(journalJdbcConfig, projectionJdbcConfig, "read_side_offsets")
 
       // create the old read side offset store
-      noException shouldBe thrownBy(create(projectionJdbcConfig))
+      noException shouldBe thrownBy(createOldOffsetTable(projectionJdbcConfig))
 
       // seed the old read side offset store with some data
       insert(projectionJdbcConfig) shouldBe 3
@@ -191,7 +193,7 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
 
       // create the actual offset store table
       // create the old read side offset store
-      noException shouldBe thrownBy(create(projectionJdbcConfig))
+      noException shouldBe thrownBy(createOldOffsetTable(projectionJdbcConfig))
 
       v1.afterUpgrade().isSuccess shouldBe true
 
@@ -207,7 +209,7 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
 
       // create the actual offset store table
       // create the old read side offset store
-      noException shouldBe thrownBy(create(projectionJdbcConfig))
+      noException shouldBe thrownBy(createOldOffsetTable(projectionJdbcConfig))
 
       v1.afterUpgrade().isSuccess shouldBe true
     }
@@ -218,7 +220,7 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
       val v1: V1 = V1(journalJdbcConfig, projectionJdbcConfig, "read_side_offsets")
 
       // create the temp table
-      createTable(journalJdbcConfig) shouldBe {}
+      V1.createTable(journalJdbcConfig) shouldBe {}
 
       // before upgrade the read_side_offset table does not exist on the new connection
       DbUtil.tableExists(journalJdbcConfig, "read_side_offsets") shouldBe false
@@ -230,22 +232,31 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
     }
 
     "drop the old table and index if exists on new connection" in {
+
+      val oldTableName = "old_read_side"
+
       // given an instance of V1 version
-      val v1: V1 = V1(journalJdbcConfig, projectionJdbcConfig, "read_side_offsets")
+      val v1: V1 = V1(journalJdbcConfig, projectionJdbcConfig, oldTableName)
 
       // create the old read side offset store
-      noException shouldBe thrownBy(create(journalJdbcConfig))
+      createOldOffsetTable(journalJdbcConfig, oldTableName)
+      DbUtil.tableExists(journalJdbcConfig, oldTableName) shouldBe true
 
       // create the temp table
-      createTable(journalJdbcConfig) shouldBe {}
+      createTable(journalJdbcConfig)
+      DbUtil.tableExists(journalJdbcConfig, V1.tempTable) shouldBe true
 
       // before upgrade the read_side_offset table does not exist on the new connection
-      DbUtil.tableExists(journalJdbcConfig, "read_side_offsets") shouldBe true
+      DbUtil.tableExists(journalJdbcConfig, V1.offsetTableName) shouldBe false
 
-      Await.result(journalJdbcConfig.db.run(v1.upgrade()), Duration.Inf) shouldBe {}
+      // run the upgrade
+      Await.result(journalJdbcConfig.db.run(v1.upgrade()), Duration.Inf)
 
       // after upgrade the read_side_offset table does exist on the new connection
-      DbUtil.tableExists(journalJdbcConfig, "read_side_offsets") shouldBe true
+      DbUtil.tableExists(journalJdbcConfig, V1.offsetTableName) shouldBe true
+
+      // after upgrade, the old table should be gone
+      DbUtil.tableExists(journalJdbcConfig, oldTableName) shouldBe false
     }
   }
 }

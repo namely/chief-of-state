@@ -30,12 +30,7 @@ object TestConfig {
     ConfigFactory.parseString(cfgString)
   }
 
-  def getProjectionConfig(url: String,
-                          user: String,
-                          password: String,
-                          tableName: String,
-                          useLowerCase: Boolean
-  ): Config = {
+  def getProjectionConfig(url: String, user: String, password: String, useLowerCase: Boolean): Config = {
     val cfgString: String = s"""
       akka.projection.slick {
         profile = "slick.jdbc.PostgresProfile$$"
@@ -47,7 +42,7 @@ object TestConfig {
           url = "$url"
         }
         offset-store {
-          table = $tableName
+          table = "read_side_offsets"
           use-lowercase-schema = $useLowerCase
         }
       }

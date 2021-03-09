@@ -76,8 +76,11 @@ object StartNodeBehaviour {
           JdbcConfig.projectionConfig(config)
 
         // TODO: think about a smarter constructor for the migrator
-        val offsetStoreTableName: String = config.getString("akka.projection.slick.offset-store.table")
-        val v1: V1 = V1(journalJdbcConfig, projectionJdbcConfig, offsetStoreTableName)
+        val v1: V1 = V1(
+          journalJdbcConfig,
+          projectionJdbcConfig,
+          config.getString("cos-migration.v1.offset-table-old-name")
+        )
         val v2: V2 = V2(journalJdbcConfig, projectionJdbcConfig)(context.system)
 
         new Migrator(journalJdbcConfig)
