@@ -79,7 +79,7 @@ object StartNodeBehaviour {
         val v1: V1 = V1(
           journalJdbcConfig,
           projectionJdbcConfig,
-          config.getString("cos-migration.v1.offset-table-old-name")
+          config.getString("chiefofstate.migration.v1.offset-table-old-name")
         )
         val v2: V2 = V2(journalJdbcConfig, projectionJdbcConfig)(context.system)
 
