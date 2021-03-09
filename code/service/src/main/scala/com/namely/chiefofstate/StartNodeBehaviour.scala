@@ -76,11 +76,14 @@ object StartNodeBehaviour {
           JdbcConfig.projectionConfig(config)
 
         // TODO: think about a smarter constructor for the migrator
-        val v1: V1 = V1(
-          journalJdbcConfig,
-          projectionJdbcConfig,
-          config.getString("chiefofstate.migration.v1.offset-table-old-name")
-        )
+        // get the projection config
+        val priorProjectionJdbcConfig: DatabaseConfig[JdbcProfile] =
+          JdbcConfig.projectionConfig(config, "chiefofstate.migration.v1.slick")
+
+        // get the old table name
+        val priorOffsetStoreName: String = config.getString("chiefofstate.migration.v1.slick.offset-store.table")
+
+        val v1: V1 = V1(journalJdbcConfig, priorProjectionJdbcConfig, priorOffsetStoreName)
         val v2: V2 = V2(journalJdbcConfig, projectionJdbcConfig)(context.system)
 
         new Migrator(journalJdbcConfig)

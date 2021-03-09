@@ -6,14 +6,13 @@
 
 package com.namely.chiefofstate.migration.versions.v1
 
-import com.namely.chiefofstate.migration.{DbUtil, Migrator, StringImprovements, Version}
+import com.namely.chiefofstate.migration.{DbUtil, StringImprovements, Version}
 import com.namely.chiefofstate.migration.versions.v1.V1.{createTable, insertInto, offsetTableName, tempTable, OffsetRow}
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
-import slick.jdbc.{GetResult, JdbcProfile, PostgresProfile}
+import slick.jdbc.{GetResult, JdbcProfile}
 import slick.jdbc.PostgresProfile.api._
-import slick.sql.SqlAction
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
