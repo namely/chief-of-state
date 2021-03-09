@@ -8,7 +8,6 @@ package com.namely.chiefofstate.migration.versions.v1
 
 import com.namely.chiefofstate.migration.{DbUtil, StringImprovements, Version}
 import com.namely.chiefofstate.migration.versions.v1.V1.{createTable, insertInto, offsetTableName, tempTable, OffsetRow}
-import com.typesafe.config.{Config, ConfigFactory}
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
@@ -135,28 +134,6 @@ object V1 {
   private[v1] val tempTable: String = "v1_offset_store_temp"
   // offset store final table name
   private[v1] val offsetTableName: String = "read_side_offsets"
-
-  /**
-   *  Creates an instance of V1 migration
-   * @param journalJdbcConfig the journal config
-   */
-  def apply(journalJdbcConfig: DatabaseConfig[JdbcProfile]): V1 = {
-    // let us read the v1-migration.conf
-    val config: Config = ConfigFactory.parseResources("migration.conf").resolve()
-
-    // get the projection config
-    val projectionJdbcConfig: DatabaseConfig[JdbcProfile] =
-      DatabaseConfig.forConfig[JdbcProfile]("chiefofstate.migration.v1.slick", config)
-
-    // get the old table name
-    val offSetFormerTableName: String = config.getString("chiefofstate.migration.v1.slick.offset-store.table")
-
-    V1(
-      journalJdbcConfig,
-      projectionJdbcConfig,
-      offSetFormerTableName
-    )
-  }
 
   /**
    * creates the temporary offset store table in the write side database
