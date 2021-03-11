@@ -19,6 +19,7 @@ import akka.persistence.jdbc.query.dao.legacy.ReadJournalQueries
 import akka.persistence.journal.Tagged
 import akka.serialization.Serialization
 import akka.stream.scaladsl.{Sink, Source}
+import org.slf4j.{Logger, LoggerFactory}
 import slick.dbio.Effect
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 import slick.jdbc.PostgresProfile.api._
@@ -39,6 +40,7 @@ import scala.util.{Failure, Success}
 case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serialization: Serialization) {
   implicit val ec: ExecutionContextExecutor = system.executionContext
   implicit val classicSys: actor.ActorSystem = system.toClassic
+  final val log: Logger = LoggerFactory.getLogger(getClass)
 
   private val defaultSchemaName = "cos"
 
@@ -67,17 +69,20 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
       .via(serializer.deserializeFlow)
       .mapAsync(1)(reprAndOrdNr => Future.fromTry(reprAndOrdNr))
       .map { case (repr, tags, ordering) => repr.withPayload(Tagged(repr, tags)) -> ordering }
-      .mapAsync(1)(tuple => {
-        val (repr, ordering) = tuple
+      .mapAsync(1) { case (repr, ordering) =>
         // serializing the PersistentRepr using the same ordering received from the old journal
         val (row, tags): (JournalAkkaSerializationRow, Set[String]) = serialize(repr, ordering)
-
         // persist the data
         writeJournalRows(row, tags)
-      })
+      }
       .runWith(Sink.ignore)
 
+    // run the data migration
     Await.result(future, Duration.Inf)
+
+    // set the next ordering value
+    log.info("resetting the ChiefOfState new journal ordering sequence number")
+    setNextOrderingValue()
   }
 
   /**
@@ -97,7 +102,7 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
   /**
    *  sets the next ordering value
    */
-  def setNextOrderingValue(): Long = {
+  private def setNextOrderingValue(): Long = {
     val schemaName = journalConfig.eventJournalTableConfiguration.schemaName.getOrElse(defaultSchemaName)
     val sequenceName = s"$schemaName.event_journal_ordering_seq"
     val nextVal = nextOrderingValue()
