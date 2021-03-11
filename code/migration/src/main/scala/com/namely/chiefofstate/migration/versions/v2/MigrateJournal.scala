@@ -27,6 +27,7 @@ import slickProfile.api._
 
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.concurrent.duration.Duration
+import scala.util.{Failure, Success}
 
 /**
  * Migrate the old legacy journal data to the new journal table
@@ -123,7 +124,11 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
     }
 
     val serializedPayload: AkkaSerialization.AkkaSerialized =
-      AkkaSerialization.serialize(serialization, updatedPr.payload).get
+      AkkaSerialization.serialize(serialization, updatedPr.payload) match {
+        case Failure(exception) => throw exception
+        case Success(value)     => value
+      }
+
     val serializedMetadata: Option[AkkaSerialization.AkkaSerialized] =
       updatedPr.metadata.flatMap(m => AkkaSerialization.serialize(serialization, m).toOption)
     val row: JournalAkkaSerializationRow = JournalAkkaSerializationRow(
