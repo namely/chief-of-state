@@ -124,7 +124,7 @@ object SchemasUtil {
    * drops the journal and snapshot tables
    */
   def dropJournalTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
-    val stmt = DBIO
+    val stmt: DBIO[Unit] = DBIO
       .seq(
         sqlu"""
              DROP TABLE IF EXISTS
