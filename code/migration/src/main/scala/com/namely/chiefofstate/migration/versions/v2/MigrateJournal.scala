@@ -60,7 +60,7 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
   def run(): Unit = {
     val source: Source[Try[(PersistentRepr, Set[String], Long)], NotUsed] = Source
       .fromPublisher(
-        journaldb.stream(queries.JournalTable.result)
+        journaldb.stream(queries.JournalTable.sortBy(_.ordering).result)
       )
       .via(serializer.deserializeFlow)
 
