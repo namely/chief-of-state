@@ -142,10 +142,8 @@ object V1 {
    * @param journalJdbcConfig the database config
    */
   private[v1] def createTable(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
-
-    val stmt = SchemasUtil.createReadSideOffsetsStmt(tempTable)
-      .withPinnedSession
-      .transactionally
+    // TODO: consider a "current schema" object so v1 migration isn't importing something from v2
+    val stmt = SchemasUtil.createReadSideOffsetsStmt(tempTable).withPinnedSession.transactionally
 
     Await.result(journalJdbcConfig.db.run(stmt), Duration.Inf)
   }
