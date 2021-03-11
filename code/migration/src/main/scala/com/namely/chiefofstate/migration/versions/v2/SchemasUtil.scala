@@ -90,11 +90,11 @@ object SchemasUtil {
   }
 
   /**
-    * creates the read side offsets table
-    *
-    * @param tableName optional param to set the table name (used in v1 migration)
-    * @return the DBIOAction creating the table and offset
-    */
+   * creates the read side offsets table
+   *
+   * @param tableName optional param to set the table name (used in v1 migration)
+   * @return the DBIOAction creating the table and offset
+   */
   private[versions] def createReadSideOffsetsStmt(
     tableName: String = "read_side_offsets"
   ): DBIOAction[Unit, NoStream, Effect] = {
