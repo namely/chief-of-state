@@ -114,7 +114,7 @@ class SchemasUtilSpec extends BaseSpec with ForAllTestContainer {
           (30, 'id-1', 2, decode('DEADBEEF', 'hex')),
           (40, 'id-2', 1, decode('DEADBEEF', 'hex')),
           (50, 'id-2', 2, decode('DEADBEEF', 'hex')),
-          (60, 'id-2', 2, decode('DEADBEEF', 'hex'))
+          (60, 'id-2', 3, decode('DEADBEEF', 'hex'))
         """)
 
       // insert events into new journal without gaps
