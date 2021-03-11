@@ -113,7 +113,8 @@ class SchemasUtilSpec extends BaseSpec with ForAllTestContainer {
           (20, 'id-1', 1, decode('DEADBEEF', 'hex')),
           (30, 'id-1', 2, decode('DEADBEEF', 'hex')),
           (40, 'id-2', 1, decode('DEADBEEF', 'hex')),
-          (50, 'id-2', 2, decode('DEADBEEF', 'hex'))
+          (50, 'id-2', 2, decode('DEADBEEF', 'hex')),
+          (60, 'id-2', 2, decode('DEADBEEF', 'hex'))
         """)
 
       // insert events into new journal without gaps
@@ -137,7 +138,7 @@ class SchemasUtilSpec extends BaseSpec with ForAllTestContainer {
           (4, 'id-2', 2, 'some-writer', 3, 2, '$manifest', decode('DEADBEEF', 'hex'))
         """)
 
-      // insert to offset table (with gaps)
+      // insert to offset table (with gaps) pointing to records 30 and 50
       testConn
         .createStatement()
         .execute(s"""
