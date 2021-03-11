@@ -43,7 +43,7 @@ case class V2(journalJdbcConfig: DatabaseConfig[JdbcProfile], projectionJdbcConf
    */
   override def upgrade(): DBIO[Unit] = {
     log.info(s"finalizing ChiefOfState migration: #$versionNumber")
-    SchemasUtil.dropLegacyJournalTablesStmt.flatMap(_ => DBIO.successful {})
+    SchemasUtil.updateReadOffsets.andThen(SchemasUtil.dropLegacyJournalTablesStmt).andThen(DBIO.successful {})
   }
 
   /**
@@ -52,11 +52,9 @@ case class V2(journalJdbcConfig: DatabaseConfig[JdbcProfile], projectionJdbcConf
    * @return a DBIO that creates the version snapshot
    */
   override def snapshot(): DBIO[Unit] = {
-    log.info("creating new ChiefOfState journal tables")
-    SchemasUtil.createJournalTables(journalJdbcConfig)
 
-    log.info("creating ChiefOfState read side offset tables")
-    Await.result(SlickProjection.createOffsetTableIfNotExists(projectionJdbcConfig), Duration.Inf)
+    log.info("creating new ChiefOfState journal & offset tables")
+    SchemasUtil.createJournalTables(journalJdbcConfig)
 
     DBIO.successful {}
   }
