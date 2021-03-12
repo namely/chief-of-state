@@ -272,5 +272,74 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       // let us assert the ordering number
       getEventJournalNextSequenceValue(journalConfig, journaldb) shouldBe 7L
     }
+
+    "migrate legacy journal  data into the new journal and check ordering and sequence number number parity" in {
+      implicit val ec: ExecutionContextExecutor = testKit.system.executionContext
+      implicit val sys: ActorSystem[Nothing] = testKit.system
+
+      val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
+      val profile: JdbcProfile = journalJdbcConfig.profile
+      val journalConfig: JournalConfig = new JournalConfig(config.getConfig("jdbc-journal"))
+      val legacyJournalQueries: legacy.JournalQueries =
+        new legacy.JournalQueries(profile, journalConfig.journalTableConfiguration)
+
+      val newJournalQueries: JournalQueries =
+        new JournalQueries(profile,
+                           journalConfig.eventJournalTableConfiguration,
+                           journalConfig.eventTagTableConfiguration
+        )
+
+      val serialization: Serialization = SerializationExtension(testKit.system)
+      val migrator: MigrateJournal = MigrateJournal(testKit.system, profile, serialization)
+
+      val journaldb: JdbcBackend.Database =
+        SlickExtension(testKit.system).database(config.getConfig("jdbc-read-journal")).database
+
+      val legacyDao: ByteArrayJournalDao = new ByteArrayJournalDao(journaldb, profile, journalConfig, serialization)
+
+      // let us create the legacy tables
+      SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
+
+      // let us seed some data into the legacy journal
+      noException shouldBe thrownBy(Seeding.seedLegacyJournal(legacyDao))
+
+      // let us count the old journal
+      countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
+
+      // let us create the new journal table
+      SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
+
+      // let us migrate the data
+      migrator.migrateWithBatchSize() shouldBe {}
+
+      // let us get the number of records in the new journal
+      // let us get the number of records in the new journal
+      Await.result(journalJdbcConfig.db
+                     .run(newJournalQueries.JournalTable.map(_.ordering).length.result),
+                   Duration.Inf
+      ) shouldBe countLegacyJournal(journalJdbcConfig, legacyJournalQueries)
+
+      // let us assert the ordering number
+      getEventJournalNextSequenceValue(journalConfig, journaldb) shouldBe 7L
+
+      // let fetch the data from the old journal
+      val oldOrdNrAndSeqNr = Await
+        .result(
+          journalJdbcConfig.db
+            .run(legacyJournalQueries.JournalTable.map(journal => (journal.ordering, journal.sequenceNumber)).result),
+          Duration.Inf
+        )
+        .toSet
+
+      val newOrdNrAndSeqNr = Await
+        .result(
+          journalJdbcConfig.db
+            .run(newJournalQueries.JournalTable.map(journal => (journal.ordering, journal.sequenceNumber)).result),
+          Duration.Inf
+        )
+        .toSet
+
+      oldOrdNrAndSeqNr.equals(newOrdNrAndSeqNr) shouldBe true
+    }
   }
 }
