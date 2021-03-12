@@ -42,8 +42,6 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
   implicit val classicSys: actor.ActorSystem = system.toClassic
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
-  private val defaultSchemaName = "cos"
-
   // the journal, read journal and snapshot config
   private val journalConfig: JournalConfig = new JournalConfig(system.settings.config.getConfig("jdbc-journal"))
   private val readJournalConfig: ReadJournalConfig = new ReadJournalConfig(
@@ -62,6 +60,11 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
 
   // The default value per akka reference conf is 500
   private val bufferSize: Int = journalConfig.daoConfig.bufferSize
+
+  private val schemaName: String = journalConfig.eventJournalTableConfiguration.schemaName match {
+    case Some(schema) => schema
+    case None => throw Exception("missing schema name in configuration")
+  }
 
   /**
    * write all legacy events into the new journal tables applying the proper serialization.
@@ -108,7 +111,6 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
    * returns the next ordering value
    */
   private[versions] def nextOrderingValue(): Long = {
-    val schemaName: String = journalConfig.journalTableConfiguration.schemaName.getOrElse(defaultSchemaName)
     val legacyTableName: String = s"$schemaName.journal"
 
     val eventualLong: Future[Long] = for {
@@ -125,7 +127,6 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
    *  sets the next ordering value
    */
   private[versions] def setNextOrderingValue(): Future[Long] = {
-    val schemaName: String = journalConfig.eventJournalTableConfiguration.schemaName.getOrElse(defaultSchemaName)
     val tableName: String = s"$schemaName.event_journal"
     val nextVal: Long = nextOrderingValue()
 
@@ -205,6 +206,5 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
         .withPinnedSession
         .transactionally
     )
-
   }
 }
