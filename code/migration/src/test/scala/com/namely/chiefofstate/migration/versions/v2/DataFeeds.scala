@@ -106,8 +106,8 @@ object DataFeeds {
   }
 
   def feedLegacySnapshot(legacyDao: ByteArraySnapshotDao)(implicit ec: ExecutionContext): Seq[Unit] = {
-    val future = Future.sequence(snapshots.map(snapshot => {
-      legacyDao.save(snapshot._1, snapshot._2)
+    val future = Future.sequence(snapshots.map({ case (metadata, account) =>
+      legacyDao.save(metadata, account)
     }))
 
     Await.result(future, Duration.Inf)
