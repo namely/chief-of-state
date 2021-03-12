@@ -12,7 +12,7 @@ import akka.actor.typed.scaladsl.adapter.TypedActorSystemOps
 import akka.persistence.PersistentRepr
 import akka.persistence.jdbc.config.{JournalConfig, ReadJournalConfig}
 import akka.persistence.jdbc.db.SlickExtension
-import akka.persistence.jdbc.journal.dao.{AkkaSerialization, JournalQueries}
+import akka.persistence.jdbc.journal.dao.{legacy, AkkaSerialization, JournalQueries}
 import akka.persistence.jdbc.journal.dao.legacy.ByteArrayJournalSerializer
 import akka.persistence.jdbc.journal.dao.JournalTables.{JournalAkkaSerializationRow, TagRow}
 import akka.persistence.jdbc.query.dao.legacy.ReadJournalQueries
@@ -21,7 +21,7 @@ import akka.serialization.Serialization
 import akka.stream.scaladsl.{Sink, Source}
 import org.slf4j.{Logger, LoggerFactory}
 import slick.dbio.Effect
-import slick.jdbc.{JdbcBackend, JdbcProfile}
+import slick.jdbc.{JdbcBackend, JdbcProfile, ResultSetConcurrency, ResultSetType}
 import slick.jdbc.PostgresProfile.api._
 import slick.sql.FixedSqlAction
 import slickProfile.api._
@@ -61,11 +61,25 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
     new JournalQueries(profile, journalConfig.eventJournalTableConfiguration, journalConfig.eventTagTableConfiguration)
 
   /**
-   * write all legacy events into the new journal tables applying the proper serialization
+   * write all legacy events into the new journal tables applying the proper serialization.
+   * The migration will be done by batchSize. That will avoid to pull all records into memory
+   *
+   * @param fetchSize the number of records to fetch
    */
-  def run(): Unit = {
-    val future: Future[Done] = Source
-      .fromPublisher(journaldb.stream(queries.JournalTable.sortBy(_.ordering).result))
+  def migrateWithBatchSize(fetchSize: Int = 10000): Unit = {
+    val query: DBIOAction[Seq[legacy.JournalRow], Streaming[legacy.JournalRow], Effect.Read with Effect.Transactional] =
+      queries.JournalTable
+        .sortBy(_.ordering)
+        .result
+        .withStatementParameters(
+          rsType = ResultSetType.ForwardOnly,
+          rsConcurrency = ResultSetConcurrency.ReadOnly,
+          fetchSize = fetchSize
+        )
+        .transactionally
+
+    val eventualDone: Future[Done] = Source
+      .fromPublisher(journaldb.stream(query))
       .via(serializer.deserializeFlow)
       .mapAsync(1)(reprAndOrdNr => Future.fromTry(reprAndOrdNr))
       .map { case (repr, tags, ordering) => repr.withPayload(Tagged(repr, tags)) -> ordering }
@@ -77,41 +91,46 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
       }
       .runWith(Sink.ignore)
 
-    // run the data migration
-    Await.result(future, Duration.Inf)
+    // run the data migration and set the next ordering value
+    val eventualUnit: Future[Unit] = for {
+      _ <- eventualDone
+      _ <- setNextOrderingValue()
+    } yield ()
 
-    // set the next ordering value
-    log.info("resetting the ChiefOfState new journal ordering sequence number")
-    setNextOrderingValue()
+    Await.result(eventualUnit, Duration.Inf)
   }
 
   /**
    * returns the next ordering value
    */
   private[versions] def nextOrderingValue(): Long = {
-    val schemaName = journalConfig.journalTableConfiguration.schemaName.getOrElse(defaultSchemaName)
-    val sequenceName = s"$schemaName.journal_ordering_seq"
-    val stmt: DBIO[Long] =
-      sql"""
-             SELECT pg_catalog.nextval($sequenceName);
-        """.as[Long].head
+    val schemaName: String = journalConfig.journalTableConfiguration.schemaName.getOrElse(defaultSchemaName)
+    val legacyTableName: String = s"$schemaName.journal"
 
-    Await.result(journaldb.run(stmt), Duration.Inf)
+    val eventualLong: Future[Long] = for {
+      seqName: String <- journaldb.run(
+        sql"""SELECT pg_get_serial_sequence($legacyTableName, 'ordering')""".as[String].head
+      )
+      nextVal <- journaldb.run(sql""" SELECT pg_catalog.nextval($seqName);""".as[Long].head)
+    } yield nextVal
+
+    Await.result(eventualLong, Duration.Inf)
   }
 
   /**
    *  sets the next ordering value
    */
-  private[versions] def setNextOrderingValue(): Long = {
-    val schemaName = journalConfig.eventJournalTableConfiguration.schemaName.getOrElse(defaultSchemaName)
-    val sequenceName = s"$schemaName.event_journal_ordering_seq"
-    val nextVal = nextOrderingValue()
-    val stmt: DBIO[Long] =
-      sql"""
-             SELECT pg_catalog.setval($sequenceName, $nextVal, false);
-        """.as[Long].head
+  private[versions] def setNextOrderingValue(): Future[Long] = {
+    val schemaName: String = journalConfig.eventJournalTableConfiguration.schemaName.getOrElse(defaultSchemaName)
+    val tableName: String = s"$schemaName.event_journal"
+    val nextVal: Long = nextOrderingValue()
 
-    Await.result(journaldb.run(stmt), Duration.Inf)
+    for {
+      sequenceName: String <- journaldb.run(
+        sql"""SELECT pg_get_serial_sequence($tableName, 'ordering')""".as[String].head
+      )
+      value <- journaldb.run(sql""" SELECT pg_catalog.setval($sequenceName, $nextVal, false)""".as[Long].head)
+    } yield value
   }
 
   /**

@@ -88,7 +88,7 @@ case class V2(journalJdbcConfig: DatabaseConfig[JdbcProfile], projectionJdbcConf
       SchemasUtil.createJournalTables(journalJdbcConfig)
 
       log.info("migrating ChiefOfState old journal data to the new journal table")
-      journalMigrator.run()
+      journalMigrator.migrateWithBatchSize()
 
       log.info("migrating ChiefOfState old snapshot data onto the new snapshot table")
       snapshotMigrator.run()
