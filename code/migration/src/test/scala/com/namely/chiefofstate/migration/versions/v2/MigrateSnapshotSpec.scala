@@ -14,10 +14,9 @@ import akka.persistence.jdbc.snapshot.dao
 import akka.persistence.jdbc.snapshot.dao.legacy.{ByteArraySnapshotDao, SnapshotQueries}
 import akka.serialization.{Serialization, SerializationExtension}
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import com.github.dockerjava.api.command.CreateContainerCmd
-import com.github.dockerjava.api.model.{ExposedPort, PortBinding, Ports}
 import com.namely.chiefofstate.migration.{BaseSpec, DbUtil, JdbcConfig}
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 import slick.jdbc.PostgresProfile.api._
@@ -25,26 +24,10 @@ import slick.jdbc.PostgresProfile.api._
 import java.sql.{Connection, DriverManager}
 import scala.concurrent.{Await, ExecutionContextExecutor}
 import scala.concurrent.duration.Duration
-import com.typesafe.config.ConfigValue
-import com.typesafe.config.ConfigValueFactory
-import org.testcontainers.utility.DockerImageName
 
 class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
-  // val containerExposedPort: Int = 5432
-  // val hostPort: Int = 8004
 
-  // override val container: PostgreSQLContainer = PostgreSQLContainer().configure { c =>
-  //   c.withDatabaseName("test")
-  //   c.withUsername("test")
-  //   c.withPassword("changeme")
-  //   c.withExposedPorts(containerExposedPort)
-  //   c.withUrlParam("currentSchema", cosSchema)
-  //   c.withExtraHost("localhost", "0.0.0.0")
-  //   c.withCreateContainerCmdModifier((t: CreateContainerCmd) => {
-  //     t.withPortBindings(new PortBinding(Ports.Binding.bindPort(hostPort), new ExposedPort(containerExposedPort)))
-  //   })
-  // }
   override val container: PostgreSQLContainer = PostgreSQLContainer
     .Def(
       dockerImageName = DockerImageName.parse("postgres"),
@@ -78,10 +61,12 @@ class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
 
   lazy val config: Config = ConfigFactory
     .parseResources("v2-snapshot-migration.conf")
-    .resolve()
     .withValue("write-side-slick.db.url", ConfigValueFactory.fromAnyRef(container.jdbcUrl))
     .withValue("write-side-slick.db.user", ConfigValueFactory.fromAnyRef(container.username))
     .withValue("write-side-slick.db.password", ConfigValueFactory.fromAnyRef(container.password))
+    .withValue("write-side-slick.db.serverName", ConfigValueFactory.fromAnyRef(container.host))
+    .withValue("write-side-slick.db.databaseName", ConfigValueFactory.fromAnyRef(container.databaseName))
+    .resolve()
 
   lazy val testKit: ActorTestKit = ActorTestKit(config)
 
@@ -129,6 +114,8 @@ class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
 
       // let us migrate the data
       noException shouldBe thrownBy(migrator.migrate())
+
+      Thread.sleep(1000) // wait for 1000 millisecond
 
       // let us get the number of records in the new snapshot
       Await.result(journalJdbcConfig.db
