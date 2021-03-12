@@ -17,6 +17,7 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.Try
+import com.namely.chiefofstate.migration.versions.v2.SchemasUtil
 
 /**
  * V1 migration only rename the read side offset store table columns name from
@@ -141,16 +142,12 @@ object V1 {
    * @param journalJdbcConfig the database config
    */
   private[v1] def createTable(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
-    val stmt = sqlu"""
-        CREATE TABLE #$tempTable(
-          projection_name VARCHAR(255) NOT NULL,
-          projection_key VARCHAR(255) NOT NULL,
-          current_offset VARCHAR(255) NOT NULL,
-          manifest VARCHAR(4) NOT NULL,
-          mergeable BOOLEAN NOT NULL,
-          last_updated BIGINT NOT NULL,
-          PRIMARY KEY(projection_name, projection_key)
-        )""".withPinnedSession.transactionally
+    // TODO: consider a "current schema" object so v1
+    // migration isn't importing something from v2
+    val stmt = SchemasUtil
+      .createReadSideOffsetsStmt(tempTable)
+      .withPinnedSession
+      .transactionally
 
     Await.result(journalJdbcConfig.db.run(stmt), Duration.Inf)
   }

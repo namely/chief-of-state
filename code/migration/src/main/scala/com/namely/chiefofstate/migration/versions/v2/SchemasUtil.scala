@@ -19,7 +19,7 @@ object SchemasUtil {
   /**
    * event_journal DDL statement
    */
-  private val createEventJournalStmt: SqlAction[Int, NoStream, Effect] = {
+  private[versions] val createEventJournalStmt: SqlAction[Int, NoStream, Effect] = {
     sqlu"""
         CREATE TABLE IF NOT EXISTS event_journal(
           ordering BIGSERIAL,
@@ -46,14 +46,14 @@ object SchemasUtil {
   /**
    * event_journal index Sql statement
    */
-  private val createEventJournalIndexStmt: SqlAction[Int, NoStream, Effect] = {
+  private[versions] val createEventJournalIndexStmt: SqlAction[Int, NoStream, Effect] = {
     sqlu"""CREATE UNIQUE INDEX IF NOT EXISTS event_journal_ordering_idx ON event_journal(ordering)"""
   }
 
   /**
    * event_tag DDL statement
    */
-  private val createEventTagStmt: SqlAction[Int, NoStream, Effect] = {
+  private[versions] val createEventTagStmt: SqlAction[Int, NoStream, Effect] = {
     sqlu"""
         CREATE TABLE IF NOT EXISTS event_tag(
             event_id BIGINT,
@@ -70,7 +70,7 @@ object SchemasUtil {
   /**
    * state_snapshot DDL statement
    */
-  private val createSnapshotStmt: SqlAction[Int, NoStream, Effect] = {
+  private[versions] val createSnapshotStmt: SqlAction[Int, NoStream, Effect] = {
     sqlu"""
      CREATE TABLE IF NOT EXISTS state_snapshot (
       persistence_id VARCHAR(255) NOT NULL,
@@ -90,6 +90,35 @@ object SchemasUtil {
   }
 
   /**
+   * creates the read side offsets table
+   *
+   * @param tableName optional param to set the table name (used in v1 migration)
+   * @return the DBIOAction creating the table and offset
+   */
+  private[versions] def createReadSideOffsetsStmt(
+    tableName: String = "read_side_offsets"
+  ): DBIOAction[Unit, NoStream, Effect] = {
+
+    val table = sqlu"""
+      CREATE TABLE IF NOT EXISTS #$tableName (
+        projection_name VARCHAR(255) NOT NULL,
+        projection_key VARCHAR(255) NOT NULL,
+        current_offset VARCHAR(255) NOT NULL,
+        manifest VARCHAR(4) NOT NULL,
+        mergeable BOOLEAN NOT NULL,
+        last_updated BIGINT NOT NULL,
+        PRIMARY KEY(projection_name, projection_key)
+      )
+    """
+
+    val ix = sqlu"""
+    CREATE INDEX IF NOT EXISTS projection_name_index ON #$tableName (projection_name);
+    """
+
+    DBIO.seq(table, ix)
+  }
+
+  /**
    * creates the various write-side stores and read-side offset stores
    */
   def createJournalTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
@@ -98,7 +127,8 @@ object SchemasUtil {
         createEventJournalStmt,
         createEventJournalIndexStmt,
         createEventTagStmt,
-        createSnapshotStmt
+        createSnapshotStmt,
+        createReadSideOffsetsStmt()
       )
       .withPinnedSession
       .transactionally
