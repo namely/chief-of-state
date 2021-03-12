@@ -42,7 +42,7 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
   implicit val classicSys: actor.ActorSystem = system.toClassic
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
-  private val defaultSchemaName = "cos"
+  private val defaultSchemaName = "public"
 
   // the journal, read journal and snapshot config
   private val journalConfig: JournalConfig = new JournalConfig(system.settings.config.getConfig("jdbc-journal"))

@@ -79,13 +79,13 @@ case class MigrateSnapshot(system: ActorSystem[_], profile: JdbcProfile, seriali
       // for each "page", write to the new table
       .runForeach((records: Seq[SnapshotRow]) => {
         // create a bunch of insert statements
-        val inserts: Seq[Option[DBIOAction[Int, NoStream, Effect.Write]]] = records
+        val inserts: Seq[Option[DBIO[Int]]] = records
           .map(newQueries.insertOrUpdate)
           .map(x => Option(x))
 
         // reduce to a single insert and run it
         inserts
-          .foldLeft[Option[DBIOAction[Int, NoStream, Effect.Write]]](None)((agg, someInsert) => {
+          .foldLeft[Option[DBIO[Int]]](None)((agg, someInsert) => {
             agg match {
               case None        => someInsert
               case Some(prior) => someInsert.map(_.andThen(prior))
@@ -108,7 +108,7 @@ case class MigrateSnapshot(system: ActorSystem[_], profile: JdbcProfile, seriali
     val transformed: Try[SnapshotRow] = serializer
       .deserialize(old)
       .flatMap({ case (meta, snapshot) =>
-        val serializedMetadata = meta.metadata
+        val serializedMetadata: Option[AkkaSerialization.AkkaSerialized] = meta.metadata
           .flatMap(m => AkkaSerialization.serialize(serialization, m).toOption)
 
         AkkaSerialization
