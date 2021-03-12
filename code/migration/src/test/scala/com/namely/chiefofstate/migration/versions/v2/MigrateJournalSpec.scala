@@ -17,7 +17,6 @@ import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.github.dockerjava.api.command.CreateContainerCmd
 import com.github.dockerjava.api.model.{ExposedPort, PortBinding, Ports}
 import com.namely.chiefofstate.migration.{BaseSpec, JdbcConfig}
-import com.namely.chiefofstate.migration.versions.v2.Seeding.insertNonSerializedDataIntoLegacy
 import com.typesafe.config.{Config, ConfigFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.{JdbcBackend, JdbcProfile}
@@ -104,6 +103,8 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
 
   "MigrateJournal" should {
     "create legacy tables and insert data onto the new journal" in {
+      implicit val ec: ExecutionContextExecutor = testKit.system.executionContext
+      implicit val sys: ActorSystem[Nothing] = testKit.system
       val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
       val profile: JdbcProfile = journalJdbcConfig.profile
       val journalConfig: JournalConfig = new JournalConfig(config.getConfig("jdbc-journal"))
@@ -111,18 +112,22 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
         new legacy.JournalQueries(profile, journalConfig.journalTableConfiguration)
       val serialization: Serialization = SerializationExtension(testKit.system)
       val migrator: MigrateJournal = MigrateJournal(testKit.system, profile, serialization)
+      val journaldb: JdbcBackend.Database =
+        SlickExtension(testKit.system).database(config.getConfig("jdbc-read-journal")).database
+
+      val legacyDao: ByteArrayJournalDao = new ByteArrayJournalDao(journaldb, profile, journalConfig, serialization)
 
       // let us create the legacy tables
       SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
 
       // insert some data in the old journal
-      insertNonSerializedDataIntoLegacy(journalJdbcConfig, legacyJournalQueries) shouldBe 8
+      noException shouldBe thrownBy(DataFeeds.feedLegacyJournal(legacyDao))
 
       // let us count the old journal
-      countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 8
+      countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
 
       // let us test the next ordering value
-      migrator.nextOrderingValue() shouldBe 9L
+      migrator.nextOrderingValue() shouldBe 7L
     }
 
     "migrate legacy journal data into the new journal schema" in {
@@ -153,7 +158,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
 
       // let us seed some data into the legacy journal
-      noException shouldBe thrownBy(Seeding.seedLegacyJournal(legacyDao))
+      noException shouldBe thrownBy(DataFeeds.feedLegacyJournal(legacyDao))
 
       // let us count the old journal
       countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
@@ -202,7 +207,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
 
       // let us seed some data into the legacy journal
-      noException shouldBe thrownBy(Seeding.seedLegacyJournal(legacyDao))
+      noException shouldBe thrownBy(DataFeeds.feedLegacyJournal(legacyDao))
 
       // let us count the old journal
       countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
@@ -251,7 +256,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
 
       // let us seed some data into the legacy journal
-      noException shouldBe thrownBy(Seeding.seedLegacyJournal(legacyDao))
+      noException shouldBe thrownBy(DataFeeds.feedLegacyJournal(legacyDao))
 
       // let us count the old journal
       countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
@@ -301,7 +306,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
 
       // let us seed some data into the legacy journal
-      noException shouldBe thrownBy(Seeding.seedLegacyJournal(legacyDao))
+      noException shouldBe thrownBy(DataFeeds.feedLegacyJournal(legacyDao))
 
       // let us count the old journal
       countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
