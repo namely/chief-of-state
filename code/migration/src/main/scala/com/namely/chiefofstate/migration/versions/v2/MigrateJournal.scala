@@ -63,7 +63,7 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
 
   private val schemaName: String = journalConfig.eventJournalTableConfiguration.schemaName match {
     case Some(schema) => schema
-    case None => throw Exception("missing schema name in configuration")
+    case None         => throw new Exception("missing schema name in configuration")
   }
 
   /**
