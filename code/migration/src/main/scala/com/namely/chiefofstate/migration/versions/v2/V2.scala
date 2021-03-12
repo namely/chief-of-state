@@ -87,7 +87,7 @@ case class V2(journalJdbcConfig: DatabaseConfig[JdbcProfile], projectionJdbcConf
       journalMigrator.migrateWithBatchSize()
 
       log.info("migrating ChiefOfState old snapshot data onto the new snapshot table")
-      snapshotMigrator.run()
+      snapshotMigrator.migrate()
     }
   }
 

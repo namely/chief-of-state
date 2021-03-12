@@ -6,12 +6,14 @@
 
 package com.namely.chiefofstate.migration.versions.v2
 
-import akka.persistence.{AtomicWrite, PersistentRepr}
+import akka.persistence.{AtomicWrite, PersistentRepr, SnapshotMetadata}
 import akka.persistence.jdbc.journal.dao.legacy
-import com.namely.protobuf.chiefofstate.v1.tests.{AccountDebited, AccountOpened}
+import akka.persistence.jdbc.snapshot.dao.legacy.ByteArraySnapshotDao
+import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountDebited, AccountOpened}
 
+import java.time.Instant
 import java.util.UUID
-import scala.concurrent.Await
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
@@ -74,9 +76,40 @@ object DataFeeds {
     )
   }
 
+  val snapshots: Seq[(SnapshotMetadata, Account)] = Seq(
+    SnapshotMetadata(
+      persistenceId = "some-persistence-id-1",
+      sequenceNr = 1L,
+      timestamp = Instant.now().getEpochSecond
+    ) -> Account.defaultInstance.withAccountUuid("some-persistence-id-1"),
+    SnapshotMetadata(
+      persistenceId = "some-persistence-id-2",
+      sequenceNr = 2L,
+      timestamp = Instant.now().getEpochSecond
+    ) -> Account.defaultInstance.withAccountUuid("some-persistence-id-2"),
+    SnapshotMetadata(
+      persistenceId = "some-persistence-id-3",
+      sequenceNr = 3L,
+      timestamp = Instant.now().getEpochSecond
+    ) -> Account.defaultInstance.withAccountUuid("some-persistence-id-3"),
+    SnapshotMetadata(
+      persistenceId = "some-persistence-id-4",
+      sequenceNr = 4L,
+      timestamp = Instant.now().getEpochSecond
+    ) -> Account.defaultInstance.withAccountUuid("some-persistence-id-4")
+  )
+
   def feedLegacyJournal(legacyDao: legacy.ByteArrayJournalDao): Seq[Try[Unit]] = {
     val atomicWrites = persistentReprs.map(repr => AtomicWrite(repr))
 
     Await.result(legacyDao.asyncWriteMessages(atomicWrites), Duration.Inf)
+  }
+
+  def feedLegacySnapshot(legacyDao: ByteArraySnapshotDao)(implicit ec: ExecutionContext): Seq[Unit] = {
+    val future = Future.sequence(snapshots.map(snapshot => {
+      legacyDao.save(snapshot._1, snapshot._2)
+    }))
+
+    Await.result(future, Duration.Inf)
   }
 }

@@ -55,7 +55,7 @@ case class MigrateSnapshot(system: ActorSystem[_], profile: JdbcProfile, seriali
   /**
    * Write the state snapshot data into the new snapshot table applying the proper serialization
    */
-  def run(): Unit = {
+  def migrate(): Unit = {
     val fetchSize: Int = 10000
 
     // create a table query from the old journal

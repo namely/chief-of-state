@@ -16,7 +16,7 @@ import akka.serialization.{Serialization, SerializationExtension}
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.github.dockerjava.api.command.CreateContainerCmd
 import com.github.dockerjava.api.model.{ExposedPort, PortBinding, Ports}
-import com.namely.chiefofstate.migration.{BaseSpec, JdbcConfig}
+import com.namely.chiefofstate.migration.{BaseSpec, DbUtil, JdbcConfig}
 import com.typesafe.config.{Config, ConfigFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.{JdbcBackend, JdbcProfile}
@@ -64,7 +64,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
   }
 
   lazy val config: Config = ConfigFactory
-    .parseResources("v2-migration.conf")
+    .parseResources("v2-journal-migration.conf")
     .resolve()
 
   lazy val testKit: ActorTestKit = ActorTestKit(config)
@@ -156,6 +156,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
 
       // let us create the legacy tables
       SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
+      DbUtil.tableExists(journalJdbcConfig, "journal") shouldBe true
 
       // let us seed some data into the legacy journal
       noException shouldBe thrownBy(DataFeeds.feedLegacyJournal(legacyDao))
@@ -168,6 +169,8 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
 
       // let us create the new journal table
       SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
+      DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
+      DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
 
       // let us migrate the data
       migrator.migrateWithBatchSize() shouldBe {}
