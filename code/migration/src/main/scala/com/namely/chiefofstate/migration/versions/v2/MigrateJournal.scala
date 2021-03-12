@@ -60,17 +60,21 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
   private val newJournalQueries: JournalQueries =
     new JournalQueries(profile, journalConfig.eventJournalTableConfiguration, journalConfig.eventTagTableConfiguration)
 
+  // The default value per akka reference conf is 500
+  private val bufferSize: Int = journalConfig.daoConfig.bufferSize
+
   /**
    * write all legacy events into the new journal tables applying the proper serialization.
    * The migration will be done by batchSize. That will avoid to pull all records into memory
    *
    * @param fetchSize the number of records to fetch
    */
-  def migrateWithBatchSize(fetchSize: Int = 10000): Unit = {
+  def migrateWithBatchSize(fetchSize: Int = bufferSize): Unit = {
+    // get the parallelism setting. This value in the akka reference conf is 8
+    val parallelism: Int = journalConfig.daoConfig.parallelism
+
     val query: DBIOAction[Seq[legacy.JournalRow], Streaming[legacy.JournalRow], Effect.Read with Effect.Transactional] =
-      queries.JournalTable
-        .sortBy(_.ordering)
-        .result
+      queries.JournalTable.result
         .withStatementParameters(
           rsType = ResultSetType.ForwardOnly,
           rsConcurrency = ResultSetConcurrency.ReadOnly,
@@ -81,9 +85,9 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
     val eventualDone: Future[Done] = Source
       .fromPublisher(journaldb.stream(query))
       .via(serializer.deserializeFlow)
-      .mapAsync(1)(reprAndOrdNr => Future.fromTry(reprAndOrdNr))
+      .mapAsync(parallelism)(reprAndOrdNr => Future.fromTry(reprAndOrdNr))
       .map { case (repr, tags, ordering) => repr.withPayload(Tagged(repr, tags)) -> ordering }
-      .mapAsync(1) { case (repr, ordering) =>
+      .mapAsync(parallelism) { case (repr, ordering) =>
         // serializing the PersistentRepr using the same ordering received from the old journal
         val (row, tags): (JournalAkkaSerializationRow, Set[String]) = serialize(repr, ordering)
         // persist the data
