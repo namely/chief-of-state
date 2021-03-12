@@ -157,5 +157,54 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
                    Duration.Inf
       ) shouldBe 6
     }
+
+    "migrate old data into the new journal schema one by one" in {
+      implicit val ec: ExecutionContextExecutor = testKit.system.executionContext
+      implicit val sys: ActorSystem[Nothing] = testKit.system
+
+      val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
+      val profile: JdbcProfile = journalJdbcConfig.profile
+      val journalConfig: JournalConfig = new JournalConfig(config.getConfig("jdbc-journal"))
+      val legacyJournalQueries: legacy.JournalQueries =
+        new legacy.JournalQueries(profile, journalConfig.journalTableConfiguration)
+
+      val newJournalQueries: JournalQueries =
+        new JournalQueries(profile,
+                           journalConfig.eventJournalTableConfiguration,
+                           journalConfig.eventTagTableConfiguration
+        )
+
+      val serialization: Serialization = SerializationExtension(testKit.system)
+      val migrator: MigrateJournal = MigrateJournal(testKit.system, profile, serialization)
+
+      val journaldb: JdbcBackend.Database =
+        SlickExtension(testKit.system).database(config.getConfig("jdbc-read-journal")).database
+
+      val legacyDao: ByteArrayJournalDao = new ByteArrayJournalDao(journaldb, profile, journalConfig, serialization)
+
+      // let us create the legacy tables
+      SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
+
+      // let us seed some data into the legacy journal
+      noException shouldBe thrownBy(Seeding.seedLegacyJournal(legacyDao))
+
+      // let us count the old journal
+      countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
+
+      // let us test the next ordering value
+      migrator.nextOrderingValue() shouldBe 7L
+
+      // let us create the new journal table
+      SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
+
+      // let us migrate the data
+      migrator.migrateWithBatchSize(1) shouldBe {}
+
+      // let us get the number of records in the new journal
+      Await.result(journalJdbcConfig.db
+                     .run(newJournalQueries.JournalTable.map(_.ordering).length.result),
+                   Duration.Inf
+      ) shouldBe 6
+    }
   }
 }
