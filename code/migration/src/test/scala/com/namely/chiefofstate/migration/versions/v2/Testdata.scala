@@ -17,7 +17,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
-object DataFeeds {
+object Testdata {
   val persistenceIdOne: String = UUID.randomUUID().toString
   val persistenceIdTwo: String = UUID.randomUUID().toString
   val persistenceIdThree: String = UUID.randomUUID().toString
