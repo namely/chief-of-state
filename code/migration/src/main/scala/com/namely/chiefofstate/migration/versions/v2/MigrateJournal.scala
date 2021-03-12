@@ -88,7 +88,7 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
   /**
    * returns the next ordering value
    */
-  private def nextOrderingValue(): Long = {
+  private[versions] def nextOrderingValue(): Long = {
     val schemaName = journalConfig.journalTableConfiguration.schemaName.getOrElse(defaultSchemaName)
     val sequenceName = s"$schemaName.journal_ordering_seq"
     val stmt: DBIO[Long] =
@@ -102,13 +102,13 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
   /**
    *  sets the next ordering value
    */
-  private def setNextOrderingValue(): Long = {
+  private[versions] def setNextOrderingValue(): Long = {
     val schemaName = journalConfig.eventJournalTableConfiguration.schemaName.getOrElse(defaultSchemaName)
     val sequenceName = s"$schemaName.event_journal_ordering_seq"
     val nextVal = nextOrderingValue()
     val stmt: DBIO[Long] =
       sql"""
-             SELECT pg_catalog.setval($sequenceName, $nextVal, true);
+             SELECT pg_catalog.setval($sequenceName, $nextVal, false);
         """.as[Long].head
 
     Await.result(journaldb.run(stmt), Duration.Inf)
@@ -121,7 +121,7 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
    * @param ordering the ordering of the PersistentRepr
    * @return the tuple of JournalAkkaSerializationRow and set of tags
    */
-  private def serialize(pr: PersistentRepr, ordering: Long): (JournalAkkaSerializationRow, Set[String]) = {
+  private[versions] def serialize(pr: PersistentRepr, ordering: Long): (JournalAkkaSerializationRow, Set[String]) = {
 
     val (updatedPr, tags) = pr.payload match {
       case Tagged(payload, tags) => (pr.withPayload(payload), tags)
@@ -161,7 +161,9 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
    * @param journalSerializedRow the serialized journal row
    * @param tags the set of tags
    */
-  private def writeJournalRows(journalSerializedRow: JournalAkkaSerializationRow, tags: Set[String]): Future[Unit] = {
+  private[versions] def writeJournalRows(journalSerializedRow: JournalAkkaSerializationRow,
+                                         tags: Set[String]
+  ): Future[Unit] = {
 
     val journalInsert: DBIO[Long] = newJournalQueries.JournalTable
       .returning(newJournalQueries.JournalTable.map(_.ordering))

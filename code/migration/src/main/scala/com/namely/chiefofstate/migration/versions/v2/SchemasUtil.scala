@@ -142,4 +142,45 @@ object SchemasUtil {
 
     Await.result(journalJdbcConfig.db.run(stmt), Duration.Inf)
   }
+
+  /**
+   * helper method merely for tests
+   *
+   * @param journalJdbcConfig the jdbc config
+   */
+  private[versions] def createLegacyJournalAndSnapshot(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
+    val createStmt: SqlAction[Int, NoStream, Effect] = sqlu"""
+     CREATE TABLE IF NOT EXISTS journal (
+      ordering        BIGSERIAL,
+      persistence_id  VARCHAR(255) NOT NULL,
+      sequence_number BIGINT       NOT NULL,
+      deleted         BOOLEAN      DEFAULT FALSE,
+      tags            VARCHAR(255) DEFAULT NULL,
+      message         BYTEA        NOT NULL,
+      PRIMARY KEY (persistence_id, sequence_number)
+     )"""
+
+    val ixStmt: SqlAction[Int, NoStream, Effect] =
+      sqlu"""CREATE UNIQUE INDEX IF NOT EXISTS journal_ordering_idx on journal(ordering)"""
+
+    val snpashotStmt: SqlAction[Int, NoStream, Effect] = sqlu"""
+     CREATE TABLE IF NOT EXISTS snapshot (
+      persistence_id  VARCHAR(255) NOT NULL,
+      sequence_number BIGINT       NOT NULL,
+      created         BIGINT       NOT NULL,
+      snapshot        BYTEA        NOT NULL,
+      PRIMARY KEY (persistence_id, sequence_number)
+     )"""
+
+    val actions: DBIO[Unit] = DBIO
+      .seq(
+        createStmt,
+        ixStmt,
+        snpashotStmt
+      )
+      .withPinnedSession
+      .transactionally
+
+    Await.result(journalJdbcConfig.db.run(actions), Duration.Inf)
+  }
 }
