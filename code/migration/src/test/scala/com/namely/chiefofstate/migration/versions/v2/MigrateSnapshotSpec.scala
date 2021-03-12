@@ -101,7 +101,7 @@ class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
       val migrator: MigrateSnapshot = MigrateSnapshot(testKit.system, profile, serialization)
 
       // let us create the legacy tables
-      SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
+      noException shouldBe thrownBy(SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig))
       DbUtil.tableExists(journalJdbcConfig, "snapshot") shouldBe true
 
       // let us load some data into the old snapshot
@@ -111,12 +111,12 @@ class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
       countLegacySnapshot(journalJdbcConfig, queries) shouldBe 4
 
       // let us create the new snapshot table
-      SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
+      noException shouldBe thrownBy(SchemasUtil.createJournalTables(journalJdbcConfig))
 
       DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
 
       // let us migrate the data
-      migrator.migrate() shouldBe {}
+      noException shouldBe thrownBy(migrator.migrate())
 
       // let us get the number of records in the new snapshot
       Await.result(journalJdbcConfig.db
