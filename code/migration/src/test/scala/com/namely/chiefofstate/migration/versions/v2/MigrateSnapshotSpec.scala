@@ -60,7 +60,7 @@ class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
   }
 
   lazy val config: Config = ConfigFactory
-    .parseResources("v2-snapshot-migration.conf")
+    .parseResources("migration.conf")
     .withValue("write-side-slick.db.url", ConfigValueFactory.fromAnyRef(container.jdbcUrl))
     .withValue("write-side-slick.db.user", ConfigValueFactory.fromAnyRef(container.username))
     .withValue("write-side-slick.db.password", ConfigValueFactory.fromAnyRef(container.password))
@@ -93,7 +93,8 @@ class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
       val snapshotdb: JdbcBackend.Database =
         SlickExtension(testKit.system).database(config.getConfig("jdbc-snapshot-store")).database
 
-      val legacyDao: ByteArraySnapshotDao = new ByteArraySnapshotDao(snapshotdb, profile, snapshotConfig, serialization)
+      val legacySnapshotDao: ByteArraySnapshotDao =
+        new ByteArraySnapshotDao(snapshotdb, profile, snapshotConfig, serialization)
 
       val migrator: MigrateSnapshot = MigrateSnapshot(testKit.system, profile, serialization)
 
@@ -101,10 +102,10 @@ class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
       noException shouldBe thrownBy(SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig))
       DbUtil.tableExists(journalJdbcConfig, "snapshot") shouldBe true
 
-      // let us load some data into the old snapshot
-      noException shouldBe thrownBy(Testdata.feedLegacySnapshot(legacyDao))
+      // let us load some data into the legacy snapshot
+      noException shouldBe thrownBy(Testdata.feedLegacySnapshot(legacySnapshotDao))
 
-      // let us count the old snapshot
+      // let us count the legacy snapshot
       countLegacySnapshot(journalJdbcConfig, queries) shouldBe 4
 
       // let us create the new snapshot table

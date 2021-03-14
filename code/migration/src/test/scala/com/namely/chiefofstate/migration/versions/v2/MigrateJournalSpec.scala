@@ -56,7 +56,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
   }
 
   lazy val config: Config = ConfigFactory
-    .parseResources("v2-journal-migration.conf")
+    .parseResources("migration.conf")
     .withValue("write-side-slick.db.url", ConfigValueFactory.fromAnyRef(container.jdbcUrl))
     .withValue("write-side-slick.db.user", ConfigValueFactory.fromAnyRef(container.username))
     .withValue("write-side-slick.db.password", ConfigValueFactory.fromAnyRef(container.password))
