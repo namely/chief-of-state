@@ -95,7 +95,7 @@ sbt:
     FROM openjdk:11-jdk-stretch
 
     # Install sbt
-    ARG SBT_VERSION=1.4.7
+    ARG SBT_VERSION=1.4.9
     RUN \
         curl -L -o sbt.deb https://dl.bintray.com/sbt/debian/sbt-${SBT_VERSION}.deb && \
         dpkg -i sbt.deb && \
