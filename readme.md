@@ -29,7 +29,7 @@ Chief-of-state was built by Namely with the following principles:
 Developers implement two gRPC interfaces: a write handler for building state and, optionally, many read handlers for
 reacting to state changes.
 
-![Architecture Diagram](img/architecture.png?raw=true "Title")
+![Architecture Diagram](img/anatomy.png?raw=true "Title")
 
 ### Write Handler
 
