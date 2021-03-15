@@ -95,10 +95,8 @@ case class MigrateSnapshot(system: ActorSystem[_],
             }
           })
           .map(_.withPinnedSession.transactionally)
-          // run query
-          .map(statement => snapshotdb.run(statement))
-          // convert to a Future of Unit
-          .map(_.map[Unit](identity))
+          // run query, return as future of Unit
+          .map(statement => snapshotdb.run(statement).asInstanceOf[Future[Unit]])
           // return success future if no statement to run
           .getOrElse(Future.successful {})
       })
