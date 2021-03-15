@@ -34,8 +34,13 @@ import scala.util.{Failure, Success, Try}
  * @param system the actor system
  * @param profile the jdbc profile
  * @param serialization the akka serialization
+ * @param pageSize number of records to bulk process together
  */
-case class MigrateSnapshot(system: ActorSystem[_], profile: JdbcProfile, serialization: Serialization) {
+case class MigrateSnapshot(system: ActorSystem[_],
+                           profile: JdbcProfile,
+                           serialization: Serialization,
+                           pageSize: Int = 1000
+) {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   implicit val ec: ExecutionContextExecutor = system.executionContext
@@ -55,15 +60,13 @@ case class MigrateSnapshot(system: ActorSystem[_], profile: JdbcProfile, seriali
   /**
    * Write the state snapshot data into the new snapshot table applying the proper serialization
    */
-  def run(): Unit = {
-    val fetchSize: Int = 10000
-
+  def migrate(): Unit = {
     // create a table query from the old journal
     val query = queries.SnapshotTable.result
       .withStatementParameters(
         rsType = ResultSetType.ForwardOnly,
         rsConcurrency = ResultSetConcurrency.ReadOnly,
-        fetchSize = fetchSize
+        fetchSize = pageSize
       )
       .transactionally
 
@@ -73,27 +76,24 @@ case class MigrateSnapshot(system: ActorSystem[_], profile: JdbcProfile, seriali
     val streamFuture: Future[Done] = Source
       .fromPublisher(dbPublisher)
       // group into fetchsize to use all records in memory
-      .grouped(fetchSize)
+      .grouped(pageSize)
       // convert to new snapshot type
       .map(records => records.map(convertSnapshot))
       // for each "page", write to the new table
-      .runForeach((records: Seq[SnapshotRow]) => {
-        // create a bunch of insert statements
-        val inserts: Seq[Option[DBIOAction[Int, NoStream, Effect.Write]]] = records
-          .map(newQueries.insertOrUpdate)
-          .map(x => Option(x))
+      .mapAsync[Unit](1)(records => {
 
-        // reduce to a single insert and run it
-        inserts
-          .foldLeft[Option[DBIOAction[Int, NoStream, Effect.Write]]](None)((agg, someInsert) => {
-            agg match {
-              case None        => someInsert
-              case Some(prior) => someInsert.map(_.andThen(prior))
-            }
+        val stmt = records
+          .map(newQueries.insertOrUpdate)
+          .asInstanceOf[Seq[DBIO[Unit]]]
+          .foldLeft[DBIO[Unit]](DBIO.successful[Unit] {})((priorStmt, newStmt) => {
+            priorStmt.andThen(newStmt)
           })
-          .map(_.withPinnedSession.transactionally)
-          .map(snapshotdb.run)
+          .withPinnedSession
+          .transactionally
+
+        snapshotdb.run(stmt)
       })
+      .run()
 
     Await.result(streamFuture, Duration.Inf)
   }
@@ -108,7 +108,7 @@ case class MigrateSnapshot(system: ActorSystem[_], profile: JdbcProfile, seriali
     val transformed: Try[SnapshotRow] = serializer
       .deserialize(old)
       .flatMap({ case (meta, snapshot) =>
-        val serializedMetadata = meta.metadata
+        val serializedMetadata: Option[AkkaSerialization.AkkaSerialized] = meta.metadata
           .flatMap(m => AkkaSerialization.serialize(serialization, m).toOption)
 
         AkkaSerialization

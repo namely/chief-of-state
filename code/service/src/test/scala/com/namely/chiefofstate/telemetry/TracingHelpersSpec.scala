@@ -51,7 +51,6 @@ class TracingHelpersSpec extends BaseSpec {
       val headers: Map[String, String] = Map("X-B3-SpanId" -> spanID, "X-B3-TraceId" -> traceID, "X-B3-SAMPLED" -> "1")
       val actual = TracingHelpers.getParentSpanContext(Context.current(), headers)
       val span = Span.fromContext(actual)
-      println(s"State ${span.getSpanContext.getTraceState.asMap()}")
       span.getSpanContext.getSpanId shouldBe spanID
       span.getSpanContext.getTraceId shouldBe traceID
     }

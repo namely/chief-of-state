@@ -16,6 +16,11 @@ message AccountOpened {
   string account_number = 2;
 }
 
+message AccountDebited {
+  string account_uuid = 1;
+  double balance = 2;
+}
+
 message Account {
   string account_uuid = 1;
   string account_number = 2;

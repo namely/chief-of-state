@@ -7,7 +7,6 @@
 package com.namely.chiefofstate.migration.versions.v2
 
 import akka.actor.typed.ActorSystem
-import akka.projection.slick.SlickProjection
 import akka.serialization.{Serialization, SerializationExtension}
 import com.namely.chiefofstate.migration.Version
 import org.slf4j.{Logger, LoggerFactory}
@@ -15,8 +14,7 @@ import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.{Await, ExecutionContextExecutor}
-import scala.concurrent.duration.Duration
+import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Success, Try}
 
 /**
@@ -43,7 +41,7 @@ case class V2(journalJdbcConfig: DatabaseConfig[JdbcProfile], projectionJdbcConf
    */
   override def upgrade(): DBIO[Unit] = {
     log.info(s"finalizing ChiefOfState migration: #$versionNumber")
-    SchemasUtil.updateReadOffsets.andThen(SchemasUtil.dropLegacyJournalTablesStmt).andThen(DBIO.successful {})
+    SchemasUtil.dropLegacyJournalTablesStmt.flatMap(_ => DBIO.successful {})
   }
 
   /**
@@ -89,7 +87,7 @@ case class V2(journalJdbcConfig: DatabaseConfig[JdbcProfile], projectionJdbcConf
       journalMigrator.run()
 
       log.info("migrating ChiefOfState old snapshot data onto the new snapshot table")
-      snapshotMigrator.run()
+      snapshotMigrator.migrate()
     }
   }
 

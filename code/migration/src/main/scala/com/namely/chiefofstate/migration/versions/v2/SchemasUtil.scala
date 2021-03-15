@@ -154,7 +154,7 @@ object SchemasUtil {
    * drops the journal and snapshot tables
    */
   def dropJournalTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
-    val stmt = DBIO
+    val stmt: DBIO[Unit] = DBIO
       .seq(
         sqlu"""
              DROP TABLE IF EXISTS
@@ -174,31 +174,43 @@ object SchemasUtil {
   }
 
   /**
-   * SQL statement that updates the read_side_offsets current_offset
-   * values to the event ordering on the new journal. This is necessary
-   * as the ordering value is computed on insert with a postgres sequence,
-   * so it's possible for the values to have changed, etc. This should be run
-   * after populating the new journal but before dropping the old journal.
+   * helper method merely for tests
+   *
+   * @param journalJdbcConfig the jdbc config
    */
-  private[v2] val updateReadOffsets: SqlAction[Int, NoStream, Effect] = {
-    sqlu"""
-        with new_values(projection_key, projection_name, new_offset) as (
-          select
-            r.projection_key,
-            r.projection_name,
-            new_journal.ordering::varchar(255)
-          from read_side_offsets r
-          inner join journal old_journal
-            on old_journal.ordering::varchar(255) = r.current_offset
-          inner join event_journal new_journal
-            on old_journal.persistence_id = new_journal.persistence_id
-            and old_journal.sequence_number = new_journal.sequence_number
-        )
-        update read_side_offsets r
-        set current_offset = new_values.new_offset
-        from new_values
-        where r.projection_key = new_values.projection_key
-          and r.projection_name = new_values.projection_name
-    """
+  private[versions] def createLegacyJournalAndSnapshot(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
+    val createStmt: SqlAction[Int, NoStream, Effect] = sqlu"""
+     CREATE TABLE IF NOT EXISTS journal (
+      ordering        BIGSERIAL,
+      persistence_id  VARCHAR(255) NOT NULL,
+      sequence_number BIGINT       NOT NULL,
+      deleted         BOOLEAN      DEFAULT FALSE,
+      tags            VARCHAR(255) DEFAULT NULL,
+      message         BYTEA        NOT NULL,
+      PRIMARY KEY (persistence_id, sequence_number)
+     )"""
+
+    val ixStmt: SqlAction[Int, NoStream, Effect] =
+      sqlu"""CREATE UNIQUE INDEX IF NOT EXISTS journal_ordering_idx on journal(ordering)"""
+
+    val snpashotStmt: SqlAction[Int, NoStream, Effect] = sqlu"""
+     CREATE TABLE IF NOT EXISTS snapshot (
+      persistence_id  VARCHAR(255) NOT NULL,
+      sequence_number BIGINT       NOT NULL,
+      created         BIGINT       NOT NULL,
+      snapshot        BYTEA        NOT NULL,
+      PRIMARY KEY (persistence_id, sequence_number)
+     )"""
+
+    val actions: DBIO[Unit] = DBIO
+      .seq(
+        createStmt,
+        ixStmt,
+        snpashotStmt
+      )
+      .withPinnedSession
+      .transactionally
+
+    Await.result(journalJdbcConfig.db.run(actions), Duration.Inf)
   }
 }

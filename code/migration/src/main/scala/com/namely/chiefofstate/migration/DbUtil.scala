@@ -44,5 +44,4 @@ object DbUtil {
       Duration.Inf
     )
   }
-
 }
