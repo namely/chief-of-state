@@ -79,7 +79,6 @@ case class MigrateSnapshot(system: ActorSystem[_],
       .grouped(pageSize)
       // convert to new snapshot type
       .map(records => records.map(convertSnapshot))
-      // .mapAsync(parallelism = 1)(records => Future(records.map(convertSnapshot)))
       // for each "page", write to the new table
       .mapAsync[Unit](1)(records => {
         // create a bunch of insert statements
