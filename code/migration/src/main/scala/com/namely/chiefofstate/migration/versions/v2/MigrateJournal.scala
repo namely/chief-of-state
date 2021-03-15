@@ -18,7 +18,7 @@ import akka.persistence.jdbc.journal.dao.JournalTables.{JournalAkkaSerialization
 import akka.persistence.jdbc.query.dao.legacy.ReadJournalQueries
 import akka.persistence.journal.Tagged
 import akka.serialization.Serialization
-import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.scaladsl.Source
 import org.slf4j.{Logger, LoggerFactory}
 import slick.dbio.Effect
 import slick.jdbc.{JdbcBackend, JdbcProfile, ResultSetConcurrency, ResultSetType}
@@ -190,23 +190,9 @@ case class MigrateJournal(system: ActorSystem[_],
     (row, tags)
   }
 
-  /**
-   * inserts a serialized journal row with the mapping tags
-   *
-   * @param journalSerializedRow the serialized journal row
-   * @param tags the set of tags
-   */
-  private[versions] def writeJournalRows(journalSerializedRow: JournalAkkaSerializationRow,
-                                         tags: Set[String]
-  ): Future[Unit] = {
-
-    val dbioAction = writeJournalRowsStatements(journalSerializedRow, tags).withPinnedSession.transactionally
-
-    journaldb.run(dbioAction)
-  }
-
-  private[versions] def writeJournalRowsStatements(journalSerializedRow: JournalAkkaSerializationRow,
-                                                   tags: Set[String]
+  private[versions] def writeJournalRowsStatements(
+    journalSerializedRow: JournalAkkaSerializationRow,
+    tags: Set[String]
   ): DBIO[Unit] = {
     val journalInsert: DBIO[Long] = newJournalQueries.JournalTable
       .returning(newJournalQueries.JournalTable.map(_.ordering))

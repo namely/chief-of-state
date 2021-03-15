@@ -17,7 +17,6 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.Try
-import com.namely.chiefofstate.migration.versions.v2.SchemasUtil
 
 /**
  * V1 migration only rename the read side offset store table columns name from
@@ -142,12 +141,8 @@ object V1 {
    * @param journalJdbcConfig the database config
    */
   private[v1] def createTable(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
-    // TODO: consider a "current schema" object so v1
-    // migration isn't importing something from v2
-    val stmt = SchemasUtil
-      .createReadSideOffsetsStmt(tempTable)
-      .withPinnedSession
-      .transactionally
+    val stmt =
+      createReadSideOffsetsStmt(tempTable).withPinnedSession.transactionally
 
     Await.result(journalJdbcConfig.db.run(stmt), Duration.Inf)
   }
@@ -176,6 +171,35 @@ object V1 {
       .transactionally
 
     Await.result(dbConfig.db.run(combined), Duration.Inf).sum
+  }
+
+  /**
+   * creates the read side offsets table
+   *
+   * @param tableName optional param to set the table name (used in v1 migration)
+   * @return the DBIOAction creating the table and offset
+   */
+  private[v1] def createReadSideOffsetsStmt(
+    tableName: String = "read_side_offsets"
+  ): DBIOAction[Unit, NoStream, Effect] = {
+
+    val table = sqlu"""
+      CREATE TABLE IF NOT EXISTS #$tableName (
+        projection_name VARCHAR(255) NOT NULL,
+        projection_key VARCHAR(255) NOT NULL,
+        current_offset VARCHAR(255) NOT NULL,
+        manifest VARCHAR(4) NOT NULL,
+        mergeable BOOLEAN NOT NULL,
+        last_updated BIGINT NOT NULL,
+        PRIMARY KEY(projection_name, projection_key)
+      )
+    """
+
+    val ix = sqlu"""
+    CREATE INDEX IF NOT EXISTS projection_name_index ON #$tableName (projection_name);
+    """
+
+    DBIO.seq(table, ix)
   }
 
   private[v1] case class OffsetRow(
