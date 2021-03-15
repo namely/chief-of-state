@@ -96,7 +96,12 @@ class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
       val legacySnapshotDao: ByteArraySnapshotDao =
         new ByteArraySnapshotDao(snapshotdb, profile, snapshotConfig, serialization)
 
-      val migrator: MigrateSnapshot = MigrateSnapshot(testKit.system, profile, serialization)
+      val migrator: MigrateSnapshot = MigrateSnapshot(
+        testKit.system,
+        profile,
+        serialization,
+        pageSize = 2
+      )
 
       // let us create the legacy tables
       noException shouldBe thrownBy(SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig))
@@ -115,8 +120,6 @@ class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
 
       // let us migrate the data
       noException shouldBe thrownBy(migrator.migrate())
-
-      Thread.sleep(1000) // wait for 1000 millisecond
 
       // let us get the number of records in the new snapshot
       Await.result(journalJdbcConfig.db

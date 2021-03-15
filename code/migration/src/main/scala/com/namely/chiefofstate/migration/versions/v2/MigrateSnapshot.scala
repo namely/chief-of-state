@@ -34,8 +34,13 @@ import scala.util.{Failure, Success, Try}
  * @param system the actor system
  * @param profile the jdbc profile
  * @param serialization the akka serialization
+ * @param pageSize number of records to bulk process together
  */
-case class MigrateSnapshot(system: ActorSystem[_], profile: JdbcProfile, serialization: Serialization) {
+case class MigrateSnapshot(system: ActorSystem[_],
+                           profile: JdbcProfile,
+                           serialization: Serialization,
+                           pageSize: Int = 1000
+) {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   implicit val ec: ExecutionContextExecutor = system.executionContext
@@ -56,14 +61,12 @@ case class MigrateSnapshot(system: ActorSystem[_], profile: JdbcProfile, seriali
    * Write the state snapshot data into the new snapshot table applying the proper serialization
    */
   def migrate(): Unit = {
-    val fetchSize: Int = 10000
-
     // create a table query from the old journal
     val query = queries.SnapshotTable.result
       .withStatementParameters(
         rsType = ResultSetType.ForwardOnly,
         rsConcurrency = ResultSetConcurrency.ReadOnly,
-        fetchSize = fetchSize
+        fetchSize = pageSize
       )
       .transactionally
 
@@ -73,11 +76,12 @@ case class MigrateSnapshot(system: ActorSystem[_], profile: JdbcProfile, seriali
     val streamFuture: Future[Done] = Source
       .fromPublisher(dbPublisher)
       // group into fetchsize to use all records in memory
-      .grouped(fetchSize)
+      .grouped(pageSize)
       // convert to new snapshot type
       .map(records => records.map(convertSnapshot))
+      // .mapAsync(parallelism = 1)(records => Future(records.map(convertSnapshot)))
       // for each "page", write to the new table
-      .runForeach((records: Seq[SnapshotRow]) => {
+      .mapAsync[Unit](1)(records => {
         // create a bunch of insert statements
         val inserts: Seq[Option[DBIO[Int]]] = records
           .map(newQueries.insertOrUpdate)
@@ -92,8 +96,14 @@ case class MigrateSnapshot(system: ActorSystem[_], profile: JdbcProfile, seriali
             }
           })
           .map(_.withPinnedSession.transactionally)
-          .map(snapshotdb.run)
+          // run query
+          .map(statement => snapshotdb.run(statement))
+          // convert to a Future of Unit
+          .map(_.map[Unit](identity))
+          // return success future if no statement to run
+          .getOrElse(Future.successful {})
       })
+      .run()
 
     Await.result(streamFuture, Duration.Inf)
   }
