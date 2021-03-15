@@ -73,9 +73,6 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
    * @param fetchSize the number of records to fetch
    */
   def migrateWithBatchSize(fetchSize: Int = bufferSize): Unit = {
-    // get the parallelism setting. This value in the akka reference conf is 8
-    val parallelism: Int = journalConfig.daoConfig.parallelism
-
     val query: DBIOAction[Seq[legacy.JournalRow], Streaming[legacy.JournalRow], Effect.Read with Effect.Transactional] =
       queries.JournalTable.result
         .withStatementParameters(
@@ -85,22 +82,43 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
         )
         .transactionally
 
-    val eventualDone: Future[Done] = Source
+    val pipeline: Future[Done] = Source
+      // build source from table query
       .fromPublisher(journaldb.stream(query))
+      // deserialize it
       .via(serializer.deserializeFlow)
-      .mapAsync(parallelism)(reprAndOrdNr => Future.fromTry(reprAndOrdNr))
-      .map { case (repr, tags, ordering) => repr.withPayload(Tagged(repr, tags)) -> ordering }
-      .mapAsync(parallelism) { case (repr, ordering) =>
-        // serializing the PersistentRepr using the same ordering received from the old journal
-        val (row, tags): (JournalAkkaSerializationRow, Set[String]) = serialize(repr, ordering)
-        // persist the data
-        writeJournalRows(row, tags)
-      }
-      .runWith(Sink.ignore)
+      .map({
+        case Success((repr, tags, ordering)) if tags.nonEmpty =>
+          repr.withPayload(Tagged(repr, tags)) -> ordering // only wrap in `Tagged` if needed
+        case Success((repr, _, ordering)) => repr -> ordering // noops map
+        case Failure(exception)           => throw exception // blow-up on failure
+      })
+      // generate new repr and new tags as tuples of (<newRepr>, <newTags>)
+      .map({ case (repr, ordering) => serialize(repr, ordering) })
+      // get pages of many records at once
+      .grouped(fetchSize)
+      .mapAsync(1)(records => {
+        val optionalStmt: Option[DBIO[Unit]] = records
+          // get all the sql statements for this record as an option
+          .map({ case (newRepr, newTags) => Option(writeJournalRowsStatements(newRepr, newTags)) })
+          // reduce to 1 statement
+          .foldLeft[Option[DBIO[Unit]]](None)((priorStmt, nextStmt) => {
+            priorStmt match {
+              case Some(stmt) => nextStmt.map(_.andThen(stmt))
+              case None       => nextStmt
+            }
+          })
 
-    // run the data migration and set the next ordering value
+        optionalStmt match {
+          // run the statement
+          case Some(stmt) => journaldb.run(stmt)
+          case None       => Future.successful {}
+        }
+      })
+      .run()
+
     val eventualUnit: Future[Unit] = for {
-      _ <- eventualDone
+      _ <- pipeline
       _ <- setNextOrderingValue()
     } yield ()
 
@@ -189,22 +207,23 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
                                          tags: Set[String]
   ): Future[Unit] = {
 
+    val dbioAction = writeJournalRowsStatements(journalSerializedRow, tags).withPinnedSession.transactionally
+
+    journaldb.run(dbioAction)
+  }
+
+  private[versions] def writeJournalRowsStatements(journalSerializedRow: JournalAkkaSerializationRow,
+                                                   tags: Set[String]
+  ): DBIO[Unit] = {
     val journalInsert: DBIO[Long] = newJournalQueries.JournalTable
       .returning(newJournalQueries.JournalTable.map(_.ordering))
       .forceInsert(journalSerializedRow)
 
-    val tagInserts: FixedSqlAction[Option[Int], NoStream, Effect.Write] = newJournalQueries.TagTable ++= tags
-      .map(tag => TagRow(journalSerializedRow.ordering, tag))
-      .toSeq
+    val tagInserts: FixedSqlAction[Option[Int], NoStream, Effect.Write] =
+      newJournalQueries.TagTable ++= tags
+        .map(tag => TagRow(journalSerializedRow.ordering, tag))
+        .toSeq
 
-    journaldb.run(
-      DBIO
-        .seq(
-          journalInsert,
-          tagInserts
-        )
-        .withPinnedSession
-        .transactionally
-    )
+    journalInsert.flatMap(_ => tagInserts.asInstanceOf[DBIO[Unit]])
   }
 }
