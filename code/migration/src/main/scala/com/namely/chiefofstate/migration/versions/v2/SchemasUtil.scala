@@ -90,6 +90,35 @@ object SchemasUtil {
   }
 
   /**
+   * creates the read side offsets table
+   *
+   * @param tableName optional param to set the table name (used in v1 migration)
+   * @return the DBIOAction creating the table and offset
+   */
+  private[versions] def createReadSideOffsetsStmt(
+    tableName: String = "read_side_offsets"
+  ): DBIOAction[Unit, NoStream, Effect] = {
+
+    val table = sqlu"""
+      CREATE TABLE IF NOT EXISTS #$tableName (
+        projection_name VARCHAR(255) NOT NULL,
+        projection_key VARCHAR(255) NOT NULL,
+        current_offset VARCHAR(255) NOT NULL,
+        manifest VARCHAR(4) NOT NULL,
+        mergeable BOOLEAN NOT NULL,
+        last_updated BIGINT NOT NULL,
+        PRIMARY KEY(projection_name, projection_key)
+      )
+    """
+
+    val ix = sqlu"""
+    CREATE INDEX IF NOT EXISTS projection_name_index ON #$tableName (projection_name);
+    """
+
+    DBIO.seq(table, ix)
+  }
+
+  /**
    * creates the various write-side stores and read-side offset stores
    */
   def createJournalTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
