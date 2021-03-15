@@ -170,7 +170,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
 
       // let us migrate the data
-      migrator.migrateWithBatchSize() shouldBe {}
+      migrator.run() shouldBe {}
 
       // let us get the number of records in the new journal
       Await.result(journalJdbcConfig.db
@@ -196,7 +196,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
         )
 
       val serialization: Serialization = SerializationExtension(testKit.system)
-      val migrator: MigrateJournal = MigrateJournal(testKit.system, profile, serialization)
+      val migrator: MigrateJournal = MigrateJournal(testKit.system, profile, serialization, 1)
 
       val journaldb: JdbcBackend.Database =
         SlickExtension(testKit.system).database(config.getConfig("jdbc-read-journal")).database
@@ -219,7 +219,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
 
       // let us migrate the data
-      migrator.migrateWithBatchSize(1) shouldBe {}
+      migrator.run() shouldBe {}
 
       // let us get the number of records in the new journal
       Await.result(journalJdbcConfig.db
@@ -265,7 +265,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
 
       // let us migrate the data
-      migrator.migrateWithBatchSize() shouldBe {}
+      migrator.run() shouldBe {}
 
       // let us get the number of records in the new journal
       // let us get the number of records in the new journal
@@ -315,7 +315,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
 
       // let us migrate the data
-      migrator.migrateWithBatchSize() shouldBe {}
+      migrator.run() shouldBe {}
 
       // let us get the number of records in the new journal
       // let us get the number of records in the new journal

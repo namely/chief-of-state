@@ -36,8 +36,13 @@ import scala.util.{Failure, Success}
  * @param system the actor system
  * @param profile the jdbc profile
  * @param serialization the akka serialization
+ * @param pageSize number of records to write at once
  */
-case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serialization: Serialization) {
+case class MigrateJournal(system: ActorSystem[_],
+                          profile: JdbcProfile,
+                          serialization: Serialization,
+                          pageSize: Int = 1000
+) {
   implicit val ec: ExecutionContextExecutor = system.executionContext
   implicit val classicSys: actor.ActorSystem = system.toClassic
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -58,9 +63,6 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
   private val newJournalQueries: JournalQueries =
     new JournalQueries(profile, journalConfig.eventJournalTableConfiguration, journalConfig.eventTagTableConfiguration)
 
-  // The default value per akka reference conf is 500
-  private val bufferSize: Int = journalConfig.daoConfig.bufferSize
-
   private val schemaName: String = journalConfig.eventJournalTableConfiguration.schemaName match {
     case Some(schema) => schema
     case None         => throw new Exception("missing schema name in configuration")
@@ -69,16 +71,14 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
   /**
    * write all legacy events into the new journal tables applying the proper serialization.
    * The migration will be done by batchSize. That will avoid to pull all records into memory
-   *
-   * @param fetchSize the number of records to fetch
    */
-  def migrateWithBatchSize(fetchSize: Int = bufferSize): Unit = {
+  def run(): Unit = {
     val query: DBIOAction[Seq[legacy.JournalRow], Streaming[legacy.JournalRow], Effect.Read with Effect.Transactional] =
       queries.JournalTable.result
         .withStatementParameters(
           rsType = ResultSetType.ForwardOnly,
           rsConcurrency = ResultSetConcurrency.ReadOnly,
-          fetchSize = fetchSize
+          fetchSize = pageSize
         )
         .transactionally
 
@@ -96,7 +96,7 @@ case class MigrateJournal(system: ActorSystem[_], profile: JdbcProfile, serializ
       // generate new repr and new tags as tuples of (<newRepr>, <newTags>)
       .map({ case (repr, ordering) => serialize(repr, ordering) })
       // get pages of many records at once
-      .grouped(fetchSize)
+      .grouped(pageSize)
       .mapAsync(1)(records => {
         val optionalStmt: Option[DBIO[Unit]] = records
           // get all the sql statements for this record as an option
