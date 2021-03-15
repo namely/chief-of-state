@@ -98,22 +98,15 @@ case class MigrateJournal(system: ActorSystem[_],
       // get pages of many records at once
       .grouped(pageSize)
       .mapAsync(1)(records => {
-        val optionalStmt: Option[DBIO[Unit]] = records
+        val stmt: DBIO[Unit] = records
           // get all the sql statements for this record as an option
-          .map({ case (newRepr, newTags) => Option(writeJournalRowsStatements(newRepr, newTags)) })
+          .map({ case (newRepr, newTags) => writeJournalRowsStatements(newRepr, newTags) })
           // reduce to 1 statement
-          .foldLeft[Option[DBIO[Unit]]](None)((priorStmt, nextStmt) => {
-            priorStmt match {
-              case Some(stmt) => nextStmt.map(_.andThen(stmt))
-              case None       => nextStmt
-            }
+          .foldLeft[DBIO[Unit]](DBIO.successful[Unit] {})((priorStmt, nextStmt) => {
+            priorStmt.andThen(nextStmt)
           })
 
-        optionalStmt match {
-          // run the statement
-          case Some(stmt) => journaldb.run(stmt)
-          case None       => Future.successful {}
-        }
+        journaldb.run(stmt)
       })
       .run()
 

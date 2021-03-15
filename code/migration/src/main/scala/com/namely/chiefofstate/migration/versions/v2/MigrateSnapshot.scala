@@ -81,24 +81,17 @@ case class MigrateSnapshot(system: ActorSystem[_],
       .map(records => records.map(convertSnapshot))
       // for each "page", write to the new table
       .mapAsync[Unit](1)(records => {
-        // create a bunch of insert statements
-        val inserts: Seq[Option[DBIO[Int]]] = records
-          .map(newQueries.insertOrUpdate)
-          .map(x => Option(x))
 
-        // reduce to a single insert and run it
-        inserts
-          .foldLeft[Option[DBIO[Int]]](None)((agg, someInsert) => {
-            agg match {
-              case None        => someInsert
-              case Some(prior) => someInsert.map(_.andThen(prior))
-            }
+        val stmt = records
+          .map(newQueries.insertOrUpdate)
+          .asInstanceOf[Seq[DBIO[Unit]]]
+          .foldLeft[DBIO[Unit]](DBIO.successful[Unit] {})((priorStmt, newStmt) => {
+            priorStmt.andThen(newStmt)
           })
-          .map(_.withPinnedSession.transactionally)
-          // run query, return as future of Unit
-          .map(statement => snapshotdb.run(statement).asInstanceOf[Future[Unit]])
-          // return success future if no statement to run
-          .getOrElse(Future.successful {})
+          .withPinnedSession
+          .transactionally
+
+        snapshotdb.run(stmt)
       })
       .run()
 
