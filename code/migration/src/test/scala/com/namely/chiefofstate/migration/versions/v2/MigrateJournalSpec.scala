@@ -347,4 +347,12 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       oldOrdNrAndSeqNr.equals(newOrdNrAndSeqNr) shouldBe true
     }
   }
+  ".upgradeJournalRow" should {
+    "transform an old row to a new row" in {
+      // TODO
+    }
+    "fail to transform a bad old row" in {
+      // TODO
+    }
+  }
 }

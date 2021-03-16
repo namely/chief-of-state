@@ -29,6 +29,9 @@ import slickProfile.api._
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
+import akka.persistence.jdbc.journal.dao.legacy.JournalRow
+import scala.util.Try
+import akka.persistence.serialization.MessageFormats.PersistentMessage
 
 /**
  * Migrate the old legacy journal data to the new journal table
@@ -85,16 +88,13 @@ case class MigrateJournal(system: ActorSystem[_],
     val pipeline: Future[Done] = Source
       // build source from table query
       .fromPublisher(journaldb.stream(query))
-      // deserialize it
-      .via(serializer.deserializeFlow)
-      .map({
-        case Success((repr, tags, ordering)) if tags.nonEmpty =>
-          repr.withPayload(Tagged(repr, tags)) -> ordering // only wrap in `Tagged` if needed
-        case Success((repr, _, ordering)) => repr -> ordering // noops map
-        case Failure(exception)           => throw exception // blow-up on failure
+      // transform to new types and extract tags
+      .map(journalRow => {
+        upgradeJournalRow(journalRow) match {
+          case Success(newRow) => (newRow, upgradeTags(journalRow.tags))
+          case Failure(e) => throw e
+        }
       })
-      // generate new repr and new tags as tuples of (<newRepr>, <newTags>)
-      .map({ case (repr, ordering) => serialize(repr, ordering) })
       // get pages of many records at once
       .grouped(pageSize)
       .mapAsync(1)(records => {
@@ -204,5 +204,45 @@ case class MigrateJournal(system: ActorSystem[_],
         .toSeq
 
     journalInsert.flatMap(_ => tagInserts.asInstanceOf[DBIO[Unit]])
+  }
+
+  /**
+    * convert the old akka journal row to the new one, assuming proto serialization
+    * was used
+    *
+    * @param row a legacy akka journal row with internal proto serialization
+    * @return the new journal serialized row
+    */
+  private[versions] def upgradeJournalRow(row: JournalRow): Try[JournalAkkaSerializationRow] = {
+    // parse the old proto representation from the old journal row
+    Try(PersistentMessage.parseFrom(row.message))
+    // convert to the new row
+    .map(persistentMessage => {
+      JournalAkkaSerializationRow(
+        ordering = row.ordering,
+        deleted = row.deleted,
+        persistenceId = row.persistenceId,
+        sequenceNumber = row.sequenceNumber,
+        writer = persistentMessage.getWriterUuid(),
+        writeTimestamp = persistentMessage.getTimestamp(),
+        adapterManifest = persistentMessage.getMetadata().getPayloadManifest().toString("utf-8"),
+        eventPayload = persistentMessage.getMetadata().getPayload().toByteArray(),
+        eventSerId = persistentMessage.getMetadata().getSerializerId(),
+        eventSerManifest = "", // TODO
+        metaPayload = None, // TODO
+        metaSerId = None, // TODO
+        metaSerManifest = None // TODO
+      )
+    })
+  }
+
+  /**
+    * converts the old tags serialization (csv) to the new one
+    *
+    * @param oldTags optional string repr of tags from old journal
+    * @return set of string tags
+    */
+  private[versions] def upgradeTags(oldTags: Option[String]): Set[String] = {
+    oldTags.map(_.split(",").toSet).getOrElse(Set.empty[String])
   }
 }
