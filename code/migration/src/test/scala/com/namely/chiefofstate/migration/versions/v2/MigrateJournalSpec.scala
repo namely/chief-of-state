@@ -377,7 +377,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       })
     }
 
-    "migrate legacy journal  data into the new journal and event persisted" in {
+    "migrate legacy journal data into the new journal and validate event persisted" in {
       implicit val ec: ExecutionContextExecutor = testKit.system.executionContext
 
       val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
@@ -433,6 +433,91 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
         EventWrapper.validate(bytea).isSuccess shouldBe true
       })
 
+    }
+
+    "migrate legacy journal data into the new journal and validate tags" in {
+      implicit val ec: ExecutionContextExecutor = testKit.system.executionContext
+
+      val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
+      val profile: JdbcProfile = journalJdbcConfig.profile
+      val journalConfig: JournalConfig = new JournalConfig(config.getConfig("jdbc-journal"))
+      val legacyJournalQueries: legacy.JournalQueries =
+        new legacy.JournalQueries(profile, journalConfig.journalTableConfiguration)
+
+      val newJournalQueries: JournalQueries =
+        new JournalQueries(profile,
+                           journalConfig.eventJournalTableConfiguration,
+                           journalConfig.eventTagTableConfiguration
+        )
+
+      val serialization: Serialization = SerializationExtension(testKit.system)
+      val migrator: MigrateJournal = MigrateJournal(testKit.system, profile, serialization)
+
+      val journaldb: JdbcBackend.Database =
+        SlickExtension(testKit.system).database(config.getConfig("jdbc-read-journal")).database
+
+      // let us create the legacy tables
+      SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
+
+      // let us seed some data into the legacy journal
+      noException shouldBe thrownBy(Testdata.feedLegacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
+
+      // let us count the old journal
+      countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
+
+      // let us create the new journal table
+      SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
+
+      // let us migrate the data
+      migrator.run() shouldBe {}
+
+      // let us get the number of records in the new journal
+      Await.result(journalJdbcConfig.db
+                     .run(newJournalQueries.JournalTable.map(_.ordering).length.result),
+                   Duration.Inf
+      ) shouldBe countLegacyJournal(journalJdbcConfig, legacyJournalQueries)
+
+      // let us assert the ordering number
+      getEventJournalNextSequenceValue(journalConfig, journaldb) shouldBe 7L
+
+      // let us get the manifest
+      val payloads: Seq[Array[Byte]] = Await.result(
+        journalJdbcConfig.db
+          .run(newJournalQueries.JournalTable.map(_.eventPayload).result),
+        Duration.Inf
+      )
+
+      payloads.map(bytea => {
+        EventWrapper.validate(bytea).isSuccess shouldBe true
+      })
+
+      val legacyTagsAndOrd = Await
+        .result(
+          journalJdbcConfig.db
+            .run(
+              legacyJournalQueries.JournalTable
+                .sortBy(_.ordering.asc)
+                .map(journal => (journal.ordering, journal.tags.get))
+                .result
+            ),
+          Duration.Inf
+        )
+        .toSet
+
+      val newTagsAndOrd = Await
+        .result(
+          journalJdbcConfig.db
+            .run(
+              newJournalQueries.TagTable
+                .sortBy(_.eventId.asc)
+                .map(t => (t.eventId, t.tag))
+                .result
+            ),
+          Duration.Inf
+        )
+        .toSet
+
+      legacyTagsAndOrd.equals(newTagsAndOrd) shouldBe true
     }
 
   }
