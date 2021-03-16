@@ -7,14 +7,13 @@
 package com.namely.chiefofstate.migration.versions.v2
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import akka.actor.typed.ActorSystem
 import akka.persistence.jdbc.config.JournalConfig
 import akka.persistence.jdbc.db.SlickExtension
 import akka.persistence.jdbc.journal.dao.{legacy, JournalQueries}
-import akka.persistence.jdbc.journal.dao.legacy.ByteArrayJournalDao
 import akka.serialization.{Serialization, SerializationExtension}
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.namely.chiefofstate.migration.{BaseSpec, DbUtil, JdbcConfig}
+import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
@@ -100,8 +99,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
 
   "MigrateJournal" should {
     "create legacy tables and insert data onto the new journal" in {
-      implicit val ec: ExecutionContextExecutor = testKit.system.executionContext
-      implicit val sys: ActorSystem[Nothing] = testKit.system
+
       val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
       val profile: JdbcProfile = journalJdbcConfig.profile
       val journalConfig: JournalConfig = new JournalConfig(config.getConfig("jdbc-journal"))
@@ -109,16 +107,12 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
         new legacy.JournalQueries(profile, journalConfig.journalTableConfiguration)
       val serialization: Serialization = SerializationExtension(testKit.system)
       val migrator: MigrateJournal = MigrateJournal(testKit.system, profile, serialization)
-      val journaldb: JdbcBackend.Database =
-        SlickExtension(testKit.system).database(config.getConfig("jdbc-read-journal")).database
-
-      val legacyDao: ByteArrayJournalDao = new ByteArrayJournalDao(journaldb, profile, journalConfig, serialization)
 
       // let us create the legacy tables
       SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
 
       // insert some data in the old journal
-      noException shouldBe thrownBy(Testdata.feedLegacyJournal(legacyDao))
+      noException shouldBe thrownBy(Testdata.feedLegacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
 
       // let us count the old journal
       countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
@@ -128,8 +122,6 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
     }
 
     "migrate legacy journal data into the new journal schema" in {
-      implicit val ec: ExecutionContextExecutor = testKit.system.executionContext
-      implicit val sys: ActorSystem[Nothing] = testKit.system
 
       val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
       val profile: JdbcProfile = journalJdbcConfig.profile
@@ -146,17 +138,12 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       val serialization: Serialization = SerializationExtension(testKit.system)
       val migrator: MigrateJournal = MigrateJournal(testKit.system, profile, serialization)
 
-      val journaldb: JdbcBackend.Database =
-        SlickExtension(testKit.system).database(config.getConfig("jdbc-read-journal")).database
-
-      val legacyDao: ByteArrayJournalDao = new ByteArrayJournalDao(journaldb, profile, journalConfig, serialization)
-
       // let us create the legacy tables
       SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
       DbUtil.tableExists(journalJdbcConfig, "journal") shouldBe true
 
       // let us seed some data into the legacy journal
-      noException shouldBe thrownBy(Testdata.feedLegacyJournal(legacyDao))
+      noException shouldBe thrownBy(Testdata.feedLegacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
 
       // let us count the old journal
       countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
@@ -180,8 +167,6 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
     }
 
     "migrate legacy journal  data into the new journal schema one by one" in {
-      implicit val ec: ExecutionContextExecutor = testKit.system.executionContext
-      implicit val sys: ActorSystem[Nothing] = testKit.system
 
       val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
       val profile: JdbcProfile = journalJdbcConfig.profile
@@ -198,16 +183,11 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       val serialization: Serialization = SerializationExtension(testKit.system)
       val migrator: MigrateJournal = MigrateJournal(testKit.system, profile, serialization, 1)
 
-      val journaldb: JdbcBackend.Database =
-        SlickExtension(testKit.system).database(config.getConfig("jdbc-read-journal")).database
-
-      val legacyDao: ByteArrayJournalDao = new ByteArrayJournalDao(journaldb, profile, journalConfig, serialization)
-
       // let us create the legacy tables
       SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
 
       // let us seed some data into the legacy journal
-      noException shouldBe thrownBy(Testdata.feedLegacyJournal(legacyDao))
+      noException shouldBe thrownBy(Testdata.feedLegacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
 
       // let us count the old journal
       countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
@@ -230,7 +210,6 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
 
     "migrate legacy journal  data into the new journal and check the next ordering number" in {
       implicit val ec: ExecutionContextExecutor = testKit.system.executionContext
-      implicit val sys: ActorSystem[Nothing] = testKit.system
 
       val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
       val profile: JdbcProfile = journalJdbcConfig.profile
@@ -250,13 +229,11 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       val journaldb: JdbcBackend.Database =
         SlickExtension(testKit.system).database(config.getConfig("jdbc-read-journal")).database
 
-      val legacyDao: ByteArrayJournalDao = new ByteArrayJournalDao(journaldb, profile, journalConfig, serialization)
-
       // let us create the legacy tables
       SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
 
       // let us seed some data into the legacy journal
-      noException shouldBe thrownBy(Testdata.feedLegacyJournal(legacyDao))
+      noException shouldBe thrownBy(Testdata.feedLegacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
 
       // let us count the old journal
       countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
@@ -280,7 +257,6 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
 
     "migrate legacy journal  data into the new journal and check ordering and sequence number number parity" in {
       implicit val ec: ExecutionContextExecutor = testKit.system.executionContext
-      implicit val sys: ActorSystem[Nothing] = testKit.system
 
       val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
       val profile: JdbcProfile = journalJdbcConfig.profile
@@ -300,13 +276,11 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       val journaldb: JdbcBackend.Database =
         SlickExtension(testKit.system).database(config.getConfig("jdbc-read-journal")).database
 
-      val legacyDao: ByteArrayJournalDao = new ByteArrayJournalDao(journaldb, profile, journalConfig, serialization)
-
       // let us create the legacy tables
       SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
 
       // let us seed some data into the legacy journal
-      noException shouldBe thrownBy(Testdata.feedLegacyJournal(legacyDao))
+      noException shouldBe thrownBy(Testdata.feedLegacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
 
       // let us count the old journal
       countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
@@ -317,7 +291,6 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       // let us migrate the data
       migrator.run() shouldBe {}
 
-      // let us get the number of records in the new journal
       // let us get the number of records in the new journal
       Await.result(journalJdbcConfig.db
                      .run(newJournalQueries.JournalTable.map(_.ordering).length.result),
@@ -346,5 +319,121 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
 
       oldOrdNrAndSeqNr.equals(newOrdNrAndSeqNr) shouldBe true
     }
+
+    "migrate legacy journal  data into the new journal and check manifest" in {
+      implicit val ec: ExecutionContextExecutor = testKit.system.executionContext
+
+      val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
+      val profile: JdbcProfile = journalJdbcConfig.profile
+      val journalConfig: JournalConfig = new JournalConfig(config.getConfig("jdbc-journal"))
+      val legacyJournalQueries: legacy.JournalQueries =
+        new legacy.JournalQueries(profile, journalConfig.journalTableConfiguration)
+
+      val newJournalQueries: JournalQueries =
+        new JournalQueries(profile,
+                           journalConfig.eventJournalTableConfiguration,
+                           journalConfig.eventTagTableConfiguration
+        )
+
+      val serialization: Serialization = SerializationExtension(testKit.system)
+      val migrator: MigrateJournal = MigrateJournal(testKit.system, profile, serialization)
+
+      val journaldb: JdbcBackend.Database =
+        SlickExtension(testKit.system).database(config.getConfig("jdbc-read-journal")).database
+
+      // let us create the legacy tables
+      SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
+
+      // let us seed some data into the legacy journal
+      noException shouldBe thrownBy(Testdata.feedLegacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
+
+      // let us count the old journal
+      countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
+
+      // let us create the new journal table
+      SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
+
+      // let us migrate the data
+      migrator.run() shouldBe {}
+
+      // let us get the number of records in the new journal
+      Await.result(journalJdbcConfig.db
+                     .run(newJournalQueries.JournalTable.map(_.ordering).length.result),
+                   Duration.Inf
+      ) shouldBe countLegacyJournal(journalJdbcConfig, legacyJournalQueries)
+
+      // let us assert the ordering number
+      getEventJournalNextSequenceValue(journalConfig, journaldb) shouldBe 7L
+
+      // let us get the manifest
+      val manifests: Seq[String] = Await.result(
+        journalJdbcConfig.db
+          .run(newJournalQueries.JournalTable.map(_.eventSerManifest).result),
+        Duration.Inf
+      )
+
+      manifests.map(manifest => {
+        manifest shouldBe "com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper"
+      })
+    }
+
+    "migrate legacy journal  data into the new journal and event persisted" in {
+      implicit val ec: ExecutionContextExecutor = testKit.system.executionContext
+
+      val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
+      val profile: JdbcProfile = journalJdbcConfig.profile
+      val journalConfig: JournalConfig = new JournalConfig(config.getConfig("jdbc-journal"))
+      val legacyJournalQueries: legacy.JournalQueries =
+        new legacy.JournalQueries(profile, journalConfig.journalTableConfiguration)
+
+      val newJournalQueries: JournalQueries =
+        new JournalQueries(profile,
+                           journalConfig.eventJournalTableConfiguration,
+                           journalConfig.eventTagTableConfiguration
+        )
+
+      val serialization: Serialization = SerializationExtension(testKit.system)
+      val migrator: MigrateJournal = MigrateJournal(testKit.system, profile, serialization)
+
+      val journaldb: JdbcBackend.Database =
+        SlickExtension(testKit.system).database(config.getConfig("jdbc-read-journal")).database
+
+      // let us create the legacy tables
+      SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
+
+      // let us seed some data into the legacy journal
+      noException shouldBe thrownBy(Testdata.feedLegacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
+
+      // let us count the old journal
+      countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
+
+      // let us create the new journal table
+      SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
+
+      // let us migrate the data
+      migrator.run() shouldBe {}
+
+      // let us get the number of records in the new journal
+      Await.result(journalJdbcConfig.db
+                     .run(newJournalQueries.JournalTable.map(_.ordering).length.result),
+                   Duration.Inf
+      ) shouldBe countLegacyJournal(journalJdbcConfig, legacyJournalQueries)
+
+      // let us assert the ordering number
+      getEventJournalNextSequenceValue(journalConfig, journaldb) shouldBe 7L
+
+      // let us get the manifest
+      val payloads: Seq[Array[Byte]] = Await.result(
+        journalJdbcConfig.db
+          .run(newJournalQueries.JournalTable.map(_.eventPayload).result),
+        Duration.Inf
+      )
+
+      payloads.map(bytea => {
+        EventWrapper.validate(bytea).isSuccess shouldBe true
+      })
+
+    }
+
   }
 }
