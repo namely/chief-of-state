@@ -11,7 +11,6 @@ import akka.actor.typed.ActorSystem
 import akka.persistence.jdbc.config.{JournalConfig, SnapshotConfig}
 import akka.persistence.jdbc.db.SlickExtension
 import akka.persistence.jdbc.journal.dao.{legacy, JournalQueries}
-import akka.persistence.jdbc.journal.dao.legacy.ByteArrayJournalDao
 import akka.persistence.jdbc.snapshot.dao
 import akka.persistence.jdbc.snapshot.dao.legacy.{ByteArraySnapshotDao, SnapshotQueries}
 import akka.serialization.{Serialization, SerializationExtension}
@@ -138,8 +137,6 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
       val journaldb: JdbcBackend.Database =
         SlickExtension(testKit.system).database(config.getConfig("jdbc-read-journal")).database
 
-      val legacyJournalDao: ByteArrayJournalDao =
-        new ByteArrayJournalDao(journaldb, profile, journalConfig, serialization)
       val snapshotdb: JdbcBackend.Database =
         SlickExtension(testKit.system).database(config.getConfig("jdbc-snapshot-store")).database
       val legacySnapshotDao: ByteArraySnapshotDao =
@@ -153,7 +150,7 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
       DbUtil.tableExists(journalJdbcConfig, "snapshot") shouldBe true
 
       // let us seed some data into the legacy journal
-      noException shouldBe thrownBy(Testdata.feedLegacyJournal(legacyJournalDao))
+      noException shouldBe thrownBy(Testdata.feedLegacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
       // let us load some data into the legacy snapshot
       noException shouldBe thrownBy(Testdata.feedLegacySnapshot(legacySnapshotDao))
 
@@ -180,8 +177,6 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
 
       // let us assert the ordering number
       getEventJournalNextSequenceValue(journalConfig, journaldb) shouldBe 7L
-
-      Thread.sleep(1000) // wait for 1000 millisecond
 
       // let us get the number of records in the new snapshot
       Await.result(journalJdbcConfig.db

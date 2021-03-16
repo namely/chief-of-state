@@ -16,7 +16,6 @@ import akka.persistence.jdbc.journal.dao.{legacy, AkkaSerialization, JournalQuer
 import akka.persistence.jdbc.journal.dao.legacy.ByteArrayJournalSerializer
 import akka.persistence.jdbc.journal.dao.JournalTables.{JournalAkkaSerializationRow, TagRow}
 import akka.persistence.jdbc.query.dao.legacy.ReadJournalQueries
-import akka.persistence.journal.Tagged
 import akka.serialization.Serialization
 import akka.stream.scaladsl.Source
 import org.slf4j.{Logger, LoggerFactory}
@@ -88,13 +87,11 @@ case class MigrateJournal(system: ActorSystem[_],
       // deserialize it
       .via(serializer.deserializeFlow)
       .map({
-        case Success((repr, tags, ordering)) if tags.nonEmpty =>
-          repr.withPayload(Tagged(repr, tags)) -> ordering // only wrap in `Tagged` if needed
-        case Success((repr, _, ordering)) => repr -> ordering // noops map
-        case Failure(exception)           => throw exception // blow-up on failure
+        case Success((repr, tags, ordering)) => (repr, tags, ordering)
+        case Failure(exception)              => throw exception // blow-up on failure
       })
       // generate new repr and new tags as tuples of (<newRepr>, <newTags>)
-      .map({ case (repr, ordering) => serialize(repr, ordering) })
+      .map({ case (repr, tags, ordering) => serialize(repr, tags, ordering) })
       // get pages of many records at once
       .grouped(pageSize)
       .mapAsync(1)(records => {
@@ -152,33 +149,33 @@ case class MigrateJournal(system: ActorSystem[_],
   /**
    *  serialize the PersistentRepr and construct a JournalAkkaSerializationRow and set of matching tags
    *
-   * @param pr the PersistentRepr
+   * @param persistentRepr the PersistentRepr
+   * @param tags the set of tags that match the given persistentRepr
    * @param ordering the ordering of the PersistentRepr
    * @return the tuple of JournalAkkaSerializationRow and set of tags
    */
-  private[versions] def serialize(pr: PersistentRepr, ordering: Long): (JournalAkkaSerializationRow, Set[String]) = {
-
-    val (updatedPr, tags) = pr.payload match {
-      case Tagged(payload, tags) => (pr.withPayload(payload), tags)
-      case _                     => (pr, Set.empty[String])
-    }
+  private[versions] def serialize(
+    persistentRepr: PersistentRepr,
+    tags: Set[String],
+    ordering: Long
+  ): (JournalAkkaSerializationRow, Set[String]) = {
 
     val serializedPayload: AkkaSerialization.AkkaSerialized =
-      AkkaSerialization.serialize(serialization, updatedPr.payload) match {
+      AkkaSerialization.serialize(serialization, persistentRepr.payload) match {
         case Failure(exception) => throw exception
         case Success(value)     => value
       }
 
     val serializedMetadata: Option[AkkaSerialization.AkkaSerialized] =
-      updatedPr.metadata.flatMap(m => AkkaSerialization.serialize(serialization, m).toOption)
+      persistentRepr.metadata.flatMap(m => AkkaSerialization.serialize(serialization, m).toOption)
     val row: JournalAkkaSerializationRow = JournalAkkaSerializationRow(
       ordering,
-      updatedPr.deleted,
-      updatedPr.persistenceId,
-      updatedPr.sequenceNr,
-      updatedPr.writerUuid,
-      updatedPr.timestamp,
-      updatedPr.manifest,
+      persistentRepr.deleted,
+      persistentRepr.persistenceId,
+      persistentRepr.sequenceNr,
+      persistentRepr.writerUuid,
+      persistentRepr.timestamp,
+      persistentRepr.manifest,
       serializedPayload.payload,
       serializedPayload.serId,
       serializedPayload.serManifest,
