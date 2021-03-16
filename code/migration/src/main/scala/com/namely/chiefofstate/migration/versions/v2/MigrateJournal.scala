@@ -60,8 +60,6 @@ case class MigrateJournal(system: ActorSystem[_],
     SlickExtension(system).database(system.settings.config.getConfig("jdbc-read-journal")).database
 
   private val queries: ReadJournalQueries = new ReadJournalQueries(profile, readJournalConfig)
-  private val serializer: ByteArrayJournalSerializer =
-    new ByteArrayJournalSerializer(serialization, readJournalConfig.pluginConfig.tagSeparator)
 
   private val newJournalQueries: JournalQueries =
     new JournalQueries(profile, journalConfig.eventJournalTableConfiguration, journalConfig.eventTagTableConfiguration)
@@ -92,7 +90,7 @@ case class MigrateJournal(system: ActorSystem[_],
       .map(journalRow => {
         upgradeJournalRow(journalRow) match {
           case Success(newRow) => (newRow, upgradeTags(journalRow.tags))
-          case Failure(e) => throw e
+          case Failure(e)      => throw e
         }
       })
       // get pages of many records at once
@@ -149,47 +147,6 @@ case class MigrateJournal(system: ActorSystem[_],
     } yield value
   }
 
-  /**
-   *  serialize the PersistentRepr and construct a JournalAkkaSerializationRow and set of matching tags
-   *
-   * @param pr the PersistentRepr
-   * @param ordering the ordering of the PersistentRepr
-   * @return the tuple of JournalAkkaSerializationRow and set of tags
-   */
-  private[versions] def serialize(pr: PersistentRepr, ordering: Long): (JournalAkkaSerializationRow, Set[String]) = {
-
-    val (updatedPr, tags) = pr.payload match {
-      case Tagged(payload, tags) => (pr.withPayload(payload), tags)
-      case _                     => (pr, Set.empty[String])
-    }
-
-    val serializedPayload: AkkaSerialization.AkkaSerialized =
-      AkkaSerialization.serialize(serialization, updatedPr.payload) match {
-        case Failure(exception) => throw exception
-        case Success(value)     => value
-      }
-
-    val serializedMetadata: Option[AkkaSerialization.AkkaSerialized] =
-      updatedPr.metadata.flatMap(m => AkkaSerialization.serialize(serialization, m).toOption)
-    val row: JournalAkkaSerializationRow = JournalAkkaSerializationRow(
-      ordering,
-      updatedPr.deleted,
-      updatedPr.persistenceId,
-      updatedPr.sequenceNr,
-      updatedPr.writerUuid,
-      updatedPr.timestamp,
-      updatedPr.manifest,
-      serializedPayload.payload,
-      serializedPayload.serId,
-      serializedPayload.serManifest,
-      serializedMetadata.map(_.payload),
-      serializedMetadata.map(_.serId),
-      serializedMetadata.map(_.serManifest)
-    )
-
-    (row, tags)
-  }
-
   private[versions] def writeJournalRowsStatements(
     journalSerializedRow: JournalAkkaSerializationRow,
     tags: Set[String]
@@ -207,41 +164,41 @@ case class MigrateJournal(system: ActorSystem[_],
   }
 
   /**
-    * convert the old akka journal row to the new one, assuming proto serialization
-    * was used
-    *
-    * @param row a legacy akka journal row with internal proto serialization
-    * @return the new journal serialized row
-    */
+   * convert the old akka journal row to the new one, assuming proto serialization
+   * was used
+   *
+   * @param row a legacy akka journal row with internal proto serialization
+   * @return the new journal serialized row
+   */
   private[versions] def upgradeJournalRow(row: JournalRow): Try[JournalAkkaSerializationRow] = {
     // parse the old proto representation from the old journal row
     Try(PersistentMessage.parseFrom(row.message))
-    // convert to the new row
-    .map(persistentMessage => {
-      JournalAkkaSerializationRow(
-        ordering = row.ordering,
-        deleted = row.deleted,
-        persistenceId = row.persistenceId,
-        sequenceNumber = row.sequenceNumber,
-        writer = persistentMessage.getWriterUuid(),
-        writeTimestamp = persistentMessage.getTimestamp(),
-        adapterManifest = persistentMessage.getMetadata().getPayloadManifest().toString("utf-8"),
-        eventPayload = persistentMessage.getMetadata().getPayload().toByteArray(),
-        eventSerId = persistentMessage.getMetadata().getSerializerId(),
-        eventSerManifest = "", // TODO
-        metaPayload = None, // TODO
-        metaSerId = None, // TODO
-        metaSerManifest = None // TODO
-      )
-    })
+      // convert to the new row
+      .map(persistentMessage => {
+        JournalAkkaSerializationRow(
+          ordering = row.ordering,
+          deleted = row.deleted,
+          persistenceId = row.persistenceId,
+          sequenceNumber = row.sequenceNumber,
+          writer = persistentMessage.getWriterUuid(),
+          writeTimestamp = persistentMessage.getTimestamp(),
+          adapterManifest = persistentMessage.getMetadata().getPayloadManifest().toString("utf-8"),
+          eventPayload = persistentMessage.getMetadata().getPayload().toByteArray(),
+          eventSerId = persistentMessage.getMetadata().getSerializerId(),
+          eventSerManifest = "", // TODO
+          metaPayload = None, // TODO
+          metaSerId = None, // TODO
+          metaSerManifest = None // TODO
+        )
+      })
   }
 
   /**
-    * converts the old tags serialization (csv) to the new one
-    *
-    * @param oldTags optional string repr of tags from old journal
-    * @return set of string tags
-    */
+   * converts the old tags serialization (csv) to the new one
+   *
+   * @param oldTags optional string repr of tags from old journal
+   * @return set of string tags
+   */
   private[versions] def upgradeTags(oldTags: Option[String]): Set[String] = {
     oldTags.map(_.split(",").toSet).getOrElse(Set.empty[String])
   }
