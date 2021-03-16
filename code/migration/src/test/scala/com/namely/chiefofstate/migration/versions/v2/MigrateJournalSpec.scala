@@ -24,6 +24,9 @@ import slick.jdbc.PostgresProfile.api._
 import java.sql.{Connection, DriverManager}
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.concurrent.duration.Duration
+import akka.persistence.jdbc.journal.dao.legacy.JournalRow
+import java.util.UUID
+import com.namely.protobuf.chiefofstate.v1.tests.AccountOpened
 
 class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
 
@@ -349,10 +352,57 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
   }
   ".upgradeJournalRow" should {
     "transform an old row to a new row" in {
-      // TODO
+
+      // define values for the old payload
+      object oldValues {
+        val writer: String = UUID.randomUUID().toString()
+        val timestamp: Long = 3
+        val event = AccountOpened().withAccountUuid(UUID.randomUUID().toString())
+        val eventPayload: Array[Byte] = event.toByteArray
+      }
+
+      // build a serialized payload using above values
+      val oldMessage: Array[Byte] = null
+
+      // construct the old journal row
+      val oldRow: JournalRow = JournalRow(
+        ordering = 3,
+        deleted = true,
+        persistenceId = "some-persistence-id",
+        sequenceNumber = 4,
+        message = oldMessage,
+        tags = Some("a,b,c")
+      )
+
+      val actualTry = MigrateJournal.upgradeJournalRow(oldRow)
+      actualTry.isSuccess shouldBe true
+
+      val actual = actualTry.get
+
+      actual.ordering shouldBe oldRow.ordering
+      actual.deleted shouldBe oldRow.deleted
+      actual.persistenceId shouldBe oldRow.persistenceId
+      actual.sequenceNumber shouldBe oldRow.sequenceNumber
+      actual.writer shouldBe oldValues.writer
+      actual.writeTimestamp shouldBe oldValues.timestamp
+      // actual.adapterManifest shouldBe ""
+      actual.eventPayload shouldBe oldValues.eventPayload
+      actual.eventSerId shouldBe ""
+      // actual.eventSerManifest shouldBe ""
+      // actual.metaPayload shouldBe None
+      // actual.metaSerId shouldBe None
+      // actual.metaSerManifest shouldBe None
     }
     "fail to transform a bad old row" in {
       // TODO
+    }
+  }
+  ".upgradeTags" should {
+    "split the CSV" in {
+      MigrateJournal.upgradeTags(Some("a,b,c")) should contain theSameElementsAs Set("a", "b", "c")
+    }
+    "pass through None" in {
+      MigrateJournal.upgradeTags(None).isEmpty shouldBe true
     }
   }
 }

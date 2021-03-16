@@ -88,8 +88,8 @@ case class MigrateJournal(system: ActorSystem[_],
       .fromPublisher(journaldb.stream(query))
       // transform to new types and extract tags
       .map(journalRow => {
-        upgradeJournalRow(journalRow) match {
-          case Success(newRow) => (newRow, upgradeTags(journalRow.tags))
+        MigrateJournal.upgradeJournalRow(journalRow) match {
+          case Success(newRow) => (newRow, MigrateJournal.upgradeTags(journalRow.tags))
           case Failure(e)      => throw e
         }
       })
@@ -162,6 +162,9 @@ case class MigrateJournal(system: ActorSystem[_],
 
     journalInsert.flatMap(_ => tagInserts.asInstanceOf[DBIO[Unit]])
   }
+}
+
+object MigrateJournal {
 
   /**
    * convert the old akka journal row to the new one, assuming proto serialization
