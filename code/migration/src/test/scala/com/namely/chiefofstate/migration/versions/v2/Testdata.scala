@@ -51,7 +51,7 @@ object Testdata {
               deleted = false
             )
           )
-          .get,
+          .getOrElse(Seq.empty[Byte].toArray), // to avoid scalastyle yelling
         tags = Some("chiefofstate-1")
       ),
       JournalRow(
@@ -74,7 +74,7 @@ object Testdata {
               deleted = false
             )
           )
-          .get,
+          .getOrElse(Seq.empty[Byte].toArray), // to avoid scalastyle yelling
         tags = Some("chiefofstate-2")
       ),
       JournalRow(
@@ -97,7 +97,7 @@ object Testdata {
               deleted = false
             )
           )
-          .get,
+          .getOrElse(Seq.empty[Byte].toArray), //to avoid scalastyle yelling,
         tags = Some("chiefofstate-2")
       ),
       JournalRow(
@@ -120,7 +120,7 @@ object Testdata {
               deleted = false
             )
           )
-          .get,
+          .getOrElse(Seq.empty[Byte].toArray), //to avoid scalastyle yelling
         tags = Some("chiefofstate-2")
       ),
       JournalRow(
@@ -143,7 +143,7 @@ object Testdata {
               deleted = false
             )
           )
-          .get,
+          .getOrElse(Seq.empty[Byte].toArray), // to avoid scalastyle yelling
         tags = Some("chiefofstate-2")
       ),
       JournalRow(
@@ -166,7 +166,7 @@ object Testdata {
               deleted = false
             )
           )
-          .get,
+          .getOrElse(Seq.empty[Byte].toArray), // to avoid scalastyle yelling
         tags = Some("chiefofstate-2")
       )
     )

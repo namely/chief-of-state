@@ -87,15 +87,11 @@ case class MigrateJournal(system: ActorSystem[_],
       // deserialize it
       .via(serializer.deserializeFlow)
       .map({
-        case Success((repr, tags, ordering)) =>
-          repr -> tags -> ordering
-        case Failure(exception) => throw exception // blow-up on failure
+        case Success((repr, tags, ordering)) => (repr, tags, ordering)
+        case Failure(exception)              => throw exception // blow-up on failure
       })
       // generate new repr and new tags as tuples of (<newRepr>, <newTags>)
-      .map({ case (reprAndTags: (PersistentRepr, Set[String]), ordering) =>
-        val (repr, tags) = reprAndTags
-        serialize(repr, tags, ordering)
-      })
+      .map({ case (repr, tags, ordering) => serialize(repr, tags, ordering) })
       // get pages of many records at once
       .grouped(pageSize)
       .mapAsync(1)(records => {
