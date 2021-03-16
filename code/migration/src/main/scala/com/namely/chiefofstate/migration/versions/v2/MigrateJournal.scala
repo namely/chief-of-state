@@ -149,32 +149,33 @@ case class MigrateJournal(system: ActorSystem[_],
   /**
    *  serialize the PersistentRepr and construct a JournalAkkaSerializationRow and set of matching tags
    *
-   * @param pr the PersistentRepr
+   * @param persistentRepr the PersistentRepr
+   * @param tags the set of tags that match the given persistentRepr
    * @param ordering the ordering of the PersistentRepr
    * @return the tuple of JournalAkkaSerializationRow and set of tags
    */
   private[versions] def serialize(
-    updatedPr: PersistentRepr,
+    persistentRepr: PersistentRepr,
     tags: Set[String],
     ordering: Long
   ): (JournalAkkaSerializationRow, Set[String]) = {
 
     val serializedPayload: AkkaSerialization.AkkaSerialized =
-      AkkaSerialization.serialize(serialization, updatedPr.payload) match {
+      AkkaSerialization.serialize(serialization, persistentRepr.payload) match {
         case Failure(exception) => throw exception
         case Success(value)     => value
       }
 
     val serializedMetadata: Option[AkkaSerialization.AkkaSerialized] =
-      updatedPr.metadata.flatMap(m => AkkaSerialization.serialize(serialization, m).toOption)
+      persistentRepr.metadata.flatMap(m => AkkaSerialization.serialize(serialization, m).toOption)
     val row: JournalAkkaSerializationRow = JournalAkkaSerializationRow(
       ordering,
-      updatedPr.deleted,
-      updatedPr.persistenceId,
-      updatedPr.sequenceNr,
-      updatedPr.writerUuid,
-      updatedPr.timestamp,
-      updatedPr.manifest,
+      persistentRepr.deleted,
+      persistentRepr.persistenceId,
+      persistentRepr.sequenceNr,
+      persistentRepr.writerUuid,
+      persistentRepr.timestamp,
+      persistentRepr.manifest,
       serializedPayload.payload,
       serializedPayload.serId,
       serializedPayload.serManifest,
