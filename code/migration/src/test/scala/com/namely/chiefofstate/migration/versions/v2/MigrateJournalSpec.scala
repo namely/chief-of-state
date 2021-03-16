@@ -307,7 +307,6 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
             .run(legacyJournalQueries.JournalTable.map(journal => (journal.ordering, journal.sequenceNumber)).result),
           Duration.Inf
         )
-        .toSet
 
       val newOrdNrAndSeqNr = Await
         .result(
@@ -315,12 +314,11 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
             .run(newJournalQueries.JournalTable.map(journal => (journal.ordering, journal.sequenceNumber)).result),
           Duration.Inf
         )
-        .toSet
 
-      oldOrdNrAndSeqNr.equals(newOrdNrAndSeqNr) shouldBe true
+      (oldOrdNrAndSeqNr should contain).theSameElementsInOrderAs(newOrdNrAndSeqNr)
     }
 
-    "migrate legacy journal  data into the new journal and check manifest" in {
+    "migrate legacy journal  data into the new journal and check persisted event manifest" in {
       implicit val ec: ExecutionContextExecutor = testKit.system.executionContext
 
       val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
@@ -497,12 +495,14 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
             .run(
               legacyJournalQueries.JournalTable
                 .sortBy(_.ordering.asc)
-                .map(journal => (journal.ordering, journal.tags.get))
+                .map(journal => (journal.ordering, journal.tags))
                 .result
             ),
           Duration.Inf
         )
-        .toSet
+        .map({ case (l, maybeString) =>
+          (l, maybeString.getOrElse(""))
+        })
 
       val newTagsAndOrd = Await
         .result(
@@ -515,9 +515,8 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
             ),
           Duration.Inf
         )
-        .toSet
 
-      legacyTagsAndOrd.equals(newTagsAndOrd) shouldBe true
+      (legacyTagsAndOrd should contain).theSameElementsInOrderAs(newTagsAndOrd)
     }
 
   }
