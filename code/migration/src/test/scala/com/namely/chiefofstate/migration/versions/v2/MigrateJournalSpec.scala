@@ -325,7 +325,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
         .map({ case (id, values) => (id, values.map({ case (_, tag) => tag })) })
         .toSeq
 
-      (legacyTagsAndOrd should contain).theSameElementsInOrderAs(newTagsAndOrd)
+      (legacyTagsAndOrd should contain).theSameElementsAs(newTagsAndOrd)
     }
   }
 }
