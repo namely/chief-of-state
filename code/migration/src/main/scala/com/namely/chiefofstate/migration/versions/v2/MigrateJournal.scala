@@ -88,7 +88,7 @@ case class MigrateJournal(system: ActorSystem[_],
       .via(serializer.deserializeFlow)
       .map({
         case Success((repr, tags, ordering)) =>
-          repr -> tags -> ordering // only wrap in `Tagged` if needed
+          repr -> tags -> ordering
         case Failure(exception) => throw exception // blow-up on failure
       })
       // generate new repr and new tags as tuples of (<newRepr>, <newTags>)
