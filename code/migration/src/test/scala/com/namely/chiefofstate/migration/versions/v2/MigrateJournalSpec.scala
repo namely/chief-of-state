@@ -27,6 +27,9 @@ import scala.concurrent.duration.Duration
 import akka.persistence.jdbc.journal.dao.legacy.JournalRow
 import java.util.UUID
 import com.namely.protobuf.chiefofstate.v1.tests.AccountOpened
+import akka.persistence.serialization.MessageFormats.PersistentMessage
+import akka.persistence.serialization.MessageFormats.PersistentPayload
+import akka.protobufv3.internal.ByteString
 
 class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
 
@@ -359,10 +362,23 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
         val timestamp: Long = 3
         val event = AccountOpened().withAccountUuid(UUID.randomUUID().toString())
         val eventPayload: Array[Byte] = event.toByteArray
+        val serializerId: Int = 2
       }
 
       // build a serialized payload using above values
-      val oldMessage: Array[Byte] = null
+      val oldMessage: PersistentMessage = {
+        PersistentMessage.newBuilder()
+          .setWriterUuid(oldValues.writer)
+          .setTimestamp(oldValues.timestamp)
+          .setMetadata(
+            PersistentPayload.newBuilder()
+            .setPayload(ByteString.copyFrom(oldValues.eventPayload))
+            .setPayloadManifest(ByteString.copyFrom(oldValues.event.companion.scalaDescriptor.fullName, "utf-8"))
+            .setSerializerId(oldValues.serializerId)
+            .build()
+          )
+          .build()
+      }
 
       // construct the old journal row
       val oldRow: JournalRow = JournalRow(
@@ -370,7 +386,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
         deleted = true,
         persistenceId = "some-persistence-id",
         sequenceNumber = 4,
-        message = oldMessage,
+        message = oldMessage.toByteArray(),
         tags = Some("a,b,c")
       )
 
