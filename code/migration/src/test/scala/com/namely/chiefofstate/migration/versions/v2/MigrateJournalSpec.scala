@@ -166,7 +166,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       ) shouldBe countLegacyJournal(journalJdbcConfig, legacyJournalQueries)
     }
 
-    "migrate legacy journal  data into the new journal schema one by one" in {
+    "migrate legacy journal data into the new journal schema one by one" in {
 
       val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
       val profile: JdbcProfile = journalJdbcConfig.profile
