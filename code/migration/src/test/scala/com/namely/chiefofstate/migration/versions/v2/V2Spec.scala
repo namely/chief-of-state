@@ -150,9 +150,9 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
       DbUtil.tableExists(journalJdbcConfig, "snapshot") shouldBe true
 
       // let us seed some data into the legacy journal
-      noException shouldBe thrownBy(Testdata.feedLegacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
+      noException shouldBe thrownBy(Seed.legacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
       // let us load some data into the legacy snapshot
-      noException shouldBe thrownBy(Testdata.feedLegacySnapshot(legacySnapshotDao))
+      noException shouldBe thrownBy(Seed.legacySnapshot(legacySnapshotDao))
 
       // let us count the old journal
       countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6

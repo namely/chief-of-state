@@ -112,7 +112,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
 
       // insert some data in the old journal
-      noException shouldBe thrownBy(Testdata.feedLegacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
+      noException shouldBe thrownBy(Seed.legacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
 
       // let us count the old journal
       countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
@@ -143,7 +143,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       DbUtil.tableExists(journalJdbcConfig, "journal") shouldBe true
 
       // let us seed some data into the legacy journal
-      noException shouldBe thrownBy(Testdata.feedLegacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
+      noException shouldBe thrownBy(Seed.legacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
 
       // let us count the old journal
       countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
@@ -187,7 +187,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
 
       // let us seed some data into the legacy journal
-      noException shouldBe thrownBy(Testdata.feedLegacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
+      noException shouldBe thrownBy(Seed.legacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
 
       // let us count the old journal
       countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
@@ -233,7 +233,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig) shouldBe {}
 
       // let us seed some data into the legacy journal
-      noException shouldBe thrownBy(Testdata.feedLegacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
+      noException shouldBe thrownBy(Seed.legacyJournal(serialization, legacyJournalQueries, journalJdbcConfig))
 
       // let us count the old journal
       countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6

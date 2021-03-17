@@ -108,7 +108,7 @@ class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
       DbUtil.tableExists(journalJdbcConfig, "snapshot") shouldBe true
 
       // let us load some data into the legacy snapshot
-      noException shouldBe thrownBy(Testdata.feedLegacySnapshot(legacySnapshotDao))
+      noException shouldBe thrownBy(Seed.legacySnapshot(legacySnapshotDao))
 
       // let us count the legacy snapshot
       countLegacySnapshot(journalJdbcConfig, queries) shouldBe 4
