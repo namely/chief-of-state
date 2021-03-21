@@ -58,7 +58,7 @@ class CosSnapshotStore(config: Config) extends SnapshotStore {
       // fold to the max sequence number
       .runFold[Option[EventEnvelope]](None)((maxEnvelope: Option[EventEnvelope], nextEnvelope: EventEnvelope) => {
         maxEnvelope.map(prior => {
-          if (prior.sequenceNr < nextEnvelope.sequenceNr) prior else nextEnvelope
+          if (prior.sequenceNr < nextEnvelope.sequenceNr) nextEnvelope else prior
         })
       })
 
