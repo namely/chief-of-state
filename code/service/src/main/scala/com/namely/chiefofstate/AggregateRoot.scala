@@ -29,6 +29,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import java.time.Instant
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
+import akka.persistence.typed.SnapshotSelectionCriteria
 
 /**
  *  This is an event sourced actor.
@@ -72,6 +73,7 @@ object AggregateRoot {
           .withTagger(_ => Set(tags(cosConfig.eventsConfig)(shardIndex)))
           .withRetention(setSnapshotRetentionCriteria(cosConfig.snapshotConfig))
           .onPersistFailure(SupervisorStrategy.restartWithBackoff(200.millis, 5.seconds, 0.1))
+          .withRecovery(Recovery.withSnapshotSelectionCriteria(SnapshotSelectionCriteria.latest))
       }
     }
   }
