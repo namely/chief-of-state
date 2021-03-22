@@ -64,8 +64,7 @@ class CosSnapshotStore(config: Config) extends SnapshotStore {
 
     maxEnvelopeFuture
       .map(_.map((maxEnvelope: EventEnvelope) => {
-        // FIXME, make a debug log
-        logger.info(s"restoring, persistenceId=${maxEnvelope.persistenceId}, sequenceNo=${maxEnvelope.persistenceId}")
+        logger.debug(s"restoring, persistenceId=${maxEnvelope.persistenceId}, sequenceNo=${maxEnvelope.persistenceId}")
 
         SelectedSnapshot(
           metadata = SnapshotMetadata(
