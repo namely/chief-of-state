@@ -51,7 +51,7 @@ class TracedExecutorServiceSpec extends BaseSpec {
 
       implicit val ec: ExecutionContext = TracedExecutorService.get()
 
-      val propagators: ContextPropagators = ContextPropagators.create(B3Propagator.builder.injectMultipleHeaders.build)
+      val propagators: ContextPropagators = ContextPropagators.create(B3Propagator.injectingMultiHeaders())
       val ot: OpenTelemetry = OpenTelemetrySdk
         .builder()
         .setPropagators(propagators)
@@ -89,7 +89,7 @@ class TracedExecutorServiceSpec extends BaseSpec {
     "not auto propagate the span on a normal execution context" in {
       val threadPool = Executors.newFixedThreadPool(1)
       implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(threadPool)
-      val propagators: ContextPropagators = ContextPropagators.create(B3Propagator.builder.injectMultipleHeaders.build)
+      val propagators: ContextPropagators = ContextPropagators.create(B3Propagator.injectingMultiHeaders())
       val ot: OpenTelemetry = OpenTelemetrySdk
         .builder()
         .setPropagators(propagators)

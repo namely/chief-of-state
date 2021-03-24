@@ -8,7 +8,7 @@ package com.namely.chiefofstate.telemetry
 
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.context.Context
-import io.opentelemetry.context.propagation.TextMapPropagator
+import io.opentelemetry.context.propagation.{TextMapGetter, TextMapSetter}
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.lang
@@ -20,8 +20,8 @@ object TracingHelpers {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   private class HashMapCarrier
-      extends TextMapPropagator.Getter[mutable.HashMap[String, String]]
-      with TextMapPropagator.Setter[mutable.HashMap[String, String]] {
+      extends TextMapGetter[mutable.HashMap[String, String]]
+      with TextMapSetter[mutable.HashMap[String, String]] {
     override def keys(carrier: mutable.HashMap[String, String]): lang.Iterable[String] = carrier.keys.toSeq.asJava
 
     override def get(carrier: mutable.HashMap[String, String], key: String): String = carrier.getOrElse(key, "")

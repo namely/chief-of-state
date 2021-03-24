@@ -22,8 +22,9 @@ object Dependencies {
     val JaninoVersion: String = "3.1.3"
     val LogstashLogbackVersion: String = "6.3"
 
-    val OpenTelemetryVersion: String = "0.16.0"
-    val OpenTelemetryMetricsVersion: String = "0.16.0-alpha"
+    val OpenTelemetryVersion: String = "1.0.1"
+    val OpenTelemetryGRPCVersion: String = "1.0.1-alpha"
+    val OpenTelemetryMetricsVersion: String = "1.0.1-alpha"
     val PrometheusServerVersion: String = "0.10.0"
 
     val EmbeddedPostgresVersion: String = "1.2.10"
@@ -65,12 +66,13 @@ object Dependencies {
     // Opentelemetry
     "io.opentelemetry" % "opentelemetry-api" % OpenTelemetryVersion,
     "io.opentelemetry" % "opentelemetry-sdk" % OpenTelemetryVersion,
-    "io.opentelemetry.instrumentation" % "opentelemetry-grpc-1.5" % OpenTelemetryVersion,
+    "io.opentelemetry.instrumentation" % "opentelemetry-grpc-1.5" % OpenTelemetryGRPCVersion,
     "io.opentelemetry" % "opentelemetry-extension-trace-propagators" % OpenTelemetryVersion,
     "io.opentelemetry" % "opentelemetry-exporter-otlp-trace" % OpenTelemetryVersion excludeAll excludeGRPC,
     "io.opentelemetry" % "opentelemetry-exporter-otlp-metrics" % OpenTelemetryMetricsVersion excludeAll excludeGRPC,
     "io.opentelemetry" % "opentelemetry-exporter-jaeger-thrift" % OpenTelemetryVersion excludeAll excludeGRPC,
     "io.opentelemetry" % "opentelemetry-exporter-prometheus" % OpenTelemetryMetricsVersion,
+    "io.opentelemetry" % "opentelemetry-sdk-testing" % OpenTelemetryVersion % Test,
     "io.prometheus" % "simpleclient_httpserver" % PrometheusServerVersion
   )
 
