@@ -23,7 +23,8 @@ import java.util.Collections
 
 case class TelemetryTools(config: CosConfig) {
 
-  /** Create an open telemetry SDK and configure it to instrument the service for trace and metrics collection.
+  /**
+   * Create an open telemetry SDK and configure it to instrument the service for trace and metrics collection.
    *
    *  This sets the created SDK as the Global Open Telemetry instance enabling use of the global tracer.
    */
@@ -46,7 +47,8 @@ case class TelemetryTools(config: CosConfig) {
     sdkBuilder.buildAndRegisterGlobal()
   }
 
-  /** Configure a metrics exporter.
+  /**
+   * Configure a metrics exporter.
    * @param resource a Resource instance representing the instrumented target.
    */
   def configureMetricsExporter(resource: Resource): Unit = {
@@ -67,7 +69,8 @@ case class TelemetryTools(config: CosConfig) {
     }
   }
 
-  /** Configure the Tracer Provider that will be used to process trace entries.
+  /**
+   * Configure the Tracer Provider that will be used to process trace entries.
    *
    * @param config the config object which holds the provider settings
    * @param resource a Resource instance representing the instrumented target
@@ -96,7 +99,8 @@ case class TelemetryTools(config: CosConfig) {
       })
   }
 
-  /** Create a resource instance that will hold details of the service being instrumented.
+  /**
+   * Create a resource instance that will hold details of the service being instrumented.
    *
    * @param config the config object to be used to extract the service details
    * @return a resource representing the current instrumentation target.

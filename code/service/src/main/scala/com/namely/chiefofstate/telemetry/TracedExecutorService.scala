@@ -13,7 +13,8 @@ import java.util.concurrent.{Callable, ExecutorService, ForkJoinPool, Future, Ti
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
 
-/** A custom Executor service that wraps all tasks it receives with the current telemetry context
+/**
+ * A custom Executor service that wraps all tasks it receives with the current telemetry context
  *  before handing the tasks off to underlying delegate executor.
  * @param delegate an executor service that will actually handle running the tasks.
  */
@@ -73,6 +74,7 @@ class TracedExecutorService(delegate: ExecutorService) extends ExecutorService {
 }
 
 object TracedExecutorService {
+
   /**
    * Returns an Execution Context created from a ForkJoinPool wrapped in a TracedExecutorService
    * to ensure that tasks executed in the ForkJoinPool propagate the current telemetry Context.
