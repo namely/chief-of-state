@@ -52,8 +52,8 @@ case class TelemetryTools(config: CosConfig) {
    * @param resource a Resource instance representing the instrumented target.
    */
   def configureMetricsExporter(resource: Resource): Unit = {
-    val endpoint = config.telemetryConfig.otlpEndpoint
-    if (!endpoint.isBlank) {
+    val endpoint: String = config.telemetryConfig.otlpEndpoint
+    if (endpoint.nonEmpty) {
       val meterProvider = SdkMeterProvider.builder.setResource(resource).buildAndRegisterGlobal
       val builder = OtlpGrpcMetricExporter.builder()
 
@@ -78,7 +78,7 @@ case class TelemetryTools(config: CosConfig) {
    */
   def configureProvider(config: CosConfig, resource: Resource): Option[SdkTracerProvider] = {
     Option(config.telemetryConfig.otlpEndpoint)
-      .filter(!_.isBlank)
+      .filter(_.nonEmpty)
       .map(endpoint => {
         val providerBuilder = SdkTracerProvider.builder()
         providerBuilder.setResource(resource)
@@ -110,7 +110,7 @@ case class TelemetryTools(config: CosConfig) {
     resourceAttributes.put(ResourceAttributes.SERVICE_NAME, config.serviceName)
 
     Option(config.telemetryConfig.namespace)
-      .filter(!_.isBlank)
+      .filter(_.nonEmpty)
       .foreach(resourceAttributes.put(ResourceAttributes.SERVICE_NAMESPACE, _))
 
     Resource.getDefault.merge(Resource.create(resourceAttributes.build()))

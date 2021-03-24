@@ -8,7 +8,7 @@ package com.namely.chiefofstate.migration
 
 import com.typesafe.config.Config
 import slick.basic.DatabaseConfig
-import slick.jdbc.{JdbcProfile, PostgresProfile}
+import slick.jdbc.JdbcProfile
 
 object JdbcConfig {
 
@@ -25,8 +25,8 @@ object JdbcConfig {
    * returns the akka projection database config
    * @param config the main application config
    */
-  def projectionConfig(config: Config): DatabaseConfig[PostgresProfile] = {
-    DatabaseConfig.forConfig[PostgresProfile]("akka.projection.slick", config)
+  def projectionConfig(config: Config, key: String = "akka.projection.slick"): DatabaseConfig[JdbcProfile] = {
+    DatabaseConfig.forConfig[JdbcProfile](key, config)
   }
 
   /**

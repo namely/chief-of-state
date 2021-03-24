@@ -27,18 +27,6 @@ class TracingHelpersSpec extends BaseSpec {
   val tracer: Tracer = ot.getTracer("testTracer")
 
   ".getTracingHeaders" should {
-    "handle a null active span" in {
-
-      val span: Span = tracer
-        .spanBuilder("foo")
-        .startSpan()
-
-      val actual = TracingHelpers.getTracingHeaders(Context.current())
-
-      span.end()
-
-      actual.isEmpty shouldBe true
-    }
     "yield a map with parent spanId and traceId" in {
 
       val span: Span = tracer

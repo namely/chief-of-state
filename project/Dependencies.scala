@@ -5,13 +5,13 @@ object Dependencies {
 
   // Package versions
   object Versions {
-    val ScalaVersion: String = "2.13.3"
+    val ScalaVersion: String = "2.13.5"
     val AkkaVersion: String = "2.6.13"
     val SilencerVersion: String = "1.7.3"
     val LogbackVersion: String = "1.2.3"
     val ScalapbCommonProtoVersion: String = "1.18.1-1"
     val ScalapbValidationVersion: String = "0.1.4"
-    val ScalaTestVersion: String = "3.2.4"
+    val ScalaTestVersion: String = "3.2.6"
     val AkkaManagementVersion: String = "1.0.10"
     val AkkaProjectionVersion: String = "1.1.0"
     val PostgresDriverVersion: String = "42.2.19"
@@ -27,7 +27,7 @@ object Dependencies {
     val OpenTelemetryMetricsVersion: String = "1.0.1-alpha"
     val PrometheusServerVersion: String = "0.10.0"
 
-    val EmbeddedPostgresVersion: String = "1.2.10"
+    val TestContainers: String = "0.39.3"
   }
 
   import Dependencies.Versions._
@@ -68,9 +68,9 @@ object Dependencies {
     "io.opentelemetry" % "opentelemetry-sdk" % OpenTelemetryVersion,
     "io.opentelemetry.instrumentation" % "opentelemetry-grpc-1.5" % OpenTelemetryGRPCVersion,
     "io.opentelemetry" % "opentelemetry-extension-trace-propagators" % OpenTelemetryVersion,
-    "io.opentelemetry" % "opentelemetry-exporter-otlp-trace" % OpenTelemetryVersion excludeAll excludeGRPC,
-    "io.opentelemetry" % "opentelemetry-exporter-otlp-metrics" % OpenTelemetryMetricsVersion excludeAll excludeGRPC,
-    "io.opentelemetry" % "opentelemetry-exporter-jaeger-thrift" % OpenTelemetryVersion excludeAll excludeGRPC,
+    ("io.opentelemetry" % "opentelemetry-exporter-otlp-trace" % OpenTelemetryVersion).excludeAll(excludeGRPC),
+    ("io.opentelemetry" % "opentelemetry-exporter-otlp-metrics" % OpenTelemetryMetricsVersion).excludeAll(excludeGRPC),
+    ("io.opentelemetry" % "opentelemetry-exporter-jaeger-thrift" % OpenTelemetryVersion).excludeAll(excludeGRPC),
     "io.opentelemetry" % "opentelemetry-exporter-prometheus" % OpenTelemetryMetricsVersion,
     "io.opentelemetry" % "opentelemetry-sdk-testing" % OpenTelemetryVersion % Test,
     "io.prometheus" % "simpleclient_httpserver" % PrometheusServerVersion
@@ -78,9 +78,12 @@ object Dependencies {
 
   val testJars: Seq[ModuleID] = Seq(
     "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % Test,
+    "com.typesafe.akka" %% "akka-persistence-testkit" % AkkaVersion % Test,
     "org.scalatest" %% "scalatest" % ScalaTestVersion % Test,
     "org.scalamock" %% "scalamock" % ScalaMockVersion % Test,
     "io.grpc" % "grpc-testing" % grpcJavaVersion % Test,
-    "io.zonky.test" % "embedded-postgres" % EmbeddedPostgresVersion % Test
+    // test containers
+    "com.dimafeng" %% "testcontainers-scala-scalatest" % Versions.TestContainers % Test,
+    "com.dimafeng" %% "testcontainers-scala-postgresql" % Versions.TestContainers % Test
   )
 }

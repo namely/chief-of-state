@@ -24,7 +24,6 @@ object BootConfig {
     val mode: DeploymentMode = getDeploymentMode
     ConfigFactory
       .parseResources(mode.file)
-      .withFallback(ConfigFactory.parseResources("legacy.conf")) // FIXME remove this when migration tool is done
       .resolve()
   }
 

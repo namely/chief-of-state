@@ -17,14 +17,13 @@ See the following deployment-specific guides for relevant configurations:
 | COS_ADDRESS | container host | 0.0.0.0 |
 | COS_PORT | container port | 9000 |
 | COS_DEPLOYMENT_MODE | "docker" or "kubernetes" | "docker" |
-| COS_DB_CREATE_TABLES | when enabled create both writeside journal/snapshot store tables and readside offset store if readside settings enabled. | false |
 | COS_DB_USER | journal, snapshot and read side offsets store username | postgres |
 | COS_DB_PASSWORD | journal, snapshot and read side offsets store password | changeme |
 | COS_DB_HOST | journal, snapshot and read side offsets store host | localhost |
 | COS_DB_PORT | journal, snapshot and read side offsets store port | 5432 |
 | COS_DB_NAME | journal, snapshot and read side offsets store db name | postgres |
 | COS_DB_SCHEMA | journal, snapshot and read side offsets store db schema | public |
-| COS_EVENTS_BATCH_THRESHOLD | Number of Events to batch persist | 100 |
+| COS_SNAPSHOT_FREQUENCY |Save snapshots automatically every Number of Events| 100 |
 | COS_NUM_SNAPSHOTS_TO_RETAIN | Number of Aggregate Snapshot to persist to disk for swift recovery | 2 |
 | COS_READ_SIDE_ENABLED | turn on readside or not | false |
 | COS_READ_SIDE_OFFSET_DB_HOST | readside offset storage host | localhost |
@@ -49,9 +48,11 @@ See the following deployment-specific guides for relevant configurations:
 
 ### Telemetry configuration
 
-This library leverages the [io.opentelemetry](https://opentelemetry.io/docs/java/) library
-for both metrics and tracing instrumentation. We only bundle in the [OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) gRPC exporter which
-should be used to push metrics and traces to an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/)
+This library leverages the [io.opentelemetry](https://opentelemetry.io/docs/java/) library for both metrics and tracing
+instrumentation. We only bundle in
+the [OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) gRPC
+exporter which should be used to push metrics and traces to
+an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/)
 that should then propagate the same to desired monitoring services. Collection of telemetry data will be auto enabled
 when a collector endpoint is configured.
 
@@ -61,7 +62,8 @@ Property | Required | Description
 --- | --- | ---
 COS_TELEMETRY_NAMESPACE | no | Namespace to be used to differentiate different chief of state deployments
 COS_TELEMETRY_COLLECTOR_ENDPOINT | no | The grpc endpoint to be use to connect to an [opentelemetry collector](https://opentelemetry.io/docs/collector/) eg.`http://otlp.collector:4317`
-COS_TRACE_PROPAGATORS | no | A comma separated list of [propagators](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/context/api-propagators.md#propagators-distribution) to enable. Defaults to `b3multi`. Valid values are **b3**, **b3multi**, **tracecontext**, **baggage**, **jaeger** and **ottracer**
+COS_TRACE_PROPAGATORS | no | A comma separated list of [propagators](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/context/api-propagators.md#propagators-distribution) to enable. Defaults to `b3multi`. Valid values are **
+b3**, **b3multi**, **tracecontext**, **baggage**, **jaeger** and **ottracer**
 
 ### Read side configurations
 
