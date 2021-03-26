@@ -7,7 +7,7 @@
 package com.namely.chiefofstate.telemetry
 
 import io.grpc.ForwardingServerCall.SimpleForwardingServerCall
-import io.grpc.{Metadata, ServerCall, ServerCallHandler, ServerInterceptor, Status}
+import io.grpc._
 import io.opentelemetry.api.trace.Span
 
 /**
