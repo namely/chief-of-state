@@ -87,6 +87,7 @@ class StatusServerInterceptorSpec extends BaseSpec{
       val attributeData = spans.get(0).getAttributes
       attributeData.get(AttributeKey.stringKey("grpc.kind")) shouldBe "server"
       attributeData.get(AttributeKey.stringKey("grpc.status_code")) shouldBe "PERMISSION_DENIED"
+      attributeData.get(AttributeKey.stringKey("grpc.isOk")) shouldBe "false"
     }
   }
 }

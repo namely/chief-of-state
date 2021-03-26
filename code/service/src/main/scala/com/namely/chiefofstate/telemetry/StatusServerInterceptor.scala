@@ -25,6 +25,8 @@ class StatusServerInterceptor extends ServerInterceptor {
 object StatusServerInterceptor {
   val GrpcStatusLabel = "grpc.status_code"
 
+  val GrpcOkLabel = "grpc.isOk"
+
   val GrpcKindLabel = "grpc.kind"
 
   val GrpcKind = "server"
@@ -46,6 +48,7 @@ object StatusServerInterceptor {
         .current()
         .setAttribute(GrpcStatusLabel, status.getCode.name())
         .setAttribute(GrpcKindLabel, GrpcKind)
+        .setAttribute(GrpcOkLabel, status.equals(Status.OK).toString)
       super.close(status, trailers)
     }
   }
