@@ -99,7 +99,7 @@ object AggregateRoot {
 
     val headers = aggregateCommand.command.tracingHeaders
 
-    log.debug(s"aggregate root headers $headers")
+    log.trace(s"aggregate root headers $headers")
 
     val ctx = TracingHelpers.getParentSpanContext(Context.current(), headers)
 

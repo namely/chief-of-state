@@ -16,8 +16,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk
 
 class TracingHelpersSpec extends BaseSpec {
 
-  val propagators: ContextPropagators = ContextPropagators.create(B3Propagator.builder.injectMultipleHeaders.build)
-
+  val propagators: ContextPropagators = ContextPropagators.create(B3Propagator.injectingMultiHeaders())
   val ot: OpenTelemetry = OpenTelemetrySdk
     .builder()
     .setPropagators(propagators)

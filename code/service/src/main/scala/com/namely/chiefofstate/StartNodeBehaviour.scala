@@ -28,8 +28,7 @@ import com.typesafe.config.Config
 import io.grpc._
 import io.grpc.netty.NettyServerBuilder
 import io.opentelemetry.api.GlobalOpenTelemetry
-import io.opentelemetry.instrumentation.grpc.v1_5.client.TracingClientInterceptor
-import io.opentelemetry.instrumentation.grpc.v1_5.server.TracingServerInterceptor
+import io.opentelemetry.instrumentation.grpc.v1_5.GrpcTracing
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -100,8 +99,6 @@ object StartNodeBehaviour {
       // start the telemetry tools and register global tracer
       TelemetryTools(cosConfig).start()
 
-      val tracer = GlobalOpenTelemetry.get().getTracer("com.namely.chiefofstate")
-
       // We only proceed when the data stores and various migrations are done successfully.
       log.info("Journal and snapshot store created successfully. About to start...")
 
@@ -115,7 +112,8 @@ object StartNodeBehaviour {
           .build()
 
       val grpcClientInterceptors: Seq[ClientInterceptor] = Seq(
-        TracingClientInterceptor.newInterceptor(tracer)
+        GrpcTracing.create(GlobalOpenTelemetry.get()).newClientInterceptor(),
+        new StatusClientInterceptor()
       )
 
       val writeHandler: WriteSideHandlerServiceBlockingStub = new WriteSideHandlerServiceBlockingStub(channel)
@@ -188,11 +186,9 @@ object StartNodeBehaviour {
     // create the traced execution context for grpc
     val grpcEc: ExecutionContext = TracedExecutorService.get()
 
-    val tracer = GlobalOpenTelemetry.get().getTracer("com.namely.chiefofstate")
-
     // create interceptor using the global tracer
-    val tracingServerInterceptor: ServerInterceptor = TracingServerInterceptor
-      .newInterceptor(tracer)
+    val tracingServerInterceptor: ServerInterceptor =
+      GrpcTracing.create(GlobalOpenTelemetry.get()).newServerInterceptor()
 
     // instantiate the grpc service, bind do the execution context
     val serviceImpl: GrpcServiceImpl =
@@ -202,6 +198,7 @@ object StartNodeBehaviour {
     val service: ServerServiceDefinition = ServerInterceptors.intercept(
       ChiefOfStateService.bindService(serviceImpl, grpcEc),
       tracingServerInterceptor,
+      new StatusServerInterceptor(),
       GrpcHeadersInterceptor
     )
 

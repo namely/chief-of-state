@@ -29,8 +29,8 @@ object PropagatorConfiguration {
     name match {
       case "tracecontext" => W3CTraceContextPropagator.getInstance
       case "baggage"      => W3CBaggagePropagator.getInstance
-      case "b3"           => B3Propagator.getInstance
-      case "b3multi"      => B3Propagator.builder.injectMultipleHeaders.build
+      case "b3"           => B3Propagator.injectingSingleHeader()
+      case "b3multi"      => B3Propagator.injectingMultiHeaders()
       case "jaeger"       => JaegerPropagator.getInstance
       case "ottracer"     => OtTracePropagator.getInstance
       case _ =>
