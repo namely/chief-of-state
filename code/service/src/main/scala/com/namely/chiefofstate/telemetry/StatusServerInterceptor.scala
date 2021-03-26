@@ -25,7 +25,7 @@ class StatusServerInterceptor extends ServerInterceptor {
 object StatusServerInterceptor {
   val GrpcStatusLabel = "grpc.status_code"
 
-  val GrpcOkLabel = "grpc.isOk"
+  val GrpcOkLabel = "grpc.ok"
 
   val GrpcKindLabel = "grpc.kind"
 

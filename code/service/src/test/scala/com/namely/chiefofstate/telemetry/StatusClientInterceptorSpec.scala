@@ -95,7 +95,7 @@ class StatusClientInterceptorSpec extends BaseSpec {
       val attributeData = spans.get(0).getAttributes
       attributeData.get(AttributeKey.stringKey("grpc.kind")) shouldBe "client"
       attributeData.get(AttributeKey.stringKey("grpc.status_code")) shouldBe "NOT_FOUND"
-      attributeData.get(AttributeKey.stringKey("grpc.isOk")) shouldBe "false"
+      attributeData.get(AttributeKey.stringKey("grpc.ok")) shouldBe "false"
 
     }
   }
