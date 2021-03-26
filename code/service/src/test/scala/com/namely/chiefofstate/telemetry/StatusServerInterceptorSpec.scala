@@ -1,3 +1,9 @@
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 package com.namely.chiefofstate.telemetry
 
 import com.namely.chiefofstate.helper.BaseSpec
@@ -20,17 +26,16 @@ import scala.concurrent.ExecutionContext.global
 import scala.concurrent.Future
 import scala.util.Try
 
-class StatusServerInterceptorSpec extends BaseSpec{
+class StatusServerInterceptorSpec extends BaseSpec {
 
-  var testExporter:InMemorySpanExporter = _
+  var testExporter: InMemorySpanExporter = _
   var openTelemetry: OpenTelemetry = _
 
   override def beforeEach(): Unit = {
     GlobalOpenTelemetry.resetForTest()
 
     testExporter = InMemorySpanExporter.create
-    openTelemetry = OpenTelemetrySdk
-      .builder
+    openTelemetry = OpenTelemetrySdk.builder
       .setTracerProvider(SdkTracerProvider.builder.addSpanProcessor(SimpleSpanProcessor.create(testExporter)).build)
       .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance))
       .buildAndRegisterGlobal
@@ -69,7 +74,8 @@ class StatusServerInterceptorSpec extends BaseSpec{
 
       val stub: GreeterGrpc.GreeterBlockingStub = GreeterGrpc.blockingStub(channel)
 
-      val span: Span = openTelemetry.getTracer("test")
+      val span: Span = openTelemetry
+        .getTracer("test")
         .spanBuilder("foo")
         .startSpan()
 

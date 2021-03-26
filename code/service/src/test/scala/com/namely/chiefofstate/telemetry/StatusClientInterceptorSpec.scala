@@ -1,3 +1,9 @@
+/*
+ * Copyright 2020 Namely Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 package com.namely.chiefofstate.telemetry
 
 import com.namely.chiefofstate.helper.BaseSpec
@@ -22,15 +28,14 @@ import scala.util.Try
 
 class StatusClientInterceptorSpec extends BaseSpec {
 
-  var testExporter:InMemorySpanExporter = _
+  var testExporter: InMemorySpanExporter = _
   var openTelemetry: OpenTelemetry = _
 
   override def beforeEach(): Unit = {
     GlobalOpenTelemetry.resetForTest()
 
     testExporter = InMemorySpanExporter.create
-    openTelemetry = OpenTelemetrySdk
-      .builder
+    openTelemetry = OpenTelemetrySdk.builder
       .setTracerProvider(SdkTracerProvider.builder.addSpanProcessor(SimpleSpanProcessor.create(testExporter)).build)
       .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance))
       .buildAndRegisterGlobal
@@ -58,20 +63,21 @@ class StatusClientInterceptorSpec extends BaseSpec {
 
       val statusInterceptor = new StatusClientInterceptor()
       val channel: ManagedChannel =
-          InProcessChannelBuilder
-            .forName(serverName)
-            .directExecutor()
-            .intercept(
-              GrpcTracing.create(GlobalOpenTelemetry.get()).newClientInterceptor(),
-              statusInterceptor
-            )
-            .build()
+        InProcessChannelBuilder
+          .forName(serverName)
+          .directExecutor()
+          .intercept(
+            GrpcTracing.create(GlobalOpenTelemetry.get()).newClientInterceptor(),
+            statusInterceptor
+          )
+          .build()
 
       closeables.register(channel)
 
       val stub: GreeterGrpc.GreeterBlockingStub = GreeterGrpc.blockingStub(channel)
 
-      val span: Span = openTelemetry.getTracer("test")
+      val span: Span = openTelemetry
+        .getTracer("test")
         .spanBuilder("foo")
         .startSpan()
 
