@@ -152,9 +152,10 @@ object StartNodeBehaviour {
     }
   }
 
-  private def startReadSide(system: ActorSystem[_],
-                            cosConfig: CosConfig,
-                            interceptors: Seq[ClientInterceptor]
+  private def startReadSide(
+    system: ActorSystem[_],
+    cosConfig: CosConfig,
+    interceptors: Seq[ClientInterceptor]
   ): Unit = {
     if (cosConfig.enableReadSide && ReadSideConfigReader.getReadSideSettings.nonEmpty) {
       ReadSideConfigReader.getReadSideSettings.foreach(rsconfig => {
@@ -177,9 +178,10 @@ object StartNodeBehaviour {
   /**
    * starts the main application
    */
-  private def startService(clusterSharding: ClusterSharding,
-                           config: Config,
-                           cosConfig: CosConfig
+  private def startService(
+    clusterSharding: ClusterSharding,
+    config: Config,
+    cosConfig: CosConfig
   ): ShutdownHookThread = {
     implicit val askTimeout: Timeout = cosConfig.askTimeout
 

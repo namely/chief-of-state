@@ -103,9 +103,10 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
    * @param metadata the gRPC metadata
    * @return the RemoteCommand object
    */
-  private[this] def getRemoteCommand(writeSideConfig: WriteSideConfig,
-                                     processCommandRequest: ProcessCommandRequest,
-                                     metadata: Metadata
+  private[this] def getRemoteCommand(
+    writeSideConfig: WriteSideConfig,
+    processCommandRequest: ProcessCommandRequest,
+    metadata: Metadata
   ): RemoteCommand = {
     // get the headers to forward
     val propagatedHeaders: Seq[RemoteCommand.Header] = Util
