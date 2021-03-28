@@ -25,6 +25,8 @@ import com.namely.chiefofstate.AggregateRoot
 import akka.projection.jdbc.scaladsl.JdbcProjection
 import akka.projection.jdbc.JdbcSession
 import akka.projection.jdbc.scaladsl.JdbcHandler
+import scala.concurrent.duration.FiniteDuration
+import com.typesafe.config.Config
 
 /**
  * ReadSide processor actor
@@ -44,8 +46,8 @@ class ReadSideProcessor(
 
   implicit val sys: ActorSystem[_] = actorSystem
 
-  val databaseConfig: DatabaseConfig[PostgresProfile] =
-    DatabaseConfig.forConfig("akka.projection.slick", actorSystem.settings.config)
+  // val databaseConfig: DatabaseConfig[PostgresProfile] =
+  //   DatabaseConfig.forConfig("akka.projection.slick", actorSystem.settings.config)
 
   val baseTag: String = cosConfig.eventsConfig.eventTag
 
@@ -56,31 +58,43 @@ class ReadSideProcessor(
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
       name = processorId,
       numberOfInstances = AggregateRoot.tags(cosConfig.eventsConfig).size,
-      behaviorFactory = n => ProjectionBehavior(slickProjection(s"$baseTag$n")),
+      behaviorFactory = n => ProjectionBehavior(jdbcProjection(s"$baseTag$n")),
       settings = ShardedDaemonProcessSettings(actorSystem),
       stopMessage = Some(ProjectionBehavior.Stop)
     )
   }
 
-  /**
-   * Build the projection instance based upon the event tag
-   *
-   * @param tagName the event tag
-   * @return the projection instance
-   */
-  protected def slickProjection(tagName: String): ExactlyOnceProjection[Offset, EventEnvelope[EventWrapper]] = {
-    SlickProjection
-      .exactlyOnce(
-        projectionId = ProjectionId(processorId, tagName),
-        sourceProvider(tagName),
-        databaseConfig,
-        handler = () => new ReadSideSlickHandler(tagName, processorId, remoteReadProcessor)
-      )
-  }
+  // /**
+  //  * Build the projection instance based upon the event tag
+  //  *
+  //  * @param tagName the event tag
+  //  * @return the projection instance
+  //  */
+  // protected def slickProjection(tagName: String): ExactlyOnceProjection[Offset, EventEnvelope[EventWrapper]] = {
+  //   SlickProjection
+  //     .exactlyOnce(
+  //       projectionId = ProjectionId(processorId, tagName),
+  //       sourceProvider(tagName),
+  //       databaseConfig,
+  //       handler = () => new ReadSideSlickHandler(tagName, processorId, remoteReadProcessor)
+  //     )
+  // }
 
   private[readside] def jdbcProjection(tagName: String): ExactlyOnceProjection[Offset, EventEnvelope[EventWrapper]] = {
+    // FIXME: perhaps move this to a constructor for the JdbcSession
+    val cfg: Config = actorSystem.settings.config.getConfig("jdbc-default")
+    val jdbcUrl: String = cfg.getString("url")
+    val username: String = cfg.getString("user")
+    val password: String = cfg.getString("password")
 
-    val sessionFactory: () => JdbcSession = ???
+    log.info(s"creating jdbcProjection for $jdbcUrl, $username")
+
+    val sessionFactory: () => JdbcSession = () =>
+      new ReadSideJdbcSession(
+        jdbcUrl = jdbcUrl,
+        username = username,
+        password = password
+      )
 
     JdbcProjection
       .exactlyOnce(
@@ -89,6 +103,13 @@ class ReadSideProcessor(
         sessionFactory = sessionFactory,
         handler = () => new ReadSideJdbcHandler(tagName, processorId, remoteReadProcessor)
       )
+    // .withRestartBackoff(
+    //   minBackoff = FiniteDuration(3L, "seconds"),
+    //   maxBackoff = FiniteDuration(30L, "seconds"),
+    //   randomFactor = 0.2,
+    //   maxRestarts = -1
+    // )
+
   }
 
   /**
