@@ -74,8 +74,11 @@ object StartNodeBehaviour {
         val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
           JdbcConfig.journalConfig(config)
 
+        // FIXME: this uses the write-side slick config to read the journal
+        // for the migration, as COS projections has moved to raw JDBC
+        // connections and no longer uses slick.
         val projectionJdbcConfig: DatabaseConfig[JdbcProfile] =
-          JdbcConfig.projectionConfig(config)
+          JdbcConfig.projectionConfig(config, "write-side-slick")
 
         // TODO: think about a smarter constructor for the migrator
         // get the projection config

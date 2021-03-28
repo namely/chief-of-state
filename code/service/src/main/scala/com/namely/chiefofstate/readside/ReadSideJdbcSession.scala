@@ -19,9 +19,7 @@ import org.slf4j.LoggerFactory
  *
  * @param conn a java sql Connection
  */
-class ReadSideJdbcSession(val conn: Connection) extends JdbcSession {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+private[readside] class ReadSideJdbcSession(val conn: Connection) extends JdbcSession {
 
   override def withConnection[Result](func: function.Function[Connection, Result]): Result = {
     func(conn)

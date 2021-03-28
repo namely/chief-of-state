@@ -19,7 +19,7 @@ import scala.util.Failure
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.readside.HandleReadSideResponse
 
-class ReadSideJdbcHandler(eventTag: String, processorId: String, remoteReadProcessor: RemoteReadSideProcessor)
+private[readside] class ReadSideJdbcHandler(eventTag: String, processorId: String, remoteReadProcessor: RemoteReadSideProcessor)
     extends JdbcHandler[EventEnvelope[EventWrapper], JdbcSession] {
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)

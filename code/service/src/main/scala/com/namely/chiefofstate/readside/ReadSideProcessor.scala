@@ -37,7 +37,7 @@ import com.zaxxer.hikari.HikariDataSource
  * @param remoteReadProcessor the actual events processor
  * @param cosConfig the main application config
  */
-class ReadSideProcessor(
+private[readside] class ReadSideProcessor(
   actorSystem: ActorSystem[_],
   val processorId: String,
   val dataSource: HikariDataSource,

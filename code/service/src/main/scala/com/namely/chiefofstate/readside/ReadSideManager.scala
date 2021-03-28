@@ -114,11 +114,11 @@ object ReadSideManager {
   )
 
   /**
-    * create a hikari data source using a dbconfig class
-    *
-    * @param dbConfig database configs
-    * @return a hikari data source instance
-    */
+   * create a hikari data source using a dbconfig class
+   *
+   * @param dbConfig database configs
+   * @return a hikari data source instance
+   */
   def getDataSource(dbConfig: DbConfig): HikariDataSource = {
     // make a hikari config for this db
     val hikariCfg: HikariConfig = new HikariConfig()
