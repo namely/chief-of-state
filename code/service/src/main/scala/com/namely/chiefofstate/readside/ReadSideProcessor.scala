@@ -22,6 +22,9 @@ import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.PostgresProfile
 import com.namely.chiefofstate.AggregateRoot
+import akka.projection.jdbc.scaladsl.JdbcProjection
+import akka.projection.jdbc.JdbcSession
+import akka.projection.jdbc.scaladsl.JdbcHandler
 
 /**
  * ReadSide processor actor
@@ -53,7 +56,7 @@ class ReadSideProcessor(
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
       name = processorId,
       numberOfInstances = AggregateRoot.tags(cosConfig.eventsConfig).size,
-      behaviorFactory = n => ProjectionBehavior(projection(s"$baseTag$n")),
+      behaviorFactory = n => ProjectionBehavior(slickProjection(s"$baseTag$n")),
       settings = ShardedDaemonProcessSettings(actorSystem),
       stopMessage = Some(ProjectionBehavior.Stop)
     )
@@ -65,13 +68,27 @@ class ReadSideProcessor(
    * @param tagName the event tag
    * @return the projection instance
    */
-  protected def projection(tagName: String): ExactlyOnceProjection[Offset, EventEnvelope[EventWrapper]] = {
+  protected def slickProjection(tagName: String): ExactlyOnceProjection[Offset, EventEnvelope[EventWrapper]] = {
     SlickProjection
       .exactlyOnce(
         projectionId = ProjectionId(processorId, tagName),
         sourceProvider(tagName),
         databaseConfig,
-        handler = () => new ReadSideEventsConsumer(tagName, processorId, remoteReadProcessor)
+        handler = () => new ReadSideSlickHandler(tagName, processorId, remoteReadProcessor)
+      )
+  }
+
+  private[readside] def jdbcProjection(tagName: String): ExactlyOnceProjection[Offset, EventEnvelope[EventWrapper]] = {
+
+    val sessionFactory: () => JdbcSession = ???
+    val handlerFactory: () => JdbcHandler[EventEnvelope[EventWrapper], JdbcSession] = ???
+
+    JdbcProjection
+      .exactlyOnce(
+        projectionId = ProjectionId(processorId, tagName),
+        sourceProvider = sourceProvider(tagName),
+        sessionFactory = sessionFactory,
+        handler = handlerFactory
       )
   }
 

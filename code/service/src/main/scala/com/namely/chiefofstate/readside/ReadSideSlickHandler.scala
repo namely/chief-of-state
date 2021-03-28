@@ -24,7 +24,7 @@ import scala.util.{Failure, Success, Try}
  * @param processorId the processor unique id
  * @param remoteReadProcessor the actual events processor
  */
-class ReadSideEventsConsumer(eventTag: String, processorId: String, remoteReadProcessor: RemoteReadSideProcessor)
+class ReadSideSlickHandler(eventTag: String, processorId: String, remoteReadProcessor: RemoteReadSideProcessor)
     extends SlickHandler[EventEnvelope[EventWrapper]] {
 
   /**
