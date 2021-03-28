@@ -81,14 +81,13 @@ class ReadSideProcessor(
   private[readside] def jdbcProjection(tagName: String): ExactlyOnceProjection[Offset, EventEnvelope[EventWrapper]] = {
 
     val sessionFactory: () => JdbcSession = ???
-    val handlerFactory: () => JdbcHandler[EventEnvelope[EventWrapper], JdbcSession] = ???
 
     JdbcProjection
       .exactlyOnce(
         projectionId = ProjectionId(processorId, tagName),
         sourceProvider = sourceProvider(tagName),
         sessionFactory = sessionFactory,
-        handler = handlerFactory
+        handler = () => new ReadSideJdbcHandler(tagName, processorId, remoteReadProcessor)
       )
   }
 
