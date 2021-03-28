@@ -19,6 +19,16 @@ import com.typesafe.config.Config
 import com.zaxxer.hikari.HikariDataSource
 import scala.concurrent.duration.FiniteDuration
 
+/**
+ * Used to configure and start all read side processors
+ *
+ * @param system actor system
+ * @param interceptors sequence of interceptors for the gRPC client
+ * @param dbConfig the DB config for creating a hikari data source
+ * @param readSideConfigs sequence of configs for specific read sides
+ * @param baseTag configured "Base" tag string
+ * @param numShards number of shards for projections/tags
+ */
 class ReadSideManager(system: ActorSystem[_],
                       interceptors: Seq[ClientInterceptor],
                       dbConfig: ReadSideManager.DbConfig,

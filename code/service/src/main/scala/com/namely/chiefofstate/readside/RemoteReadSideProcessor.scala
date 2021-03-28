@@ -21,7 +21,9 @@ import scala.util.Try
  *
  * @param readSideHandlerServiceBlockingStub a blocking client for a ReadSideHandler
  */
-private[readside] class RemoteReadSideProcessor(readSideHandlerServiceBlockingStub: ReadSideHandlerServiceBlockingStub) {
+private[readside] class RemoteReadSideProcessor(
+  readSideHandlerServiceBlockingStub: ReadSideHandlerServiceBlockingStub
+) {
   private val COS_EVENT_TAG_HEADER = "x-cos-event-tag"
   private val COS_ENTITY_ID_HEADER = "x-cos-entity-id"
 

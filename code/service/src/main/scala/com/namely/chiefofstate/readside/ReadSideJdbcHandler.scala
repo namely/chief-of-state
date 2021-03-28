@@ -19,8 +19,18 @@ import scala.util.Failure
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.readside.HandleReadSideResponse
 
-private[readside] class ReadSideJdbcHandler(eventTag: String, processorId: String, remoteReadProcessor: RemoteReadSideProcessor)
-    extends JdbcHandler[EventEnvelope[EventWrapper], JdbcSession] {
+/**
+ * Implements the akka JdbcHandler interface and forwards events to the
+ * provided remote read side processor
+ *
+ * @param eventTag tag for this handler
+ * @param processorId read side processor id
+ * @param remoteReadProcessor a remote processor to forward events to
+ */
+private[readside] class ReadSideJdbcHandler(eventTag: String,
+                                            processorId: String,
+                                            remoteReadProcessor: RemoteReadSideProcessor
+) extends JdbcHandler[EventEnvelope[EventWrapper], JdbcSession] {
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 

@@ -30,12 +30,15 @@ import com.typesafe.config.Config
 import com.zaxxer.hikari.HikariDataSource
 
 /**
- * ReadSide processor actor
+ * Read side processor creates a sharded daemon process for handling
+ * akka projections read sides
  *
- * @param actorSystem the actor system
- * @param processorId the unique id of the processor
- * @param remoteReadProcessor the actual events processor
- * @param cosConfig the main application config
+ * @param actorSystem actor system
+ * @param processorId ID for this read side
+ * @param dataSource hikari data source to connect through
+ * @param remoteReadProcessor forwards messages remotely via gRPC
+ * @param baseTag configured "Base" tag string
+ * @param numShards number of shards for projections/tags
  */
 private[readside] class ReadSideProcessor(
   actorSystem: ActorSystem[_],
