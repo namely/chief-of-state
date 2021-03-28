@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.namely.chiefofstate
+package com.namely.chiefofstate.readside
 
 import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
