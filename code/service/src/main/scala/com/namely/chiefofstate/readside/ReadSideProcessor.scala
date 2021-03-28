@@ -27,6 +27,7 @@ import akka.projection.jdbc.JdbcSession
 import akka.projection.jdbc.scaladsl.JdbcHandler
 import scala.concurrent.duration.FiniteDuration
 import com.typesafe.config.Config
+import com.zaxxer.hikari.HikariDataSource
 
 /**
  * ReadSide processor actor
@@ -39,17 +40,14 @@ import com.typesafe.config.Config
 class ReadSideProcessor(
   actorSystem: ActorSystem[_],
   val processorId: String,
+  val dataSource: HikariDataSource,
   remoteReadProcessor: RemoteReadSideProcessor,
-  cosConfig: CosConfig
+  val baseTag: String,
+  val numShards: Int
 ) {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   implicit val sys: ActorSystem[_] = actorSystem
-
-  // val databaseConfig: DatabaseConfig[PostgresProfile] =
-  //   DatabaseConfig.forConfig("akka.projection.slick", actorSystem.settings.config)
-
-  val baseTag: String = cosConfig.eventsConfig.eventTag
 
   /**
    * Initialize the projection to start fetching the events that are emitted
@@ -57,58 +55,23 @@ class ReadSideProcessor(
   def init(): Unit = {
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
       name = processorId,
-      numberOfInstances = AggregateRoot.tags(cosConfig.eventsConfig).size,
+      numberOfInstances = numShards,
       behaviorFactory = n => ProjectionBehavior(jdbcProjection(s"$baseTag$n")),
       settings = ShardedDaemonProcessSettings(actorSystem),
       stopMessage = Some(ProjectionBehavior.Stop)
     )
   }
 
-  // /**
-  //  * Build the projection instance based upon the event tag
-  //  *
-  //  * @param tagName the event tag
-  //  * @return the projection instance
-  //  */
-  // protected def slickProjection(tagName: String): ExactlyOnceProjection[Offset, EventEnvelope[EventWrapper]] = {
-  //   SlickProjection
-  //     .exactlyOnce(
-  //       projectionId = ProjectionId(processorId, tagName),
-  //       sourceProvider(tagName),
-  //       databaseConfig,
-  //       handler = () => new ReadSideSlickHandler(tagName, processorId, remoteReadProcessor)
-  //     )
-  // }
-
   private[readside] def jdbcProjection(tagName: String): ExactlyOnceProjection[Offset, EventEnvelope[EventWrapper]] = {
-    // FIXME: perhaps move this to a constructor for the JdbcSession
-    val cfg: Config = actorSystem.settings.config.getConfig("jdbc-default")
-    val jdbcUrl: String = cfg.getString("url")
-    val username: String = cfg.getString("user")
-    val password: String = cfg.getString("password")
-
-    log.info(s"creating jdbcProjection for $jdbcUrl, $username")
-
-    val sessionFactory: () => JdbcSession = () =>
-      new ReadSideJdbcSession(
-        jdbcUrl = jdbcUrl,
-        username = username,
-        password = password
-      )
-
     JdbcProjection
       .exactlyOnce(
         projectionId = ProjectionId(processorId, tagName),
         sourceProvider = sourceProvider(tagName),
-        sessionFactory = sessionFactory,
+        // defines a session factory that returns a jdbc
+        // session connected to the hikari pool
+        sessionFactory = () => new ReadSideJdbcSession(dataSource.getConnection()),
         handler = () => new ReadSideJdbcHandler(tagName, processorId, remoteReadProcessor)
       )
-    // .withRestartBackoff(
-    //   minBackoff = FiniteDuration(3L, "seconds"),
-    //   maxBackoff = FiniteDuration(30L, "seconds"),
-    //   randomFactor = 0.2,
-    //   maxRestarts = -1
-    // )
 
   }
 

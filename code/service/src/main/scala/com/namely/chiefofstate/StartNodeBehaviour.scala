@@ -24,8 +24,7 @@ import com.namely.chiefofstate.telemetry._
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
-// FIXME, static imports.
-import com.namely.chiefofstate.readside._
+import com.namely.chiefofstate.readside.ReadSideManager
 import com.typesafe.config.Config
 import io.grpc._
 import io.grpc.netty.NettyServerBuilder
@@ -168,24 +167,16 @@ object StartNodeBehaviour {
                             interceptors: Seq[ClientInterceptor]
   ): Unit = {
     // if read side is enabled
-    if (cosConfig.enableReadSide && ReadSideConfigReader.getReadSideSettings.nonEmpty) {
-      // configure each read side
-      ReadSideConfigReader.getReadSideSettings.foreach(rsconfig => {
-        // construct a remote gRPC read side client for this read side
-        // and register interceptors
-        val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(
-          NettyHelper
-            .builder(rsconfig.host, rsconfig.port, rsconfig.useTls)
-            .build
-        ).withInterceptors(interceptors: _*)
-        // instantiate a remote read side processor with the gRPC client
-        val remoteReadSideProcessor: RemoteReadSideProcessor = new RemoteReadSideProcessor(rpcClient)
-        // instantiate the read side processor with the remote processor
-        val readSideProcessor: ReadSideProcessor =
-          new ReadSideProcessor(system, rsconfig.processorId, remoteReadSideProcessor, cosConfig)
-
-        readSideProcessor.init()
-      })
+    if (cosConfig.enableReadSide) {
+      // instantiate a read side manager
+      val readSideManager: ReadSideManager = ReadSideManager(
+        system = system,
+        interceptors = interceptors,
+        baseTag = cosConfig.eventsConfig.eventTag,
+        numShards = cosConfig.eventsConfig.numShards
+      )
+      // initialize all configured read sides
+      readSideManager.init()
     }
   }
 
