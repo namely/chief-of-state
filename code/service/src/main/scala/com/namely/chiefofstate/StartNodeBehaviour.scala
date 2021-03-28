@@ -24,6 +24,7 @@ import com.namely.chiefofstate.telemetry._
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
+import com.namely.chiefofstate.readside.{ReadSideEventsConsumer, ReadSideProcessor, RemoteReadSideProcessor}
 import com.typesafe.config.Config
 import io.grpc._
 import io.grpc.netty.NettyServerBuilder
@@ -37,6 +38,8 @@ import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext
 import scala.sys.ShutdownHookThread
 import scala.util.{Failure, Success}
+import com.namely.chiefofstate.RemoteCommandHandler
+import com.namely.chiefofstate.NettyHelper
 
 /**
  * This helps setup the required engines needed to smoothly run the ChiefOfState sevice.
@@ -152,20 +155,31 @@ object StartNodeBehaviour {
     }
   }
 
+  /**
+   * Start all the read side processors (akka projections)
+   *
+   * @param system actor system
+   * @param cosConfig the chief of state config
+   * @param interceptors gRPC client interceptors for remote calls
+   */
   private def startReadSide(system: ActorSystem[_],
                             cosConfig: CosConfig,
                             interceptors: Seq[ClientInterceptor]
   ): Unit = {
+    // if read side is enabled
     if (cosConfig.enableReadSide && ReadSideConfigReader.getReadSideSettings.nonEmpty) {
+      // configure each read side
       ReadSideConfigReader.getReadSideSettings.foreach(rsconfig => {
+        // construct a remote gRPC read side client for this read side
+        // and register interceptors
         val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(
           NettyHelper
             .builder(rsconfig.host, rsconfig.port, rsconfig.useTls)
             .build
         ).withInterceptors(interceptors: _*)
-
+        // instantiate a remote read side processor with the gRPC client
         val remoteReadSideProcessor: RemoteReadSideProcessor = new RemoteReadSideProcessor(rpcClient)
-
+        // instantiate the read side processor with the remote processor
         val readSideProcessor: ReadSideProcessor =
           new ReadSideProcessor(system, rsconfig.processorId, remoteReadSideProcessor, cosConfig)
 

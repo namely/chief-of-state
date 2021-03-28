@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.namely.chiefofstate
+package com.namely.chiefofstate.readside
 
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.slick.SlickHandler

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.namely.chiefofstate
+package com.namely.chiefofstate.readside
 
 import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ShardedDaemonProcess
@@ -21,6 +21,7 @@ import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.PostgresProfile
+import com.namely.chiefofstate.AggregateRoot
 
 /**
  * ReadSide processor actor
