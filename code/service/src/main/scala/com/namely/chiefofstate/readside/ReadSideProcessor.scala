@@ -23,8 +23,6 @@ import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.PostgresProfile
 import com.namely.chiefofstate.AggregateRoot
-
-import scala.concurrent.duration.FiniteDuration
 import com.typesafe.config.Config
 import com.zaxxer.hikari.HikariDataSource
 
