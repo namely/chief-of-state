@@ -25,7 +25,7 @@ object JdbcConfig {
    * returns the akka projection database config
    * @param config the main application config
    */
-  def projectionConfig(config: Config, key: String = "akka.projection.slick"): DatabaseConfig[JdbcProfile] = {
+  def projectionConfig(config: Config, key: String = "write-side-slick"): DatabaseConfig[JdbcProfile] = {
     DatabaseConfig.forConfig[JdbcProfile](key, config)
   }
 

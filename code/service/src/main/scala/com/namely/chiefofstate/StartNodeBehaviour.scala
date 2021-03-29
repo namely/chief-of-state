@@ -24,6 +24,8 @@ import com.namely.chiefofstate.telemetry._
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
+import com.namely.chiefofstate.{NettyHelper, RemoteCommandHandler}
+import com.namely.chiefofstate.readside.ReadSideManager
 import com.typesafe.config.Config
 import io.grpc._
 import io.grpc.netty.NettyServerBuilder
@@ -71,8 +73,11 @@ object StartNodeBehaviour {
         val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
           JdbcConfig.journalConfig(config)
 
+        // FIXME: this uses the write-side slick config to read the journal
+        // for the migration, as COS projections has moved to raw JDBC
+        // connections and no longer uses slick.
         val projectionJdbcConfig: DatabaseConfig[JdbcProfile] =
-          JdbcConfig.projectionConfig(config)
+          JdbcConfig.projectionConfig(config, "write-side-slick")
 
         // TODO: think about a smarter constructor for the migrator
         // get the projection config
@@ -152,25 +157,28 @@ object StartNodeBehaviour {
     }
   }
 
+  /**
+   * Start all the read side processors (akka projections)
+   *
+   * @param system actor system
+   * @param cosConfig the chief of state config
+   * @param interceptors gRPC client interceptors for remote calls
+   */
   private def startReadSide(system: ActorSystem[_],
                             cosConfig: CosConfig,
                             interceptors: Seq[ClientInterceptor]
   ): Unit = {
-    if (cosConfig.enableReadSide && ReadSideConfigReader.getReadSideSettings.nonEmpty) {
-      ReadSideConfigReader.getReadSideSettings.foreach(rsconfig => {
-        val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(
-          NettyHelper
-            .builder(rsconfig.host, rsconfig.port, rsconfig.useTls)
-            .build
-        ).withInterceptors(interceptors: _*)
-
-        val remoteReadSideProcessor: RemoteReadSideProcessor = new RemoteReadSideProcessor(rpcClient)
-
-        val readSideProcessor: ReadSideProcessor =
-          new ReadSideProcessor(system, rsconfig.processorId, remoteReadSideProcessor, cosConfig)
-
-        readSideProcessor.init()
-      })
+    // if read side is enabled
+    if (cosConfig.enableReadSide) {
+      // instantiate a read side manager
+      val readSideManager: ReadSideManager = ReadSideManager(
+        system = system,
+        interceptors = interceptors,
+        baseTag = cosConfig.eventsConfig.eventTag,
+        numShards = cosConfig.eventsConfig.numShards
+      )
+      // initialize all configured read sides
+      readSideManager.init()
     }
   }
 

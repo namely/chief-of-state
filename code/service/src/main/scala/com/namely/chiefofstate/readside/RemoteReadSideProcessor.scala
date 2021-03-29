@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.namely.chiefofstate
+package com.namely.chiefofstate.readside
 
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.readside.{HandleReadSideRequest, HandleReadSideResponse}
@@ -15,7 +15,15 @@ import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.Span
 import scala.util.Try
 
-class RemoteReadSideProcessor(readSideHandlerServiceBlockingStub: ReadSideHandlerServiceBlockingStub) {
+/**
+ * read side processor that sends messages to a gRPC server that implements
+ * the ReadSideHandler service
+ *
+ * @param readSideHandlerServiceBlockingStub a blocking client for a ReadSideHandler
+ */
+private[readside] class RemoteReadSideProcessor(
+  readSideHandlerServiceBlockingStub: ReadSideHandlerServiceBlockingStub
+) {
   private val COS_EVENT_TAG_HEADER = "x-cos-event-tag"
   private val COS_ENTITY_ID_HEADER = "x-cos-entity-id"
 
