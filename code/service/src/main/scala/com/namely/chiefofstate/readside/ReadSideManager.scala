@@ -130,6 +130,7 @@ object ReadSideManager {
     // make a hikari config for this db
     val hikariCfg: HikariConfig = new HikariConfig()
     // apply settings
+    hikariCfg.setPoolName("cos-readside-pool")
     // FIXME, apply schema here as a hikari setting?
     hikariCfg.setJdbcUrl(dbConfig.jdbcUrl)
     hikariCfg.setUsername(dbConfig.username)
