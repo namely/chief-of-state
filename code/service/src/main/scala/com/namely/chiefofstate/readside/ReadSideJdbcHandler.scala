@@ -11,7 +11,7 @@ import akka.projection.eventsourced.EventEnvelope
 import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
 import akka.projection.jdbc.JdbcSession
 import com.google.protobuf.any.{Any => ProtoAny}
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 import org.slf4j.{Logger, LoggerFactory}
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.readside.HandleReadSideResponse
@@ -58,16 +58,15 @@ private[readside] class ReadSideJdbcHandler(eventTag: String,
         val errMsg: String =
           s"read side returned failure, processor=${processorId}, id=${meta.entityId}, revisionNumber=${meta.revisionNumber}"
         logger.warn(errMsg)
-        // FIXME: is this correct?
         throw new RuntimeException(errMsg)
 
       // handle failed gRPC call
       case Failure(exception) =>
-        logger.warn(
+        logger.error(
           s"read side processing failure, processor=${processorId}, id=${meta.entityId}, revisionNumber=${meta.revisionNumber}, cause=${exception.getMessage()}"
         )
+        // for debug purposes, log the stack trace as well
         logger.debug("remote handler failure", exception)
-        // FIXME: is this correct?
         throw exception
     }
   }

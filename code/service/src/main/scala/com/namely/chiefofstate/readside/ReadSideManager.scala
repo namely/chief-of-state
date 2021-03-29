@@ -25,12 +25,13 @@ import org.slf4j.{Logger, LoggerFactory}
  * @param baseTag configured "Base" tag string
  * @param numShards number of shards for projections/tags
  */
-class ReadSideManager(system: ActorSystem[_],
-                      interceptors: Seq[ClientInterceptor],
-                      dbConfig: ReadSideManager.DbConfig,
-                      readSideConfigs: Seq[ReadSideConfig],
-                      baseTag: String,
-                      numShards: Int
+class ReadSideManager(
+  system: ActorSystem[_],
+  interceptors: Seq[ClientInterceptor],
+  dbConfig: ReadSideManager.DbConfig,
+  readSideConfigs: Seq[ReadSideConfig],
+  baseTag: String,
+  numShards: Int
 ) {
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)

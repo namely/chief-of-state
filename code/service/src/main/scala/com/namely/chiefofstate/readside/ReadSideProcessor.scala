@@ -15,7 +15,7 @@ import akka.projection.{ProjectionBehavior, ProjectionId}
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.eventsourced.scaladsl.EventSourcedProvider
 import akka.projection.scaladsl.{ExactlyOnceProjection, SourceProvider}
-import akka.projection.jdbc.scaladsl.{JdbcProjection, JdbcHandler}
+import akka.projection.jdbc.scaladsl.{JdbcHandler, JdbcProjection}
 import akka.projection.jdbc.JdbcSession
 import com.namely.chiefofstate.config.CosConfig
 import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
@@ -25,7 +25,6 @@ import slick.jdbc.PostgresProfile
 import com.namely.chiefofstate.AggregateRoot
 import com.typesafe.config.Config
 import com.zaxxer.hikari.HikariDataSource
-
 
 /**
  * Read side processor creates a sharded daemon process for handling
