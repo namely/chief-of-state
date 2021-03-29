@@ -24,6 +24,7 @@ import com.namely.chiefofstate.telemetry._
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
+import com.namely.chiefofstate.{NettyHelper, RemoteCommandHandler}
 import com.namely.chiefofstate.readside.ReadSideManager
 import com.typesafe.config.Config
 import io.grpc._
@@ -38,8 +39,6 @@ import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext
 import scala.sys.ShutdownHookThread
 import scala.util.{Failure, Success}
-import com.namely.chiefofstate.RemoteCommandHandler
-import com.namely.chiefofstate.NettyHelper
 
 /**
  * This helps setup the required engines needed to smoothly run the ChiefOfState sevice.

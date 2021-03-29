@@ -11,11 +11,8 @@ import akka.projection.eventsourced.EventEnvelope
 import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
 import akka.projection.jdbc.JdbcSession
 import com.google.protobuf.any.{Any => ProtoAny}
-import scala.util.Success
-import scala.util.Try
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import scala.util.Failure
+import scala.util.{Try, Success, Failure}
+import org.slf4j.{Logger, LoggerFactory}
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.readside.HandleReadSideResponse
 

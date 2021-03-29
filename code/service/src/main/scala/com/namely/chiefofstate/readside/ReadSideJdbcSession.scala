@@ -7,11 +7,8 @@
 package com.namely.chiefofstate.readside
 
 import akka.projection.jdbc.JdbcSession
-import java.sql.DriverManager
 import java.sql.Connection
 import akka.japi.function
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 /**
  * Simple implementation of a JdbcSession that uses an existing

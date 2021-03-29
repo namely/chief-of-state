@@ -12,12 +12,10 @@ import io.grpc.ClientInterceptor
 import com.namely.chiefofstate.config.ReadSideConfigReader
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.chiefofstate.NettyHelper
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 import com.zaxxer.hikari.HikariConfig
 import com.typesafe.config.Config
 import com.zaxxer.hikari.HikariDataSource
-import scala.concurrent.duration.FiniteDuration
 
 /**
  * Used to configure and start all read side processors
