@@ -9,25 +9,25 @@ package com.namely.chiefofstate.readside
 import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ShardedDaemonProcess
 import akka.cluster.sharding.typed.ShardedDaemonProcessSettings
-import akka.persistence.jdbc.query.javadsl.JdbcReadJournal
+import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import akka.persistence.query.Offset
 import akka.projection.{ProjectionBehavior, ProjectionId}
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.eventsourced.scaladsl.EventSourcedProvider
 import akka.projection.scaladsl.{ExactlyOnceProjection, SourceProvider}
-import akka.projection.slick.SlickProjection
+import akka.projection.jdbc.scaladsl.{JdbcProjection, JdbcHandler}
+import akka.projection.jdbc.JdbcSession
 import com.namely.chiefofstate.config.CosConfig
 import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.PostgresProfile
 import com.namely.chiefofstate.AggregateRoot
-import akka.projection.jdbc.scaladsl.JdbcProjection
-import akka.projection.jdbc.JdbcSession
-import akka.projection.jdbc.scaladsl.JdbcHandler
+
 import scala.concurrent.duration.FiniteDuration
 import com.typesafe.config.Config
 import com.zaxxer.hikari.HikariDataSource
+
 
 /**
  * Read side processor creates a sharded daemon process for handling

@@ -6,16 +6,14 @@
 
 package com.namely.chiefofstate.readside
 
-import com.namely.chiefofstate.config.ReadSideConfig
 import akka.actor.typed.ActorSystem
-import io.grpc.ClientInterceptor
-import com.namely.chiefofstate.config.ReadSideConfigReader
+import com.namely.chiefofstate.config.{ReadSideConfig, ReadSideConfigReader}
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.chiefofstate.NettyHelper
-import org.slf4j.{Logger, LoggerFactory}
-import com.zaxxer.hikari.HikariConfig
 import com.typesafe.config.Config
-import com.zaxxer.hikari.HikariDataSource
+import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import io.grpc.ClientInterceptor
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
  * Used to configure and start all read side processors
