@@ -19,7 +19,7 @@ import scala.concurrent.duration.Duration
 import scala.util.Try
 
 /**
- * V3 removes any
+ * V3 removes the string prefixes from persistence ID's and tags.
  *
  * @param projectionJdbcConfig the projection configuration
  */
@@ -32,7 +32,8 @@ case class V3(
   override def versionNumber: Int = 3
 
   /**
-   * Runs the upgrade
+   * Runs the upgrade, which uses update statements and regex to
+   * remove the prefixes from old events
    *
    * @return a DBIO that runs this upgrade
    */
@@ -54,7 +55,7 @@ case class V3(
   }
 
   /**
-   * implement this method to snapshot this version (run if no prior versions found)
+   * creates the latest COS schema if no prior versions found.
    *
    * @return a DBIO that creates the version snapshot
    */
