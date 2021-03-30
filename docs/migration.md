@@ -1,6 +1,6 @@
 # Migrating from 0.7 to 0.8+
 
-COS v0.8 upgrades to the latest akka persistence libraries (>5.0.0), which change the journal, snapshot, and tags representations in the db (see the [docs](https://doc.akka.io/docs/akka-persistence-jdbc/5.0.0/migration.html) for more info). COS v0.8 provides a new built-in migrator to handle this upgrade automatically on boot. If you are start a new application OR are already running on a COS version >= 0.8, you may ignore these instructions.
+COS v0.8 upgrades to the latest akka persistence libraries (>5.0.0), which change the journal, snapshot, and tags representations in the db (see the [docs](https://doc.akka.io/docs/akka-persistence-jdbc/5.0.0/migration.html) for more info). COS v0.8 provides a new built-in migrator to handle this upgrade automatically on boot. If you are starting a new application OR are already running on a COS version >= 0.8, you may ignore these instructions.
 
 ### Instructions
 If you are currently running COS v0.7, please initialize the internal "schema version" to `0` by setting the following environment variable:
