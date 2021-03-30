@@ -17,7 +17,6 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.Try
-import scala.util.Success
 
 /**
  * V3 removes any
