@@ -22,7 +22,6 @@ import org.slf4j.{Logger, LoggerFactory}
  * @param interceptors sequence of interceptors for the gRPC client
  * @param dbConfig the DB config for creating a hikari data source
  * @param readSideConfigs sequence of configs for specific read sides
- * @param baseTag configured "Base" tag string
  * @param numShards number of shards for projections/tags
  */
 class ReadSideManager(
@@ -30,7 +29,6 @@ class ReadSideManager(
   interceptors: Seq[ClientInterceptor],
   dbConfig: ReadSideManager.DbConfig,
   readSideConfigs: Seq[ReadSideConfig],
-  baseTag: String,
   numShards: Int
 ) {
 
@@ -64,7 +62,6 @@ class ReadSideManager(
           processorId = rsconfig.processorId,
           dataSource = dataSource,
           remoteReadProcessor = remoteReadSideProcessor,
-          baseTag = baseTag,
           numShards = numShards
         )
 
@@ -75,11 +72,7 @@ class ReadSideManager(
 
 object ReadSideManager {
 
-  def apply(system: ActorSystem[_],
-            interceptors: Seq[ClientInterceptor],
-            baseTag: String,
-            numShards: Int
-  ): ReadSideManager = {
+  def apply(system: ActorSystem[_], interceptors: Seq[ClientInterceptor], numShards: Int): ReadSideManager = {
 
     val dbConfig: DbConfig = {
       // read the jdbc-default settings
@@ -104,7 +97,6 @@ object ReadSideManager {
       interceptors = interceptors,
       dbConfig = dbConfig,
       readSideConfigs = configs,
-      baseTag = baseTag,
       numShards = numShards
     )
   }

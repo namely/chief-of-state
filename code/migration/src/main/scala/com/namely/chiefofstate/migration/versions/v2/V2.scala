@@ -13,6 +13,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
+import com.namely.chiefofstate.migration.versions.v3.SchemasUtil
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Success, Try}
@@ -49,13 +50,8 @@ case class V2(journalJdbcConfig: DatabaseConfig[JdbcProfile], projectionJdbcConf
    *
    * @return a DBIO that creates the version snapshot
    */
-  override def snapshot(): DBIO[Unit] = {
-
-    log.info("creating new ChiefOfState journal & offset tables")
-    SchemasUtil.createJournalTables(journalJdbcConfig)
-
-    DBIO.successful {}
-  }
+  override def snapshot(): DBIO[Unit] =
+    DBIO.failed(new NotImplementedError("cannot snapshot v2"))
 
   /**
    * performs the following actions:

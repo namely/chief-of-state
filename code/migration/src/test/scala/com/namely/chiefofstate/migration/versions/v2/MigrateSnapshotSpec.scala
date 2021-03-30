@@ -24,6 +24,7 @@ import slick.jdbc.PostgresProfile.api._
 import java.sql.{Connection, DriverManager}
 import scala.concurrent.{Await, ExecutionContextExecutor}
 import scala.concurrent.duration.Duration
+import com.namely.chiefofstate.migration.versions.v3.SchemasUtil
 
 class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
