@@ -14,7 +14,7 @@ import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import java.sql.{DriverManager, Connection}
+import java.sql.{Connection, DriverManager}
 
 class V3Spec extends BaseSpec with ForAllTestContainer {
 
