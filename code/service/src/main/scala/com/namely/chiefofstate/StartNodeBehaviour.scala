@@ -177,7 +177,6 @@ object StartNodeBehaviour {
       val readSideManager: ReadSideManager = ReadSideManager(
         system = system,
         interceptors = interceptors,
-        baseTag = cosConfig.eventsConfig.eventTag,
         numShards = cosConfig.eventsConfig.numShards
       )
       // initialize all configured read sides

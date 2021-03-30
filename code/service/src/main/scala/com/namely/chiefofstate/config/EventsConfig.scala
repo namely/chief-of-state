@@ -13,9 +13,8 @@ import com.typesafe.config.Config
  *
  * @param eventTag the event tag name
  */
-final case class EventsConfig(eventTag: String, numShards: Int)
+final case class EventsConfig(numShards: Int)
 object EventsConfig {
-  private val eventTagkey: String = "chiefofstate.events.tagname"
   private val numShardsKey = "akka.cluster.sharding.number-of-shards"
 
   /**
@@ -24,6 +23,6 @@ object EventsConfig {
    * @return the new instance created
    */
   def apply(config: Config): EventsConfig = {
-    EventsConfig(config.getString(eventTagkey), config.getInt(numShardsKey))
+    EventsConfig(numShards = config.getInt(numShardsKey))
   }
 }

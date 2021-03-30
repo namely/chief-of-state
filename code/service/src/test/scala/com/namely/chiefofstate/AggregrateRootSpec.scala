@@ -14,7 +14,6 @@ import com.google.protobuf.any.Any
 import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate.config.{CosConfig, EventsConfig}
 import com.namely.chiefofstate.helper.BaseActorSpec
-import com.namely.chiefofstate.AggregateRoot.getEntityId
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
@@ -121,7 +120,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
   ".initialState" should {
     "return the aggregate initial state" in {
-      val persistenceId: PersistenceId = PersistenceId("chiefofstate", "123")
+      val persistenceId: PersistenceId = PersistenceId.ofUniqueId("123")
       val initialState: StateWrapper = AggregateRoot.initialState(persistenceId)
       initialState.getMeta.entityId shouldBe "123"
       initialState.getMeta.revisionNumber shouldBe 0
@@ -132,7 +131,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
     "return as expected" in {
       // define the ID's
       val aggregateId: String = UUID.randomUUID().toString
-      val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
+      val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
 
       // define prior state, command, and prior event meta
       val priorState: Any = Any.pack(Empty.defaultInstance)
@@ -230,11 +229,11 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
     }
     "return as expected with no event to persist" in {
       val aggregateId: String = UUID.randomUUID().toString
-      val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
+      val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
       val stateWrapper: StateWrapper = StateWrapper()
         .withState(any.Any.pack(Empty.defaultInstance))
         .withMeta(
-          MetaData.defaultInstance.withEntityId(getEntityId(persistenceId))
+          MetaData.defaultInstance.withEntityId(persistenceId.id)
         )
       val command: Any = Any.pack(OpenAccount())
 
@@ -302,7 +301,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
     }
     "return a failure when an empty command is sent" in {
       val aggregateId: String = UUID.randomUUID().toString
-      val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
+      val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
 
       val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
       val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
@@ -353,7 +352,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
     }
     "return a failure when command handler failed" in {
       val aggregateId: String = UUID.randomUUID().toString
-      val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
+      val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
       val command: Any = Any.pack(OpenAccount())
 
       val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
@@ -414,7 +413,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
     }
     "return a failure when event handler failed" in {
       val aggregateId: String = UUID.randomUUID().toString
-      val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
+      val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
       val command: Any = Any.pack(OpenAccount())
 
       val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
@@ -524,7 +523,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val mainConfig = CosConfig(config)
 
       val aggregateId: String = UUID.randomUUID().toString
-      val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
+      val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
       val command: Any = Any.pack(OpenAccount())
 
       val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
@@ -633,7 +632,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val mainConfig = CosConfig(config)
 
       val aggregateId: String = UUID.randomUUID().toString
-      val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
+      val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
       val command: Any = Any.pack(OpenAccount())
       val event: AccountOpened = AccountOpened()
       val state: Account = Account().withAccountUuid(aggregateId)
@@ -750,7 +749,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val mainConfig = CosConfig(config)
 
       val aggregateId: String = UUID.randomUUID().toString
-      val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
+      val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
       val command: Any = Any.pack(OpenAccount())
       val event: AccountOpened = AccountOpened()
 
@@ -822,7 +821,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
   ".getStateCommand" should {
     "return as expected" in {
       val aggregateId: String = UUID.randomUUID().toString
-      val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
+      val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
       val state: Account = Account().withAccountUuid(aggregateId)
       val command: Any = Any.pack(OpenAccount())
       val event: AccountOpened = AccountOpened()
@@ -913,7 +912,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
     }
     "return a failure when there is no entity as expected" in {
       val aggregateId: String = UUID.randomUUID().toString
-      val persistenceId: PersistenceId = PersistenceId("chiefofstate", aggregateId)
+      val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
 
       // Let us create the sender of commands
       val commandSender: TestProbe[CommandReply] =

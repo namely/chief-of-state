@@ -14,24 +14,16 @@ class EventsConfigSpec extends BaseSpec {
     "be successful when all is set" in {
       val config: Config = ConfigFactory.parseString(s"""
             akka.cluster.sharding.number-of-shards = 2
-            chiefofstate {
-              events {
-                tagname: "cos"
-              }
-            }
           """)
+
+      EventsConfig(config) shouldBe EventsConfig(2)
 
       noException shouldBe thrownBy(EventsConfig(config))
     }
 
     "fail when any of the settings is missing or not properly set" in {
       val config: Config = ConfigFactory.parseString(s"""
-            akka.cluster.sharding.number-of-shards = 2
-            chiefofstate {
-              events {
-               # tagname: "cos"
-              }
-            }
+            akka.cluster.sharding.number-of-poops = 2
           """)
       an[ConfigException] shouldBe thrownBy(EventsConfig(config))
     }

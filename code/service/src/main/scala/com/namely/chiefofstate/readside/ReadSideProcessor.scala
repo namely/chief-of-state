@@ -34,7 +34,6 @@ import com.zaxxer.hikari.HikariDataSource
  * @param processorId ID for this read side
  * @param dataSource hikari data source to connect through
  * @param remoteReadProcessor forwards messages remotely via gRPC
- * @param baseTag configured "Base" tag string
  * @param numShards number of shards for projections/tags
  */
 private[readside] class ReadSideProcessor(
@@ -42,7 +41,6 @@ private[readside] class ReadSideProcessor(
   val processorId: String,
   val dataSource: HikariDataSource,
   remoteReadProcessor: RemoteReadSideProcessor,
-  val baseTag: String,
   val numShards: Int
 ) {
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -56,7 +54,7 @@ private[readside] class ReadSideProcessor(
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
       name = processorId,
       numberOfInstances = numShards,
-      behaviorFactory = n => ProjectionBehavior(jdbcProjection(s"$baseTag$n")),
+      behaviorFactory = shardNumber => ProjectionBehavior(jdbcProjection(shardNumber.toString)),
       settings = ShardedDaemonProcessSettings(actorSystem),
       stopMessage = Some(ProjectionBehavior.Stop)
     )
