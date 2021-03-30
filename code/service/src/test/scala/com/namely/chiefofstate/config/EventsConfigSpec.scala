@@ -17,8 +17,6 @@ class EventsConfigSpec extends BaseSpec {
           """)
 
       EventsConfig(config) shouldBe EventsConfig(2)
-
-      noException shouldBe thrownBy(EventsConfig(config))
     }
 
     "fail when any of the settings is missing or not properly set" in {
