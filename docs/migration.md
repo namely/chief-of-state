@@ -8,6 +8,6 @@ If you are currently running COS v0.7, please initialize the internal "schema ve
 COS_MIGRATIONS_INITIAL_VERSION: 0
 ```
 
-Then, boot a single instance of chief-of-state v0.8 or higher. If you have scaled out COS to more than 1 node, it's currently important to temporarily scale down to a single node, as the schema migrator runs on node start. (There is an existing feature request [#269](https://github.com/namely/chief-of-state/issues/269) to implement the migrator inside of a [cluster singleton](https://doc.akka.io/docs/akka/current/typed/cluster-singleton.html), and these docs will be ammended when that is complete).
+Then, boot a single instance of chief-of-state v0.8 or higher. If you have scaled out COS to more than 1 node, it's currently important to temporarily scale down to a single node, as the schema migrator runs on node start. (There is an existing feature request [#269](https://github.com/namely/chief-of-state/issues/269) to implement the migrator inside of a [cluster singleton](https://doc.akka.io/docs/akka/current/typed/cluster-singleton.html), and these docs will be amended when that is complete).
 
 After the node starts and is able to answer requests, you may scale out again to the desired number of nodes.
