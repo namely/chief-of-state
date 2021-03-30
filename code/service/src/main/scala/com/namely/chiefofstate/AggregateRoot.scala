@@ -284,17 +284,6 @@ object AggregateRoot {
   }
 
   /**
-   * returns the peristence actual entity id from the persistence ID
-   *
-   * @param persistenceId the persistence ID
-   * @return the actual entity ID
-   */
-  private[chiefofstate] def getEntityId(persistenceId: PersistenceId): String = {
-    val splitter: Char = PersistenceId.DefaultSeparator(0)
-    persistenceId.id.split(splitter).lastOption.getOrElse("")
-  }
-
-  /**
    * perists an event and the resulting state and reply to the caller
    *
    * @param event the event to persist
@@ -329,7 +318,7 @@ object AggregateRoot {
   private[chiefofstate] def initialState(persistenceId: PersistenceId): StateWrapper = {
     StateWrapper.defaultInstance
       .withMeta(
-        MetaData.defaultInstance.withEntityId(getEntityId(persistenceId))
+        MetaData.defaultInstance.withEntityId(persistenceId.id)
       )
       .withState(any.Any.pack(Empty.defaultInstance))
   }

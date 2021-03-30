@@ -119,23 +119,6 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
     super.beforeEach()
   }
 
-  ".tags" should {
-    "return the list of possible tags" in {
-      val eventsConfig: EventsConfig = EventsConfig("tag", 10)
-      val tags: Seq[String] = AggregateRoot.tags(eventsConfig)
-      tags.size shouldBe 10
-      tags should contain("tag7")
-    }
-  }
-
-  ".getEntityId" should {
-    "return the actual entity id" in {
-      val expected: String = "123"
-      val persistenceId: PersistenceId = PersistenceId("chiefofstate", "123")
-      AggregateRoot.getEntityId(persistenceId) shouldBe expected
-    }
-  }
-
   ".initialState" should {
     "return the aggregate initial state" in {
       val persistenceId: PersistenceId = PersistenceId("chiefofstate", "123")
