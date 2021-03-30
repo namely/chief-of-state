@@ -69,7 +69,7 @@ object AggregateRoot {
             (state, command) => handleCommand(context, state, command, commandHandler, eventHandler, protosValidator),
             (state, event) => handleEvent(state, event)
           )
-          .withTagger(_ => Set(tags(cosConfig.eventsConfig)(shardIndex)))
+          .withTagger(_ => Set(shardIndex.toString()))
           .withRetention(setSnapshotRetentionCriteria(cosConfig.snapshotConfig))
           .onPersistFailure(SupervisorStrategy.restartWithBackoff(200.millis, 5.seconds, 0.1))
       }
@@ -281,19 +281,6 @@ object AggregateRoot {
       if (snapshotConfig.deleteEventsOnSnapshot) rc.withDeleteEventsOnSnapshot
       rc
     }
-  }
-
-  /**
-   * returns the list of possible event tags based upon the number of shards defined
-   * in the configuration file
-   *
-   * @param eventsConfig the events config
-   * @return the list of tags
-   */
-  def tags(eventsConfig: EventsConfig): Vector[String] = {
-    (0 until eventsConfig.numShards)
-      .map(shardNo => s"${eventsConfig.eventTag}$shardNo")
-      .toVector
   }
 
   /**
