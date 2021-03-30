@@ -39,6 +39,7 @@ import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext
 import scala.sys.ShutdownHookThread
 import scala.util.{Failure, Success}
+import com.namely.chiefofstate.migration.versions.v3.V3
 
 /**
  * This helps setup the required engines needed to smoothly run the ChiefOfState sevice.
@@ -89,10 +90,12 @@ object StartNodeBehaviour {
 
         val v1: V1 = V1(journalJdbcConfig, priorProjectionJdbcConfig, priorOffsetStoreName)
         val v2: V2 = V2(journalJdbcConfig, projectionJdbcConfig)(context.system)
+        val v3: V3 = V3(journalJdbcConfig)
 
         new Migrator(journalJdbcConfig)
           .addVersion(v1)
           .addVersion(v2)
+          .addVersion(v3)
       }
 
       migrator.run() match {
@@ -137,7 +140,7 @@ object StartNodeBehaviour {
       sharding.init(
         Entity(typeKey = AggregateRoot.TypeKey) { entityContext =>
           AggregateRoot(
-            PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
+            PersistenceId.ofUniqueId(entityContext.entityId),
             Util.getShardIndex(entityContext.entityId, cosConfig.eventsConfig.numShards),
             cosConfig,
             remoteCommandHandler,
@@ -174,7 +177,6 @@ object StartNodeBehaviour {
       val readSideManager: ReadSideManager = ReadSideManager(
         system = system,
         interceptors = interceptors,
-        baseTag = cosConfig.eventsConfig.eventTag,
         numShards = cosConfig.eventsConfig.numShards
       )
       // initialize all configured read sides

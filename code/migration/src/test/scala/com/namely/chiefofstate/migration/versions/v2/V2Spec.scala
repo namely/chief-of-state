@@ -21,6 +21,7 @@ import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 import slick.jdbc.PostgresProfile.api._
+import com.namely.chiefofstate.migration.versions.v3.SchemasUtil
 
 import java.sql.{Connection, DriverManager}
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
@@ -190,20 +191,6 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
       // let us check the existence of the legacy journal and snapshot
       DbUtil.tableExists(journalJdbcConfig, "journal") shouldBe false
       DbUtil.tableExists(journalJdbcConfig, "snapshot") shouldBe false
-    }
-  }
-
-  ".snapshot" should {
-    "create the new journal, snapshot and read side store" in {
-      val journalJdbcConfig: DatabaseConfig[JdbcProfile] = JdbcConfig.journalConfig(config)
-      val projectionJdbcConfig = JdbcConfig.projectionConfig(config)
-      val v2 = V2(journalJdbcConfig, projectionJdbcConfig)(testKit.system)
-
-      Await.result(journalJdbcConfig.db.run(v2.snapshot()), Duration.Inf) shouldBe {}
-      DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
-      DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
-      DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
-      DbUtil.tableExists(journalJdbcConfig, "read_side_offsets") shouldBe true
     }
   }
 }

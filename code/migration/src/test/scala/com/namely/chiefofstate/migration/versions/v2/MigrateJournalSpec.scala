@@ -23,6 +23,7 @@ import slick.jdbc.PostgresProfile.api._
 import java.sql.{Connection, DriverManager}
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.concurrent.duration.Duration
+import com.namely.chiefofstate.migration.versions.v3.SchemasUtil
 
 class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
 
