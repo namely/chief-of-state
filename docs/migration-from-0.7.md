@@ -59,3 +59,17 @@ to the desired number of nodes.
 COS v0.8 moves to [OpenTelemetry](https://opentelemetry.io/) for metrics and
 tracing and can now emit metrics to the [OLTP collector](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/README.md).
 Please see our [docs](https://github.com/namely/chief-of-state/blob/master/docs/configuration.md#telemetry-configuration) for configuring an OTLP collector.
+
+### After the migration
+
+After the migration completes, you can remove the following deprecated
+environment variables.
+
+Variables:
+- COS_READ_SIDE_OFFSET_DB_HOST
+- COS_READ_SIDE_OFFSET_DB_PORT
+- COS_READ_SIDE_OFFSET_DB_USER
+- COS_READ_SIDE_OFFSET_DB_PASSWORD
+- COS_READ_SIDE_OFFSET_DB_SCHEMA
+- COS_READ_SIDE_OFFSET_DB
+- COS_READ_SIDE_OFFSET_STORE_TABLE
