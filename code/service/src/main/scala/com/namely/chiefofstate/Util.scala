@@ -15,6 +15,7 @@ import io.grpc.{Metadata, Status, StatusException, StatusRuntimeException}
 import java.time.{Instant, LocalDate, ZoneId}
 import scala.collection.mutable
 import scala.util.{Failure, Try}
+import io.grpc.protobuf.StatusProto
 
 object Util {
   implicit class Timestamps(timestamp: Timestamp) {
@@ -130,9 +131,10 @@ object Util {
         e
 
       case e: StatusRuntimeException =>
-        new StatusException(e.getStatus)
+        new StatusException(e.getStatus(), e.getTrailers())
 
       case e: IllegalArgumentException =>
+        // convert an illegal argument into an INVALID_ARGUMENT status
         val errMsg = e.getMessage.stripPrefix("requirement failed: ")
         new StatusException(Status.INVALID_ARGUMENT.withDescription(errMsg))
 
@@ -148,10 +150,21 @@ object Util {
    * @return a the rpc Status instance
    */
   def toRpcStatus(status: Status): com.google.rpc.status.Status = {
-    com.google.rpc.status.Status(
-      code = status.getCode.value,
-      message = Option(status.getDescription).getOrElse("")
-    )
+    toRpcStatus(status, null)
+  }
+
+  /**
+   * helper to convert io.grpc.Status to com.google.rpc.status.Status
+   *
+   * @param status a io.grpc.Status
+   * @param trailers grpc metadata
+   * @return the rpc Status instance
+   */
+  def toRpcStatus(status: Status, trailers: Metadata): com.google.rpc.status.Status = {
+    // convert to a java status
+    val javaStatus = StatusProto.fromStatusAndTrailers(status, trailers)
+    // convert to the scala equivalent
+    com.google.rpc.status.Status.parseFrom(javaStatus.toByteArray())
   }
 
   /**

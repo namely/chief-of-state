@@ -23,6 +23,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
+import io.grpc.protobuf.StatusProto
 
 class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
   implicit val askTimeout: Timeout
@@ -46,7 +47,8 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
     log.debug(s"Adding tracing headers to command $tracingHeaders")
 
     // ascertain the entity ID
-    requireEntityId(entityId)
+    GrpcServiceImpl
+      .requireEntityId(entityId)
       // run plugins to get meta
       .flatMap(_ => Future.fromTry(pluginManager.run(request, metadata)))
       // run remote command
@@ -54,7 +56,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
         val entityRef: EntityRef[AggregateCommand] = clusterSharding
           .entityRefFor(AggregateRoot.TypeKey, entityId)
 
-        val remoteCommand: RemoteCommand = getRemoteCommand(writeSideConfig, request, metadata)
+        val remoteCommand: RemoteCommand = GrpcServiceImpl.getRemoteCommand(writeSideConfig, request, metadata)
         val sendCommand: SendCommand = SendCommand()
           .withRemoteCommand(remoteCommand)
           .withTracingHeaders(tracingHeaders)
@@ -62,7 +64,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
         // ask entity for response to aggregate command
         entityRef ? (replyTo => AggregateCommand(sendCommand, replyTo, meta))
       })
-      .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
+      .flatMap((value: CommandReply) => Future.fromTry(GrpcServiceImpl.handleCommandReply(value)))
       .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
   }
 
@@ -77,7 +79,8 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
     val tracingHeaders = TracingHelpers.getTracingHeaders(Context.current())
 
     // ascertain the entity id
-    requireEntityId(entityId)
+    GrpcServiceImpl
+      .requireEntityId(entityId)
       .flatMap(_ => {
         val entityRef: EntityRef[AggregateCommand] = clusterSharding
           .entityRefFor(AggregateRoot.TypeKey, entityId)
@@ -91,9 +94,12 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
         // ask entity for response to AggregateCommand
         entityRef ? (replyTo => AggregateCommand(sendCommand, replyTo, Map.empty))
       })
-      .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
+      .flatMap((value: CommandReply) => Future.fromTry(GrpcServiceImpl.handleCommandReply(value)))
       .map(c => GetStateResponse().withState(c.getState).withMeta(c.getMeta))
   }
+}
+
+object GrpcServiceImpl {
 
   /**
    * builds the remote command to execute
@@ -103,9 +109,10 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
    * @param metadata the gRPC metadata
    * @return the RemoteCommand object
    */
-  private[this] def getRemoteCommand(writeSideConfig: WriteSideConfig,
-                                     processCommandRequest: ProcessCommandRequest,
-                                     metadata: Metadata
+  private[chiefofstate] def getRemoteCommand(
+    writeSideConfig: WriteSideConfig,
+    processCommandRequest: ProcessCommandRequest,
+    metadata: Metadata
   ): RemoteCommand = {
     // get the headers to forward
     val propagatedHeaders: Seq[RemoteCommand.Header] = Util
@@ -123,7 +130,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
    * @param entityId the entity id
    * @return future for the validation
    */
-  private[this] def requireEntityId(entityId: String): Future[Unit] = {
+  private[chiefofstate] def requireEntityId(entityId: String): Future[Unit] = {
     if (entityId.isEmpty) {
       Future.failed(new StatusException(Status.INVALID_ARGUMENT.withDescription("empty entity ID")))
     } else {
@@ -138,18 +145,15 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
    * @param commandReply a command reply
    * @return a state wrapper
    */
-  private[this] def handleCommandReply(commandReply: CommandReply): Try[StateWrapper] = {
+  private[chiefofstate] def handleCommandReply(commandReply: CommandReply): Try[StateWrapper] = {
     commandReply.reply match {
       case Reply.State(value: StateWrapper) => Success(value)
 
       case Reply.Error(status: com.google.rpc.status.Status) =>
-        Failure(
-          new StatusException(
-            io.grpc.Status
-              .fromCodeValue(status.code)
-              .withDescription(status.message)
-          )
-        )
+        val javaStatus: com.google.rpc.Status =
+          com.google.rpc.Status.parseFrom(status.toByteArray)
+
+        Failure(StatusProto.toStatusException(javaStatus))
 
       case default =>
         Failure(
