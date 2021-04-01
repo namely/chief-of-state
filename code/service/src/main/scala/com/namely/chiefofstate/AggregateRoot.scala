@@ -230,9 +230,11 @@ object AggregateRoot {
         persistEventAndReply(event, newState, eventMeta, replyTo)
 
       case Failure(e: StatusException) =>
+        // record the exception on the current span
         Span.current().recordException(e).setStatus(StatusCode.ERROR)
+        // reply with the error status
         Effect.reply(replyTo)(
-          CommandReply().withError(toRpcStatus(e.getStatus))
+          CommandReply().withError(toRpcStatus(e.getStatus(), e.getTrailers()))
         )
 
       case x =>

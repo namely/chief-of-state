@@ -23,6 +23,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
+import io.grpc.protobuf.StatusProto
 
 class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
   implicit val askTimeout: Timeout
@@ -62,7 +63,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
         // ask entity for response to aggregate command
         entityRef ? (replyTo => AggregateCommand(sendCommand, replyTo, meta))
       })
-      .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
+      .flatMap((value: CommandReply) => Future.fromTry(GrpcServiceImpl.handleCommandReply(value)))
       .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
   }
 
@@ -91,7 +92,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
         // ask entity for response to AggregateCommand
         entityRef ? (replyTo => AggregateCommand(sendCommand, replyTo, Map.empty))
       })
-      .flatMap((value: CommandReply) => Future.fromTry(handleCommandReply(value)))
+      .flatMap((value: CommandReply) => Future.fromTry(GrpcServiceImpl.handleCommandReply(value)))
       .map(c => GetStateResponse().withState(c.getState).withMeta(c.getMeta))
   }
 
@@ -130,6 +131,9 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
       Future.successful {}
     }
   }
+}
+
+object GrpcServiceImpl {
 
   /**
    * handles the command reply, specifically for errors, and
@@ -138,18 +142,15 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
    * @param commandReply a command reply
    * @return a state wrapper
    */
-  private[this] def handleCommandReply(commandReply: CommandReply): Try[StateWrapper] = {
+  private[chiefofstate] def handleCommandReply(commandReply: CommandReply): Try[StateWrapper] = {
     commandReply.reply match {
       case Reply.State(value: StateWrapper) => Success(value)
 
       case Reply.Error(status: com.google.rpc.status.Status) =>
-        Failure(
-          new StatusException(
-            io.grpc.Status
-              .fromCodeValue(status.code)
-              .withDescription(status.message)
-          )
-        )
+        val javaStatus: com.google.rpc.Status =
+          com.google.rpc.Status.parseFrom(status.toByteArray)
+
+        Failure(StatusProto.toStatusException(javaStatus))
 
       case default =>
         Failure(

@@ -14,6 +14,9 @@ import io.grpc.{Metadata, Status, StatusException, StatusRuntimeException}
 
 import java.time.{Instant, ZoneId}
 import scala.util.Failure
+import com.namely.chiefofstate.helper.GrpcHelpers
+import com.google.rpc.error_details.BadRequest
+import io.grpc.protobuf.StatusProto
 
 class UtilSpec extends BaseSpec {
   "A protobuf Timestamp date" should {
@@ -138,6 +141,46 @@ class UtilSpec extends BaseSpec {
         message = ""
       )
       actual shouldBe expected
+    }
+
+    "convert status with trailers to the google rpc class preserving details" in {
+      // define a field violation
+      val errField = BadRequest
+        .FieldViolation()
+        .withField("some_field")
+        .withDescription("oh no")
+
+      // create the bad request detail
+      val errDetail: BadRequest = BadRequest()
+        .addFieldViolations(errField)
+
+      // create an error status with this detail
+      val expectedStatus: com.google.rpc.status.Status =
+        com.google.rpc.status
+          .Status()
+          .withCode(com.google.rpc.code.Code.INVALID_ARGUMENT.value)
+          .withMessage("some error message")
+          .addDetails(com.google.protobuf.any.Any.pack(errDetail))
+
+      // construct a status exception
+      val statusException: StatusException = {
+        // convert to java version of the status proto
+        val javaErrStatus = com.google.rpc.Status
+          .parseFrom(expectedStatus.toByteArray)
+        // use provided helper to convert to a status exception,
+        // which conveniently converts the error details to
+        // trailers for us
+        StatusProto.toStatusException(javaErrStatus)
+      }
+
+      // run our method and pass in the status and trailers
+      val actualStatus: com.google.rpc.status.Status = Util.toRpcStatus(
+        statusException.getStatus(),
+        statusException.getTrailers()
+      )
+
+      // assert that error status with details was not lost
+      actualStatus shouldBe expectedStatus
     }
   }
 
