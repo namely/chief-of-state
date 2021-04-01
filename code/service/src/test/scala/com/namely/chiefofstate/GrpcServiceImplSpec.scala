@@ -16,8 +16,66 @@ import scala.util.Success
 import com.google.rpc.error_details.BadRequest
 import io.grpc.protobuf.StatusProto
 import com.google.rpc.status.Status
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import io.grpc.Metadata
+import com.namely.chiefofstate.config.WriteSideConfig
+import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
+import com.google.protobuf.wrappers.StringValue
+import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 
 class GrpcServiceImplSpec extends BaseSpec {
+  ".getRemoteCommand" should {
+    "invoke the Util helper" in {
+
+      val key: String = "some-header"
+      val value: String = "some value"
+
+      val config: WriteSideConfig = WriteSideConfig(
+        host = "x",
+        port = 0,
+        useTls = false,
+        enableProtoValidation = false,
+        eventsProtos = Seq.empty[String],
+        statesProtos = Seq.empty[String],
+        propagatedHeaders = Seq(key)
+      )
+
+      val metadata: Metadata = new Metadata()
+      val stringHeaderKey: Metadata.Key[String] = Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER)
+      metadata.put(stringHeaderKey, value)
+
+      val command = ProcessCommandRequest()
+        .withCommand(any.Any.pack(StringValue("x")))
+
+      val actual = GrpcServiceImpl.getRemoteCommand(config, command, metadata)
+
+      val expected = RemoteCommand()
+        .withCommand(command.getCommand)
+        .addHeaders(
+          RemoteCommand
+            .Header()
+            .withKey(key)
+            .withStringValue(value)
+        )
+
+      actual shouldBe expected
+    }
+  }
+
+  ".requireEntityId" should {
+    "fail if entity missing" in {
+      assertThrows[StatusException] {
+        Await.result(GrpcServiceImpl.requireEntityId(""), Duration.Inf)
+      }
+    }
+    "pass if entity provided" in {
+      noException shouldBe thrownBy {
+        Await.result(GrpcServiceImpl.requireEntityId("x"), Duration.Inf)
+      }
+    }
+  }
+
   ".handleCommandReply" should {
     "pass through success" in {
       val stateWrapper = StateWrapper()

@@ -66,9 +66,7 @@ object Common extends AutoPlugin {
       logBuffered in Test := false,
       coverageExcludedPackages := "<empty>;com.namely.protobuf.*;" +
         "com.namely.chiefofstate.StartNodeBehaviour;" +
-        "com.namely.chiefofstate.GrpcHeadersInterceptor;" +
-        "com.namely.chiefofstate.StartNode;" +
-        "com.namely.chiefofstate.GrpcServiceImpl;",
+        "com.namely.chiefofstate.StartNode;",
       fork in Test := true
     )
 }
