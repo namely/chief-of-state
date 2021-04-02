@@ -43,7 +43,7 @@ private[readside] class ReadSideJdbcHandler(eventTag: String,
    * @param session a JdbcSession implementation
    * @param envelope the wrapped event to process
    */
-  final def process(session: JdbcSession, envelope: EventEnvelope[EventWrapper]): Unit = {
+  def process(session: JdbcSession, envelope: EventEnvelope[EventWrapper]): Unit = {
     recursiveProcess(session, envelope)
   }
 
@@ -57,7 +57,7 @@ private[readside] class ReadSideJdbcHandler(eventTag: String,
    * @param backOffSeconds the seconds to backoff in a failure case
    */
   @tailrec
-  final def recursiveProcess(session: JdbcSession,
+  private[this] def recursiveProcess(session: JdbcSession,
                              envelope: EventEnvelope[EventWrapper],
                              numAttempts: Int = 1,
                              backOffSeconds: Long = backOffSecondsMin
@@ -96,7 +96,7 @@ private[readside] class ReadSideJdbcHandler(eventTag: String,
         val newBackOffSeconds: Long = if (backOffSeconds >= backOffSecondsMax) {
           backOffSecondsMax
         } else {
-          backOffSeconds + Math.pow(Math.random() * 2, numAttempts).toLong
+          backOffSeconds * Math.pow(1.1, numAttempts).toLong
         }
 
         recursiveProcess(session, envelope, numAttempts + 1, newBackOffSeconds)
