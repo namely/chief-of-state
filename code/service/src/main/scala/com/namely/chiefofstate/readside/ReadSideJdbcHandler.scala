@@ -59,8 +59,7 @@ private[readside] class ReadSideJdbcHandler(eventTag: String,
   @tailrec
   private[this] def recursiveProcess(session: JdbcSession,
                              envelope: EventEnvelope[EventWrapper],
-                             numAttempts: Int = 1,
-                             backOffSeconds: Long = backOffSecondsMin
+                             numAttempts: Int = 0
   ): Unit = {
     // extract required arguments
     val event: ProtoAny = envelope.event.getEvent
@@ -91,15 +90,11 @@ private[readside] class ReadSideJdbcHandler(eventTag: String,
         // for debug purposes, log the stack trace as well
         logger.debug("remote handler failure", exception)
 
-        Thread.sleep(Duration.ofSeconds(backOffSeconds).toMillis)
+        val backoffSeconds: Long = Math.min(maxBackOff, (backOffSecondsMin * Math.pow(1.1, numAttempts)).toLong)
 
-        val newBackOffSeconds: Long = if (backOffSeconds >= backOffSecondsMax) {
-          backOffSecondsMax
-        } else {
-          (backOffSeconds * Math.pow(1.1, numAttempts)).toLong
-        }
+        Thread.sleep(Duration.ofSeconds(backoffSeconds).toMillis)
 
-        recursiveProcess(session, envelope, numAttempts + 1, newBackOffSeconds)
+        recursiveProcess(session, envelope, numAttempts + 1)
     }
   }
 }
