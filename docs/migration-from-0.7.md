@@ -62,10 +62,11 @@ Please see our [docs](https://github.com/namely/chief-of-state/blob/master/docs/
 
 ### After the migration
 
-After the migration completes, you can remove the following deprecated
-environment variables.
+After the migration completes, you can remove the following environment 
+variables.
 
 Variables:
+- COS_MIGRATIONS_INITIAL_VERSION
 - COS_READ_SIDE_OFFSET_DB_HOST
 - COS_READ_SIDE_OFFSET_DB_PORT
 - COS_READ_SIDE_OFFSET_DB_USER
