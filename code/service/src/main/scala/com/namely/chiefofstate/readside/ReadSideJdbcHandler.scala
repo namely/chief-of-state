@@ -90,7 +90,7 @@ private[readside] class ReadSideJdbcHandler(eventTag: String,
         // for debug purposes, log the stack trace as well
         logger.debug("remote handler failure", exception)
 
-        val backoffSeconds: Long = Math.min(maxBackOff, (backOffSecondsMin * Math.pow(1.1, numAttempts)).toLong)
+        val backoffSeconds: Long = Math.min(backOffSecondsMax, (backOffSecondsMin * Math.pow(1.1, numAttempts)).toLong)
 
         Thread.sleep(Duration.ofSeconds(backoffSeconds).toMillis)
 
