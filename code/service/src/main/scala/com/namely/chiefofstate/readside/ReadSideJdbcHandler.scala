@@ -54,7 +54,6 @@ private[readside] class ReadSideJdbcHandler(eventTag: String,
    * @param session a JdbcSession implementation
    * @param envelope the wrapped event to process
    * @param numAttempts the number of attempts
-   * @param backOffSeconds the seconds to backoff in a failure case
    */
   @tailrec
   private[this] def recursiveProcess(session: JdbcSession,
