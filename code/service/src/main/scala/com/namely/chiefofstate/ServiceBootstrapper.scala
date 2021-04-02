@@ -32,9 +32,7 @@ import scala.sys.ShutdownHookThread
  * This helps setup the required engines needed to smoothly run the ChiefOfState sevice.
  * The following engines are started on boot.
  * <ul>
- *   <li> the akka cluster system
  *   <li> the akka cluster sharding engine
- *   <li> the akka cluster management
  *   <li> loads the various ChiefOfState plugins
  *   <li> run the required schemas and migration needed
  *   <li> the telemetry tools and the various gRPC interceptors
