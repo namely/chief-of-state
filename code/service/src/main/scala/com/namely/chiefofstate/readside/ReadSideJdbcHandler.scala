@@ -96,7 +96,7 @@ private[readside] class ReadSideJdbcHandler(eventTag: String,
         val newBackOffSeconds: Long = if (backOffSeconds >= backOffSecondsMax) {
           backOffSecondsMax
         } else {
-          backOffSeconds * Math.pow(1.1, numAttempts).toLong
+          (backOffSeconds * Math.pow(1.1, numAttempts)).toLong
         }
 
         recursiveProcess(session, envelope, numAttempts + 1, newBackOffSeconds)
