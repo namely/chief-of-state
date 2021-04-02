@@ -60,6 +60,7 @@ private[readside] class ReadSideProcessor(
     )
   }
 
+  // TODO: Pass in the back off seconds min and max from config
   private[readside] def jdbcProjection(tagName: String): ExactlyOnceProjection[Offset, EventEnvelope[EventWrapper]] = {
     JdbcProjection
       .exactlyOnce(
@@ -68,7 +69,7 @@ private[readside] class ReadSideProcessor(
         // defines a session factory that returns a jdbc
         // session connected to the hikari pool
         sessionFactory = () => new ReadSideJdbcSession(dataSource.getConnection()),
-        handler = () => new ReadSideJdbcHandler(tagName, processorId, remoteReadProcessor)
+        handler = () => new ReadSideJdbcHandler(tagName, processorId, remoteReadProcessor, 1, 30)
       )
 
   }
