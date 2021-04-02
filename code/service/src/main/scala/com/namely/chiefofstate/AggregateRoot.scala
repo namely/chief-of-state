@@ -13,7 +13,7 @@ import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl._
 import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
-import com.namely.chiefofstate.config.{CosConfig, EventsConfig, SnapshotConfig}
+import com.namely.chiefofstate.config.{CosConfig, SnapshotConfig}
 import com.namely.chiefofstate.Util.{makeFailedStatusPf, toRpcStatus, Instants}
 import com.namely.chiefofstate.telemetry.TracingHelpers
 import com.namely.chiefofstate.WriteHandlerHelpers.{NewState, NoOp}
@@ -123,14 +123,15 @@ object AggregateRoot {
           )
 
       case SendCommand.Type.RemoteCommand(remoteCommand: RemoteCommand) =>
-        handleRemoteCommand(context,
-                            aggregateState,
-                            remoteCommand,
-                            aggregateCommand.replyTo,
-                            commandHandler,
-                            eventHandler,
-                            protosValidator,
-                            aggregateCommand.data
+        handleRemoteCommand(
+          context,
+          aggregateState,
+          remoteCommand,
+          aggregateCommand.replyTo,
+          commandHandler,
+          eventHandler,
+          protosValidator,
+          aggregateCommand.data
         )
 
       case SendCommand.Type.GetStateCommand(getStateCommand) =>
@@ -151,9 +152,10 @@ object AggregateRoot {
    * @param replyTo address to reply to
    * @return a reply effect returning the state or an error
    */
-  def handleGetStateCommand(cmd: GetStateCommand,
-                            state: StateWrapper,
-                            replyTo: ActorRef[CommandReply]
+  def handleGetStateCommand(
+    cmd: GetStateCommand,
+    state: StateWrapper,
+    replyTo: ActorRef[CommandReply]
   ): ReplyEffect[EventWrapper, StateWrapper] = {
     if (state.meta.map(_.revisionNumber).getOrElse(0) > 0) {
       log.debug(s"found state for entity ${cmd.entityId}")
@@ -179,14 +181,15 @@ object AggregateRoot {
    * @param data COS plugin data
    * @return a reply effect
    */
-  def handleRemoteCommand(context: ActorContext[AggregateCommand],
-                          priorState: StateWrapper,
-                          command: RemoteCommand,
-                          replyTo: ActorRef[CommandReply],
-                          commandHandler: RemoteCommandHandler,
-                          eventHandler: RemoteEventHandler,
-                          protosValidator: ProtosValidator,
-                          data: Map[String, com.google.protobuf.any.Any]
+  def handleRemoteCommand(
+    context: ActorContext[AggregateCommand],
+    priorState: StateWrapper,
+    command: RemoteCommand,
+    replyTo: ActorRef[CommandReply],
+    commandHandler: RemoteCommandHandler,
+    eventHandler: RemoteEventHandler,
+    protosValidator: ProtosValidator,
+    data: Map[String, com.google.protobuf.any.Any]
   ): ReplyEffect[EventWrapper, StateWrapper] = {
 
     val handlerOutput: Try[WriteHandlerHelpers.WriteTransitions] = commandHandler
