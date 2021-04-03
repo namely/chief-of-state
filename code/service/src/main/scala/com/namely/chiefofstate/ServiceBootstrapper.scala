@@ -35,7 +35,6 @@ import scala.sys.ShutdownHookThread
  * <ul>
  *   <li> the akka cluster sharding engine
  *   <li> loads the various ChiefOfState plugins
- *   <li> run the required schemas and migration needed
  *   <li> the telemetry tools and the various gRPC interceptors
  *   <li> the gRPC service
  * </ul>
