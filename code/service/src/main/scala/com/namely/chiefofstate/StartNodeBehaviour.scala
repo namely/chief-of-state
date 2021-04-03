@@ -62,14 +62,9 @@ object StartNodeBehaviour {
       Behaviors.receiveSignal[NotUsed] { case (context, Terminated(ref)) =>
         val actorName = ref.path.name
         context.log.info("Actor stopped: {}", actorName)
-
-        if (actorName.equalsIgnoreCase(COS_MIGRATION_RUNNER)) {
-          // whenever any of the key starters (ServiceBootstrapper or ServiceMigrationRunner) stop
-          // we need to panic here and halt the whole system
-          throw new RuntimeException("unable to boot ChiefOfState properly....")
-        }
-
-        Behaviors.empty
+        // whenever any of the key starters (ServiceBootstrapper or ServiceMigrationRunner) stop
+        // we need to panic here and halt the whole system
+        throw new RuntimeException("unable to boot ChiefOfState properly....")
       }
 
       Behaviors.empty
