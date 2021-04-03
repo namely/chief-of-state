@@ -162,7 +162,7 @@ object Migrator {
    * @param dbConfig a jdbc db config for the journal
    * @return success/failure
    */
-  private[migration] def createMigrationsTable(dbConfig: DatabaseConfig[JdbcProfile]): Try[Unit] = {
+  private[chiefofstate] def createMigrationsTable(dbConfig: DatabaseConfig[JdbcProfile]): Try[Unit] = {
 
     val stmt = sqlu"""
      CREATE TABLE IF NOT EXISTS #$COS_MIGRATIONS_TABLE (
@@ -201,7 +201,7 @@ object Migrator {
    * @param isSnapshot true if the version was set via a snapshot
    * @return success/failure for db operation (blocking)
    */
-  private[migration] def setCurrentVersionNumber(
+  private[chiefofstate] def setCurrentVersionNumber(
     dbConfig: DatabaseConfig[JdbcProfile],
     versionNumber: Int,
     isSnapshot: Boolean

@@ -11,6 +11,7 @@ import akka.actor.typed.ActorRef
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.google.protobuf.wrappers.StringValue
 import com.namely.chiefofstate.helper.BaseSpec
+import com.namely.chiefofstate.migration.{JdbcConfig, Migrator}
 import com.namely.chiefofstate.serialization.{MessageWithActorRef, ScalaMessage}
 import com.namely.protobuf.chiefofstate.v1.internal.{DoMigration, MigrationDone}
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
@@ -19,7 +20,8 @@ import scalapb.GeneratedMessage
 
 import java.sql.{Connection, DriverManager, Statement}
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.Await
 
 class ServiceMigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
@@ -74,6 +76,52 @@ class ServiceMigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
 
   "ServiceMigrationRunner" should {
     "execute the migration request as expected" in {
+      // create an instance of ServiceMigrationRunner
+      val migrationRunnerRef: ActorRef[ScalaMessage] = testKit.spawn(ServiceMigrationRunner(config))
+
+      // create a message sender and a response receiver
+      val probe: TestProbe[GeneratedMessage] = testKit.createTestProbe[GeneratedMessage]()
+
+      // send the migration command to the migrator
+      migrationRunnerRef ! MessageWithActorRef(DoMigration.defaultInstance, probe.ref)
+
+      probe.receiveMessage(replyTimeout) match {
+        case _: MigrationDone => succeed
+        case _                => fail("unexpected message type")
+      }
+    }
+
+    "execute the migration request as expected when migration already run" in {
+      val dbConfig = JdbcConfig.journalConfig(config)
+      // create the versions table
+      Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
+
+      // set the current version to 3
+      val stmt = Migrator
+        .setCurrentVersionNumber(dbConfig, 3, true)
+
+      Await.ready(dbConfig.db.run(stmt), Duration.Inf)
+
+      // create an instance of ServiceMigrationRunner
+      val migrationRunnerRef: ActorRef[ScalaMessage] = testKit.spawn(ServiceMigrationRunner(config))
+
+      // create a message sender and a response receiver
+      val probe: TestProbe[GeneratedMessage] = testKit.createTestProbe[GeneratedMessage]()
+
+      // send the migration command to the migrator
+      migrationRunnerRef ! MessageWithActorRef(DoMigration.defaultInstance, probe.ref)
+
+      probe.receiveMessage(replyTimeout) match {
+        case _: MigrationDone => succeed
+        case _                => fail("unexpected message type")
+      }
+    }
+
+    "execute the migration request as expected when table exist with migration to run" in {
+      val dbConfig = JdbcConfig.journalConfig(config)
+      // create the versions table
+      Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
+
       // create an instance of ServiceMigrationRunner
       val migrationRunnerRef: ActorRef[ScalaMessage] = testKit.spawn(ServiceMigrationRunner(config))
 

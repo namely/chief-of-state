@@ -43,79 +43,76 @@ object ServiceMigrationRunner {
   def apply(config: Config): Behavior[ScalaMessage] = Behaviors
     .setup[ScalaMessage] { context =>
       Behaviors.receiveMessage[ScalaMessage] {
-        case MessageWithActorRef(message, replyTo) =>
-          message match {
-            case _: DoMigration =>
-              val result: Try[Unit] = {
-                // create and run the migrator
-                val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
-                  JdbcConfig.journalConfig(config)
+        case MessageWithActorRef(message, replyTo) if message.isInstanceOf[DoMigration] =>
+          val result: Try[Unit] = {
+            // create and run the migrator
+            val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
+              JdbcConfig.journalConfig(config)
 
-                // for the migration, as COS projections has moved to raw JDBC
-                // connections and no longer uses slick.
-                val projectionJdbcConfig: DatabaseConfig[JdbcProfile] =
-                  JdbcConfig.projectionConfig(config)
+            // for the migration, as COS projections has moved to raw JDBC
+            // connections and no longer uses slick.
+            val projectionJdbcConfig: DatabaseConfig[JdbcProfile] =
+              JdbcConfig.projectionConfig(config)
 
-                // get the projection config
-                val priorProjectionJdbcConfig: DatabaseConfig[JdbcProfile] =
-                  JdbcConfig.projectionConfig(config, "chiefofstate.migration.v1.slick")
+            // get the projection config
+            val priorProjectionJdbcConfig: DatabaseConfig[JdbcProfile] =
+              JdbcConfig.projectionConfig(config, "chiefofstate.migration.v1.slick")
 
-                // get the old table name
-                val priorOffsetStoreName: String =
-                  config.getString("chiefofstate.migration.v1.slick.offset-store.table")
+            // get the old table name
+            val priorOffsetStoreName: String =
+              config.getString("chiefofstate.migration.v1.slick.offset-store.table")
 
-                val v1: V1 = V1(journalJdbcConfig, priorProjectionJdbcConfig, priorOffsetStoreName)
-                val v2: V2 = V2(journalJdbcConfig, projectionJdbcConfig)(context.system)
-                val v3: V3 = V3(journalJdbcConfig)
+            val v1: V1 = V1(journalJdbcConfig, priorProjectionJdbcConfig, priorOffsetStoreName)
+            val v2: V2 = V2(journalJdbcConfig, projectionJdbcConfig)(context.system)
+            val v3: V3 = V3(journalJdbcConfig)
 
-                // instance of the migrator
-                val migrator: Migrator = new Migrator(journalJdbcConfig)
-                  .addVersion(v1)
-                  .addVersion(v2)
-                  .addVersion(v3)
+            // instance of the migrator
+            val migrator: Migrator = new Migrator(journalJdbcConfig)
+              .addVersion(v1)
+              .addVersion(v2)
+              .addVersion(v3)
 
-                // check whether the migration table exists or not
-                if (!DbUtil.tableExists(journalJdbcConfig, Migrator.COS_MIGRATIONS_TABLE)) {
-                  migrator.run()
-                } else {
-                  // get the last version
-                  val lastVersion: Option[Int] = migrator.getVersions().lastOption.map(_.versionNumber)
+            // check whether the migration table exists or not
+            // TODO move this implementation into the migrator
+            if (!DbUtil.tableExists(journalJdbcConfig, Migrator.COS_MIGRATIONS_TABLE)) {
+              migrator.run()
+            } else {
+              // get the last version
+              val lastVersion: Option[Int] = migrator.getVersions().lastOption.map(_.versionNumber)
 
-                  // get the current version
-                  val currentVersion: Option[Int] = Migrator.getCurrentVersionNumber(journalJdbcConfig)
+              // get the current version
+              val currentVersion: Option[Int] = Migrator.getCurrentVersionNumber(journalJdbcConfig)
 
-                  // get the ordering
-                  val ordering: Ordering[Option[Int]] = implicitly[Ordering[Option[Int]]]
-
-                  if (ordering.lt(currentVersion, lastVersion)) {
-                    migrator.run()
-                  } else {
-                    log.info("ChiefOfState migration already run")
-                    Success {}
-                  }
-                }
+              // get the ordering
+              val ordering: Ordering[Option[Int]] = implicitly[Ordering[Option[Int]]]
+              // TODO move this implementation into the migrator
+              if (ordering.lt(currentVersion, lastVersion)) {
+                migrator.run()
+              } else {
+                log.info("ChiefOfState migration already run")
+                Success {}
               }
-
-              result match {
-                case Failure(exception) =>
-                  log.error("migration failed", exception)
-
-                  // stopping the actor
-                  Behaviors.stopped
-
-                case Success(_) =>
-                  log.info("ChiefOfState migration successfully done...")
-
-                  replyTo ! MigrationDone.defaultInstance
-
-                  Behaviors.same
-              }
-
-            case unhandled =>
-              log.warn(s"unhandled message ${unhandled.companion.scalaDescriptor.fullName}")
-
-              Behaviors.stopped
+            }
           }
+          result match {
+            case Failure(exception) =>
+              log.error("migration failed", exception)
+
+              // stopping the actor
+              Behaviors.stopped
+
+            case Success(_) =>
+              log.info("ChiefOfState migration successfully done...")
+
+              replyTo ! MigrationDone.defaultInstance
+
+              Behaviors.same
+          }
+
+        case MessageWithActorRef(message, _) =>
+          log.warn(s"unhandled message ${message.companion.scalaDescriptor.fullName}")
+          Behaviors.stopped
+
         case unhandled =>
           log.warn(s"cannot serialize ${unhandled.getClass.getName}")
 

@@ -19,6 +19,8 @@ import org.slf4j.{Logger, LoggerFactory}
 
 object StartNodeBehaviour {
   final val log: Logger = LoggerFactory.getLogger(getClass)
+  val COS_MIGRATION_RUNNER = "CosServiceMigrationRunner"
+  val COS_SERVICE_BOOTSTRAPPER = "CosServiceBootstrapper"
 
   def apply(config: Config): Behavior[NotUsed] = {
     Behaviors.setup { context =>
@@ -35,7 +37,7 @@ object StartNodeBehaviour {
       val bootstrapper: ActorRef[scalapb.GeneratedMessage] =
         context.spawn(
           Behaviors.supervise(ServiceBootstrapper(config)).onFailure[Exception](SupervisorStrategy.restart),
-          "CosServiceBootstrapper"
+          COS_SERVICE_BOOTSTRAPPER
         )
 
       // initialise the migration runner in a singleton
@@ -45,7 +47,7 @@ object StartNodeBehaviour {
             Behaviors
               .supervise(ServiceMigrationRunner(config))
               .onFailure[Exception](SupervisorStrategy.stop),
-            "CosServiceMigrationRunner"
+            COS_MIGRATION_RUNNER
           )
         )
 
@@ -58,11 +60,16 @@ object StartNodeBehaviour {
 
       // let us handle the Terminated message received
       Behaviors.receiveSignal[NotUsed] { case (context, Terminated(ref)) =>
-        context.log.info("Actor stopped: {}", ref.path.name)
+        val actorName = ref.path.name
+        context.log.info("Actor stopped: {}", actorName)
 
-        // whenever any of the key starters (ServiceBootstrapper or ServiceMigrationRunner) stop
-        // we need to panic here and halt the whole system
-        throw new RuntimeException("unable to boot ChiefOfState properly....")
+        if (actorName.equalsIgnoreCase(COS_MIGRATION_RUNNER)) {
+          // whenever any of the key starters (ServiceBootstrapper or ServiceMigrationRunner) stop
+          // we need to panic here and halt the whole system
+          throw new RuntimeException("unable to boot ChiefOfState properly....")
+        }
+
+        Behaviors.empty
       }
 
       Behaviors.empty
