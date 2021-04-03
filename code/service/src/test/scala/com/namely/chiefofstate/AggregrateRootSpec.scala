@@ -17,7 +17,7 @@ import com.namely.chiefofstate.helper.BaseActorSpec
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
-import com.namely.protobuf.chiefofstate.v1.internal.SendCommand.Type
+import com.namely.protobuf.chiefofstate.v1.internal.SendCommand.Message
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened, OpenAccount}
 import com.namely.protobuf.chiefofstate.v1.writeside._
@@ -32,6 +32,8 @@ import scala.concurrent.ExecutionContext.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.Future
 import scala.util.{Failure, Try}
+import com.namely.chiefofstate.serialization.MessageWithActorRef
+import scalapb.GeneratedMessage
 
 class AggregrateRootSpec extends BaseActorSpec(s"""
       akka.cluster.sharding.number-of-shards = 1
@@ -186,8 +188,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
       // Let us create the sender of commands
-      val commandSender: TestProbe[CommandReply] =
-        createTestProbe[CommandReply]()
+      val commandSender: TestProbe[GeneratedMessage] =
+        createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
         RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
@@ -204,17 +206,16 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                                         eventsAndStateProtosValidation
       )
 
-      val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
         .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
-      aggregateRef ! AggregateCommand(
+      aggregateRef ! MessageWithActorRef(
         SendCommand().withRemoteCommand(remoteCommand),
-        commandSender.ref,
-        Map.empty[String, Any]
+        commandSender.ref
       )
 
       commandSender.receiveMessage(replyTimeout) match {
@@ -259,8 +260,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
       // Let us create the sender of commands
-      val commandSender: TestProbe[CommandReply] =
-        createTestProbe[CommandReply]()
+      val commandSender: TestProbe[GeneratedMessage] =
+        createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
         RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
@@ -277,17 +278,16 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                                         eventsAndStateProtosValidation
       )
 
-      val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
         .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
-      aggregateRef ! AggregateCommand(
+      aggregateRef ! MessageWithActorRef(
         SendCommand().withRemoteCommand(remoteCommand),
-        commandSender.ref,
-        Map.empty[String, Any]
+        commandSender.ref
       )
 
       commandSender.receiveMessage(replyTimeout) match {
@@ -315,8 +315,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
       // Let us create the sender of commands
-      val commandSender: TestProbe[CommandReply] =
-        createTestProbe[CommandReply]()
+      val commandSender: TestProbe[GeneratedMessage] =
+        createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
         RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
@@ -334,18 +334,17 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                                         eventsAndStateProtosValidation
       )
 
-      val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
 
-      aggregateRef ! AggregateCommand(
-        SendCommand().withType(Type.Empty),
-        commandSender.ref,
-        Map.empty[String, Any]
+      aggregateRef ! MessageWithActorRef(
+        SendCommand().withMessage(SendCommand.Message.Empty), // empty message
+        commandSender.ref
       )
 
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(Reply.Error(status), _) =>
           status.code shouldBe (Status.Code.INTERNAL.value)
-          Option(status.message) shouldBe Some("something really bad happens...")
+          Option(status.message) shouldBe Some("no command sent")
         case _ => fail("unexpected message type")
       }
 
@@ -372,8 +371,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
       // Let us create the sender of commands
-      val commandSender: TestProbe[CommandReply] =
-        createTestProbe[CommandReply]()
+      val commandSender: TestProbe[GeneratedMessage] =
+        createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
         RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
@@ -390,17 +389,16 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                                         eventsAndStateProtosValidation
       )
 
-      val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
         .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
-      aggregateRef ! AggregateCommand(
+      aggregateRef ! MessageWithActorRef(
         SendCommand().withRemoteCommand(remoteCommand),
-        commandSender.ref,
-        Map.empty[String, Any]
+        commandSender.ref
       )
 
       commandSender.receiveMessage(replyTimeout) match {
@@ -437,8 +435,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
       // Let us create the sender of commands
-      val commandSender: TestProbe[CommandReply] =
-        createTestProbe[CommandReply]()
+      val commandSender: TestProbe[GeneratedMessage] =
+        createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
         RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
@@ -455,17 +453,16 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                                         eventsAndStateProtosValidation
       )
 
-      val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
         .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
-      aggregateRef ! AggregateCommand(
+      aggregateRef ! MessageWithActorRef(
         SendCommand().withRemoteCommand(remoteCommand),
-        commandSender.ref,
-        Map.empty[String, Any]
+        commandSender.ref
       )
 
       commandSender.receiveMessage(replyTimeout) match {
@@ -543,8 +540,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
       // Let us create the sender of commands
-      val commandSender: TestProbe[CommandReply] =
-        createTestProbe[CommandReply]()
+      val commandSender: TestProbe[GeneratedMessage] =
+        createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
         RemoteCommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
@@ -561,17 +558,16 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                                         eventsAndStateProtosValidation
       )
 
-      val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
         .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
-      aggregateRef ! AggregateCommand(
+      aggregateRef ! MessageWithActorRef(
         SendCommand().withRemoteCommand(remoteCommand),
-        commandSender.ref,
-        Map.empty[String, Any]
+        commandSender.ref
       )
 
       commandSender.receiveMessage(replyTimeout) match {
@@ -659,8 +655,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
       // Let us create the sender of commands
-      val commandSender: TestProbe[CommandReply] =
-        createTestProbe[CommandReply]()
+      val commandSender: TestProbe[GeneratedMessage] =
+        createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
         RemoteCommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
@@ -669,25 +665,25 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(mainConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(persistenceId,
-                                        shardIndex,
-                                        mainConfig,
-                                        remoteCommandHandler,
-                                        remoteEventHandler,
-                                        eventsAndStateProtosValidation
+      val aggregateRoot = AggregateRoot(
+        persistenceId,
+        shardIndex,
+        mainConfig,
+        remoteCommandHandler,
+        remoteEventHandler,
+        eventsAndStateProtosValidation
       )
 
-      val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
         .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
-      aggregateRef ! AggregateCommand(
+      aggregateRef ! MessageWithActorRef(
         SendCommand().withRemoteCommand(remoteCommand),
-        commandSender.ref,
-        Map.empty[String, Any]
+        commandSender.ref
       )
 
       commandSender.receiveMessage(replyTimeout) match {
@@ -774,8 +770,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
       // Let us create the sender of commands
-      val commandSender: TestProbe[CommandReply] =
-        createTestProbe[CommandReply]()
+      val commandSender: TestProbe[GeneratedMessage] =
+        createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
         RemoteCommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
@@ -792,17 +788,16 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                                         eventsAndStateProtosValidation
       )
 
-      val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
         .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
-      aggregateRef ! AggregateCommand(
+      aggregateRef ! MessageWithActorRef(
         SendCommand().withRemoteCommand(remoteCommand),
-        commandSender.ref,
-        Map.empty[String, Any]
+        commandSender.ref
       )
 
       commandSender.receiveMessage(replyTimeout) match {
@@ -847,8 +842,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
       // Let us create the sender of commands
-      val commandSender: TestProbe[CommandReply] =
-        createTestProbe[CommandReply]()
+      val commandSender: TestProbe[GeneratedMessage] =
+        createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
         RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
@@ -864,17 +859,16 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                                         remoteEventHandler,
                                         eventsAndStateProtosValidation
       )
-      val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
         .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
-      aggregateRef ! AggregateCommand(
+      aggregateRef ! MessageWithActorRef(
         SendCommand().withRemoteCommand(remoteCommand),
-        commandSender.ref,
-        Map.empty[String, Any]
+        commandSender.ref
       )
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(Reply.State(value: StateWrapper), _) =>
@@ -886,13 +880,12 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
         case _ => fail("unexpected message type")
       }
-      aggregateRef ! AggregateCommand(
+      aggregateRef ! MessageWithActorRef(
         SendCommand().withGetStateCommand(
           GetStateCommand()
             .withEntityId(aggregateId)
         ),
-        commandSender.ref,
-        Map.empty[String, Any]
+        commandSender.ref
       )
 
       commandSender.receiveMessage(replyTimeout) match {
@@ -915,8 +908,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
 
       // Let us create the sender of commands
-      val commandSender: TestProbe[CommandReply] =
-        createTestProbe[CommandReply]()
+      val commandSender: TestProbe[GeneratedMessage] =
+        createTestProbe[GeneratedMessage]()
 
       val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
       val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
@@ -943,15 +936,14 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                                         remoteEventHandler,
                                         eventsAndStateProtosValidation
       )
-      val aggregateRef: ActorRef[AggregateCommand] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
 
-      aggregateRef ! AggregateCommand(
+      aggregateRef ! MessageWithActorRef(
         SendCommand().withGetStateCommand(
           GetStateCommand()
             .withEntityId(aggregateId)
         ),
-        commandSender.ref,
-        Map.empty[String, Any]
+        commandSender.ref
       )
 
       commandSender.receiveMessage(replyTimeout) match {

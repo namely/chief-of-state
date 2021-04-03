@@ -4,13 +4,19 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.namely.chiefofstate
+// /*
+//  * Copyright 2020 Namely Inc.
+//  *
+//  * SPDX-License-Identifier: MIT
+//  */
 
-import akka.actor.typed.ActorRef
-import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, SendCommand}
+// package com.namely.chiefofstate
 
-final case class AggregateCommand(
-  command: SendCommand,
-  replyTo: ActorRef[CommandReply],
-  data: Map[String, com.google.protobuf.any.Any]
-)
+// import akka.actor.typed.ActorRef
+// import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, SendCommand}
+
+// final case class AggregateCommand(
+//   command: SendCommand,
+//   replyTo: ActorRef[CommandReply],
+//   data: Map[String, com.google.protobuf.any.Any]
+// )
