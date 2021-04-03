@@ -26,6 +26,8 @@ import io.opentelemetry.api.trace.{Span, StatusCode}
 import io.opentelemetry.context.Context
 import org.slf4j.{Logger, LoggerFactory}
 
+import com.namely.chiefofstate.serialization.MessageWithActorRef
+
 import java.time.Instant
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
@@ -40,7 +42,7 @@ object AggregateRoot {
   /**
    * thee aggregate root type key
    */
-  val TypeKey: EntityTypeKey[AggregateCommand] = EntityTypeKey[AggregateCommand]("chiefOfState")
+  val TypeKey: EntityTypeKey[MessageWithActorRef] = EntityTypeKey[MessageWithActorRef]("chiefOfState")
 
   /**
    * creates a new instance of the aggregate root
@@ -59,11 +61,11 @@ object AggregateRoot {
     commandHandler: RemoteCommandHandler,
     eventHandler: RemoteEventHandler,
     protosValidator: ProtosValidator
-  ): Behavior[AggregateCommand] = {
+  ): Behavior[MessageWithActorRef] = {
     Behaviors.setup { context =>
       {
         EventSourcedBehavior
-          .withEnforcedReplies[AggregateCommand, EventWrapper, StateWrapper](
+          .withEnforcedReplies[MessageWithActorRef, EventWrapper, StateWrapper](
             persistenceId,
             emptyState = initialState(persistenceId),
             (state, command) => handleCommand(context, state, command, commandHandler, eventHandler, protosValidator),
@@ -87,9 +89,9 @@ object AggregateRoot {
    * @return a side effect
    */
   private[chiefofstate] def handleCommand(
-    context: ActorContext[AggregateCommand],
+    context: ActorContext[MessageWithActorRef],
     aggregateState: StateWrapper,
-    aggregateCommand: AggregateCommand,
+    aggregateCommand: MessageWithActorRef,
     commandHandler: RemoteCommandHandler,
     eventHandler: RemoteEventHandler,
     protosValidator: ProtosValidator
@@ -97,8 +99,9 @@ object AggregateRoot {
 
     log.debug("begin handle command")
 
-    val headers = aggregateCommand.command.tracingHeaders
+    val sendCommand: SendCommand = aggregateCommand.message.asInstanceOf[SendCommand]
 
+    val headers = sendCommand.tracingHeaders
     log.trace(s"aggregate root headers $headers")
 
     val ctx = TracingHelpers.getParentSpanContext(Context.current(), headers)
@@ -112,29 +115,29 @@ object AggregateRoot {
 
     val scope = span.makeCurrent()
 
-    val output: ReplyEffect[EventWrapper, StateWrapper] = aggregateCommand.command.`type` match {
-      case SendCommand.Type.Empty =>
-        val errStatus = Status.INTERNAL.withDescription("something really bad happens...")
+    val output: ReplyEffect[EventWrapper, StateWrapper] = sendCommand.message match {
+      case SendCommand.Message.RemoteCommand(remoteCommand) =>
+        handleRemoteCommand(
+          aggregateState,
+          remoteCommand,
+          aggregateCommand.actorRef,
+          commandHandler,
+          eventHandler,
+          protosValidator,
+          remoteCommand.data
+        )
+
+      case SendCommand.Message.GetStateCommand(getStateCommand) =>
+        handleGetStateCommand(getStateCommand, aggregateState, aggregateCommand.actorRef)
+
+      case SendCommand.Message.Empty =>
+        val errStatus = Status.INTERNAL.withDescription("no command sent")
         span.recordException(errStatus.asException()).setStatus(StatusCode.ERROR)
         Effect
-          .reply(aggregateCommand.replyTo)(
+          .reply(aggregateCommand.actorRef)(
             CommandReply()
               .withError(toRpcStatus(errStatus))
           )
-
-      case SendCommand.Type.RemoteCommand(remoteCommand: RemoteCommand) =>
-        handleRemoteCommand(context,
-                            aggregateState,
-                            remoteCommand,
-                            aggregateCommand.replyTo,
-                            commandHandler,
-                            eventHandler,
-                            protosValidator,
-                            aggregateCommand.data
-        )
-
-      case SendCommand.Type.GetStateCommand(getStateCommand) =>
-        handleGetStateCommand(getStateCommand, aggregateState, aggregateCommand.replyTo)
     }
 
     span.end()
@@ -169,7 +172,6 @@ object AggregateRoot {
   /**
    * hanlder for remote commands
    *
-   * @param context actor context
    * @param priorState the prior state of the entity
    * @param command the command to handle
    * @param replyTo the actor ref to reply to
@@ -179,8 +181,7 @@ object AggregateRoot {
    * @param data COS plugin data
    * @return a reply effect
    */
-  def handleRemoteCommand(context: ActorContext[AggregateCommand],
-                          priorState: StateWrapper,
+  def handleRemoteCommand(priorState: StateWrapper,
                           command: RemoteCommand,
                           replyTo: ActorRef[CommandReply],
                           commandHandler: RemoteCommandHandler,
