@@ -16,7 +16,7 @@ import "google/rpc/status.proto";
 // AggregateRoot(aka persistence entity to handle)
 // There are internally used
 message SendCommand {
-  oneof type {
+  oneof message {
     RemoteCommand remote_command = 1;
     GetStateCommand get_state_command = 2;
   }
@@ -41,6 +41,9 @@ message RemoteCommand {
   google.protobuf.Any command = 2;
   // the grpc headers/metadata
   repeated Header headers = 3;
+
+  // additional data to be added to the state meta
+  map<string, google.protobuf.Any> data = 4;
 }
 
 // GetStateCommand returns the current state of a
@@ -48,22 +51,6 @@ message RemoteCommand {
 message GetStateCommand {
   // the entity unique id
   string entity_id = 1;
-}
-
-//  Helper protobuf for serializing the command and akka actor reference
-//    during command serde between actors. This is needed to design lagom
-//    commands with proto, since the actorRef is not a proto-serializable
-//    type by default. During serialization, the AggregateCommand case class
-//    is converted into this protobuf and sent between actors as a
-//    bytearray
-//
-message CommandWrapper {
-  // the actual command
-  google.protobuf.Any command = 1;
-  // the actor ref
-  bytes actor_ref = 2;
-  // additional data to be added to the state meta
-  map<string, google.protobuf.Any> data = 3;
 }
 
 // For returning a command reply whether it is successful or failed
@@ -76,4 +63,11 @@ message CommandReply {
     // gRPC failure
     google.rpc.Status error = 2;
   }
+}
+
+message WireMessageWithActorRef {
+  // the wrapped message
+  google.protobuf.Any message = 1;
+  // the sending actor ref
+  bytes actor_ref = 2;
 }
