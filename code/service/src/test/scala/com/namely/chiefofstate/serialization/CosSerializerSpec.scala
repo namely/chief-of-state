@@ -4,21 +4,22 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.namely.chiefofstate
+package com.namely.chiefofstate.serialization
 
 import akka.actor.testkit.typed.scaladsl.TestProbe
-import com.google.protobuf.any.Any
-import com.namely.chiefofstate.helper.BaseActorSpec
-import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, RemoteCommand, SendCommand}
-import com.namely.protobuf.chiefofstate.v1.tests.OpenAccount
-import com.namely.chiefofstate.serialization.MessageWithActorRef
-import scalapb.GeneratedMessage
-import com.namely.chiefofstate.serialization.CosSerializer
-import com.namely.protobuf.chiefofstate.v1.internal.WireMessageWithActorRef
 import akka.actor.typed.scaladsl.adapter._
-import com.google.protobuf.wrappers.StringValue
 import akka.actor.ExtendedActorSystem
-import com.namely.protobuf.chiefofstate.v1.internal.GetStateCommand
+import com.google.protobuf.any.Any
+import com.google.protobuf.wrappers.StringValue
+import com.namely.chiefofstate.helper.BaseActorSpec
+import com.namely.protobuf.chiefofstate.v1.internal.{
+  GetStateCommand,
+  RemoteCommand,
+  SendCommand,
+  WireMessageWithActorRef
+}
+import com.namely.protobuf.chiefofstate.v1.tests.OpenAccount
+import scalapb.GeneratedMessage
 
 class CosSerializerSpec
     extends BaseActorSpec(
