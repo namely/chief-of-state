@@ -133,8 +133,8 @@ object CosSerializer {
   private[serialization] val companions: Seq[GeneratedMessageCompanion[_ <: GeneratedMessage]] =
     // recognizes all internal messages
     com.namely.protobuf.chiefofstate.v1.internal.InternalProto.messagesCompanions ++
-    // recognizes all persistence messages
-    com.namely.protobuf.chiefofstate.v1.persistence.PersistenceProto.messagesCompanions
+      // recognizes all persistence messages
+      com.namely.protobuf.chiefofstate.v1.persistence.PersistenceProto.messagesCompanions
 
   /**
    * returns at type URL given a companion
