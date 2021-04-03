@@ -71,3 +71,10 @@ message WireMessageWithActorRef {
   // the sending actor ref
   bytes actor_ref = 2;
 }
+
+// DoMigration used by the Migration Actor to kick-start the migration
+message DoMigration{}
+
+// MigrationDone used as a reply message by the Migration Actor when the migration
+// is successful
+message MigrationDone{}

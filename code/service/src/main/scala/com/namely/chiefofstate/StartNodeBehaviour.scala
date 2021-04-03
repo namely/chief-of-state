@@ -12,7 +12,8 @@ import akka.cluster.typed.{Cluster, ClusterSingleton, SingletonActor}
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
 import akka.NotUsed
-import com.namely.chiefofstate.ServiceBootstrapper.{StartCommand, StartMigration}
+import com.namely.chiefofstate.serialization.{MessageWithActorRef, ScalaMessage}
+import com.namely.protobuf.chiefofstate.v1.internal.DoMigration
 import com.typesafe.config.Config
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -31,14 +32,14 @@ object StartNodeBehaviour {
       ClusterBootstrap(context.system).start()
 
       // initialize the service bootstrapper
-      val bootstrapper: ActorRef[StartCommand] =
+      val bootstrapper: ActorRef[scalapb.GeneratedMessage] =
         context.spawn(
           Behaviors.supervise(ServiceBootstrapper(config)).onFailure[Exception](SupervisorStrategy.restart),
           "CosServiceBootstrapper"
         )
 
       // initialise the migration runner in a singleton
-      val migrator: ActorRef[StartCommand] =
+      val migrator: ActorRef[ScalaMessage] =
         ClusterSingleton(context.system).init(
           SingletonActor(
             Behaviors
@@ -49,7 +50,7 @@ object StartNodeBehaviour {
         )
 
       // tell the migrator to kickstart
-      migrator ! StartMigration(bootstrapper)
+      migrator ! MessageWithActorRef(DoMigration.defaultInstance, bootstrapper)
 
       // let us watch both actors to handle any on them termination
       context.watch(migrator)

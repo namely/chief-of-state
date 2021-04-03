@@ -6,16 +6,16 @@
 
 package com.namely.chiefofstate
 
-import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
+import akka.actor.typed.{ActorSystem, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.CosConfig
 import com.namely.chiefofstate.plugin.PluginManager
-import com.namely.chiefofstate.telemetry._
-import com.namely.chiefofstate.StartNodeBehaviour.log
 import com.namely.chiefofstate.readside.ReadSideManager
+import com.namely.chiefofstate.telemetry._
+import com.namely.protobuf.chiefofstate.v1.internal.MigrationDone
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.typesafe.config.Config
@@ -23,6 +23,7 @@ import io.grpc._
 import io.grpc.netty.NettyServerBuilder
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.instrumentation.grpc.v1_5.GrpcTracing
+import org.slf4j.{Logger, LoggerFactory}
 
 import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext
@@ -40,18 +41,15 @@ import scala.sys.ShutdownHookThread
  * </ul>
  */
 object ServiceBootstrapper {
-  // define the bootstrap protocol
-  sealed trait StartCommand extends CborSerializable
-  final case class StartMigration(replyTo: ActorRef[StartMigrationReply]) extends StartCommand
-  final case class StartMigrationReply() extends StartCommand
+  final val log: Logger = LoggerFactory.getLogger(getClass)
 
-  def apply(config: Config): Behavior[StartCommand] = Behaviors
-    .setup[StartCommand] { context =>
+  def apply(config: Config): Behavior[scalapb.GeneratedMessage] = Behaviors
+    .setup[scalapb.GeneratedMessage] { context =>
       // get the  COS config
       val cosConfig: CosConfig = CosConfig(config)
 
-      Behaviors.receiveMessage[StartCommand] {
-        case StartMigrationReply() =>
+      Behaviors.receiveMessage[scalapb.GeneratedMessage] {
+        case _: MigrationDone =>
           // start the telemetry tools and register global tracer
           TelemetryTools(cosConfig).start()
 
@@ -107,7 +105,11 @@ object ServiceBootstrapper {
           startService(sharding, config, cosConfig)
 
           Behaviors.same
-        case _ => Behaviors.stopped
+
+        case unhandled =>
+          log.warn(s"unhandled message ${unhandled.companion.scalaDescriptor.fullName}")
+
+          Behaviors.stopped
       }
     }
 
