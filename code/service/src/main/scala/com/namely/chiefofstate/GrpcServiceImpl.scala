@@ -79,7 +79,6 @@ class GrpcServiceImpl(
           )
         })
       })
-      // fixme, proper error here if not a CommandReply
       .map((msg: GeneratedMessage) => msg.asInstanceOf[CommandReply])
       .flatMap((value: CommandReply) => Future.fromTry(GrpcServiceImpl.handleCommandReply(value)))
       .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
@@ -117,7 +116,6 @@ class GrpcServiceImpl(
           )
         })
       })
-      // fixme: proper error if not generated message
       .map((msg: GeneratedMessage) => msg.asInstanceOf[CommandReply])
       .flatMap((value: CommandReply) => Future.fromTry(GrpcServiceImpl.handleCommandReply(value)))
       .map(c => GetStateResponse().withState(c.getState).withMeta(c.getMeta))

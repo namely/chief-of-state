@@ -115,7 +115,6 @@ object AggregateRoot {
 
     val scope = span.makeCurrent()
 
-    // FIXME: helper for type URL's
     val output: ReplyEffect[EventWrapper, StateWrapper] = sendCommand.message match {
       case SendCommand.Message.RemoteCommand(remoteCommand) =>
         handleRemoteCommand(
