@@ -16,8 +16,7 @@ import java.time.Instant
 import scala.collection.mutable
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
-import scala.util.Try
-import scala.util.Success
+import scala.util.{Try, Success}
 
 class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
   val logger: Logger = Migrator.logger
