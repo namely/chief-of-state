@@ -1,12 +1,11 @@
 # Migrating from 0.7 to 0.8+
 
-This document describes the upgrade from COS v0.7 to v0.8. If you are starting
-a new application OR are already running on a COS version >= 0.8, you may
-ignore these instructions.
+This document describes the upgrade from COS v0.7 to v0.8. If you are starting a new application OR are already running
+on a COS version >= 0.8, you may ignore these instructions.
+
 ### Preparing for migration
 
-The following yaml snippets describes the environment variables that should be
-set for the migration.
+The following yaml snippets describes the environment variables that should be set for the migration.
 
 ```yaml
 # *******************************
@@ -37,7 +36,7 @@ COS_READ_SIDE_OFFSET_DB: postgres
 COS_READ_SIDE_OFFSET_STORE_TABLE: read_side_offsets
 
 # *******************************
-# Renamed enviornment variables
+# Renamed environment variables
 # *******************************
 
 # renamed COS_EVENTS_BATCH_THRESHOLD to COS_SNAPSHOT_FREQUENCY
@@ -47,25 +46,21 @@ COS_SNAPSHOT_FREQUENCY: 100
 
 ### Running the migration
 
-After setting the above environment variables, please boot a single instance
-of COS v0.8 (or higher). (There is a feature request to run migrations safely
-in clustered mode, https://github.com/namely/chief-of-state/issues/269).
-
-After the node starts and is able to answer requests, you may scale out again
-to the desired number of nodes.
+After setting the above environment variables, just boot the new version of COS.
 
 ### Configuring telemetry
 
-COS v0.8 moves to [OpenTelemetry](https://opentelemetry.io/) for metrics and
-tracing and can now emit metrics to the [OLTP collector](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/README.md).
-Please see our [docs](https://github.com/namely/chief-of-state/blob/master/docs/configuration.md#telemetry-configuration) for configuring an OTLP collector.
+COS v0.8 moves to [OpenTelemetry](https://opentelemetry.io/) for metrics and tracing and can now emit metrics to
+the [OLTP collector](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/README.md). Please see
+our [docs](https://github.com/namely/chief-of-state/blob/master/docs/configuration.md#telemetry-configuration) for
+configuring an OTLP collector.
 
 ### After the migration
 
-After the migration completes, you can remove the following environment 
-variables.
+After the migration completes, you can remove the following environment variables.
 
 Variables:
+
 - COS_MIGRATIONS_INITIAL_VERSION
 - COS_READ_SIDE_OFFSET_DB_HOST
 - COS_READ_SIDE_OFFSET_DB_PORT
