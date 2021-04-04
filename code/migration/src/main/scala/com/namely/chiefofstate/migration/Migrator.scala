@@ -17,6 +17,7 @@ import scala.collection.mutable
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 import scala.util.Try
+import scala.util.Success
 
 class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
   val logger: Logger = Migrator.logger
@@ -64,7 +65,6 @@ class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
    * run the migration, including setup and all steps
    */
   def run(): Try[Unit] = {
-    logger.info(s"starting migrator")
     this
       // run before all step
       .beforeAll()
@@ -82,15 +82,19 @@ class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
           // find all subsequent versions available
           val versionsToUpgrade: Seq[Version] = getVersions(versionNumber + 1)
 
-          logger.info(s"current version: ${versionNumber}")
-          logger.info(s"newer versions found: ${versionsToUpgrade.size}")
+          if(versionsToUpgrade.nonEmpty) {
+            logger.info(s"upgrading COS schema, currentVersion: $versionNumber, newerVersions: ${versionsToUpgrade.size}")
 
-          versionsToUpgrade.foldLeft(Try {})((output, version) => {
-            output
-              .flatMap(_ => {
-                Migrator.upgradeVersion(this.journalDbConfig, version)
-              })
-          })
+            versionsToUpgrade.foldLeft(Try {})((output, version) => {
+              output
+                .flatMap(_ => {
+                  Migrator.upgradeVersion(this.journalDbConfig, version)
+                })
+            })
+          } else {
+            logger.info("COS schema is up to date")
+            Success {}
+          }
       })
   }
 }
