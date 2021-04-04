@@ -14,17 +14,11 @@ import akka.persistence.query.Offset
 import akka.projection.{ProjectionBehavior, ProjectionId}
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.eventsourced.scaladsl.EventSourcedProvider
+import akka.projection.jdbc.scaladsl.JdbcProjection
 import akka.projection.scaladsl.{ExactlyOnceProjection, SourceProvider}
-import akka.projection.jdbc.scaladsl.{JdbcHandler, JdbcProjection}
-import akka.projection.jdbc.JdbcSession
-import com.namely.chiefofstate.config.CosConfig
 import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
-import org.slf4j.{Logger, LoggerFactory}
-import slick.basic.DatabaseConfig
-import slick.jdbc.PostgresProfile
-import com.namely.chiefofstate.AggregateRoot
-import com.typesafe.config.Config
 import com.zaxxer.hikari.HikariDataSource
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
  * Read side processor creates a sharded daemon process for handling

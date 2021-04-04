@@ -7,15 +7,14 @@
 package com.namely.chiefofstate.serialization
 
 import akka.actor.ExtendedActorSystem
-import akka.serialization.SerializerWithStringManifest
-import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
-import com.namely.protobuf.chiefofstate.v1.internal.WireMessageWithActorRef
-import akka.actor.typed.ActorRefResolver
-import java.nio.charset.StandardCharsets
-import com.google.protobuf.any
-import com.google.protobuf.ByteString
-import akka.actor.typed.ActorRef
+import akka.actor.typed.{ActorRef, ActorRefResolver}
 import akka.actor.typed.scaladsl.adapter._
+import akka.serialization.SerializerWithStringManifest
+import com.google.protobuf.{any, ByteString}
+import com.namely.protobuf.chiefofstate.v1.internal.WireMessageWithActorRef
+import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
+
+import java.nio.charset.StandardCharsets
 
 class CosSerializer(val system: ExtendedActorSystem) extends SerializerWithStringManifest {
 

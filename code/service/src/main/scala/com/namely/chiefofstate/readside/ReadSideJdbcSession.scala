@@ -6,9 +6,10 @@
 
 package com.namely.chiefofstate.readside
 
-import akka.projection.jdbc.JdbcSession
-import java.sql.Connection
 import akka.japi.function
+import akka.projection.jdbc.JdbcSession
+
+import java.sql.Connection
 
 /**
  * Simple implementation of a JdbcSession that uses an existing

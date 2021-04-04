@@ -8,7 +8,7 @@ package com.namely.chiefofstate
 
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
-import com.namely.chiefofstate.migration.{DbUtil, JdbcConfig, Migrator}
+import com.namely.chiefofstate.migration.{JdbcConfig, Migrator}
 import com.namely.chiefofstate.migration.versions.v1.V1
 import com.namely.chiefofstate.migration.versions.v2.V2
 import com.namely.chiefofstate.migration.versions.v3.V3
@@ -72,28 +72,9 @@ object ServiceMigrationRunner {
               .addVersion(v2)
               .addVersion(v3)
 
-            // check whether the migration table exists or not
-            // TODO move this implementation into the migrator
-            if (!DbUtil.tableExists(journalJdbcConfig, Migrator.COS_MIGRATIONS_TABLE)) {
-              migrator.run()
-            } else {
-              // get the last version
-              val lastVersion: Option[Int] = migrator.getVersions().lastOption.map(_.versionNumber)
-
-              // get the current version
-              val currentVersion: Option[Int] = Migrator.getCurrentVersionNumber(journalJdbcConfig)
-
-              // get the ordering
-              val ordering: Ordering[Option[Int]] = implicitly[Ordering[Option[Int]]]
-              // TODO move this implementation into the migrator
-              if (ordering.lt(currentVersion, lastVersion)) {
-                migrator.run()
-              } else {
-                log.info("ChiefOfState migration already run")
-                Success {}
-              }
-            }
+            migrator.run()
           }
+
           result match {
             case Failure(exception) =>
               log.error("migration failed", exception)

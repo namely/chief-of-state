@@ -6,15 +6,16 @@
 
 package com.namely.chiefofstate.migration.versions.v3
 
-import com.namely.chiefofstate.migration.{BaseSpec, DbUtil, JdbcConfig}
-import com.namely.chiefofstate.migration.helper.TestConfig
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
+import com.namely.chiefofstate.migration.{BaseSpec, DbUtil}
+import com.namely.chiefofstate.migration.helper.TestConfig
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
+
+import java.sql.{Connection, DriverManager}
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import java.sql.{Connection, DriverManager}
 
 class V3Spec extends BaseSpec with ForAllTestContainer {
 

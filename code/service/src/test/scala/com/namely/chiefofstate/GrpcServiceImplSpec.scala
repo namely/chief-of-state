@@ -6,23 +6,22 @@
 
 package com.namely.chiefofstate
 
-import com.namely.chiefofstate.helper.BaseSpec
-import com.namely.protobuf.chiefofstate.v1.internal.CommandReply
-import io.grpc.StatusException
-import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
-import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.google.protobuf.any
-import scala.util.Success
+import com.google.protobuf.wrappers.StringValue
 import com.google.rpc.error_details.BadRequest
-import io.grpc.protobuf.StatusProto
 import com.google.rpc.status.Status
+import com.namely.chiefofstate.config.WriteSideConfig
+import com.namely.chiefofstate.helper.BaseSpec
+import com.namely.protobuf.chiefofstate.v1.common.MetaData
+import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, RemoteCommand}
+import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
+import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
+import io.grpc.{Metadata, StatusException}
+import io.grpc.protobuf.StatusProto
+
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import io.grpc.Metadata
-import com.namely.chiefofstate.config.WriteSideConfig
-import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
-import com.google.protobuf.wrappers.StringValue
-import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
+import scala.util.Success
 
 class GrpcServiceImplSpec extends BaseSpec {
   ".getRemoteCommand" should {

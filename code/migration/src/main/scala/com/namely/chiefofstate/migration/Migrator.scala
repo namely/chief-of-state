@@ -16,7 +16,7 @@ import java.time.Instant
 import scala.collection.mutable
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
-import scala.util.{Try, Success}
+import scala.util.{Success, Try}
 
 class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
   val logger: Logger = Migrator.logger
@@ -81,8 +81,9 @@ class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
           // find all subsequent versions available
           val versionsToUpgrade: Seq[Version] = getVersions(versionNumber + 1)
 
-          if(versionsToUpgrade.nonEmpty) {
-            logger.info(s"upgrading COS schema, currentVersion: $versionNumber, newerVersions: ${versionsToUpgrade.size}")
+          if (versionsToUpgrade.nonEmpty) {
+            logger
+              .info(s"upgrading COS schema, currentVersion: $versionNumber, newerVersions: ${versionsToUpgrade.size}")
 
             versionsToUpgrade.foldLeft(Try {})((output, version) => {
               output

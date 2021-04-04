@@ -13,6 +13,7 @@ import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.Span
+
 import scala.util.Try
 
 /**

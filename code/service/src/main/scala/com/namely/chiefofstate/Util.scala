@@ -11,11 +11,11 @@ import com.google.protobuf.any.Any
 import com.google.protobuf.timestamp.Timestamp
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand.Header
 import io.grpc.{Metadata, Status, StatusException, StatusRuntimeException}
+import io.grpc.protobuf.StatusProto
 
 import java.time.{Instant, LocalDate, ZoneId}
 import scala.collection.mutable
 import scala.util.{Failure, Try}
-import io.grpc.protobuf.StatusProto
 
 object Util {
   implicit class Timestamps(timestamp: Timestamp) {

@@ -7,8 +7,8 @@
 package com.namely.chiefofstate.telemetry
 
 import com.namely.chiefofstate.helper.BaseSpec
-import io.opentelemetry.api.trace.{Span, Tracer}
 import io.opentelemetry.api.{GlobalOpenTelemetry, OpenTelemetry}
+import io.opentelemetry.api.trace.{Span, Tracer}
 import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.extension.trace.propagation.B3Propagator
 import io.opentelemetry.sdk.OpenTelemetrySdk

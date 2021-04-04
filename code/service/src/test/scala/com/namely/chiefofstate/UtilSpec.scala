@@ -7,16 +7,15 @@
 package com.namely.chiefofstate
 
 import com.google.protobuf.timestamp.Timestamp
+import com.google.rpc.error_details.BadRequest
 import com.namely.chiefofstate.Util.{Instants, Timestamps}
 import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.tests.AccountOpened
 import io.grpc.{Metadata, Status, StatusException, StatusRuntimeException}
+import io.grpc.protobuf.StatusProto
 
 import java.time.{Instant, ZoneId}
 import scala.util.Failure
-import com.namely.chiefofstate.helper.GrpcHelpers
-import com.google.rpc.error_details.BadRequest
-import io.grpc.protobuf.StatusProto
 
 class UtilSpec extends BaseSpec {
   "A protobuf Timestamp date" should {

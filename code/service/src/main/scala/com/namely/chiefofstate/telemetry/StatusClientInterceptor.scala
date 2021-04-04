@@ -6,9 +6,9 @@
 
 package com.namely.chiefofstate.telemetry
 
+import io.grpc._
 import io.grpc.ForwardingClientCall.SimpleForwardingClientCall
 import io.grpc.ForwardingClientCallListener.SimpleForwardingClientCallListener
-import io.grpc._
 import io.opentelemetry.api.trace.Span
 
 /**

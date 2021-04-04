@@ -6,15 +6,10 @@
 
 package com.namely.chiefofstate.migration
 
-import com.typesafe.config.{Config, ConfigFactory}
-import slick.basic.DatabaseConfig
-import slick.jdbc.{JdbcProfile, PostgresProfile}
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import slick.jdbc.PostgresProfile.api._
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import org.testcontainers.utility.DockerImageName
 import com.namely.chiefofstate.migration.helper.TestConfig
+import org.testcontainers.utility.DockerImageName
+
 import java.sql.DriverManager
 
 class DbUtilSpec extends BaseSpec with ForAllTestContainer {
