@@ -48,7 +48,7 @@ class GrpcServiceImplSpec extends BaseSpec {
       val command = ProcessCommandRequest()
         .withCommand(any.Any.pack(StringValue("x")))
 
-      val actual = GrpcServiceImpl.getRemoteCommand(config, command, metadata)
+      val actual = GrpcServiceImpl.getRemoteCommand(config, command, metadata, Map())
 
       val expected = RemoteCommand()
         .withCommand(command.getCommand)
