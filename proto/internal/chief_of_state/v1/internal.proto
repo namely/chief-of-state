@@ -35,13 +35,10 @@ message RemoteCommand {
       bytes bytesValue = 3;
     };
   }
-
   // the entity id
   string entity_id = 1;
-
   // the message to send
   google.protobuf.Any command = 2;
-
   // the grpc headers/metadata
   repeated Header headers = 3;
 
@@ -74,3 +71,10 @@ message WireMessageWithActorRef {
   // the sending actor ref
   bytes actor_ref = 2;
 }
+
+// DoMigration used by the Migration Actor to kick-start the migration
+message DoMigration{}
+
+// MigrationDone used as a reply message by the Migration Actor when the migration
+// is successful
+message MigrationDone{}

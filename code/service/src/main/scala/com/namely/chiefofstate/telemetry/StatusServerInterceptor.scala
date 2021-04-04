@@ -6,8 +6,8 @@
 
 package com.namely.chiefofstate.telemetry
 
-import io.grpc.ForwardingServerCall.SimpleForwardingServerCall
 import io.grpc._
+import io.grpc.ForwardingServerCall.SimpleForwardingServerCall
 import io.opentelemetry.api.trace.Span
 
 /**

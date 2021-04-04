@@ -16,7 +16,7 @@ import java.time.Instant
 import scala.collection.mutable
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
-import scala.util.{Try, Success}
+import scala.util.{Success, Try}
 
 class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
   val logger: Logger = Migrator.logger
@@ -45,7 +45,7 @@ class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
    * @param startAt inclusive lowest version number, defaults to 0
    * @return sequence of versions in ascending order
    */
-  private[migration] def getVersions(startAt: Int = 0): Seq[Version] = {
+  private[chiefofstate] def getVersions(startAt: Int = 0): Seq[Version] = {
     this.versions.clone.filter(_.versionNumber >= startAt).dequeueAll.reverse
   }
 
@@ -81,8 +81,9 @@ class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
           // find all subsequent versions available
           val versionsToUpgrade: Seq[Version] = getVersions(versionNumber + 1)
 
-          if(versionsToUpgrade.nonEmpty) {
-            logger.info(s"upgrading COS schema, currentVersion: $versionNumber, newerVersions: ${versionsToUpgrade.size}")
+          if (versionsToUpgrade.nonEmpty) {
+            logger
+              .info(s"upgrading COS schema, currentVersion: $versionNumber, newerVersions: ${versionsToUpgrade.size}")
 
             versionsToUpgrade.foldLeft(Try {})((output, version) => {
               output
@@ -165,7 +166,7 @@ object Migrator {
    * @param dbConfig a jdbc db config for the journal
    * @return success/failure
    */
-  private[migration] def createMigrationsTable(dbConfig: DatabaseConfig[JdbcProfile]): Try[Unit] = {
+  private[chiefofstate] def createMigrationsTable(dbConfig: DatabaseConfig[JdbcProfile]): Try[Unit] = {
 
     val stmt = sqlu"""
      CREATE TABLE IF NOT EXISTS #$COS_MIGRATIONS_TABLE (
@@ -185,7 +186,7 @@ object Migrator {
    * @param dbConfig a jdbc db config for the journal
    * @return optional version number as an int
    */
-  private[migration] def getCurrentVersionNumber(dbConfig: DatabaseConfig[JdbcProfile]): Option[Int] = {
+  private[chiefofstate] def getCurrentVersionNumber(dbConfig: DatabaseConfig[JdbcProfile]): Option[Int] = {
     val sqlStmt = sql"SELECT version_number from #$COS_MIGRATIONS_TABLE".as[Int]
 
     val result = Await.result(dbConfig.db.run(sqlStmt), Duration.Inf)
@@ -204,9 +205,10 @@ object Migrator {
    * @param isSnapshot true if the version was set via a snapshot
    * @return success/failure for db operation (blocking)
    */
-  private[migration] def setCurrentVersionNumber(dbConfig: DatabaseConfig[JdbcProfile],
-                                                 versionNumber: Int,
-                                                 isSnapshot: Boolean
+  private[chiefofstate] def setCurrentVersionNumber(
+    dbConfig: DatabaseConfig[JdbcProfile],
+    versionNumber: Int,
+    isSnapshot: Boolean
   ): SqlAction[Int, NoStream, Effect] = {
     val currentTs: Long = Instant.now().toEpochMilli()
 

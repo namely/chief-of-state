@@ -13,10 +13,11 @@ import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl._
 import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
-import com.namely.chiefofstate.config.{CosConfig, EventsConfig, SnapshotConfig}
+import com.namely.chiefofstate.config.{CosConfig, SnapshotConfig}
 import com.namely.chiefofstate.Util.{makeFailedStatusPf, toRpcStatus, Instants}
 import com.namely.chiefofstate.telemetry.TracingHelpers
 import com.namely.chiefofstate.WriteHandlerHelpers.{NewState, NoOp}
+import com.namely.chiefofstate.serialization.MessageWithActorRef
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, GetStateCommand, RemoteCommand, SendCommand}
 import com.namely.protobuf.chiefofstate.v1.persistence.{EventWrapper, StateWrapper}
@@ -25,8 +26,6 @@ import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.{Span, StatusCode}
 import io.opentelemetry.context.Context
 import org.slf4j.{Logger, LoggerFactory}
-
-import com.namely.chiefofstate.serialization.MessageWithActorRef
 
 import java.time.Instant
 import scala.concurrent.duration.DurationInt
@@ -154,9 +153,10 @@ object AggregateRoot {
    * @param replyTo address to reply to
    * @return a reply effect returning the state or an error
    */
-  def handleGetStateCommand(cmd: GetStateCommand,
-                            state: StateWrapper,
-                            replyTo: ActorRef[CommandReply]
+  def handleGetStateCommand(
+    cmd: GetStateCommand,
+    state: StateWrapper,
+    replyTo: ActorRef[CommandReply]
   ): ReplyEffect[EventWrapper, StateWrapper] = {
     if (state.meta.map(_.revisionNumber).getOrElse(0) > 0) {
       log.debug(s"found state for entity ${cmd.entityId}")
@@ -181,13 +181,14 @@ object AggregateRoot {
    * @param data COS plugin data
    * @return a reply effect
    */
-  def handleRemoteCommand(priorState: StateWrapper,
-                          command: RemoteCommand,
-                          replyTo: ActorRef[CommandReply],
-                          commandHandler: RemoteCommandHandler,
-                          eventHandler: RemoteEventHandler,
-                          protosValidator: ProtosValidator,
-                          data: Map[String, com.google.protobuf.any.Any]
+  def handleRemoteCommand(
+    priorState: StateWrapper,
+    command: RemoteCommand,
+    replyTo: ActorRef[CommandReply],
+    commandHandler: RemoteCommandHandler,
+    eventHandler: RemoteEventHandler,
+    protosValidator: ProtosValidator,
+    data: Map[String, com.google.protobuf.any.Any]
   ): ReplyEffect[EventWrapper, StateWrapper] = {
 
     val handlerOutput: Try[WriteHandlerHelpers.WriteTransitions] = commandHandler

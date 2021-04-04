@@ -12,12 +12,12 @@ import akka.persistence.typed.PersistenceId
 import com.google.protobuf.any
 import com.google.protobuf.any.Any
 import com.google.protobuf.empty.Empty
-import com.namely.chiefofstate.config.{CosConfig, EventsConfig}
+import com.namely.chiefofstate.config.CosConfig
 import com.namely.chiefofstate.helper.BaseActorSpec
+import com.namely.chiefofstate.serialization.MessageWithActorRef
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
-import com.namely.protobuf.chiefofstate.v1.internal.SendCommand.Message
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened, OpenAccount}
 import com.namely.protobuf.chiefofstate.v1.writeside._
@@ -25,6 +25,7 @@ import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc
 import com.typesafe.config.{Config, ConfigFactory}
 import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
 import io.grpc.inprocess._
+import scalapb.GeneratedMessage
 
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -32,8 +33,6 @@ import scala.concurrent.ExecutionContext.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.Future
 import scala.util.{Failure, Try}
-import com.namely.chiefofstate.serialization.MessageWithActorRef
-import scalapb.GeneratedMessage
 
 class AggregrateRootSpec extends BaseActorSpec(s"""
       akka.cluster.sharding.number-of-shards = 1
@@ -198,12 +197,13 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(persistenceId,
-                                        shardIndex,
-                                        cosConfig,
-                                        remoteCommandHandler,
-                                        remoteEventHandler,
-                                        eventsAndStateProtosValidation
+      val aggregateRoot = AggregateRoot(
+        persistenceId,
+        shardIndex,
+        cosConfig,
+        remoteCommandHandler,
+        remoteEventHandler,
+        eventsAndStateProtosValidation
       )
 
       val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
@@ -270,12 +270,13 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(persistenceId,
-                                        shardIndex,
-                                        cosConfig,
-                                        remoteCommandHandler,
-                                        remoteEventHandler,
-                                        eventsAndStateProtosValidation
+      val aggregateRoot = AggregateRoot(
+        persistenceId,
+        shardIndex,
+        cosConfig,
+        remoteCommandHandler,
+        remoteEventHandler,
+        eventsAndStateProtosValidation
       )
 
       val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
@@ -326,12 +327,13 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(persistenceId,
-                                        shardIndex,
-                                        cosConfig,
-                                        remoteCommandHandler,
-                                        remoteEventHandler,
-                                        eventsAndStateProtosValidation
+      val aggregateRoot = AggregateRoot(
+        persistenceId,
+        shardIndex,
+        cosConfig,
+        remoteCommandHandler,
+        remoteEventHandler,
+        eventsAndStateProtosValidation
       )
 
       val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
@@ -381,12 +383,13 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(persistenceId,
-                                        shardIndex,
-                                        cosConfig,
-                                        remoteCommandHandler,
-                                        remoteEventHandler,
-                                        eventsAndStateProtosValidation
+      val aggregateRoot = AggregateRoot(
+        persistenceId,
+        shardIndex,
+        cosConfig,
+        remoteCommandHandler,
+        remoteEventHandler,
+        eventsAndStateProtosValidation
       )
 
       val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
@@ -445,12 +448,13 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(persistenceId,
-                                        shardIndex,
-                                        cosConfig,
-                                        remoteCommandHandler,
-                                        remoteEventHandler,
-                                        eventsAndStateProtosValidation
+      val aggregateRoot = AggregateRoot(
+        persistenceId,
+        shardIndex,
+        cosConfig,
+        remoteCommandHandler,
+        remoteEventHandler,
+        eventsAndStateProtosValidation
       )
 
       val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
@@ -550,12 +554,13 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(mainConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(persistenceId,
-                                        shardIndex,
-                                        mainConfig,
-                                        remoteCommandHandler,
-                                        remoteEventHandler,
-                                        eventsAndStateProtosValidation
+      val aggregateRoot = AggregateRoot(
+        persistenceId,
+        shardIndex,
+        mainConfig,
+        remoteCommandHandler,
+        remoteEventHandler,
+        eventsAndStateProtosValidation
       )
 
       val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
@@ -780,12 +785,13 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(mainConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(persistenceId,
-                                        shardIndex,
-                                        mainConfig,
-                                        remoteCommandHandler,
-                                        remoteEventHandler,
-                                        eventsAndStateProtosValidation
+      val aggregateRoot = AggregateRoot(
+        persistenceId,
+        shardIndex,
+        mainConfig,
+        remoteCommandHandler,
+        remoteEventHandler,
+        eventsAndStateProtosValidation
       )
 
       val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)

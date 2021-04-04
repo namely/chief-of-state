@@ -6,224 +6,68 @@
 
 package com.namely.chiefofstate
 
-import akka.NotUsed
-import akka.actor.typed.{ActorSystem, Behavior}
+import akka.actor.typed._
 import akka.actor.typed.scaladsl.Behaviors
-import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
-import akka.cluster.typed.Cluster
+import akka.cluster.typed.{Cluster, ClusterSingleton, SingletonActor}
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
-import akka.persistence.typed.PersistenceId
-import akka.util.Timeout
-import com.namely.chiefofstate.config.{CosConfig, ReadSideConfigReader}
-import com.namely.chiefofstate.migration.{JdbcConfig, Migrator}
-import com.namely.chiefofstate.migration.versions.v1.V1
-import com.namely.chiefofstate.migration.versions.v2.V2
-import com.namely.chiefofstate.plugin.PluginManager
-import com.namely.chiefofstate.telemetry._
-import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
-import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
-import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
-import com.namely.chiefofstate.{NettyHelper, RemoteCommandHandler}
-import com.namely.chiefofstate.readside.ReadSideManager
+import akka.NotUsed
+import com.namely.chiefofstate.serialization.{MessageWithActorRef, ScalaMessage}
+import com.namely.protobuf.chiefofstate.v1.internal.DoMigration
 import com.typesafe.config.Config
-import io.grpc._
-import io.grpc.netty.NettyServerBuilder
-import io.opentelemetry.api.GlobalOpenTelemetry
-import io.opentelemetry.instrumentation.grpc.v1_5.GrpcTracing
 import org.slf4j.{Logger, LoggerFactory}
-import slick.basic.DatabaseConfig
-import slick.jdbc.JdbcProfile
 
-import java.net.InetSocketAddress
-import scala.concurrent.ExecutionContext
-import scala.sys.ShutdownHookThread
-import scala.util.{Failure, Success}
-import com.namely.chiefofstate.migration.versions.v3.V3
-
-/**
- * This helps setup the required engines needed to smoothly run the ChiefOfState sevice.
- * The following engines are started on boot.
- * <ul>
- *   <li> the akka cluster system
- *   <li> the akka cluster sharding engine
- *   <li> the akka cluster management
- *   <li> loads the various ChiefOfState plugins
- *   <li> run the required schemas and migration needed
- *   <li> the telemetry tools and the various gRPC interceptors
- *   <li> the gRPC service
- * </ul>
- */
 object StartNodeBehaviour {
   final val log: Logger = LoggerFactory.getLogger(getClass)
+  val COS_MIGRATION_RUNNER = "CosServiceMigrationRunner"
+  val COS_SERVICE_BOOTSTRAPPER = "CosServiceBootstrapper"
 
   def apply(config: Config): Behavior[NotUsed] = {
     Behaviors.setup { context =>
-      // get the  COS config
-      val cosConfig: CosConfig = CosConfig(config)
 
       val cluster: Cluster = Cluster(context.system)
       context.log.info(s"starting node with roles: ${cluster.selfMember.roles}")
 
       // Start the akka cluster management tool
       AkkaManagement(context.system).start()
+      // start the cluster boostrap
       ClusterBootstrap(context.system).start()
 
-      // create and run the migrator
-      val migrator: Migrator = {
-        val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
-          JdbcConfig.journalConfig(config)
+      // initialize the service bootstrapper
+      val bootstrapper: ActorRef[scalapb.GeneratedMessage] =
+        context.spawn(
+          Behaviors.supervise(ServiceBootstrapper(config)).onFailure[Exception](SupervisorStrategy.restart),
+          COS_SERVICE_BOOTSTRAPPER
+        )
 
-        // FIXME: this uses the write-side slick config to read the journal
-        // for the migration, as COS projections has moved to raw JDBC
-        // connections and no longer uses slick.
-        val projectionJdbcConfig: DatabaseConfig[JdbcProfile] =
-          JdbcConfig.projectionConfig(config, "write-side-slick")
-
-        // TODO: think about a smarter constructor for the migrator
-        // get the projection config
-        val priorProjectionJdbcConfig: DatabaseConfig[JdbcProfile] =
-          JdbcConfig.projectionConfig(config, "chiefofstate.migration.v1.slick")
-
-        // get the old table name
-        val priorOffsetStoreName: String = config.getString("chiefofstate.migration.v1.slick.offset-store.table")
-
-        val v1: V1 = V1(journalJdbcConfig, priorProjectionJdbcConfig, priorOffsetStoreName)
-        val v2: V2 = V2(journalJdbcConfig, projectionJdbcConfig)(context.system)
-        val v3: V3 = V3(journalJdbcConfig)
-
-        new Migrator(journalJdbcConfig)
-          .addVersion(v1)
-          .addVersion(v2)
-          .addVersion(v3)
-      }
-
-      migrator.run() match {
-        case Failure(exception) => throw exception // we want to panic here.
-        case Success(_) => // We only proceed when the data stores and various migrations are done successfully.
-          log.info("ChiefOfState migration successfully done. About to start...")
-      }
-
-      // start the telemetry tools and register global tracer
-      TelemetryTools(cosConfig).start()
-
-      // We only proceed when the data stores and various migrations are done successfully.
-      log.info("Journal and snapshot store created successfully. About to start...")
-
-      val channel: ManagedChannel =
-        NettyHelper
-          .builder(
-            cosConfig.writeSideConfig.host,
-            cosConfig.writeSideConfig.port,
-            cosConfig.writeSideConfig.useTls
+      // initialise the migration runner in a singleton
+      val migrator: ActorRef[ScalaMessage] =
+        ClusterSingleton(context.system).init(
+          SingletonActor(
+            Behaviors
+              .supervise(ServiceMigrationRunner(config))
+              .onFailure[Exception](SupervisorStrategy.stop),
+            COS_MIGRATION_RUNNER
           )
-          .build()
+        )
 
-      val grpcClientInterceptors: Seq[ClientInterceptor] = Seq(
-        GrpcTracing.create(GlobalOpenTelemetry.get()).newClientInterceptor(),
-        new StatusClientInterceptor()
-      )
+      // tell the migrator to kickstart
+      migrator ! MessageWithActorRef(DoMigration.defaultInstance, bootstrapper)
 
-      val writeHandler: WriteSideHandlerServiceBlockingStub = new WriteSideHandlerServiceBlockingStub(channel)
-        .withInterceptors(grpcClientInterceptors: _*)
+      // let us watch both actors to handle any on them termination
+      context.watch(migrator)
+      context.watch(bootstrapper)
 
-      val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(cosConfig.grpcConfig, writeHandler)
-      val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandler)
-
-      // instance of eventsAndStatesProtoValidation
-      val eventsAndStateProtoValidation: ProtosValidator = ProtosValidator(
-        cosConfig.writeSideConfig
-      )
-
-      val sharding: ClusterSharding = ClusterSharding(context.system)
-
-      sharding.init(
-        Entity(typeKey = AggregateRoot.TypeKey) { entityContext =>
-          AggregateRoot(
-            PersistenceId.ofUniqueId(entityContext.entityId),
-            Util.getShardIndex(entityContext.entityId, cosConfig.eventsConfig.numShards),
-            cosConfig,
-            remoteCommandHandler,
-            remoteEventHandler,
-            eventsAndStateProtoValidation
-          )
-        }
-      )
-
-      // read side settings
-      startReadSide(context.system, cosConfig, grpcClientInterceptors)
-
-      // start the service
-      startService(sharding, config, cosConfig)
+      // let us handle the Terminated message received
+      Behaviors.receiveSignal[NotUsed] { case (context, Terminated(ref)) =>
+        val actorName = ref.path.name
+        context.log.info("Actor stopped: {}", actorName)
+        // whenever any of the key starters (ServiceBootstrapper or ServiceMigrationRunner) stop
+        // we need to panic here and halt the whole system
+        throw new RuntimeException("unable to boot ChiefOfState properly....")
+      }
 
       Behaviors.empty
-    }
-  }
-
-  /**
-   * Start all the read side processors (akka projections)
-   *
-   * @param system actor system
-   * @param cosConfig the chief of state config
-   * @param interceptors gRPC client interceptors for remote calls
-   */
-  private def startReadSide(system: ActorSystem[_],
-                            cosConfig: CosConfig,
-                            interceptors: Seq[ClientInterceptor]
-  ): Unit = {
-    // if read side is enabled
-    if (cosConfig.enableReadSide) {
-      // instantiate a read side manager
-      val readSideManager: ReadSideManager = ReadSideManager(
-        system = system,
-        interceptors = interceptors,
-        numShards = cosConfig.eventsConfig.numShards
-      )
-      // initialize all configured read sides
-      readSideManager.init()
-    }
-  }
-
-  /**
-   * starts the main application
-   */
-  private def startService(clusterSharding: ClusterSharding,
-                           config: Config,
-                           cosConfig: CosConfig
-  ): ShutdownHookThread = {
-    implicit val askTimeout: Timeout = cosConfig.askTimeout
-
-    // create the traced execution context for grpc
-    val grpcEc: ExecutionContext = TracedExecutorService.get()
-
-    // create interceptor using the global tracer
-    val tracingServerInterceptor: ServerInterceptor =
-      GrpcTracing.create(GlobalOpenTelemetry.get()).newServerInterceptor()
-
-    // instantiate the grpc service, bind do the execution context
-    val serviceImpl: GrpcServiceImpl =
-      new GrpcServiceImpl(clusterSharding, PluginManager.getPlugins(config), cosConfig.writeSideConfig)
-
-    // intercept the service
-    val service: ServerServiceDefinition = ServerInterceptors.intercept(
-      ChiefOfStateService.bindService(serviceImpl, grpcEc),
-      tracingServerInterceptor,
-      new StatusServerInterceptor(),
-      GrpcHeadersInterceptor
-    )
-
-    // attach service to netty server
-    val server: Server = NettyServerBuilder
-      .forAddress(new InetSocketAddress(cosConfig.grpcConfig.server.host, cosConfig.grpcConfig.server.port))
-      .addService(service)
-      .build()
-      .start()
-
-    log.info("ChiefOfState Service started, listening on " + cosConfig.grpcConfig.server.port)
-    server.awaitTermination()
-    sys.addShutdownHook {
-      log.info("shutting down ChiefOfState service....")
-      server.shutdown()
     }
   }
 }

@@ -6,7 +6,6 @@
 
 package com.namely.chiefofstate.serialization
 
-import com.google.protobuf.any
 import akka.actor.typed.ActorRef
 import scalapb.GeneratedMessage
 

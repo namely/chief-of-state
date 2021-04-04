@@ -6,7 +6,6 @@
 
 package com.namely.chiefofstate.migration
 
-import scala.util.{Success, Try}
 import slick.dbio.{DBIO, DBIOAction}
 
 class VersionSpec extends BaseSpec {

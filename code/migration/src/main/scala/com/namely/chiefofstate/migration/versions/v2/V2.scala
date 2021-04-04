@@ -9,11 +9,11 @@ package com.namely.chiefofstate.migration.versions.v2
 import akka.actor.typed.ActorSystem
 import akka.serialization.{Serialization, SerializationExtension}
 import com.namely.chiefofstate.migration.Version
+import com.namely.chiefofstate.migration.versions.v3.SchemasUtil
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
-import com.namely.chiefofstate.migration.versions.v3.SchemasUtil
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Success, Try}

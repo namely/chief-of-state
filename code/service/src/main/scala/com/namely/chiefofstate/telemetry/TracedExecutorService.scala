@@ -9,7 +9,7 @@ package com.namely.chiefofstate.telemetry
 import io.opentelemetry.context.Context
 
 import java.util
-import java.util.concurrent.{Callable, ExecutorService, ForkJoinPool, Future, TimeUnit}
+import java.util.concurrent._
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
 

@@ -7,8 +7,8 @@
 package com.namely.chiefofstate.helper
 
 import java.util.concurrent.Executors
-import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration.Duration
 
 /**
  * test helper to await some condition

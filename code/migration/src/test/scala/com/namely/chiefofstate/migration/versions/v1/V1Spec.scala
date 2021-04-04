@@ -11,7 +11,6 @@ import com.dimafeng.testcontainers.{ForAllTestContainer, MultipleContainers, Pos
 import com.namely.chiefofstate.migration.{BaseSpec, DbUtil}
 import com.namely.chiefofstate.migration.helper.TestConfig
 import com.namely.chiefofstate.migration.versions.v1.V1.{createTable, insertInto, tempTable, OffsetRow}
-import com.namely.chiefofstate.migration.Migrator.createMigrationsTable
 import com.typesafe.config.Config
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig

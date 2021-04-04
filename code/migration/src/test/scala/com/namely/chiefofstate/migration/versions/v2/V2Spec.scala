@@ -16,12 +16,12 @@ import akka.persistence.jdbc.snapshot.dao.legacy.{ByteArraySnapshotDao, Snapshot
 import akka.serialization.{Serialization, SerializationExtension}
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.namely.chiefofstate.migration.{BaseSpec, DbUtil, JdbcConfig}
+import com.namely.chiefofstate.migration.versions.v3.SchemasUtil
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 import slick.jdbc.PostgresProfile.api._
-import com.namely.chiefofstate.migration.versions.v3.SchemasUtil
 
 import java.sql.{Connection, DriverManager}
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}

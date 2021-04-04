@@ -6,17 +6,12 @@
 
 package com.namely.chiefofstate.migration.versions.v3
 
-import com.namely.chiefofstate.migration.{DbUtil, StringImprovements, Version}
-import com.namely.chiefofstate.migration.versions.v1.V1.{createTable, insertInto, offsetTableName, tempTable, OffsetRow}
+import com.namely.chiefofstate.migration.Version
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
-import slick.jdbc.{GetResult, JdbcProfile}
+import slick.jdbc.JdbcProfile
 import slick.jdbc.PostgresProfile.api._
-
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import scala.util.Try
 
 /**
  * V3 removes the string prefixes from persistence ID's and tags.

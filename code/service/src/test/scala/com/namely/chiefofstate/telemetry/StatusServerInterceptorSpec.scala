@@ -7,13 +7,13 @@
 package com.namely.chiefofstate.telemetry
 
 import com.namely.chiefofstate.helper.BaseSpec
-import com.namely.protobuf.chiefofstate.test.helloworld.GreeterGrpc.Greeter
 import com.namely.protobuf.chiefofstate.test.helloworld.{GreeterGrpc, HelloReply, HelloRequest}
-import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
+import com.namely.protobuf.chiefofstate.test.helloworld.GreeterGrpc.Greeter
 import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
+import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
+import io.opentelemetry.api.{GlobalOpenTelemetry, OpenTelemetry}
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.trace.Span
-import io.opentelemetry.api.{GlobalOpenTelemetry, OpenTelemetry}
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.instrumentation.grpc.v1_5.GrpcTracing
