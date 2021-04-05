@@ -41,13 +41,13 @@ case class V4(
       sqlu"""
         UPDATE event_journal
         SET event_ser_id = #${V4.newSerializerId}, event_ser_manifest = ${V4.newSerializerManifest}
-        WHERE event_ser_id = #${V4.oldSerializerId} AND event_ser_manifest = ${V4.oldSerializerManifest}
+        WHERE event_ser_id = #${V4.oldSerializerId} AND event_ser_manifest = ${V4.oldSerializerManifestEvent}
       """,
       // update the snapshots
       sqlu"""
         UPDATE state_snapshot
         SET snapshot_ser_id = #${V4.newSerializerId}, snapshot_ser_manifest = ${V4.newSerializerManifest}
-        WHERE snapshot_ser_id = #${V4.oldSerializerId} AND snapshot_ser_manifest = ${V4.oldSerializerManifest}
+        WHERE snapshot_ser_id = #${V4.oldSerializerId} AND snapshot_ser_manifest = ${V4.oldSerializerManifestState}
       """
     )
   }
@@ -66,7 +66,8 @@ case class V4(
 
 object V4 {
   val oldSerializerId: Int = 2
-  val oldSerializerManifest: String = "com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper"
+  val oldSerializerManifestEvent: String = "com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper"
+  val oldSerializerManifestState: String = "com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper"
   val newSerializerId: Int = 5001
   val newSerializerManifest: String = EventWrapper.scalaDescriptor.fullName.split("/").last
 }
