@@ -6,13 +6,13 @@
 
 package com.namely.chiefofstate.migration.versions.v4
 
-import com.namely.chiefofstate.migration.{Version, SchemasUtil}
+import com.namely.chiefofstate.migration.{SchemasUtil, Version}
+import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
 import slick.jdbc.PostgresProfile.api._
-import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
 
 /**
  * V4 updates persistence serialization ID's for the custom serializer
@@ -46,8 +46,8 @@ case class V4(
       // update the snapshots
       sqlu"""
         UPDATE state_snapshot
-        SET event_ser_id = #${V4.newSerializerId}, event_ser_manifest = ${V4.newSerializerManifest}
-        WHERE event_ser_id = #${V4.oldSerializerId} AND event_ser_manifest = ${V4.oldSerializerManifest}
+        SET snapshot_ser_id = #${V4.newSerializerId}, snapshot_ser_manifest = ${V4.newSerializerManifest}
+        WHERE snapshot_ser_id = #${V4.oldSerializerId} AND snapshot_ser_manifest = ${V4.oldSerializerManifest}
       """
     )
   }

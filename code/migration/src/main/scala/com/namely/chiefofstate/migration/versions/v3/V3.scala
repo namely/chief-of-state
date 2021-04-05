@@ -48,12 +48,4 @@ case class V3(
       """
     )
   }
-
-  /**
-    * v3 cannot snapshot, go to latest version
-    *
-    * @return a failure
-    */
-  override def snapshot(): DBIO[Unit] =
-    DBIO.failed(new NotImplementedError("cannot snapshot v2"))
 }

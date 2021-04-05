@@ -7,7 +7,7 @@
 package com.namely.chiefofstate.migration.versions.v3
 
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import com.namely.chiefofstate.migration.{BaseSpec, DbUtil}
+import com.namely.chiefofstate.migration.{BaseSpec, DbUtil, SchemasUtil}
 import com.namely.chiefofstate.migration.helper.TestConfig
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
@@ -16,6 +16,7 @@ import slick.jdbc.JdbcProfile
 import java.sql.{Connection, DriverManager}
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import java.util.concurrent.ExecutionException
 
 class V3Spec extends BaseSpec with ForAllTestContainer {
 
@@ -127,14 +128,12 @@ class V3Spec extends BaseSpec with ForAllTestContainer {
   }
 
   ".snapshot" should {
-    "create the new journal, snapshot and read side store" in {
+    "fail" in {
       val v3 = V3(journalJdbcConfig)
-      Await.result(journalJdbcConfig.db.run(v3.snapshot()), Duration.Inf) shouldBe {}
-      DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
-      DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
-      DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
-      DbUtil.tableExists(journalJdbcConfig, "read_side_offsets") shouldBe true
+      val err: ExecutionException = intercept[ExecutionException] {
+        Await.result(journalJdbcConfig.db.run(v3.snapshot()), Duration.Inf)
+      }
+      err.getCause().isInstanceOf[NotImplementedError] shouldBe true
     }
   }
-
 }
