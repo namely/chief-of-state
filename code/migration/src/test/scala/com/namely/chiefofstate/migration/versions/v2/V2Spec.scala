@@ -25,7 +25,6 @@ import slick.jdbc.PostgresProfile.api._
 import java.sql.{Connection, DriverManager}
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.concurrent.duration.Duration
-import com.namely.chiefofstate.migration.SchemasUtil
 
 class V2Spec extends BaseSpec with ForAllTestContainer {
 
