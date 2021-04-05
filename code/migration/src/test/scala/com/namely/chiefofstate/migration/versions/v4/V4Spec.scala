@@ -115,13 +115,13 @@ class V4Spec extends BaseSpec with ForAllTestContainer {
 
       // insert a record to migrate
       val id1: String = UUID.randomUUID().toString()
-      statement.addBatch(insertJournal(id1, V4.oldSerializerId, V4.oldSerializerManifest))
-      statement.addBatch(insertSnapshot(id1, V4.oldSerializerId, V4.oldSerializerManifest))
+      statement.addBatch(insertJournal(id1, V4.oldSerializerId, V4.oldSerializerManifestEvent))
+      statement.addBatch(insertSnapshot(id1, V4.oldSerializerId, V4.oldSerializerManifestState))
 
       // insert an already migrated record
       val id2: String = UUID.randomUUID().toString()
-      statement.addBatch(insertJournal(id2, V4.newSerializerId, V4.newSerializerManifest))
-      statement.addBatch(insertSnapshot(id2, V4.newSerializerId, V4.newSerializerManifest))
+      statement.addBatch(insertJournal(id2, V4.newSerializerId, V4.newSerializerManifestEvent))
+      statement.addBatch(insertSnapshot(id2, V4.newSerializerId, V4.newSerializerManifestState))
 
       // insert record to ignore
       val id3: String = UUID.randomUUID().toString()
@@ -181,12 +181,15 @@ class V4Spec extends BaseSpec with ForAllTestContainer {
         output
       }
 
-      actualJournal(id1) shouldBe ((V4.newSerializerId, V4.newSerializerManifest))
-      actualSnapshot(id1) shouldBe ((V4.newSerializerId, V4.newSerializerManifest))
+      // assert record 1 was migrated
+      actualJournal(id1) shouldBe ((V4.newSerializerId, V4.newSerializerManifestEvent))
+      actualSnapshot(id1) shouldBe ((V4.newSerializerId, V4.newSerializerManifestState))
 
-      actualJournal(id2) shouldBe ((V4.newSerializerId, V4.newSerializerManifest))
-      actualSnapshot(id2) shouldBe ((V4.newSerializerId, V4.newSerializerManifest))
+      // assert record 2 remains OK
+      actualJournal(id2) shouldBe ((V4.newSerializerId, V4.newSerializerManifestEvent))
+      actualSnapshot(id2) shouldBe ((V4.newSerializerId, V4.newSerializerManifestState))
 
+      // assert record 3 was ignored
       actualJournal(id3) shouldBe ((unrelatedId, unrelatedManifest))
       actualSnapshot(id3) shouldBe ((unrelatedId, unrelatedManifest))
 

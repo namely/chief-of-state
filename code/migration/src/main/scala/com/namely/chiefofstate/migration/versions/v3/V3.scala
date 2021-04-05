@@ -41,6 +41,11 @@ case class V3(
         UPDATE event_journal
         SET persistence_id = regexp_replace(persistence_id, '^chiefOfState\|', '')
       """,
+      // remove "chiefOfState" prefix from snapshots
+      sqlu"""
+        UPDATE state_snapshot
+        SET persistence_id = regexp_replace(persistence_id, '^chiefOfState\|', '')
+      """,
       // remove "chiefofstate" prefix from tags
       sqlu"""
         UPDATE event_tag
