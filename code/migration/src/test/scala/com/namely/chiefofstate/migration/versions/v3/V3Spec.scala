@@ -100,19 +100,22 @@ class V3Spec extends BaseSpec with ForAllTestContainer {
         )
         """
 
-        def insertTag(id: Int, tag: String): String =
-          s"""insert into event_tag (event_id, tag) values ($id, '$tag')"""
+      def insertTag(id: Int, tag: String): String =
+        s"""insert into event_tag (event_id, tag) values ($id, '$tag')"""
 
-      statement.addBatch(insertJournal(1, "chiefOfState|1234"))
-      statement.addBatch(insertSnapshot("chiefOfState|1234"))
+      val id1: String = "chiefOfState|1234"
+      statement.addBatch(insertJournal(1, id1))
+      statement.addBatch(insertSnapshot(id1))
       statement.addBatch(insertTag(1, "chiefofstate3"))
 
-      statement.addBatch(insertJournal(2, "chiefOfState|a|b|c"))
-      statement.addBatch(insertSnapshot("chiefOfState|a|b|c"))
+      val id2: String = "chiefOfState|a|b|c"
+      statement.addBatch(insertJournal(2, id2))
+      statement.addBatch(insertSnapshot(id2))
       statement.addBatch(insertTag(2, "chiefofstate2"))
 
-      statement.addBatch(insertJournal(3, "chiefOfState|chiefOfState|but-why-did-you-do-this"))
-      statement.addBatch(insertSnapshot("chiefOfState|chiefOfState|but-why-did-you-do-this"))
+      val id3: String = "chiefOfState|chiefOfState|but-why-did-you-do-this"
+      statement.addBatch(insertJournal(3, id3))
+      statement.addBatch(insertSnapshot(id3))
       statement.addBatch(insertTag(3, "chiefofstate1"))
 
       statement.executeBatch()
