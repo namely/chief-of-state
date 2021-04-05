@@ -60,36 +60,60 @@ class V3Spec extends BaseSpec with ForAllTestContainer {
   }
 
   ".upgrade" should {
-    "strip prefixes from journal persistence IDs and tags" in {
+    "strip prefixes from journal persistence IDs, snapshots, and tags" in {
 
       // create the journal/tags tables
       SchemasUtil.createJournalTables(journalJdbcConfig)
       DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
       DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
+      DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
 
       val testConn = getConnection(container)
       val statement = getConnection(container).createStatement()
 
-      def eventTemplate(ordering: Int, id: String): String =
-        s"""( $ordering, '$id', 1, false, 'some-writer', 0,
-          'some-manifest', 2, 'some-ser-manifest', 'DEADBEEF'::bytea )"""
+      def insertJournal(ordering: Int, id: String): String =
+        s"""
+          insert into event_journal (
+            ordering, persistence_id, sequence_number, deleted, writer, write_timestamp,
+            adapter_manifest, event_ser_id, event_ser_manifest, event_payload
+          ) values (
+            $ordering, '$id', 1, false, 'some-writer', 0,
+            'some-manifest', 2, 'some-ser-manifest', 'DEADBEEF'::bytea
+          )"""
 
-      statement.addBatch(s"""
-        insert into event_journal
-        ( ordering, persistence_id, sequence_number, deleted, writer, write_timestamp,
-          adapter_manifest, event_ser_id, event_ser_manifest, event_payload)
-        values
-        ${eventTemplate(1, "chiefOfState|1234")},
-        ${eventTemplate(2, "chiefOfState|a|b|c")},
-        ${eventTemplate(3, "chiefOfState|chiefOfState|but-why-did-you-do-this")}
-      """)
+      def insertSnapshot(id: String): String =
+        s"""
+        insert into state_snapshot (
+          persistence_id,
+          sequence_number,
+          created,
+          snapshot_ser_id,
+          snapshot_ser_manifest,
+          snapshot_payload
+        ) values (
+          '$id',
+          1,
+          0,
+          2,
+          'some-manifest',
+          'DEADBEEF'::bytea
+        )
+        """
 
-      statement.addBatch(s"""
-        insert into event_tag (event_id, tag) values
-        (1, 'chiefofstate3'),
-        (2, 'chiefofstate2'),
-        (3, 'chiefofstate1')
-      """)
+        def insertTag(id: Int, tag: String): String =
+          s"""insert into event_tag (event_id, tag) values ($id, '$tag')"""
+
+      statement.addBatch(insertJournal(1, "chiefOfState|1234"))
+      statement.addBatch(insertSnapshot("chiefOfState|1234"))
+      statement.addBatch(insertTag(1, "chiefofstate3"))
+
+      statement.addBatch(insertJournal(2, "chiefOfState|a|b|c"))
+      statement.addBatch(insertSnapshot("chiefOfState|a|b|c"))
+      statement.addBatch(insertTag(2, "chiefofstate2"))
+
+      statement.addBatch(insertJournal(3, "chiefOfState|chiefOfState|but-why-did-you-do-this"))
+      statement.addBatch(insertSnapshot("chiefOfState|chiefOfState|but-why-did-you-do-this"))
+      statement.addBatch(insertTag(3, "chiefofstate1"))
 
       statement.executeBatch()
 
@@ -100,23 +124,24 @@ class V3Spec extends BaseSpec with ForAllTestContainer {
 
       val resultStmt = testConn.createStatement()
       val results = resultStmt.executeQuery("""
-        select j.ordering, j.persistence_id, t.tag
+        select j.ordering, j.persistence_id, t.tag, s.persistence_id
         from event_journal j
         inner join event_tag t on j.ordering = t.event_id
+        inner join state_snapshot s on j.persistence_id = s.persistence_id
         order by j.ordering
       """)
 
       val actual = (1 to 3)
         .map(ordering => {
           results.next() shouldBe true
-          (results.getLong(1), results.getString(2), results.getString(3))
+          (results.getLong(1), results.getString(2), results.getString(3), results.getString(4))
         })
         .toSeq
 
       val expected = Seq(
-        (1, "1234", "3"),
-        (2, "a|b|c", "2"),
-        (3, "chiefOfState|but-why-did-you-do-this", "1")
+        (1, "1234", "3", "1234"),
+        (2, "a|b|c", "2", "a|b|c"),
+        (3, "chiefOfState|but-why-did-you-do-this", "1", "chiefOfState|but-why-did-you-do-this")
       )
 
       results.next() shouldBe false
