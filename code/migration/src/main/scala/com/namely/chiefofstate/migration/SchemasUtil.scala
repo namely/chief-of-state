@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.namely.chiefofstate.migration.versions.v3
+package com.namely.chiefofstate.migration.versions
 
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile

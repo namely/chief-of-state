@@ -50,13 +50,10 @@ case class V3(
   }
 
   /**
-   * creates the latest COS schema if no prior versions found.
-   *
-   * @return a DBIO that creates the version snapshot
-   */
-  override def snapshot(): DBIO[Unit] = {
-    log.info(s"running snapshot for version #$versionNumber")
-    SchemasUtil.createJournalTables(journalJdbcConfig)
-    DBIO.successful {}
-  }
+    * v3 cannot snapshot, go to latest version
+    *
+    * @return a failure
+    */
+  override def snapshot(): DBIO[Unit] =
+    DBIO.failed(new NotImplementedError("cannot snapshot v2"))
 }
