@@ -32,7 +32,9 @@ trait Version {
    *
    * @return a DBIO that creates the version snapshot
    */
-  def snapshot(): DBIO[Unit]
+  def snapshot(): DBIO[Unit] = {
+    DBIO.failed(new NotImplementedError(s"cannot snapshot version $versionNumber"))
+  }
 
   /**
    * optional method to run prior to upgrade, which can be used for expensive

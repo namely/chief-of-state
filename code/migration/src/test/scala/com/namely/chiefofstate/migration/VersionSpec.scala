@@ -11,7 +11,7 @@ import slick.dbio.{DBIO, DBIOAction}
 class VersionSpec extends BaseSpec {
 
   case class SomeVersion(versionNumber: Int) extends Version {
-    def snapshot(): DBIO[Unit] = DBIOAction.successful {}
+    override def snapshot(): DBIO[Unit] = DBIOAction.successful {}
     def upgrade(): DBIO[Unit] = DBIOAction.successful {}
   }
 

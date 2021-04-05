@@ -12,8 +12,7 @@ import akka.persistence.jdbc.db.SlickExtension
 import akka.persistence.jdbc.journal.dao.{legacy, JournalQueries}
 import akka.serialization.{Serialization, SerializationExtension}
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import com.namely.chiefofstate.migration.{BaseSpec, DbUtil, JdbcConfig}
-import com.namely.chiefofstate.migration.versions.v3.SchemasUtil
+import com.namely.chiefofstate.migration.{BaseSpec, DbUtil, JdbcConfig, SchemasUtil}
 import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.testcontainers.utility.DockerImageName
