@@ -152,7 +152,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       migrator.nextOrderingValue() shouldBe 7L
 
       // let us create the new journal table
-      SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
+      SchemasUtil.createStoreTables(journalJdbcConfig) shouldBe {}
       DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
       DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
 
@@ -196,7 +196,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       migrator.nextOrderingValue() shouldBe 7L
 
       // let us create the new journal table
-      SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
+      SchemasUtil.createStoreTables(journalJdbcConfig) shouldBe {}
 
       // let us migrate the data
       migrator.run() shouldBe {}
@@ -239,7 +239,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       countLegacyJournal(journalJdbcConfig, legacyJournalQueries) shouldBe 6
 
       // let us create the new journal table
-      SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
+      SchemasUtil.createStoreTables(journalJdbcConfig) shouldBe {}
 
       // let us migrate the data
       migrator.run() shouldBe {}

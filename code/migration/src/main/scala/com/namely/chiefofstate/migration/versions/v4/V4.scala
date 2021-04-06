@@ -59,7 +59,7 @@ case class V4(
    */
   override def snapshot(): DBIO[Unit] = {
     log.info(s"running snapshot for version #$versionNumber")
-    SchemasUtil.createJournalTables(journalJdbcConfig)
+    SchemasUtil.createStoreTables(journalJdbcConfig)
     DBIO.successful {}
   }
 }

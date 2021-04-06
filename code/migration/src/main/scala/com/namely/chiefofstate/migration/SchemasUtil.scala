@@ -121,7 +121,7 @@ object SchemasUtil {
   /**
    * creates the various write-side stores and read-side offset stores
    */
-  def createJournalTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
+  def createStoreTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
     val ddlSeq = DBIO
       .seq(
         createEventJournalStmt,
