@@ -160,7 +160,7 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
       countLegacySnapshot(journalJdbcConfig, legacySnapshotqueries) shouldBe 4
 
       // let us create the new journal table
-      SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
+      SchemasUtil.createStoreTables(journalJdbcConfig) shouldBe {}
       DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
       DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
       DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
