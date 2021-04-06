@@ -74,13 +74,6 @@ case class V1(
   }
 
   /**
-   * implement this method to snapshot this version (run if no prior versions found)
-   *
-   * @return a DBIO that creates the version snapshot
-   */
-  override def snapshot(): DBIO[Unit] = DBIO.failed(new RuntimeException("snaphotting not allowed in this version"))
-
-  /**
    * move the data from the old read side offset store table to the new temporay offset store table by
    * reading all records into memory.
    *

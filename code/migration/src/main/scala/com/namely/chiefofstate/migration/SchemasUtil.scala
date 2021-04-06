@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.namely.chiefofstate.migration.versions.v3
+package com.namely.chiefofstate.migration
 
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -19,7 +19,7 @@ object SchemasUtil {
   /**
    * event_journal DDL statement
    */
-  private[versions] val createEventJournalStmt: SqlAction[Int, NoStream, Effect] = {
+  private[migration] val createEventJournalStmt: SqlAction[Int, NoStream, Effect] = {
     sqlu"""
         CREATE TABLE IF NOT EXISTS event_journal(
           ordering BIGSERIAL,
@@ -46,14 +46,14 @@ object SchemasUtil {
   /**
    * event_journal index Sql statement
    */
-  private[versions] val createEventJournalIndexStmt: SqlAction[Int, NoStream, Effect] = {
+  private[migration] val createEventJournalIndexStmt: SqlAction[Int, NoStream, Effect] = {
     sqlu"""CREATE UNIQUE INDEX IF NOT EXISTS event_journal_ordering_idx ON event_journal(ordering)"""
   }
 
   /**
    * event_tag DDL statement
    */
-  private[versions] val createEventTagStmt: SqlAction[Int, NoStream, Effect] = {
+  private[migration] val createEventTagStmt: SqlAction[Int, NoStream, Effect] = {
     sqlu"""
         CREATE TABLE IF NOT EXISTS event_tag(
             event_id BIGINT,
@@ -70,7 +70,7 @@ object SchemasUtil {
   /**
    * state_snapshot DDL statement
    */
-  private[versions] val createSnapshotStmt: SqlAction[Int, NoStream, Effect] = {
+  private[migration] val createSnapshotStmt: SqlAction[Int, NoStream, Effect] = {
     sqlu"""
      CREATE TABLE IF NOT EXISTS state_snapshot (
       persistence_id VARCHAR(255) NOT NULL,
@@ -95,7 +95,7 @@ object SchemasUtil {
    * @param tableName optional param to set the table name (used in v1 migration)
    * @return the DBIOAction creating the table and offset
    */
-  private[versions] def createReadSideOffsetsStmt(
+  private[migration] def createReadSideOffsetsStmt(
     tableName: String = "read_side_offsets"
   ): DBIOAction[Unit, NoStream, Effect] = {
 
@@ -178,7 +178,7 @@ object SchemasUtil {
    *
    * @param journalJdbcConfig the jdbc config
    */
-  private[versions] def createLegacyJournalAndSnapshot(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
+  private[migration] def createLegacyJournalAndSnapshot(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
     val createStmt: SqlAction[Int, NoStream, Effect] = sqlu"""
      CREATE TABLE IF NOT EXISTS journal (
       ordering        BIGSERIAL,

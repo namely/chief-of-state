@@ -15,8 +15,7 @@ import akka.persistence.jdbc.snapshot.dao
 import akka.persistence.jdbc.snapshot.dao.legacy.{ByteArraySnapshotDao, SnapshotQueries}
 import akka.serialization.{Serialization, SerializationExtension}
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import com.namely.chiefofstate.migration.{BaseSpec, DbUtil, JdbcConfig}
-import com.namely.chiefofstate.migration.versions.v3.SchemasUtil
+import com.namely.chiefofstate.migration.{BaseSpec, DbUtil, JdbcConfig, SchemasUtil}
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig

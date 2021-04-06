@@ -41,22 +41,16 @@ case class V3(
         UPDATE event_journal
         SET persistence_id = regexp_replace(persistence_id, '^chiefOfState\|', '')
       """,
+      // remove "chiefOfState" prefix from snapshots
+      sqlu"""
+        UPDATE state_snapshot
+        SET persistence_id = regexp_replace(persistence_id, '^chiefOfState\|', '')
+      """,
       // remove "chiefofstate" prefix from tags
       sqlu"""
         UPDATE event_tag
         SET tag = regexp_replace(tag, '^chiefofstate', '')
       """
     )
-  }
-
-  /**
-   * creates the latest COS schema if no prior versions found.
-   *
-   * @return a DBIO that creates the version snapshot
-   */
-  override def snapshot(): DBIO[Unit] = {
-    log.info(s"running snapshot for version #$versionNumber")
-    SchemasUtil.createJournalTables(journalJdbcConfig)
-    DBIO.successful {}
   }
 }

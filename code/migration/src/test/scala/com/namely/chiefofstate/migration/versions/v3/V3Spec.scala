@@ -7,13 +7,14 @@
 package com.namely.chiefofstate.migration.versions.v3
 
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import com.namely.chiefofstate.migration.{BaseSpec, DbUtil}
+import com.namely.chiefofstate.migration.{BaseSpec, DbUtil, SchemasUtil}
 import com.namely.chiefofstate.migration.helper.TestConfig
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import java.sql.{Connection, DriverManager}
+import java.util.concurrent.ExecutionException
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -59,36 +60,63 @@ class V3Spec extends BaseSpec with ForAllTestContainer {
   }
 
   ".upgrade" should {
-    "strip prefixes from journal persistence IDs and tags" in {
+    "strip prefixes from journal persistence IDs, snapshots, and tags" in {
 
       // create the journal/tags tables
       SchemasUtil.createJournalTables(journalJdbcConfig)
       DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
       DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
+      DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
 
       val testConn = getConnection(container)
       val statement = getConnection(container).createStatement()
 
-      def eventTemplate(ordering: Int, id: String): String =
-        s"""( $ordering, '$id', 1, false, 'some-writer', 0,
-          'some-manifest', 2, 'some-ser-manifest', 'DEADBEEF'::bytea )"""
+      def insertJournal(ordering: Int, id: String): String =
+        s"""
+          insert into event_journal (
+            ordering, persistence_id, sequence_number, deleted, writer, write_timestamp,
+            adapter_manifest, event_ser_id, event_ser_manifest, event_payload
+          ) values (
+            $ordering, '$id', 1, false, 'some-writer', 0,
+            'some-manifest', 2, 'some-ser-manifest', 'DEADBEEF'::bytea
+          )"""
 
-      statement.addBatch(s"""
-        insert into event_journal
-        ( ordering, persistence_id, sequence_number, deleted, writer, write_timestamp,
-          adapter_manifest, event_ser_id, event_ser_manifest, event_payload)
-        values
-        ${eventTemplate(1, "chiefOfState|1234")},
-        ${eventTemplate(2, "chiefOfState|a|b|c")},
-        ${eventTemplate(3, "chiefOfState|chiefOfState|but-why-did-you-do-this")}
-      """)
+      def insertSnapshot(id: String): String =
+        s"""
+        insert into state_snapshot (
+          persistence_id,
+          sequence_number,
+          created,
+          snapshot_ser_id,
+          snapshot_ser_manifest,
+          snapshot_payload
+        ) values (
+          '$id',
+          1,
+          0,
+          2,
+          'some-manifest',
+          'DEADBEEF'::bytea
+        )
+        """
 
-      statement.addBatch(s"""
-        insert into event_tag (event_id, tag) values
-        (1, 'chiefofstate3'),
-        (2, 'chiefofstate2'),
-        (3, 'chiefofstate1')
-      """)
+      def insertTag(id: Int, tag: String): String =
+        s"""insert into event_tag (event_id, tag) values ($id, '$tag')"""
+
+      val id1: String = "chiefOfState|1234"
+      statement.addBatch(insertJournal(1, id1))
+      statement.addBatch(insertSnapshot(id1))
+      statement.addBatch(insertTag(1, "chiefofstate3"))
+
+      val id2: String = "chiefOfState|a|b|c"
+      statement.addBatch(insertJournal(2, id2))
+      statement.addBatch(insertSnapshot(id2))
+      statement.addBatch(insertTag(2, "chiefofstate2"))
+
+      val id3: String = "chiefOfState|chiefOfState|but-why-did-you-do-this"
+      statement.addBatch(insertJournal(3, id3))
+      statement.addBatch(insertSnapshot(id3))
+      statement.addBatch(insertTag(3, "chiefofstate1"))
 
       statement.executeBatch()
 
@@ -99,23 +127,24 @@ class V3Spec extends BaseSpec with ForAllTestContainer {
 
       val resultStmt = testConn.createStatement()
       val results = resultStmt.executeQuery("""
-        select j.ordering, j.persistence_id, t.tag
+        select j.ordering, j.persistence_id, t.tag, s.persistence_id
         from event_journal j
         inner join event_tag t on j.ordering = t.event_id
+        inner join state_snapshot s on j.persistence_id = s.persistence_id
         order by j.ordering
       """)
 
       val actual = (1 to 3)
         .map(ordering => {
           results.next() shouldBe true
-          (results.getLong(1), results.getString(2), results.getString(3))
+          (results.getLong(1), results.getString(2), results.getString(3), results.getString(4))
         })
         .toSeq
 
       val expected = Seq(
-        (1, "1234", "3"),
-        (2, "a|b|c", "2"),
-        (3, "chiefOfState|but-why-did-you-do-this", "1")
+        (1, "1234", "3", "1234"),
+        (2, "a|b|c", "2", "a|b|c"),
+        (3, "chiefOfState|but-why-did-you-do-this", "1", "chiefOfState|but-why-did-you-do-this")
       )
 
       results.next() shouldBe false
@@ -127,14 +156,12 @@ class V3Spec extends BaseSpec with ForAllTestContainer {
   }
 
   ".snapshot" should {
-    "create the new journal, snapshot and read side store" in {
+    "fail" in {
       val v3 = V3(journalJdbcConfig)
-      Await.result(journalJdbcConfig.db.run(v3.snapshot()), Duration.Inf) shouldBe {}
-      DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
-      DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
-      DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
-      DbUtil.tableExists(journalJdbcConfig, "read_side_offsets") shouldBe true
+      val err: ExecutionException = intercept[ExecutionException] {
+        Await.result(journalJdbcConfig.db.run(v3.snapshot()), Duration.Inf)
+      }
+      err.getCause().isInstanceOf[NotImplementedError] shouldBe true
     }
   }
-
 }

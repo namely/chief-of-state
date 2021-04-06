@@ -8,8 +8,7 @@ package com.namely.chiefofstate.migration.versions.v2
 
 import akka.actor.typed.ActorSystem
 import akka.serialization.{Serialization, SerializationExtension}
-import com.namely.chiefofstate.migration.Version
-import com.namely.chiefofstate.migration.versions.v3.SchemasUtil
+import com.namely.chiefofstate.migration.{SchemasUtil, Version}
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
@@ -44,14 +43,6 @@ case class V2(journalJdbcConfig: DatabaseConfig[JdbcProfile], projectionJdbcConf
     log.info(s"finalizing ChiefOfState migration: #$versionNumber")
     SchemasUtil.dropLegacyJournalTablesStmt.flatMap(_ => DBIO.successful {})
   }
-
-  /**
-   * implement this method to snapshot this version (run if no prior versions found)
-   *
-   * @return a DBIO that creates the version snapshot
-   */
-  override def snapshot(): DBIO[Unit] =
-    DBIO.failed(new NotImplementedError("cannot snapshot v2"))
 
   /**
    * performs the following actions:
