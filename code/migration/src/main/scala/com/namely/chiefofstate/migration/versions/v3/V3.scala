@@ -50,6 +50,11 @@ case class V3(
       sqlu"""
         UPDATE event_tag
         SET tag = regexp_replace(tag, '^chiefofstate', '')
+      """,
+      // remove "chieofstate" prefix from read_side_offsets
+      sqlu"""
+         UPDATE read_side_offsets
+        SET projection_key = regexp_replace(projection_key, '^chiefofstate', '')
       """
     )
   }

@@ -106,7 +106,7 @@ class V4Spec extends BaseSpec with ForAllTestContainer {
   ".upgrade" should {
     "update journal/snapshot id and manifest" in {
       // create the journal/tags tables
-      SchemasUtil.createJournalTables(journalJdbcConfig)
+      SchemasUtil.createStoreTables(journalJdbcConfig)
       DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
       DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
 

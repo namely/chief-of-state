@@ -68,7 +68,7 @@ case class V2(journalJdbcConfig: DatabaseConfig[JdbcProfile], projectionJdbcConf
       SchemasUtil.dropJournalTables(journalJdbcConfig)
 
       log.info("creating new ChiefOfState journal tables")
-      SchemasUtil.createJournalTables(journalJdbcConfig)
+      SchemasUtil.createStoreTables(journalJdbcConfig)
 
       log.info("migrating ChiefOfState old journal data to the new journal table")
       journalMigrator.run()

@@ -114,7 +114,7 @@ class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
       countLegacySnapshot(journalJdbcConfig, queries) shouldBe 4
 
       // let us create the new snapshot table
-      noException shouldBe thrownBy(SchemasUtil.createJournalTables(journalJdbcConfig))
+      noException shouldBe thrownBy(SchemasUtil.createStoreTables(journalJdbcConfig))
 
       DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
 
