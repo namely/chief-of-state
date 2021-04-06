@@ -180,7 +180,16 @@ class V3Spec extends BaseSpec with ForAllTestContainer {
       // assert the read side offsets
       val stmt: Statement = testConn.createStatement()
       // let us query the read_side_offsets
-      val sql: String = s"""select * from read_side_offsets"""
+      val sql: String =
+        s"""select
+           |projection_name,
+           |projection_key,
+           |current_offset,
+           |manifest,
+           |mergeable,
+           |last_updated
+           |from read_side_offsets
+           |""".stripMargin
       val resultSet: ResultSet = stmt.executeQuery(sql)
 
       // we only insert three rows so we can safely loop through them
