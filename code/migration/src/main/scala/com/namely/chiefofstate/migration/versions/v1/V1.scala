@@ -79,14 +79,15 @@ case class V1(
    *
    * @return the number of the record inserted into the table
    */
-  private def migrate(): Int = {
-    // let us fetch the records
-    val data: Seq[OffsetRow] = fetchOffsetRows()
-
-    log.info(s"num records migrating to $tempTable: ${data.size}")
-
-    // let us insert the data into the temporary table
-    insertInto(tempTable, journalJdbcConfig, data)
+  private[v1] def migrate(): Unit = {
+    val oldTable: String = transformTableName()
+    if (DbUtil.tableExists(projectionJdbcConfig, oldTable)) {
+      // let us fetch the records
+      val data: Seq[OffsetRow] = fetchOffsetRows()
+      log.info(s"num records migrating to $tempTable: ${data.size}")
+      // let us insert the data into the temporary table
+      insertInto(tempTable, journalJdbcConfig, data)
+    }
   }
 
   /**
