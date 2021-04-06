@@ -76,8 +76,6 @@ case class V1(
   /**
    * move the data from the old read side offset store table to the new temporay offset store table by
    * reading all records into memory.
-   *
-   * @return the number of the record inserted into the table
    */
   private[v1] def migrate(): Unit = {
     val oldTable: String = transformTableName()
