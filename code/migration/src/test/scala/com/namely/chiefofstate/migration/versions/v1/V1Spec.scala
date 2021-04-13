@@ -184,6 +184,20 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
 
       count(journalJdbcConfig) shouldBe 3
     }
+    "succeed if old table does not exist" in {
+      val v1: V1 = V1(journalJdbcConfig, projectionJdbcConfig, "not_a_table")
+      // then run beforeUpgrade
+      v1.beforeUpgrade().isSuccess shouldBe true
+      // assert no records
+      count(journalJdbcConfig) shouldBe 0
+    }
+  }
+  ".migrate" should {
+    "succeed even if old table does not exist" in {
+      val v1: V1 = V1(journalJdbcConfig, projectionJdbcConfig, "not_a_table")
+      // create the old read side offset store
+      noException shouldBe thrownBy(v1.migrate())
+    }
   }
   ".upgrade" should {
     "drop the old table and index" in {
