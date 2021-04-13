@@ -17,11 +17,10 @@ import com.typesafe.config.Config
  * @param deleteEventsOnSnapshot removes all old events before snapshotting
  */
 final case class SnapshotConfig(
-  disableSnapshot: Boolean,
-  retentionFrequency: Int,
-  retentionNr: Int,
-  deleteEventsOnSnapshot: Boolean
-) {}
+    disableSnapshot: Boolean,
+    retentionFrequency: Int,
+    retentionNr: Int,
+    deleteEventsOnSnapshot: Boolean) {}
 
 object SnapshotConfig {
   private val disableSnapshotKey: String = "chiefofstate.snapshot-criteria.disable-snapshot"
@@ -39,7 +38,6 @@ object SnapshotConfig {
       config.getBoolean(disableSnapshotKey),
       config.getInt(retentionFrequencyKey),
       config.getInt(retentionNrKey),
-      config.getBoolean(deleteEventsOnSnapshotKey)
-    )
+      config.getBoolean(deleteEventsOnSnapshotKey))
   }
 }

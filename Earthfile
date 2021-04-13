@@ -2,6 +2,7 @@ FROM busybox:1.32
 
 all:
     # target running it all
+    BUILD +scalafmt
     BUILD +test-all
     BUILD +docker-build
 
@@ -68,6 +69,11 @@ docker-build:
     # build the image and push remotely (if all steps are successful)
     SAVE IMAGE --push namely/chief-of-state:${VERSION}
 
+scalafmt:
+    FROM +code
+
+    # run scala formatter
+    RUN sbt clean scalafmtAll
 
 test-local:
     FROM +code

@@ -7,10 +7,10 @@
 package com.namely.chiefofstate.migration.versions.v1
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import com.dimafeng.testcontainers.{ForAllTestContainer, MultipleContainers, PostgreSQLContainer}
-import com.namely.chiefofstate.migration.{BaseSpec, DbUtil}
+import com.dimafeng.testcontainers.{ ForAllTestContainer, MultipleContainers, PostgreSQLContainer }
+import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil }
 import com.namely.chiefofstate.migration.helper.TestConfig
-import com.namely.chiefofstate.migration.versions.v1.V1.{createTable, insertInto, tempTable, OffsetRow}
+import com.namely.chiefofstate.migration.versions.v1.V1.{ createTable, insertInto, tempTable, OffsetRow }
 import com.typesafe.config.Config
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
@@ -19,7 +19,7 @@ import slick.jdbc.JdbcProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.sql.SqlStreamingAction
 
-import java.sql.{Connection, DriverManager}
+import java.sql.{ Connection, DriverManager }
 import java.time.Instant
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -31,17 +31,11 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
 
   val projectionPg: PostgreSQLContainer = PostgreSQLContainer
-    .Def(
-      dockerImageName = DockerImageName.parse("postgres"),
-      urlParams = Map("currentSchema" -> cosSchema)
-    )
+    .Def(dockerImageName = DockerImageName.parse("postgres"), urlParams = Map("currentSchema" -> cosSchema))
     .createContainer()
 
   val journalPg: PostgreSQLContainer = PostgreSQLContainer
-    .Def(
-      dockerImageName = DockerImageName.parse("postgres"),
-      urlParams = Map("currentSchema" -> cosSchema)
-    )
+    .Def(dockerImageName = DockerImageName.parse("postgres"), urlParams = Map("currentSchema" -> cosSchema))
     .createContainer()
 
   override val container: MultipleContainers = MultipleContainers(projectionPg, journalPg)
@@ -53,8 +47,7 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
     // load the driver
     Class.forName("org.postgresql.Driver")
 
-    DriverManager
-      .getConnection(container.jdbcUrl, container.username, container.password)
+    DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
   }
 
   def recreateSchema(container: PostgreSQLContainer): Unit = {
@@ -66,32 +59,24 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
 
   // old projection jdbc config
   lazy val projectionJdbcConfig: DatabaseConfig[JdbcProfile] = {
-    val cfg: Config = TestConfig.getProjectionConfig(
-      projectionPg.jdbcUrl,
-      projectionPg.username,
-      projectionPg.password,
-      false
-    )
+    val cfg: Config =
+      TestConfig.getProjectionConfig(projectionPg.jdbcUrl, projectionPg.username, projectionPg.password, false)
     DatabaseConfig.forConfig[JdbcProfile]("akka.projection.slick", cfg)
   }
 
   // journal jdbc config
-  lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] = TestConfig.dbConfigFromUrl(
-    journalPg.jdbcUrl,
-    journalPg.username,
-    journalPg.password,
-    "write-side-slick"
-  )
+  lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
+    TestConfig.dbConfigFromUrl(journalPg.jdbcUrl, journalPg.username, journalPg.password, "write-side-slick")
 
   /**
    * creates the read side offset store table
    *
    * @param projectionJdbcConfig the the projection db config
    */
-  def createOldOffsetTable(projectionJdbcConfig: DatabaseConfig[JdbcProfile],
-                           tableName: String = "read_side_offsets",
-                           indexName: String = "projection_name_index"
-  ): Unit = {
+  def createOldOffsetTable(
+      projectionJdbcConfig: DatabaseConfig[JdbcProfile],
+      tableName: String = "read_side_offsets",
+      indexName: String = "projection_name_index"): Unit = {
     val stmt = DBIO.seq(
       sqlu"""
         CREATE TABLE #$tableName(
@@ -103,8 +88,7 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
           "LAST_UPDATED" BIGINT NOT NULL,
           PRIMARY KEY("PROJECTION_NAME", "PROJECTION_KEY")
         )""",
-      sqlu"""CREATE INDEX #$indexName ON #$tableName ("PROJECTION_NAME")"""
-    )
+      sqlu"""CREATE INDEX #$indexName ON #$tableName ("PROJECTION_NAME")""")
 
     Await.result(projectionJdbcConfig.db.run(stmt), Duration.Inf)
   }
@@ -122,25 +106,21 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
         currentOffset = "38",
         manifest = "SEQ",
         mergeable = false,
-        lastUpdated = 1614684500617L
-      ),
+        lastUpdated = 1614684500617L),
       OffsetRow(
         projectionName = "some-projection",
         projectionKey = "chiefofstate1",
         currentOffset = "123",
         manifest = "SEQ",
         mergeable = false,
-        lastUpdated = 1614684500618L
-      ),
+        lastUpdated = 1614684500618L),
       OffsetRow(
         projectionName = "some-projection",
         projectionKey = "chiefofstate8",
         currentOffset = "167",
         manifest = "SEQ",
         mergeable = false,
-        lastUpdated = Instant.now().toEpochMilli
-      )
-    )
+        lastUpdated = Instant.now().toEpochMilli))
     insertInto("read_side_offsets", projectionJdbcConfig, data)
   }
 

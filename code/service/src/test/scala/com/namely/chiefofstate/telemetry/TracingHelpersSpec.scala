@@ -7,8 +7,8 @@
 package com.namely.chiefofstate.telemetry
 
 import com.namely.chiefofstate.helper.BaseSpec
-import io.opentelemetry.api.{GlobalOpenTelemetry, OpenTelemetry}
-import io.opentelemetry.api.trace.{Span, Tracer}
+import io.opentelemetry.api.{ GlobalOpenTelemetry, OpenTelemetry }
+import io.opentelemetry.api.trace.{ Span, Tracer }
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.extension.trace.propagation.B3Propagator
@@ -17,10 +17,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk
 class TracingHelpersSpec extends BaseSpec {
 
   val propagators: ContextPropagators = ContextPropagators.create(B3Propagator.injectingMultiHeaders())
-  val ot: OpenTelemetry = OpenTelemetrySdk
-    .builder()
-    .setPropagators(propagators)
-    .build()
+  val ot: OpenTelemetry = OpenTelemetrySdk.builder().setPropagators(propagators).build()
 
   GlobalOpenTelemetry.resetForTest()
   GlobalOpenTelemetry.set(ot)
@@ -29,9 +26,7 @@ class TracingHelpersSpec extends BaseSpec {
   ".getTracingHeaders" should {
     "yield a map with parent spanId and traceId" in {
 
-      val span: Span = tracer
-        .spanBuilder("foo")
-        .startSpan()
+      val span: Span = tracer.spanBuilder("foo").startSpan()
 
       val scope = span.makeCurrent()
 

@@ -22,15 +22,14 @@ import scala.concurrent.duration.DurationInt
  * @param writeSideConfig the commands/events handler config
  */
 final case class CosConfig(
-  serviceName: String,
-  askTimeout: Timeout,
-  snapshotConfig: SnapshotConfig,
-  eventsConfig: EventsConfig,
-  grpcConfig: GrpcConfig,
-  writeSideConfig: WriteSideConfig,
-  enableReadSide: Boolean,
-  telemetryConfig: TelemetryConfig
-)
+    serviceName: String,
+    askTimeout: Timeout,
+    snapshotConfig: SnapshotConfig,
+    eventsConfig: EventsConfig,
+    grpcConfig: GrpcConfig,
+    writeSideConfig: WriteSideConfig,
+    enableReadSide: Boolean,
+    telemetryConfig: TelemetryConfig)
 
 object CosConfig {
   private val serviceNameKey: String = "chiefofstate.service-name"
@@ -43,9 +42,7 @@ object CosConfig {
    * @param config the config object
    * @return the newly created instance
    */
-  def apply(
-    config: Config
-  ): CosConfig = {
+  def apply(config: Config): CosConfig = {
     CosConfig(
       config.getString(serviceNameKey),
       Timeout(config.getInt(askTimeoutKey).seconds),
@@ -54,7 +51,6 @@ object CosConfig {
       GrpcConfig(config),
       WriteSideConfig(config),
       config.getBoolean(enableReadSideKey),
-      TelemetryConfig(config)
-    )
+      TelemetryConfig(config))
   }
 }

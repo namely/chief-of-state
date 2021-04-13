@@ -19,7 +19,4 @@ sealed trait ScalaMessage
  * @param message a generated message
  * @param actorRef an actor ref
  */
-case class MessageWithActorRef(
-  message: GeneratedMessage,
-  actorRef: ActorRef[GeneratedMessage]
-) extends ScalaMessage
+case class MessageWithActorRef(message: GeneratedMessage, actorRef: ActorRef[GeneratedMessage]) extends ScalaMessage

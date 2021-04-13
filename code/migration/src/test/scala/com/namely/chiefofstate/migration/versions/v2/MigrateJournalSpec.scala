@@ -9,19 +9,19 @@ package com.namely.chiefofstate.migration.versions.v2
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import akka.persistence.jdbc.config.JournalConfig
 import akka.persistence.jdbc.db.SlickExtension
-import akka.persistence.jdbc.journal.dao.{legacy, JournalQueries}
-import akka.serialization.{Serialization, SerializationExtension}
-import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import com.namely.chiefofstate.migration.{BaseSpec, DbUtil, JdbcConfig, SchemasUtil}
+import akka.persistence.jdbc.journal.dao.{ legacy, JournalQueries }
+import akka.serialization.{ Serialization, SerializationExtension }
+import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil, JdbcConfig, SchemasUtil }
 import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
-import slick.jdbc.{JdbcBackend, JdbcProfile}
+import slick.jdbc.{ JdbcBackend, JdbcProfile }
 import slick.jdbc.PostgresProfile.api._
 
-import java.sql.{Connection, DriverManager}
-import scala.concurrent.{Await, ExecutionContextExecutor, Future}
+import java.sql.{ Connection, DriverManager }
+import scala.concurrent.{ Await, ExecutionContextExecutor, Future }
 import scala.concurrent.duration.Duration
 
 class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
@@ -29,10 +29,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
 
   override val container: PostgreSQLContainer = PostgreSQLContainer
-    .Def(
-      dockerImageName = DockerImageName.parse("postgres"),
-      urlParams = Map("currentSchema" -> cosSchema)
-    )
+    .Def(dockerImageName = DockerImageName.parse("postgres"), urlParams = Map("currentSchema" -> cosSchema))
     .createContainer()
 
   /**
@@ -42,8 +39,7 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
     // load the driver
     Class.forName("org.postgresql.Driver")
 
-    DriverManager
-      .getConnection(container.jdbcUrl, container.username, container.password)
+    DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
   }
 
   // helper to drop the schema
@@ -65,23 +61,20 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
 
   lazy val testKit: ActorTestKit = ActorTestKit(config)
 
-  def countLegacyJournal(journalJdbcConfig: DatabaseConfig[JdbcProfile],
-                         legacyJournalQueries: legacy.JournalQueries
-  ): Int = {
+  def countLegacyJournal(
+      journalJdbcConfig: DatabaseConfig[JdbcProfile],
+      legacyJournalQueries: legacy.JournalQueries): Int = {
     val q: DBIO[Int] = legacyJournalQueries.JournalTable.map(_.ordering).length.result
     Await.result(journalJdbcConfig.db.run(q), Duration.Inf)
   }
 
-  def getEventJournalNextSequenceValue(journalConfig: JournalConfig, journaldb: JdbcBackend.Database)(implicit
-    executionContextExecutor: ExecutionContextExecutor
-  ): Long = {
+  def getEventJournalNextSequenceValue(journalConfig: JournalConfig, journaldb: JdbcBackend.Database)(
+      implicit executionContextExecutor: ExecutionContextExecutor): Long = {
     val schemaName: String = journalConfig.eventJournalTableConfiguration.schemaName.getOrElse("cos")
     val tableName: String = s"$schemaName.event_journal"
 
     val eventualLong: Future[Long] = for {
-      seqName: String <- journaldb.run(
-        sql"""SELECT pg_get_serial_sequence($tableName, 'ordering')""".as[String].head
-      )
+      seqName: String <- journaldb.run(sql"""SELECT pg_get_serial_sequence($tableName, 'ordering')""".as[String].head)
       lastVal <- journaldb.run(sql""" SELECT last_value FROM #$seqName """.as[Long].head)
     } yield lastVal
 
@@ -130,10 +123,10 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
         new legacy.JournalQueries(profile, journalConfig.journalTableConfiguration)
 
       val newJournalQueries: JournalQueries =
-        new JournalQueries(profile,
-                           journalConfig.eventJournalTableConfiguration,
-                           journalConfig.eventTagTableConfiguration
-        )
+        new JournalQueries(
+          profile,
+          journalConfig.eventJournalTableConfiguration,
+          journalConfig.eventTagTableConfiguration)
 
       val serialization: Serialization = SerializationExtension(testKit.system)
       val migrator: MigrateJournal = MigrateJournal(testKit.system, profile, serialization)
@@ -160,10 +153,9 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       migrator.run() shouldBe {}
 
       // let us get the number of records in the new journal
-      Await.result(journalJdbcConfig.db
-                     .run(newJournalQueries.JournalTable.map(_.ordering).length.result),
-                   Duration.Inf
-      ) shouldBe countLegacyJournal(journalJdbcConfig, legacyJournalQueries)
+      Await.result(
+        journalJdbcConfig.db.run(newJournalQueries.JournalTable.map(_.ordering).length.result),
+        Duration.Inf) shouldBe countLegacyJournal(journalJdbcConfig, legacyJournalQueries)
     }
 
     "migrate legacy journal data into the new journal schema one by one" in {
@@ -175,10 +167,10 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
         new legacy.JournalQueries(profile, journalConfig.journalTableConfiguration)
 
       val newJournalQueries: JournalQueries =
-        new JournalQueries(profile,
-                           journalConfig.eventJournalTableConfiguration,
-                           journalConfig.eventTagTableConfiguration
-        )
+        new JournalQueries(
+          profile,
+          journalConfig.eventJournalTableConfiguration,
+          journalConfig.eventTagTableConfiguration)
 
       val serialization: Serialization = SerializationExtension(testKit.system)
       val migrator: MigrateJournal = MigrateJournal(testKit.system, profile, serialization, 1)
@@ -202,10 +194,9 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       migrator.run() shouldBe {}
 
       // let us get the number of records in the new journal
-      Await.result(journalJdbcConfig.db
-                     .run(newJournalQueries.JournalTable.map(_.ordering).length.result),
-                   Duration.Inf
-      ) shouldBe countLegacyJournal(journalJdbcConfig, legacyJournalQueries)
+      Await.result(
+        journalJdbcConfig.db.run(newJournalQueries.JournalTable.map(_.ordering).length.result),
+        Duration.Inf) shouldBe countLegacyJournal(journalJdbcConfig, legacyJournalQueries)
     }
 
     "migrate legacy journal data into the new journal" in {
@@ -218,10 +209,10 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
         new legacy.JournalQueries(profile, journalConfig.journalTableConfiguration)
 
       val newJournalQueries: JournalQueries =
-        new JournalQueries(profile,
-                           journalConfig.eventJournalTableConfiguration,
-                           journalConfig.eventTagTableConfiguration
-        )
+        new JournalQueries(
+          profile,
+          journalConfig.eventJournalTableConfiguration,
+          journalConfig.eventTagTableConfiguration)
 
       val serialization: Serialization = SerializationExtension(testKit.system)
       val migrator: MigrateJournal = MigrateJournal(testKit.system, profile, serialization)
@@ -245,48 +236,38 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       migrator.run() shouldBe {}
 
       // let us get the number of records in the new journal
-      Await.result(journalJdbcConfig.db
-                     .run(newJournalQueries.JournalTable.map(_.ordering).length.result),
-                   Duration.Inf
-      ) shouldBe countLegacyJournal(journalJdbcConfig, legacyJournalQueries)
+      Await.result(
+        journalJdbcConfig.db.run(newJournalQueries.JournalTable.map(_.ordering).length.result),
+        Duration.Inf) shouldBe countLegacyJournal(journalJdbcConfig, legacyJournalQueries)
 
       // let us assert the ordering number
       getEventJournalNextSequenceValue(journalConfig, journaldb) shouldBe 7L
 
       // assert parity among old and new ordering & sequence_number
       // let fetch the data from the old journal
-      val oldOrdNrAndSeqNr = Await
-        .result(
-          journalJdbcConfig.db
-            .run(legacyJournalQueries.JournalTable.map(journal => (journal.ordering, journal.sequenceNumber)).result),
-          Duration.Inf
-        )
+      val oldOrdNrAndSeqNr = Await.result(
+        journalJdbcConfig.db.run(
+          legacyJournalQueries.JournalTable.map(journal => (journal.ordering, journal.sequenceNumber)).result),
+        Duration.Inf)
 
-      val newOrdNrAndSeqNr = Await
-        .result(
-          journalJdbcConfig.db
-            .run(newJournalQueries.JournalTable.map(journal => (journal.ordering, journal.sequenceNumber)).result),
-          Duration.Inf
-        )
+      val newOrdNrAndSeqNr = Await.result(
+        journalJdbcConfig.db.run(
+          newJournalQueries.JournalTable.map(journal => (journal.ordering, journal.sequenceNumber)).result),
+        Duration.Inf)
 
       (oldOrdNrAndSeqNr should contain).theSameElementsInOrderAs(newOrdNrAndSeqNr)
 
       // assert the persisted manifest is correct
       val manifests: Seq[String] = Await.result(
-        journalJdbcConfig.db
-          .run(newJournalQueries.JournalTable.map(_.eventSerManifest).result),
-        Duration.Inf
-      )
+        journalJdbcConfig.db.run(newJournalQueries.JournalTable.map(_.eventSerManifest).result),
+        Duration.Inf)
 
       manifests.distinct.size shouldBe 1
       manifests.head shouldBe "com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper"
 
       // assert the payloads are correct proto byte arrays
-      val payloads: Seq[Array[Byte]] = Await.result(
-        journalJdbcConfig.db
-          .run(newJournalQueries.JournalTable.map(_.eventPayload).result),
-        Duration.Inf
-      )
+      val payloads: Seq[Array[Byte]] =
+        Await.result(journalJdbcConfig.db.run(newJournalQueries.JournalTable.map(_.eventPayload).result), Duration.Inf)
 
       payloads.nonEmpty shouldBe true
       payloads.forall(msg => EventWrapper.validate(msg).isSuccess) shouldBe true
@@ -294,15 +275,12 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
       // assert the old and new tags match
       val legacyTagsAndOrd: Seq[(Long, Seq[String])] = Await
         .result(
-          journalJdbcConfig.db
-            .run(
-              legacyJournalQueries.JournalTable
-                .sortBy(_.ordering.asc)
-                .map(journal => (journal.ordering, journal.tags))
-                .result
-            ),
-          Duration.Inf
-        )
+          journalJdbcConfig.db.run(
+            legacyJournalQueries.JournalTable
+              .sortBy(_.ordering.asc)
+              .map(journal => (journal.ordering, journal.tags))
+              .result),
+          Duration.Inf)
         // convert to tuple of (ID, Seq(Tags))
         .map({ case (l, tags) =>
           (l, tags.map(_.split(",").toSeq).getOrElse(Seq.empty[String]))
@@ -310,15 +288,9 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
 
       val newTagsAndOrd: Seq[(Long, Seq[String])] = Await
         .result(
-          journalJdbcConfig.db
-            .run(
-              newJournalQueries.TagTable
-                .sortBy(_.eventId.asc)
-                .map(t => (t.eventId, t.tag))
-                .result
-            ),
-          Duration.Inf
-        )
+          journalJdbcConfig.db.run(
+            newJournalQueries.TagTable.sortBy(_.eventId.asc).map(t => (t.eventId, t.tag)).result),
+          Duration.Inf)
         // group by ID
         .groupBy({ case (id, _) => id })
         // reduce to map of ID -> Seq(Tags)

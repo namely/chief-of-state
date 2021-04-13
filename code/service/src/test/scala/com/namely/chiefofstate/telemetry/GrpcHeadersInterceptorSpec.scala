@@ -6,11 +6,11 @@
 
 package com.namely.chiefofstate.telemetry
 
-import com.namely.chiefofstate.helper.{BaseSpec, GrpcHelpers}
-import com.namely.protobuf.chiefofstate.test.helloworld.{GreeterGrpc, HelloReply, HelloRequest}
+import com.namely.chiefofstate.helper.{ BaseSpec, GrpcHelpers }
+import com.namely.protobuf.chiefofstate.test.helloworld.{ GreeterGrpc, HelloReply, HelloRequest }
 import com.namely.protobuf.chiefofstate.test.helloworld.GreeterGrpc.Greeter
-import io.grpc.{ManagedChannel, Metadata}
-import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
+import io.grpc.{ ManagedChannel, Metadata }
+import io.grpc.inprocess.{ InProcessChannelBuilder, InProcessServerBuilder }
 import io.grpc.stub.MetadataUtils
 
 import scala.concurrent.ExecutionContext.global
@@ -33,14 +33,12 @@ class GrpcHeadersInterceptorSpec extends BaseSpec {
       // declare a variable and interceptor to capture the headers
       var responseHeaders: Option[Metadata] = None
 
-      (serviceImpl.sayHello _)
-        .expects(*)
-        .onCall { hello: HelloRequest =>
-          {
-            responseHeaders = Option(GrpcHeadersInterceptor.REQUEST_META.get())
-            Future.successful(HelloReply().withMessage(hello.name))
-          }
+      (serviceImpl.sayHello _).expects(*).onCall { hello: HelloRequest =>
+        {
+          responseHeaders = Option(GrpcHeadersInterceptor.REQUEST_META.get())
+          Future.successful(HelloReply().withMessage(hello.name))
         }
+      }
 
       val service = GreeterGrpc.bindService(serviceImpl, global)
 
@@ -51,16 +49,10 @@ class GrpcHeadersInterceptorSpec extends BaseSpec {
           .addService(service)
           .intercept(GrpcHeadersInterceptor)
           .build()
-          .start()
-      )
+          .start())
 
       val channel: ManagedChannel =
-        closeables.register(
-          InProcessChannelBuilder
-            .forName(serverName)
-            .directExecutor()
-            .build()
-        )
+        closeables.register(InProcessChannelBuilder.forName(serverName).directExecutor().build())
 
       val stub = GreeterGrpc.blockingStub(channel)
 
@@ -68,9 +60,7 @@ class GrpcHeadersInterceptorSpec extends BaseSpec {
       val value = "value"
       val requestHeaders: Metadata = getHeaders((key, value))
 
-      MetadataUtils
-        .attachHeaders(stub, requestHeaders)
-        .sayHello(HelloRequest("hi"))
+      MetadataUtils.attachHeaders(stub, requestHeaders).sayHello(HelloRequest("hi"))
 
       responseHeaders.isDefined shouldBe true
       GrpcHelpers.getStringHeader(responseHeaders.get, key) shouldBe value

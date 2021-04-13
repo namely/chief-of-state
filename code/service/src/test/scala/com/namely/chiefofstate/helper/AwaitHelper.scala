@@ -7,7 +7,7 @@
 package com.namely.chiefofstate.helper
 
 import java.util.concurrent.Executors
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ Await, ExecutionContext, Future }
 import scala.concurrent.duration.Duration
 
 /**

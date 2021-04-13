@@ -29,8 +29,7 @@ case class TelemetryTools(config: CosConfig) {
    *  This sets the created SDK as the Global Open Telemetry instance enabling use of the global tracer.
    */
   def start(): Unit = {
-    val propagators: ContextPropagators = PropagatorConfiguration
-      .configurePropagators(config.telemetryConfig)
+    val propagators: ContextPropagators = PropagatorConfiguration.configurePropagators(config.telemetryConfig)
 
     val resource = configureResource(config)
 
@@ -38,9 +37,7 @@ case class TelemetryTools(config: CosConfig) {
 
     val tracerProvider = configureProvider(config, resource)
 
-    val sdkBuilder = OpenTelemetrySdk
-      .builder()
-      .setPropagators(propagators)
+    val sdkBuilder = OpenTelemetrySdk.builder().setPropagators(propagators)
 
     tracerProvider.map(sdkBuilder.setTracerProvider)
 
@@ -83,9 +80,7 @@ case class TelemetryTools(config: CosConfig) {
         val providerBuilder = SdkTracerProvider.builder()
         providerBuilder.setResource(resource)
 
-        val exporter = OtlpGrpcSpanExporter.builder
-          .setEndpoint(endpoint)
-          .build()
+        val exporter = OtlpGrpcSpanExporter.builder.setEndpoint(endpoint).build()
 
         val processor = BatchSpanProcessor.builder(exporter).build()
         providerBuilder.addSpanProcessor(processor)
