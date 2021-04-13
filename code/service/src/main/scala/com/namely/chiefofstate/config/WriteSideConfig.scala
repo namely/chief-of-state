@@ -19,14 +19,13 @@ import com.typesafe.config.Config
  * @param propagatedHeaders the list of gRPC headers to propagate
  */
 case class WriteSideConfig(
-  host: String,
-  port: Int,
-  useTls: Boolean,
-  enableProtoValidation: Boolean,
-  eventsProtos: Seq[String],
-  statesProtos: Seq[String],
-  propagatedHeaders: Seq[String]
-)
+    host: String,
+    port: Int,
+    useTls: Boolean,
+    enableProtoValidation: Boolean,
+    eventsProtos: Seq[String],
+    statesProtos: Seq[String],
+    propagatedHeaders: Seq[String])
 
 object WriteSideConfig {
 
@@ -51,27 +50,8 @@ object WriteSideConfig {
       config.getInt(portKey),
       config.getBoolean(useTlsKey),
       config.getBoolean(protoValidationKey),
-      config
-        .getString(eventsProtosKey)
-        .trim
-        .split(",")
-        .toSeq
-        .map(_.trim)
-        .filter(_.nonEmpty),
-      config
-        .getString(statesProtosKey)
-        .trim
-        .split(",")
-        .toSeq
-        .map(_.trim)
-        .filter(_.nonEmpty),
-      config
-        .getString(propagatedHeadersKey)
-        .trim
-        .split(",")
-        .toSeq
-        .map(_.trim)
-        .filter(_.nonEmpty)
-    )
+      config.getString(eventsProtosKey).trim.split(",").toSeq.map(_.trim).filter(_.nonEmpty),
+      config.getString(statesProtosKey).trim.split(",").toSeq.map(_.trim).filter(_.nonEmpty),
+      config.getString(propagatedHeadersKey).trim.split(",").toSeq.map(_.trim).filter(_.nonEmpty))
   }
 }

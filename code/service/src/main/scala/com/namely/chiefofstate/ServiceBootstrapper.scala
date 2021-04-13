@@ -6,9 +6,9 @@
 
 package com.namely.chiefofstate
 
-import akka.actor.typed.{ActorSystem, Behavior}
+import akka.actor.typed.{ ActorSystem, Behavior }
 import akka.actor.typed.scaladsl.Behaviors
-import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.CosConfig
@@ -23,7 +23,7 @@ import io.grpc._
 import io.grpc.netty.NettyServerBuilder
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.instrumentation.grpc.v1_5.GrpcTracing
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{ Logger, LoggerFactory }
 
 import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext
@@ -42,75 +42,63 @@ import scala.sys.ShutdownHookThread
 object ServiceBootstrapper {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
-  def apply(config: Config): Behavior[scalapb.GeneratedMessage] = Behaviors
-    .setup[scalapb.GeneratedMessage] { context =>
-      // get the  COS config
-      val cosConfig: CosConfig = CosConfig(config)
+  def apply(config: Config): Behavior[scalapb.GeneratedMessage] = Behaviors.setup[scalapb.GeneratedMessage] { context =>
+    // get the  COS config
+    val cosConfig: CosConfig = CosConfig(config)
 
-      Behaviors.receiveMessage[scalapb.GeneratedMessage] {
-        case _: MigrationDone =>
-          // start the telemetry tools and register global tracer
-          TelemetryTools(cosConfig).start()
+    Behaviors.receiveMessage[scalapb.GeneratedMessage] {
+      case _: MigrationDone =>
+        // start the telemetry tools and register global tracer
+        TelemetryTools(cosConfig).start()
 
-          // We only proceed when the data stores and various migrations are done successfully.
-          log.info("Journal and snapshot store created successfully. About to start...")
+        // We only proceed when the data stores and various migrations are done successfully.
+        log.info("Journal and snapshot store created successfully. About to start...")
 
-          val channel: ManagedChannel =
-            NettyHelper
-              .builder(
-                cosConfig.writeSideConfig.host,
-                cosConfig.writeSideConfig.port,
-                cosConfig.writeSideConfig.useTls
-              )
-              .build()
+        val channel: ManagedChannel =
+          NettyHelper
+            .builder(cosConfig.writeSideConfig.host, cosConfig.writeSideConfig.port, cosConfig.writeSideConfig.useTls)
+            .build()
 
-          val grpcClientInterceptors: Seq[ClientInterceptor] = Seq(
-            GrpcTracing.create(GlobalOpenTelemetry.get()).newClientInterceptor(),
-            new StatusClientInterceptor()
-          )
+        val grpcClientInterceptors: Seq[ClientInterceptor] =
+          Seq(GrpcTracing.create(GlobalOpenTelemetry.get()).newClientInterceptor(), new StatusClientInterceptor())
 
-          val writeHandler: WriteSideHandlerServiceBlockingStub = new WriteSideHandlerServiceBlockingStub(channel)
-            .withInterceptors(grpcClientInterceptors: _*)
+        val writeHandler: WriteSideHandlerServiceBlockingStub =
+          new WriteSideHandlerServiceBlockingStub(channel).withInterceptors(grpcClientInterceptors: _*)
 
-          val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(cosConfig.grpcConfig, writeHandler)
-          val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandler)
+        val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(cosConfig.grpcConfig, writeHandler)
+        val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandler)
 
-          // instance of eventsAndStatesProtoValidation
-          val eventsAndStateProtoValidation: ProtosValidator = ProtosValidator(
-            cosConfig.writeSideConfig
-          )
+        // instance of eventsAndStatesProtoValidation
+        val eventsAndStateProtoValidation: ProtosValidator = ProtosValidator(cosConfig.writeSideConfig)
 
-          // initialize the sharding extension
-          val sharding: ClusterSharding = ClusterSharding(context.system)
+        // initialize the sharding extension
+        val sharding: ClusterSharding = ClusterSharding(context.system)
 
-          // initialize the shard region
-          sharding.init(
-            Entity(typeKey = AggregateRoot.TypeKey) { entityContext =>
-              AggregateRoot(
-                PersistenceId.ofUniqueId(entityContext.entityId),
-                Util.getShardIndex(entityContext.entityId, cosConfig.eventsConfig.numShards),
-                cosConfig,
-                remoteCommandHandler,
-                remoteEventHandler,
-                eventsAndStateProtoValidation
-              )
-            }
-          )
+        // initialize the shard region
+        sharding.init(Entity(typeKey = AggregateRoot.TypeKey) { entityContext =>
+          AggregateRoot(
+            PersistenceId.ofUniqueId(entityContext.entityId),
+            Util.getShardIndex(entityContext.entityId, cosConfig.eventsConfig.numShards),
+            cosConfig,
+            remoteCommandHandler,
+            remoteEventHandler,
+            eventsAndStateProtoValidation)
+        })
 
-          // read side settings
-          startReadSide(context.system, cosConfig, grpcClientInterceptors)
+        // read side settings
+        startReadSide(context.system, cosConfig, grpcClientInterceptors)
 
-          // start the service
-          startService(sharding, config, cosConfig)
+        // start the service
+        startService(sharding, config, cosConfig)
 
-          Behaviors.same
+        Behaviors.same
 
-        case unhandled =>
-          log.warn(s"unhandled message ${unhandled.companion.scalaDescriptor.fullName}")
+      case unhandled =>
+        log.warn(s"unhandled message ${unhandled.companion.scalaDescriptor.fullName}")
 
-          Behaviors.stopped
-      }
+        Behaviors.stopped
     }
+  }
 
   /**
    * starts the main application
@@ -120,10 +108,9 @@ object ServiceBootstrapper {
    * @param cosConfig the cos specific configuration
    */
   private def startService(
-    clusterSharding: ClusterSharding,
-    config: Config,
-    cosConfig: CosConfig
-  ): ShutdownHookThread = {
+      clusterSharding: ClusterSharding,
+      config: Config,
+      cosConfig: CosConfig): ShutdownHookThread = {
     implicit val askTimeout: Timeout = cosConfig.askTimeout
 
     // create the traced execution context for grpc
@@ -142,8 +129,7 @@ object ServiceBootstrapper {
       ChiefOfStateService.bindService(serviceImpl, grpcEc),
       tracingServerInterceptor,
       new StatusServerInterceptor(),
-      GrpcHeadersInterceptor
-    )
+      GrpcHeadersInterceptor)
 
     // attach service to netty server
     val server: Server = NettyServerBuilder
@@ -168,18 +154,14 @@ object ServiceBootstrapper {
    * @param interceptors gRPC client interceptors for remote calls
    */
   private def startReadSide(
-    system: ActorSystem[_],
-    cosConfig: CosConfig,
-    interceptors: Seq[ClientInterceptor]
-  ): Unit = {
+      system: ActorSystem[_],
+      cosConfig: CosConfig,
+      interceptors: Seq[ClientInterceptor]): Unit = {
     // if read side is enabled
     if (cosConfig.enableReadSide) {
       // instantiate a read side manager
-      val readSideManager: ReadSideManager = ReadSideManager(
-        system = system,
-        interceptors = interceptors,
-        numShards = cosConfig.eventsConfig.numShards
-      )
+      val readSideManager: ReadSideManager =
+        ReadSideManager(system = system, interceptors = interceptors, numShards = cosConfig.eventsConfig.numShards)
       // initialize all configured read sides
       readSideManager.init()
     }

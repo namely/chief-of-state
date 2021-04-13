@@ -6,23 +6,21 @@
 
 package com.namely.chiefofstate.migration
 
-import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
+import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
 import com.namely.chiefofstate.migration.helper.TestConfig
 import org.testcontainers.utility.DockerImageName
 
 import java.sql.DriverManager
 
 class DbUtilSpec extends BaseSpec with ForAllTestContainer {
-  override val container: PostgreSQLContainer = PostgreSQLContainer
-    .Def(dockerImageName = DockerImageName.parse("postgres"))
-    .createContainer()
+  override val container: PostgreSQLContainer =
+    PostgreSQLContainer.Def(dockerImageName = DockerImageName.parse("postgres")).createContainer()
 
   def connection = {
     // load the driver
     Class.forName("org.postgresql.Driver")
 
-    DriverManager
-      .getConnection(container.jdbcUrl, container.username, container.password)
+    DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
   }
 
   def dbConfig = TestConfig.dbConfigFromUrl(container.jdbcUrl, container.username, container.password)

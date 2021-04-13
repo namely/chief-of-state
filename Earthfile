@@ -68,7 +68,6 @@ docker-build:
     # build the image and push remotely (if all steps are successful)
     SAVE IMAGE --push namely/chief-of-state:${VERSION}
 
-
 test-local:
     FROM +code
     # run with docker to enable testcontainers

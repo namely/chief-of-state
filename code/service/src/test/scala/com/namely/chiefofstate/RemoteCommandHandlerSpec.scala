@@ -8,19 +8,19 @@ package com.namely.chiefofstate
 
 import com.google.protobuf.any.Any
 import com.google.protobuf.ByteString
-import com.namely.chiefofstate.config.{GrpcClient, GrpcConfig, GrpcServer}
+import com.namely.chiefofstate.config.{ GrpcClient, GrpcConfig, GrpcServer }
 import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand.Header.Value
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
-import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened, OpenAccount}
+import com.namely.protobuf.chiefofstate.v1.tests.{ Account, AccountOpened, OpenAccount }
 import com.namely.protobuf.chiefofstate.v1.writeside.{
   HandleCommandRequest,
   HandleCommandResponse,
   WriteSideHandlerServiceGrpc
 }
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
-import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
+import io.grpc.{ ManagedChannel, ServerServiceDefinition, Status }
 import io.grpc.inprocess._
 
 import scala.concurrent.ExecutionContext.global
@@ -32,23 +32,11 @@ class RemoteCommandHandlerSpec extends BaseSpec {
 
   // register a server that intercepts traces and reports errors
   def createServer(serverName: String, service: ServerServiceDefinition): Unit = {
-    closeables.register(
-      InProcessServerBuilder
-        .forName(serverName)
-        .directExecutor()
-        .addService(service)
-        .build()
-        .start()
-    )
+    closeables.register(InProcessServerBuilder.forName(serverName).directExecutor().addService(service).build().start())
   }
 
   def getChannel(serverName: String): ManagedChannel = {
-    closeables.register(
-      InProcessChannelBuilder
-        .forName(serverName)
-        .directExecutor()
-        .build()
-    )
+    closeables.register(InProcessChannelBuilder.forName(serverName).directExecutor().build())
   }
 
   "RemoteCommandHandler" should {
@@ -67,9 +55,7 @@ class RemoteCommandHandlerSpec extends BaseSpec {
 
       val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
 
-      (serviceImpl.handleCommand _)
-        .expects(request)
-        .returning(scala.concurrent.Future.successful(expected))
+      (serviceImpl.handleCommand _).expects(request).returning(scala.concurrent.Future.successful(expected))
 
       val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
       val serverName = InProcessServerBuilder.generateName()
@@ -81,11 +67,7 @@ class RemoteCommandHandlerSpec extends BaseSpec {
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .withHeaders(
-          Seq(
-            RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")
-          )
-        )
+        .withHeaders(Seq(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")))
 
       val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(grpcConfig, writeHandlerServicetub)
       val triedHandleCommandResponse: Try[HandleCommandResponse] =
@@ -118,15 +100,12 @@ class RemoteCommandHandlerSpec extends BaseSpec {
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .withHeaders(
-          Seq(
-            RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"),
-            RemoteCommand
-              .Header()
-              .withKey("header-2-bin")
-              .withBytesValue(ByteString.copyFrom("header-value-2".getBytes))
-          )
-        )
+        .withHeaders(Seq(
+          RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"),
+          RemoteCommand
+            .Header()
+            .withKey("header-2-bin")
+            .withBytesValue(ByteString.copyFrom("header-value-2".getBytes))))
 
       val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(grpcConfig, writeHandlerServicetub)
       val triedHandleCommandResponse: Try[HandleCommandResponse] =
@@ -151,9 +130,7 @@ class RemoteCommandHandlerSpec extends BaseSpec {
         .withHeaders(
           Seq(
             RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"),
-            RemoteCommand.Header().withKey("header-2").withValue(Value.Empty)
-          )
-        )
+            RemoteCommand.Header().withKey("header-2").withValue(Value.Empty)))
 
       val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(grpcConfig, writeHandlerServicetub)
 

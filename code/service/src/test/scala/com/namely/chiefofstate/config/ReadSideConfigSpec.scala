@@ -6,7 +6,7 @@
 
 package com.namely.chiefofstate.config
 
-import com.namely.chiefofstate.helper.{BaseSpec, EnvironmentHelper}
+import com.namely.chiefofstate.helper.{ BaseSpec, EnvironmentHelper }
 
 class ReadSideConfigSpec extends BaseSpec {
 
@@ -34,10 +34,8 @@ class ReadSideConfigSpec extends BaseSpec {
     }
 
     "return all settings" in {
-      val config: ReadSideConfig = ReadSideConfig("test")
-        .addSetting("foo", "foo")
-        .addSetting("bar", "bar")
-        .addSetting("baz", "baz")
+      val config: ReadSideConfig =
+        ReadSideConfig("test").addSetting("foo", "foo").addSetting("bar", "bar").addSetting("baz", "baz")
       config.listSettings should contain theSameElementsAs Map("foo" -> "foo", "bar" -> "bar", "baz" -> "baz")
     }
   }
