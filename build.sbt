@@ -1,5 +1,4 @@
 parallelExecution in test := false
-enablePlugins(UniversalPlugin)
 
 Test / fork := true
 
