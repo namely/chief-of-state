@@ -1,5 +1,4 @@
 parallelExecution in test := false
-
 Test / fork := true
 
 lazy val root: Project = project
