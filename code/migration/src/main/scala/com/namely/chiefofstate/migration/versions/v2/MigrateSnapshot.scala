@@ -6,27 +6,27 @@
 
 package com.namely.chiefofstate.migration.versions.v2
 
-import akka.{actor, Done}
+import akka.{ actor, Done }
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.adapter.TypedActorSystemOps
 import akka.persistence.jdbc.config.SnapshotConfig
 import akka.persistence.jdbc.db.SlickExtension
 import akka.persistence.jdbc.journal.dao.AkkaSerialization
 import akka.persistence.jdbc.snapshot.dao
-import akka.persistence.jdbc.snapshot.dao.legacy.{ByteArraySnapshotSerializer, SnapshotQueries}
-import akka.persistence.jdbc.snapshot.dao.legacy.SnapshotTables.{SnapshotRow => OldSnapshotRow}
+import akka.persistence.jdbc.snapshot.dao.legacy.{ ByteArraySnapshotSerializer, SnapshotQueries }
+import akka.persistence.jdbc.snapshot.dao.legacy.SnapshotTables.{ SnapshotRow => OldSnapshotRow }
 import akka.persistence.jdbc.snapshot.dao.SnapshotTables.SnapshotRow
 import akka.serialization.Serialization
 import akka.stream.scaladsl.Source
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{ Logger, LoggerFactory }
 import slick.basic.DatabasePublisher
-import slick.jdbc.{JdbcBackend, JdbcProfile, ResultSetConcurrency, ResultSetType}
+import slick.jdbc.{ JdbcBackend, JdbcProfile, ResultSetConcurrency, ResultSetType }
 import slick.jdbc.PostgresProfile.api._
 import slickProfile.api._
 
-import scala.concurrent.{Await, ExecutionContextExecutor, Future}
+import scala.concurrent.{ Await, ExecutionContextExecutor, Future }
 import scala.concurrent.duration.Duration
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 /**
  * Migrates the legacy snapshot data into the new snapshot table
@@ -36,19 +36,18 @@ import scala.util.{Failure, Success, Try}
  * @param serialization the akka serialization
  * @param pageSize number of records to bulk process together
  */
-case class MigrateSnapshot(system: ActorSystem[_],
-                           profile: JdbcProfile,
-                           serialization: Serialization,
-                           pageSize: Int = 1000
-) {
+case class MigrateSnapshot(
+    system: ActorSystem[_],
+    profile: JdbcProfile,
+    serialization: Serialization,
+    pageSize: Int = 1000) {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   implicit val ec: ExecutionContextExecutor = system.executionContext
   implicit val classicSys: actor.ActorSystem = system.toClassic
 
   private val snapshotConfig: SnapshotConfig = new SnapshotConfig(
-    system.settings.config.getConfig("jdbc-snapshot-store")
-  )
+    system.settings.config.getConfig("jdbc-snapshot-store"))
 
   private val queries = new SnapshotQueries(profile, snapshotConfig.legacySnapshotTableConfiguration)
   private val newQueries = new dao.SnapshotQueries(profile, snapshotConfig.snapshotTableConfiguration)
@@ -66,8 +65,7 @@ case class MigrateSnapshot(system: ActorSystem[_],
       .withStatementParameters(
         rsType = ResultSetType.ForwardOnly,
         rsConcurrency = ResultSetConcurrency.ReadOnly,
-        fetchSize = pageSize
-      )
+        fetchSize = pageSize)
       .transactionally
 
     // use above query to build a database publisher of legacy "SnapshotRow"
@@ -108,8 +106,8 @@ case class MigrateSnapshot(system: ActorSystem[_],
     val transformed: Try[SnapshotRow] = serializer
       .deserialize(old)
       .flatMap({ case (meta, snapshot) =>
-        val serializedMetadata: Option[AkkaSerialization.AkkaSerialized] = meta.metadata
-          .flatMap(m => AkkaSerialization.serialize(serialization, m).toOption)
+        val serializedMetadata: Option[AkkaSerialization.AkkaSerialized] =
+          meta.metadata.flatMap(m => AkkaSerialization.serialize(serialization, m).toOption)
 
         AkkaSerialization
           .serialize(serialization, payload = snapshot)
@@ -123,9 +121,7 @@ case class MigrateSnapshot(system: ActorSystem[_],
               serializedSnapshot.payload,
               serializedMetadata.map(_.serId),
               serializedMetadata.map(_.serManifest),
-              serializedMetadata.map(_.payload)
-            )
-          )
+              serializedMetadata.map(_.payload)))
       })
 
     transformed match {

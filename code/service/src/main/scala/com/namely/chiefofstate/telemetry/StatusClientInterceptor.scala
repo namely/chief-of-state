@@ -15,10 +15,10 @@ import io.opentelemetry.api.trace.Span
  * gRPC client interceptor that adds the returned gRPC status code to the trace attributes
  */
 class StatusClientInterceptor extends ClientInterceptor {
-  override def interceptCall[ReqT, RespT](method: MethodDescriptor[ReqT, RespT],
-                                          callOptions: CallOptions,
-                                          next: Channel
-  ): ClientCall[ReqT, RespT] = {
+  override def interceptCall[ReqT, RespT](
+      method: MethodDescriptor[ReqT, RespT],
+      callOptions: CallOptions,
+      next: Channel): ClientCall[ReqT, RespT] = {
     new StatusClientInterceptor.CustomClientCall(next.newCall(method, callOptions))
   }
 }

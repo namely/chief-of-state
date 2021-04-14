@@ -13,10 +13,10 @@ import com.google.rpc.status.Status
 import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
-import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, RemoteCommand}
+import com.namely.protobuf.chiefofstate.v1.internal.{ CommandReply, RemoteCommand }
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
-import io.grpc.{Metadata, StatusException}
+import io.grpc.{ Metadata, StatusException }
 import io.grpc.protobuf.StatusProto
 
 import scala.concurrent.Await
@@ -37,26 +37,19 @@ class GrpcServiceImplSpec extends BaseSpec {
         enableProtoValidation = false,
         eventsProtos = Seq.empty[String],
         statesProtos = Seq.empty[String],
-        propagatedHeaders = Seq(key)
-      )
+        propagatedHeaders = Seq(key))
 
       val metadata: Metadata = new Metadata()
       val stringHeaderKey: Metadata.Key[String] = Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER)
       metadata.put(stringHeaderKey, value)
 
-      val command = ProcessCommandRequest()
-        .withCommand(any.Any.pack(StringValue("x")))
+      val command = ProcessCommandRequest().withCommand(any.Any.pack(StringValue("x")))
 
       val actual = GrpcServiceImpl.getRemoteCommand(config, command, metadata, Map())
 
       val expected = RemoteCommand()
         .withCommand(command.getCommand)
-        .addHeaders(
-          RemoteCommand
-            .Header()
-            .withKey(key)
-            .withStringValue(value)
-        )
+        .addHeaders(RemoteCommand.Header().withKey(key).withStringValue(value))
 
       actual shouldBe expected
     }
@@ -77,11 +70,9 @@ class GrpcServiceImplSpec extends BaseSpec {
 
   ".handleCommandReply" should {
     "pass through success" in {
-      val stateWrapper = StateWrapper()
-        .withMeta(MetaData().withRevisionNumber(2))
+      val stateWrapper = StateWrapper().withMeta(MetaData().withRevisionNumber(2))
 
-      val commandReply: CommandReply = CommandReply()
-        .withState(stateWrapper)
+      val commandReply: CommandReply = CommandReply().withState(stateWrapper)
 
       val actual = GrpcServiceImpl.handleCommandReply(commandReply)
 
@@ -89,14 +80,10 @@ class GrpcServiceImplSpec extends BaseSpec {
     }
     "preserve error details" in {
       // define a field violation
-      val errField = BadRequest
-        .FieldViolation()
-        .withField("some_field")
-        .withDescription("oh no")
+      val errField = BadRequest.FieldViolation().withField("some_field").withDescription("oh no")
 
       // create the bad request detail
-      val errDetail: BadRequest = BadRequest()
-        .addFieldViolations(errField)
+      val errDetail: BadRequest = BadRequest().addFieldViolations(errField)
 
       // create an error status with this detail
       val expectedStatus: com.google.rpc.status.Status =
@@ -106,17 +93,13 @@ class GrpcServiceImplSpec extends BaseSpec {
           .withMessage("some error message")
           .addDetails(com.google.protobuf.any.Any.pack(errDetail))
 
-      val commandReply: CommandReply = CommandReply()
-        .withError(expectedStatus)
+      val commandReply: CommandReply = CommandReply().withError(expectedStatus)
 
       val statusException: StatusException = intercept[StatusException] {
         GrpcServiceImpl.handleCommandReply(commandReply).get
       }
 
-      val javaStatus = StatusProto.fromStatusAndTrailers(
-        statusException.getStatus(),
-        statusException.getTrailers()
-      )
+      val javaStatus = StatusProto.fromStatusAndTrailers(statusException.getStatus(), statusException.getTrailers())
 
       val actual = Status.parseFrom(javaStatus.toByteArray())
 
@@ -124,8 +107,7 @@ class GrpcServiceImplSpec extends BaseSpec {
 
     }
     "handle defailt case" in {
-      val commandReply: CommandReply = CommandReply()
-        .withReply(CommandReply.Reply.Empty)
+      val commandReply: CommandReply = CommandReply().withReply(CommandReply.Reply.Empty)
 
       assertThrows[StatusException] {
         GrpcServiceImpl.handleCommandReply(commandReply).get

@@ -6,14 +6,14 @@
 
 package com.namely.chiefofstate.migration.versions.v3
 
-import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import com.namely.chiefofstate.migration.{BaseSpec, DbUtil, SchemasUtil}
+import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil, SchemasUtil }
 import com.namely.chiefofstate.migration.helper.TestConfig
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import java.sql.{Connection, DriverManager, ResultSet, Statement}
+import java.sql.{ Connection, DriverManager, ResultSet, Statement }
 import java.util.concurrent.ExecutionException
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -23,18 +23,11 @@ class V3Spec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
 
   override val container: PostgreSQLContainer = PostgreSQLContainer
-    .Def(
-      dockerImageName = DockerImageName.parse("postgres"),
-      urlParams = Map("currentSchema" -> cosSchema)
-    )
+    .Def(dockerImageName = DockerImageName.parse("postgres"), urlParams = Map("currentSchema" -> cosSchema))
     .createContainer()
 
-  lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] = TestConfig.dbConfigFromUrl(
-    container.jdbcUrl,
-    container.username,
-    container.password,
-    "write-side-slick"
-  )
+  lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
+    TestConfig.dbConfigFromUrl(container.jdbcUrl, container.username, container.password, "write-side-slick")
 
   /**
    * create connection to the container db for test statements
@@ -43,8 +36,7 @@ class V3Spec extends BaseSpec with ForAllTestContainer {
     // load the driver
     Class.forName("org.postgresql.Driver")
 
-    DriverManager
-      .getConnection(container.jdbcUrl, container.username, container.password)
+    DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
   }
 
   // drop the COS schema between tests
@@ -161,17 +153,15 @@ class V3Spec extends BaseSpec with ForAllTestContainer {
         order by j.ordering
       """)
 
-      val actual = (1 to 3)
-        .map(_ => {
-          results.next() shouldBe true
-          (results.getLong(1), results.getString(2), results.getString(3), results.getString(4))
-        })
+      val actual = (1 to 3).map(_ => {
+        results.next() shouldBe true
+        (results.getLong(1), results.getString(2), results.getString(3), results.getString(4))
+      })
 
       val expected = Seq(
         (1, "1234", "3", "1234"),
         (2, "a|b|c", "2", "a|b|c"),
-        (3, "chiefOfState|but-why-did-you-do-this", "1", "chiefOfState|but-why-did-you-do-this")
-      )
+        (3, "chiefOfState|but-why-did-you-do-this", "1", "chiefOfState|but-why-did-you-do-this"))
 
       results.next() shouldBe false
 
@@ -196,20 +186,19 @@ class V3Spec extends BaseSpec with ForAllTestContainer {
       val actualReadSideRows =
         (1 to 3).map(_ => {
           resultSet.next() shouldBe true
-          (resultSet.getString("projection_name"),
-           resultSet.getString("projection_key"),
-           resultSet.getString("current_offset"),
-           resultSet.getString("manifest"),
-           resultSet.getString("mergeable"),
-           resultSet.getString("last_updated")
-          )
+          (
+            resultSet.getString("projection_name"),
+            resultSet.getString("projection_key"),
+            resultSet.getString("current_offset"),
+            resultSet.getString("manifest"),
+            resultSet.getString("mergeable"),
+            resultSet.getString("last_updated"))
         })
 
       val expectedReadSideRows = Seq(
         ("LOGGER_READSIDE", "0", "19697", "SEQ", "f", "1617676050105"),
         ("LOGGER_READSIDE", "1", "19695", "SEQ", "f", "1617675137185"),
-        ("LOGGER_READSIDE", "3", "19711", "SEQ", "f", "1617682341675")
-      )
+        ("LOGGER_READSIDE", "3", "19711", "SEQ", "f", "1617682341675"))
       resultSet.next() shouldBe false
 
       actualReadSideRows should contain theSameElementsAs expectedReadSideRows

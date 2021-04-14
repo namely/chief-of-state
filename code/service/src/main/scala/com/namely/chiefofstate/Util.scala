@@ -10,12 +10,12 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
 import com.google.protobuf.timestamp.Timestamp
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand.Header
-import io.grpc.{Metadata, Status, StatusException, StatusRuntimeException}
+import io.grpc.{ Metadata, Status, StatusException, StatusRuntimeException }
 import io.grpc.protobuf.StatusProto
 
-import java.time.{Instant, LocalDate, ZoneId}
+import java.time.{ Instant, LocalDate, ZoneId }
 import scala.collection.mutable
-import scala.util.{Failure, Try}
+import scala.util.{ Failure, Try }
 
 object Util {
   implicit class Timestamps(timestamp: Timestamp) {
@@ -35,10 +35,7 @@ object Util {
      * @return java Instant date
      */
     def toInstant(zoneId: ZoneId): Instant =
-      Instant
-        .ofEpochSecond(timestamp.seconds, timestamp.nanos)
-        .atZone(zoneId)
-        .toInstant
+      Instant.ofEpochSecond(timestamp.seconds, timestamp.nanos).atZone(zoneId).toInstant
 
     /**
      * converts a protocol buffer timestamp to java local date based upon a given time zone
@@ -47,10 +44,7 @@ object Util {
      * @return  java local date
      */
     def toLocalDate(zoneId: ZoneId): LocalDate =
-      Instant
-        .ofEpochSecond(timestamp.seconds, timestamp.nanos)
-        .atZone(zoneId)
-        .toLocalDate
+      Instant.ofEpochSecond(timestamp.seconds, timestamp.nanos).atZone(zoneId).toLocalDate
   }
 
   implicit class Instants(instant: Instant) {
@@ -61,9 +55,7 @@ object Util {
      * @return Protobuf timestamp
      */
     def toTimestamp: Timestamp =
-      Timestamp()
-        .withNanos(instant.getNano)
-        .withSeconds(instant.getEpochSecond)
+      Timestamp().withNanos(instant.getNano).withSeconds(instant.getEpochSecond)
   }
 
   /**

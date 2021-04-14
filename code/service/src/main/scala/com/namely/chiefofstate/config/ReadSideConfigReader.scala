@@ -6,7 +6,7 @@
 
 package com.namely.chiefofstate.config
 
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{ Logger, LoggerFactory }
 
 object ReadSideConfigReader {
   val READ_SIDE_HOST_KEY: String = "HOST"
@@ -35,13 +35,13 @@ object ReadSideConfigReader {
       throw new RuntimeException("One or more of the read side configurations is invalid")
     }
 
-    val groupedEnvVars: Map[String, Iterable[(String, String)]] = envVars
-      .groupMap(_._1.split("__").last)({ case (k, v) =>
+    val groupedEnvVars: Map[String, Iterable[(String, String)]] = envVars.groupMap(_._1.split("__").last)({
+      case (k, v) =>
         val settingName: String = k.split("__").tail.head
         require(settingName != "", s"Setting must be defined in $k")
 
         settingName -> v
-      })
+    })
 
     groupedEnvVars
       .map({ case (processorId, settings) =>
@@ -66,8 +66,7 @@ object ReadSideConfigReader {
         require(readSideConfig.port > 0, s"ProcessorId $processorId is missing a PORT")
 
         logger.info(
-          s"Configuring read side '$processorId', host=${readSideConfig.host}, port=${readSideConfig.port}, useTls=${readSideConfig.useTls}"
-        )
+          s"Configuring read side '$processorId', host=${readSideConfig.host}, port=${readSideConfig.port}, useTls=${readSideConfig.useTls}")
 
         readSideConfig
       })

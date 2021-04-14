@@ -6,8 +6,8 @@
 
 package com.namely.chiefofstate.config
 
-import com.typesafe.config.{Config, ConfigFactory}
-import org.slf4j.{Logger, LoggerFactory}
+import com.typesafe.config.{ Config, ConfigFactory }
+import org.slf4j.{ Logger, LoggerFactory }
 
 object BootConfig {
 
@@ -22,9 +22,7 @@ object BootConfig {
 
   def get(): Config = {
     val mode: DeploymentMode = getDeploymentMode
-    ConfigFactory
-      .parseResources(mode.file)
-      .resolve()
+    ConfigFactory.parseResources(mode.file).resolve()
   }
 
   private[config] def getDeploymentMode: DeploymentMode = {

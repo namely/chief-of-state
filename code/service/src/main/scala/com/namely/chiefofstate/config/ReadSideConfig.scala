@@ -7,12 +7,11 @@
 package com.namely.chiefofstate.config
 
 final case class ReadSideConfig(
-  processorId: String,
-  host: String = "",
-  port: Int = -1,
-  useTls: Boolean = false,
-  settings: Map[String, String] = Map.empty[String, String]
-) {
+    processorId: String,
+    host: String = "",
+    port: Int = -1,
+    useTls: Boolean = false,
+    settings: Map[String, String] = Map.empty[String, String]) {
 
   /**
    * Adds a setting to the config

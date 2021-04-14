@@ -6,21 +6,21 @@
 
 package com.namely.chiefofstate
 
-import akka.actor.testkit.typed.scaladsl.{ActorTestKit, BehaviorTestKit, TestProbe}
+import akka.actor.testkit.typed.scaladsl.{ ActorTestKit, BehaviorTestKit, TestProbe }
 import akka.actor.typed.ActorRef
-import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
+import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
 import com.google.protobuf.wrappers.StringValue
 import com.namely.chiefofstate.helper.BaseSpec
-import com.namely.chiefofstate.migration.{JdbcConfig, Migrator}
-import com.namely.chiefofstate.serialization.{MessageWithActorRef, ScalaMessage}
-import com.namely.protobuf.chiefofstate.v1.internal.{DoMigration, MigrationDone}
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import com.namely.chiefofstate.migration.{ JdbcConfig, Migrator }
+import com.namely.chiefofstate.serialization.{ MessageWithActorRef, ScalaMessage }
+import com.namely.protobuf.chiefofstate.v1.internal.{ DoMigration, MigrationDone }
+import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import org.testcontainers.utility.DockerImageName
 import scalapb.GeneratedMessage
 
-import java.sql.{Connection, DriverManager, Statement}
+import java.sql.{ Connection, DriverManager, Statement }
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.{ Duration, FiniteDuration }
 import scala.concurrent.Await
 
 class ServiceMigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
@@ -29,18 +29,14 @@ class ServiceMigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
   val replyTimeout: FiniteDuration = FiniteDuration(30, TimeUnit.SECONDS)
 
   override val container: PostgreSQLContainer = PostgreSQLContainer
-    .Def(
-      dockerImageName = DockerImageName.parse("postgres"),
-      urlParams = Map("currentSchema" -> cosSchema)
-    )
+    .Def(dockerImageName = DockerImageName.parse("postgres"), urlParams = Map("currentSchema" -> cosSchema))
     .createContainer()
 
   def recreateSchema(): Unit = {
     // load the driver
     Class.forName("org.postgresql.Driver")
 
-    val connection: Connection = DriverManager
-      .getConnection(container.jdbcUrl, container.username, container.password)
+    val connection: Connection = DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
 
     val statement: Statement = connection.createStatement()
     statement.addBatch(s"drop schema if exists $cosSchema cascade")
@@ -97,8 +93,7 @@ class ServiceMigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
 
       // set the current version to 4
-      val stmt = Migrator
-        .setCurrentVersionNumber(dbConfig, 4, true)
+      val stmt = Migrator.setCurrentVersionNumber(dbConfig, 4, true)
 
       Await.ready(dbConfig.db.run(stmt), Duration.Inf)
 

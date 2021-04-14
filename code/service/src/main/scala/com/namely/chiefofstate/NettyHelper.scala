@@ -6,8 +6,8 @@
 
 package com.namely.chiefofstate
 
-import io.grpc.netty.{NegotiationType, NettyChannelBuilder}
-import io.grpc.netty.NegotiationType.{PLAINTEXT, TLS}
+import io.grpc.netty.{ NegotiationType, NettyChannelBuilder }
+import io.grpc.netty.NegotiationType.{ PLAINTEXT, TLS }
 
 object NettyHelper {
 
@@ -24,8 +24,6 @@ object NettyHelper {
     // decide on negotiation type
     val negotiationType: NegotiationType = if (useTls) TLS else PLAINTEXT
 
-    NettyChannelBuilder
-      .forAddress(host, port)
-      .negotiationType(negotiationType)
+    NettyChannelBuilder.forAddress(host, port).negotiationType(negotiationType)
   }
 }
