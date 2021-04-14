@@ -1,19 +1,32 @@
 parallelExecution in test := false
-enablePlugins(DockerComposePlugin)
-dockerImageCreationTask := (Docker / publishLocal in chiefofstate).value
+enablePlugins(UniversalPlugin)
+
 Test / fork := true
 
 lazy val root: Project = project
   .in(file("."))
   .enablePlugins(NoPublish)
-  .settings(headerLicense := None)
+  .enablePlugins(UniversalPlugin)
+  .enablePlugins(JavaAppPackaging)
+  .settings(
+    headerLicense := None,
+    mainClass in Compile := Some("com.namely.chiefofstate.StartNode"),
+    makeBatScripts := Seq(),
+    executableScriptName := "entrypoint",
+    javaOptions in Universal ++= Seq(
+      // -J params will be added as jvm parameters
+      "-J-Xms256M",
+      "-J-Xmx1G",
+      "-J-XX:+UseG1GC"
+    )
+  )
+  .dependsOn(chiefofstate)
   .aggregate(protogen, chiefofstate, chiefofstateplugins, protogenTest, migration)
 
 lazy val chiefofstate: Project = project
   .in(file("code/service"))
   .enablePlugins(Common)
   .enablePlugins(BuildSettings)
-  .enablePlugins(DockerSettings)
   .enablePlugins(NoPublish)
   .enablePlugins(AutomateHeaderPlugin)
   .settings(name := "chiefofstate", headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax)
@@ -23,7 +36,6 @@ lazy val chiefofstateplugins = project
   .in(file("code/plugin"))
   .enablePlugins(Common)
   .enablePlugins(BuildSettings)
-  .enablePlugins(DockerSettings)
   .enablePlugins(NoPublish)
   .enablePlugins(AutomateHeaderPlugin)
   .settings(
