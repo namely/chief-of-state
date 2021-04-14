@@ -7,7 +7,7 @@
 package com.namely.chiefofstate.migration
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
+import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
 import com.namely.chiefofstate.migration.helper.TestConfig
 import com.namely.chiefofstate.migration.helper.TestConfig.dbConfigFromUrl
 import org.testcontainers.utility.DockerImageName
@@ -26,10 +26,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
 
   override val container: PostgreSQLContainer = PostgreSQLContainer
-    .Def(
-      dockerImageName = DockerImageName.parse("postgres"),
-      urlParams = Map("currentSchema" -> cosSchema)
-    )
+    .Def(dockerImageName = DockerImageName.parse("postgres"), urlParams = Map("currentSchema" -> cosSchema))
     .createContainer()
 
   val testKit: ActorTestKit = ActorTestKit()
@@ -38,8 +35,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
     // load the driver
     Class.forName("org.postgresql.Driver")
 
-    val connection = DriverManager
-      .getConnection(container.jdbcUrl, container.username, container.password)
+    val connection = DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
 
     val statement = connection.createStatement()
     statement.addBatch(s"drop schema if exists $cosSchema cascade")
@@ -79,10 +75,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
   def getMockVersion(versionNumber: Int): Version = {
     val mockVersion = mock[Version]
 
-    (() => mockVersion.versionNumber)
-      .expects()
-      .returning(versionNumber)
-      .anyNumberOfTimes
+    (() => mockVersion.versionNumber).expects().returning(versionNumber).anyNumberOfTimes
 
     mockVersion
   }
@@ -172,9 +165,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
         .once()
 
       // define a migrator with two versions
-      val migrator = new Migrator(dbConfig)
-        .addVersion(version1)
-        .addVersion(version2)
+      val migrator = new Migrator(dbConfig).addVersion(version1).addVersion(version2)
 
       val result = migrator.run()
 
@@ -197,20 +188,11 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       (2 to 4).foreach(versionNumber => {
         val version = getMockVersion(versionNumber)
 
-        (() => version.beforeUpgrade())
-          .expects()
-          .returning(Success {})
-          .once()
+        (() => version.beforeUpgrade()).expects().returning(Success {}).once()
 
-        (() => version.upgrade())
-          .expects()
-          .returning(DBIOAction.successful {})
-          .once()
+        (() => version.upgrade()).expects().returning(DBIOAction.successful {}).once()
 
-        (() => version.afterUpgrade())
-          .expects()
-          .returning(Success {})
-          .once()
+        (() => version.afterUpgrade()).expects().returning(Success {}).once()
 
         migrator.addVersion(version)
       })
@@ -225,10 +207,8 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       val dbConfig = getDbConfig()
 
       // define a migrator with versions that should not run (nothing mocked)
-      val migrator = new Migrator(dbConfig)
-        .addVersion(getMockVersion(1))
-        .addVersion(getMockVersion(2))
-        .addVersion(getMockVersion(3))
+      val migrator =
+        new Migrator(dbConfig).addVersion(getMockVersion(1)).addVersion(getMockVersion(2)).addVersion(getMockVersion(3))
 
       // set db version number to the highest version
       Migrator.createMigrationsTable(dbConfig)
@@ -249,10 +229,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       // create a mock version that tracks if snapshot was run
       val someVersion = getMockVersion(versionNumber)
 
-      (() => someVersion.snapshot())
-        .expects()
-        .returning(DBIOAction.successful {})
-        .once()
+      (() => someVersion.snapshot()).expects().returning(DBIOAction.successful {}).once()
 
       // create the versions table
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
@@ -274,20 +251,11 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       // create a mock version that tracks if upgrade runs
       val version = getMockVersion(versionNumber)
 
-      (() => version.beforeUpgrade())
-        .expects()
-        .returning(Success {})
-        .once()
+      (() => version.beforeUpgrade()).expects().returning(Success {}).once()
 
-      (() => version.upgrade())
-        .expects()
-        .returning(DBIOAction.successful {})
-        .once()
+      (() => version.upgrade()).expects().returning(DBIOAction.successful {}).once()
 
-      (() => version.afterUpgrade())
-        .expects()
-        .returning(Success {})
-        .once()
+      (() => version.afterUpgrade()).expects().returning(Success {}).once()
 
       // create the versions table
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true

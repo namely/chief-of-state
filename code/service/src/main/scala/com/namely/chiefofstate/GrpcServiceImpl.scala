@@ -7,34 +7,30 @@
 package com.namely.chiefofstate
 
 import akka.actor.typed.ActorRef
-import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, EntityRef }
 import akka.util.Timeout
 import com.google.protobuf.any
 import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.serialization.MessageWithActorRef
-import com.namely.chiefofstate.telemetry.{GrpcHeadersInterceptor, TracingHelpers}
+import com.namely.chiefofstate.telemetry.{ GrpcHeadersInterceptor, TracingHelpers }
 import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.service._
-import io.grpc.{Metadata, Status, StatusException}
+import io.grpc.{ Metadata, Status, StatusException }
 import io.grpc.protobuf.StatusProto
 import io.opentelemetry.context.Context
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{ Logger, LoggerFactory }
 import scalapb.GeneratedMessage
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
-class GrpcServiceImpl(
-  clusterSharding: ClusterSharding,
-  pluginManager: PluginManager,
-  writeSideConfig: WriteSideConfig
-)(implicit
-  val askTimeout: Timeout
-) extends ChiefOfStateServiceGrpc.ChiefOfStateService {
+class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
+    implicit val askTimeout: Timeout)
+    extends ChiefOfStateServiceGrpc.ChiefOfStateService {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -60,23 +56,18 @@ class GrpcServiceImpl(
       .flatMap(_ => Future.fromTry(pluginManager.run(request, metadata)))
       // run remote command
       .flatMap(pluginData => {
-        val entityRef: EntityRef[MessageWithActorRef] = clusterSharding
-          .entityRefFor(AggregateRoot.TypeKey, entityId)
+        val entityRef: EntityRef[MessageWithActorRef] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
 
-        val remoteCommand: RemoteCommand = GrpcServiceImpl
-          .getRemoteCommand(writeSideConfig, request, metadata, pluginData)
+        val remoteCommand: RemoteCommand =
+          GrpcServiceImpl.getRemoteCommand(writeSideConfig, request, metadata, pluginData)
 
         // ask entity for response to aggregate command
         entityRef ? ((replyTo: ActorRef[GeneratedMessage]) => {
 
-          val sendCommand: SendCommand = SendCommand()
-            .withRemoteCommand(remoteCommand)
-            .withTracingHeaders(tracingHeaders)
+          val sendCommand: SendCommand =
+            SendCommand().withRemoteCommand(remoteCommand).withTracingHeaders(tracingHeaders)
 
-          MessageWithActorRef(
-            message = sendCommand,
-            actorRef = replyTo
-          )
+          MessageWithActorRef(message = sendCommand, actorRef = replyTo)
         })
       })
       .map((msg: GeneratedMessage) => msg.asInstanceOf[CommandReply])
@@ -98,22 +89,17 @@ class GrpcServiceImpl(
     GrpcServiceImpl
       .requireEntityId(entityId)
       .flatMap(_ => {
-        val entityRef: EntityRef[MessageWithActorRef] = clusterSharding
-          .entityRefFor(AggregateRoot.TypeKey, entityId)
+        val entityRef: EntityRef[MessageWithActorRef] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
 
         val getCommand = GetStateCommand().withEntityId(entityId)
 
         // ask entity for response to AggregateCommand
         entityRef ? ((replyTo: ActorRef[GeneratedMessage]) => {
 
-          val sendCommand: SendCommand = SendCommand()
-            .withGetStateCommand(getCommand)
-            .withTracingHeaders(tracingHeaders)
+          val sendCommand: SendCommand =
+            SendCommand().withGetStateCommand(getCommand).withTracingHeaders(tracingHeaders)
 
-          MessageWithActorRef(
-            message = sendCommand,
-            actorRef = replyTo
-          )
+          MessageWithActorRef(message = sendCommand, actorRef = replyTo)
         })
       })
       .map((msg: GeneratedMessage) => msg.asInstanceOf[CommandReply])
@@ -133,20 +119,15 @@ object GrpcServiceImpl {
    * @return the RemoteCommand object
    */
   private[chiefofstate] def getRemoteCommand(
-    writeSideConfig: WriteSideConfig,
-    processCommandRequest: ProcessCommandRequest,
-    metadata: Metadata,
-    pluginData: Map[String, any.Any]
-  ): RemoteCommand = {
+      writeSideConfig: WriteSideConfig,
+      processCommandRequest: ProcessCommandRequest,
+      metadata: Metadata,
+      pluginData: Map[String, any.Any]): RemoteCommand = {
     // get the headers to forward
-    val propagatedHeaders: Seq[RemoteCommand.Header] = Util
-      .transformMetadataToRemoteCommandHeader(metadata, writeSideConfig.propagatedHeaders)
+    val propagatedHeaders: Seq[RemoteCommand.Header] =
+      Util.transformMetadataToRemoteCommandHeader(metadata, writeSideConfig.propagatedHeaders)
 
-    RemoteCommand(
-      command = processCommandRequest.command,
-      headers = propagatedHeaders,
-      data = pluginData
-    )
+    RemoteCommand(command = processCommandRequest.command, headers = propagatedHeaders, data = pluginData)
   }
 
   /**
@@ -182,10 +163,7 @@ object GrpcServiceImpl {
 
       case default =>
         Failure(
-          new StatusException(
-            Status.INTERNAL.withDescription(s"unknown CommandReply ${default.getClass.getName}")
-          )
-        )
+          new StatusException(Status.INTERNAL.withDescription(s"unknown CommandReply ${default.getClass.getName}")))
     }
   }
 }

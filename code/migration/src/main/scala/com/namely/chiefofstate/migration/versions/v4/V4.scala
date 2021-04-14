@@ -6,9 +6,9 @@
 
 package com.namely.chiefofstate.migration.versions.v4
 
-import com.namely.chiefofstate.migration.{SchemasUtil, Version}
-import com.namely.protobuf.chiefofstate.v1.persistence.{EventWrapper, StateWrapper}
-import org.slf4j.{Logger, LoggerFactory}
+import com.namely.chiefofstate.migration.{ SchemasUtil, Version }
+import com.namely.protobuf.chiefofstate.v1.persistence.{ EventWrapper, StateWrapper }
+import org.slf4j.{ Logger, LoggerFactory }
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
@@ -19,9 +19,7 @@ import slick.jdbc.PostgresProfile.api._
  *
  * @param projectionJdbcConfig the projection configuration
  */
-case class V4(
-  journalJdbcConfig: DatabaseConfig[JdbcProfile]
-) extends Version {
+case class V4(journalJdbcConfig: DatabaseConfig[JdbcProfile]) extends Version {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -48,8 +46,7 @@ case class V4(
         UPDATE state_snapshot
         SET snapshot_ser_id = #${V4.newSerializerId}, snapshot_ser_manifest = ${V4.newSerializerManifestState}
         WHERE snapshot_ser_id = #${V4.oldSerializerId} AND snapshot_ser_manifest = ${V4.oldSerializerManifestState}
-      """
-    )
+      """)
   }
 
   /**

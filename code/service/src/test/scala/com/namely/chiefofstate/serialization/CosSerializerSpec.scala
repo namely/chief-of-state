@@ -21,9 +21,7 @@ import com.namely.protobuf.chiefofstate.v1.internal.{
 import com.namely.protobuf.chiefofstate.v1.tests.OpenAccount
 import scalapb.GeneratedMessage
 
-class CosSerializerSpec
-    extends BaseActorSpec(
-      s"""
+class CosSerializerSpec extends BaseActorSpec(s"""
     akka {
       actor {
         serialize-messages = on
@@ -36,8 +34,7 @@ class CosSerializerSpec
         }
       }
     }
-    """
-    ) {
+    """) {
 
   // create a shared extended system for use in constructors
   lazy val extendedSystem: ExtendedActorSystem = system.toClassic.asInstanceOf[ExtendedActorSystem]
@@ -52,10 +49,7 @@ class CosSerializerSpec
 
       val sendCommand = SendCommand().withRemoteCommand(remoteCommand)
 
-      val command: MessageWithActorRef = MessageWithActorRef(
-        message = sendCommand,
-        actorRef = probe.ref
-      )
+      val command: MessageWithActorRef = MessageWithActorRef(message = sendCommand, actorRef = probe.ref)
 
       serializationTestKit.verifySerialization(command)
     }
@@ -116,8 +110,7 @@ class CosSerializerSpec
       err.getMessage().startsWith("cannot serialize") shouldBe true
     }
     "fail to deserialize with unknown child message" in {
-      val msg = WireMessageWithActorRef()
-        .withMessage(Any.pack(StringValue("x")))
+      val msg = WireMessageWithActorRef().withMessage(Any.pack(StringValue("x")))
 
       val manifest = WireMessageWithActorRef.scalaDescriptor.fullName
 

@@ -49,10 +49,10 @@ class TracedExecutorService(delegate: ExecutorService) extends ExecutorService {
     delegate.invokeAll(wrappedTask.asJava)
   }
 
-  override def invokeAll[T](tasks: util.Collection[_ <: Callable[T]],
-                            timeout: Long,
-                            unit: TimeUnit
-  ): util.List[Future[T]] = {
+  override def invokeAll[T](
+      tasks: util.Collection[_ <: Callable[T]],
+      timeout: Long,
+      unit: TimeUnit): util.List[Future[T]] = {
     val wrappedTask: Seq[Callable[T]] = tasks.asScala.map(t => Context.current().wrap(t)).toSeq
     delegate.invokeAll(wrappedTask.asJava, timeout, unit)
   }
@@ -85,12 +85,7 @@ object TracedExecutorService {
     val threadMultiplier = 10
     val parallelism = Runtime.getRuntime.availableProcessors * threadMultiplier
     // create fork join pool
-    val pool: ForkJoinPool = new ForkJoinPool(
-      parallelism,
-      ForkJoinPool.defaultForkJoinWorkerThreadFactory,
-      null,
-      true
-    )
+    val pool: ForkJoinPool = new ForkJoinPool(parallelism, ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true)
     val tracedEc: ExecutorService = new TracedExecutorService(pool)
     ExecutionContext.fromExecutorService(tracedEc)
   }

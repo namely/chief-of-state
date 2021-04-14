@@ -7,12 +7,12 @@
 package com.namely.chiefofstate.serialization
 
 import akka.actor.ExtendedActorSystem
-import akka.actor.typed.{ActorRef, ActorRefResolver}
+import akka.actor.typed.{ ActorRef, ActorRefResolver }
 import akka.actor.typed.scaladsl.adapter._
 import akka.serialization.SerializerWithStringManifest
-import com.google.protobuf.{any, ByteString}
+import com.google.protobuf.{ any, ByteString }
 import com.namely.protobuf.chiefofstate.v1.internal.WireMessageWithActorRef
-import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
+import scalapb.{ GeneratedMessage, GeneratedMessageCompanion }
 
 import java.nio.charset.StandardCharsets
 
@@ -22,9 +22,7 @@ class CosSerializer(val system: ExtendedActorSystem) extends SerializerWithStrin
 
   // build a reverse lookup of type url's to companions
   private[serialization] lazy val companionMap: Map[String, GeneratedMessageCompanion[_ <: GeneratedMessage]] =
-    CosSerializer.companions
-      .map(c => (CosSerializer.getTypeUrl(c) -> c))
-      .toMap
+    CosSerializer.companions.map(c => (CosSerializer.getTypeUrl(c) -> c)).toMap
 
   // returns the unique ID for this serializer defined in the companion
   override def identifier: Int = CosSerializer.IDENTIFIER
@@ -80,10 +78,7 @@ class CosSerializer(val system: ExtendedActorSystem) extends SerializerWithStrin
         val ref: ActorRef[GeneratedMessage] =
           actorRefResolver.resolveActorRef[GeneratedMessage](actorRefStr)
 
-        MessageWithActorRef(
-          message = m.getMessage.unpack(innerCompanion),
-          actorRef = ref
-        )
+        MessageWithActorRef(message = m.getMessage.unpack(innerCompanion), actorRef = ref)
 
       case default: GeneratedMessage =>
         default.asInstanceOf[AnyRef]
@@ -99,9 +94,8 @@ class CosSerializer(val system: ExtendedActorSystem) extends SerializerWithStrin
   override def toBinary(o: AnyRef): Array[Byte] = {
     o match {
       case m: MessageWithActorRef =>
-        val actorBytes: Array[Byte] = actorRefResolver
-          .toSerializationFormat(m.actorRef)
-          .getBytes(StandardCharsets.UTF_8)
+        val actorBytes: Array[Byte] =
+          actorRefResolver.toSerializationFormat(m.actorRef).getBytes(StandardCharsets.UTF_8)
 
         if (!companionMap.contains(CosSerializer.getTypeUrl(m.message.companion))) {
           throw new IllegalArgumentException(s"cannot serialize ${m.message.companion.scalaDescriptor.fullName}")
@@ -109,8 +103,7 @@ class CosSerializer(val system: ExtendedActorSystem) extends SerializerWithStrin
 
         WireMessageWithActorRef(
           message = Some(any.Any.pack(m.message)),
-          actorRef = ByteString.copyFrom(actorBytes)
-        ).toByteArray
+          actorRef = ByteString.copyFrom(actorBytes)).toByteArray
 
       case e: GeneratedMessage =>
         e.toByteArray
@@ -132,8 +125,8 @@ object CosSerializer {
   private[serialization] val companions: Seq[GeneratedMessageCompanion[_ <: GeneratedMessage]] =
     // recognizes all internal messages
     com.namely.protobuf.chiefofstate.v1.internal.InternalProto.messagesCompanions ++
-      // recognizes all persistence messages
-      com.namely.protobuf.chiefofstate.v1.persistence.PersistenceProto.messagesCompanions
+    // recognizes all persistence messages
+    com.namely.protobuf.chiefofstate.v1.persistence.PersistenceProto.messagesCompanions
 
   /**
    * returns at type URL given a companion

@@ -8,22 +8,22 @@ package com.namely.chiefofstate.migration.versions.v2
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import akka.actor.typed.ActorSystem
-import akka.persistence.jdbc.config.{JournalConfig, SnapshotConfig}
+import akka.persistence.jdbc.config.{ JournalConfig, SnapshotConfig }
 import akka.persistence.jdbc.db.SlickExtension
-import akka.persistence.jdbc.journal.dao.{legacy, JournalQueries}
+import akka.persistence.jdbc.journal.dao.{ legacy, JournalQueries }
 import akka.persistence.jdbc.snapshot.dao
-import akka.persistence.jdbc.snapshot.dao.legacy.{ByteArraySnapshotDao, SnapshotQueries}
-import akka.serialization.{Serialization, SerializationExtension}
-import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import com.namely.chiefofstate.migration.{BaseSpec, DbUtil, JdbcConfig, SchemasUtil}
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import akka.persistence.jdbc.snapshot.dao.legacy.{ ByteArraySnapshotDao, SnapshotQueries }
+import akka.serialization.{ Serialization, SerializationExtension }
+import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil, JdbcConfig, SchemasUtil }
+import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
-import slick.jdbc.{JdbcBackend, JdbcProfile}
+import slick.jdbc.{ JdbcBackend, JdbcProfile }
 import slick.jdbc.PostgresProfile.api._
 
-import java.sql.{Connection, DriverManager}
-import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
+import java.sql.{ Connection, DriverManager }
+import scala.concurrent.{ Await, ExecutionContext, ExecutionContextExecutor, Future }
 import scala.concurrent.duration.Duration
 
 class V2Spec extends BaseSpec with ForAllTestContainer {
@@ -31,10 +31,7 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
 
   override val container: PostgreSQLContainer = PostgreSQLContainer
-    .Def(
-      dockerImageName = DockerImageName.parse("postgres"),
-      urlParams = Map("currentSchema" -> cosSchema)
-    )
+    .Def(dockerImageName = DockerImageName.parse("postgres"), urlParams = Map("currentSchema" -> cosSchema))
     .createContainer()
 
   /**
@@ -44,8 +41,7 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
     // load the driver
     Class.forName("org.postgresql.Driver")
 
-    DriverManager
-      .getConnection(container.jdbcUrl, container.username, container.password)
+    DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
   }
 
   // helper to drop the schema
@@ -72,9 +68,9 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
 
   lazy val testKit: ActorTestKit = ActorTestKit(config)
 
-  def countLegacyJournal(journalJdbcConfig: DatabaseConfig[JdbcProfile],
-                         legacyJournalQueries: legacy.JournalQueries
-  ): Int = {
+  def countLegacyJournal(
+      journalJdbcConfig: DatabaseConfig[JdbcProfile],
+      legacyJournalQueries: legacy.JournalQueries): Int = {
     val q: DBIO[Int] = legacyJournalQueries.JournalTable.map(_.ordering).length.result
     Await.result(journalJdbcConfig.db.run(q), Duration.Inf)
   }
@@ -84,16 +80,13 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
     Await.result(journalJdbcConfig.db.run(q), Duration.Inf)
   }
 
-  def getEventJournalNextSequenceValue(journalConfig: JournalConfig, journaldb: JdbcBackend.Database)(implicit
-    ec: ExecutionContext
-  ): Long = {
+  def getEventJournalNextSequenceValue(journalConfig: JournalConfig, journaldb: JdbcBackend.Database)(
+      implicit ec: ExecutionContext): Long = {
     val schemaName: String = journalConfig.eventJournalTableConfiguration.schemaName.getOrElse("cos")
     val tableName: String = s"$schemaName.event_journal"
 
     val eventualLong: Future[Long] = for {
-      seqName: String <- journaldb.run(
-        sql"""SELECT pg_get_serial_sequence($tableName, 'ordering')""".as[String].head
-      )
+      seqName: String <- journaldb.run(sql"""SELECT pg_get_serial_sequence($tableName, 'ordering')""".as[String].head)
       lastVal <- journaldb.run(sql""" SELECT last_value FROM #$seqName """.as[Long].head)
     } yield lastVal
 
@@ -128,10 +121,10 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
         new dao.SnapshotQueries(profile, snapshotConfig.snapshotTableConfiguration)
 
       val newJournalQueries: JournalQueries =
-        new JournalQueries(profile,
-                           journalConfig.eventJournalTableConfiguration,
-                           journalConfig.eventTagTableConfiguration
-        )
+        new JournalQueries(
+          profile,
+          journalConfig.eventJournalTableConfiguration,
+          journalConfig.eventTagTableConfiguration)
 
       val serialization: Serialization = SerializationExtension(testKit.system)
       val journaldb: JdbcBackend.Database =
@@ -170,19 +163,17 @@ class V2Spec extends BaseSpec with ForAllTestContainer {
 
       // let us get the number of records in the new journal
       // let us get the number of records in the new journal
-      Await.result(journalJdbcConfig.db
-                     .run(newJournalQueries.JournalTable.map(_.ordering).length.result),
-                   Duration.Inf
-      ) shouldBe countLegacyJournal(journalJdbcConfig, legacyJournalQueries)
+      Await.result(
+        journalJdbcConfig.db.run(newJournalQueries.JournalTable.map(_.ordering).length.result),
+        Duration.Inf) shouldBe countLegacyJournal(journalJdbcConfig, legacyJournalQueries)
 
       // let us assert the ordering number
       getEventJournalNextSequenceValue(journalConfig, journaldb) shouldBe 7L
 
       // let us get the number of records in the new snapshot
-      Await.result(journalJdbcConfig.db
-                     .run(newSnapshotQueries.SnapshotTable.length.result),
-                   Duration.Inf
-      ) shouldBe countLegacySnapshot(journalJdbcConfig, legacySnapshotqueries)
+      Await.result(
+        journalJdbcConfig.db.run(newSnapshotQueries.SnapshotTable.length.result),
+        Duration.Inf) shouldBe countLegacySnapshot(journalJdbcConfig, legacySnapshotqueries)
 
       // let us run the upgrade
       Await.result(journalJdbcConfig.db.run(v2.upgrade()), Duration.Inf) shouldBe {}

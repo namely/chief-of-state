@@ -7,13 +7,13 @@
 package com.namely.chiefofstate.readside
 
 import akka.actor.typed.ActorSystem
-import com.namely.chiefofstate.config.{ReadSideConfig, ReadSideConfigReader}
+import com.namely.chiefofstate.config.{ ReadSideConfig, ReadSideConfigReader }
 import com.namely.chiefofstate.NettyHelper
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.typesafe.config.Config
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
 import io.grpc.ClientInterceptor
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{ Logger, LoggerFactory }
 
 /**
  * Used to configure and start all read side processors
@@ -25,12 +25,11 @@ import org.slf4j.{Logger, LoggerFactory}
  * @param numShards number of shards for projections/tags
  */
 class ReadSideManager(
-  system: ActorSystem[_],
-  interceptors: Seq[ClientInterceptor],
-  dbConfig: ReadSideManager.DbConfig,
-  readSideConfigs: Seq[ReadSideConfig],
-  numShards: Int
-) {
+    system: ActorSystem[_],
+    interceptors: Seq[ClientInterceptor],
+    dbConfig: ReadSideManager.DbConfig,
+    readSideConfigs: Seq[ReadSideConfig],
+    numShards: Int) {
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -49,10 +48,7 @@ class ReadSideManager(
       // construct a remote gRPC read side client for this read side
       // and register interceptors
       val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(
-        NettyHelper
-          .builder(rsconfig.host, rsconfig.port, rsconfig.useTls)
-          .build
-      ).withInterceptors(interceptors: _*)
+        NettyHelper.builder(rsconfig.host, rsconfig.port, rsconfig.useTls).build).withInterceptors(interceptors: _*)
       // instantiate a remote read side processor with the gRPC client
       val remoteReadSideProcessor: RemoteReadSideProcessor = new RemoteReadSideProcessor(rpcClient)
       // instantiate the read side processor with the remote processor
@@ -62,8 +58,7 @@ class ReadSideManager(
           processorId = rsconfig.processorId,
           dataSource = dataSource,
           remoteReadProcessor = remoteReadSideProcessor,
-          numShards = numShards
-        )
+          numShards = numShards)
 
       readSideProcessor.init()
     })
@@ -85,8 +80,7 @@ object ReadSideManager {
         maxPoolSize = jdbcCfg.getInt("hikari-settings.max-pool-size"),
         minIdleConnections = jdbcCfg.getInt("hikari-settings.min-idle-connections"),
         idleTimeoutMs = jdbcCfg.getLong("hikari-settings.idle-timeout-ms"),
-        maxLifetimeMs = jdbcCfg.getLong("hikari-settings.max-lifetime-ms")
-      )
+        maxLifetimeMs = jdbcCfg.getLong("hikari-settings.max-lifetime-ms"))
     }
 
     // get the individual read side configs
@@ -97,20 +91,18 @@ object ReadSideManager {
       interceptors = interceptors,
       dbConfig = dbConfig,
       readSideConfigs = configs,
-      numShards = numShards
-    )
+      numShards = numShards)
   }
 
   // convenience case class for passing around the hikari settings
   private[readside] case class DbConfig(
-    jdbcUrl: String,
-    username: String,
-    password: String,
-    maxPoolSize: Int,
-    minIdleConnections: Int,
-    idleTimeoutMs: Long,
-    maxLifetimeMs: Long
-  )
+      jdbcUrl: String,
+      username: String,
+      password: String,
+      maxPoolSize: Int,
+      minIdleConnections: Int,
+      idleTimeoutMs: Long,
+      maxLifetimeMs: Long)
 
   /**
    * create a hikari data source using a dbconfig class

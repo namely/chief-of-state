@@ -31,10 +31,6 @@ object GrpcConfig {
   def apply(config: Config): GrpcConfig = {
     GrpcConfig(
       GrpcClient(config.getInt("chiefofstate.grpc.client.deadline-timeout")),
-      GrpcServer(
-        config.getString("chiefofstate.grpc.server.address"),
-        config.getInt("chiefofstate.grpc.server.port")
-      )
-    )
+      GrpcServer(config.getString("chiefofstate.grpc.server.address"), config.getInt("chiefofstate.grpc.server.port")))
   }
 }

@@ -7,15 +7,15 @@
 package com.namely.chiefofstate.telemetry
 
 import com.namely.chiefofstate.helper.BaseSpec
-import io.opentelemetry.api.{GlobalOpenTelemetry, OpenTelemetry}
-import io.opentelemetry.api.trace.{Span, Tracer}
+import io.opentelemetry.api.{ GlobalOpenTelemetry, OpenTelemetry }
+import io.opentelemetry.api.trace.{ Span, Tracer }
 import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.extension.trace.propagation.B3Propagator
 import io.opentelemetry.sdk.OpenTelemetrySdk
 
 import java.util.concurrent.Executors
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ ExecutionContext, ExecutionContextExecutor, Future }
 
 class TracedExecutorServiceSpec extends BaseSpec {
 
@@ -52,18 +52,13 @@ class TracedExecutorServiceSpec extends BaseSpec {
       implicit val ec: ExecutionContext = TracedExecutorService.get()
 
       val propagators: ContextPropagators = ContextPropagators.create(B3Propagator.injectingMultiHeaders())
-      val ot: OpenTelemetry = OpenTelemetrySdk
-        .builder()
-        .setPropagators(propagators)
-        .build()
+      val ot: OpenTelemetry = OpenTelemetrySdk.builder().setPropagators(propagators).build()
 
       GlobalOpenTelemetry.resetForTest()
       GlobalOpenTelemetry.set(ot)
       val tracer: Tracer = ot.getTracer("testTracer")
 
-      val span = tracer
-        .spanBuilder("outer span")
-        .startSpan()
+      val span = tracer.spanBuilder("outer span").startSpan()
 
       val scope = span.makeCurrent()
 
@@ -90,18 +85,13 @@ class TracedExecutorServiceSpec extends BaseSpec {
       val threadPool = Executors.newFixedThreadPool(1)
       implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(threadPool)
       val propagators: ContextPropagators = ContextPropagators.create(B3Propagator.injectingMultiHeaders())
-      val ot: OpenTelemetry = OpenTelemetrySdk
-        .builder()
-        .setPropagators(propagators)
-        .build()
+      val ot: OpenTelemetry = OpenTelemetrySdk.builder().setPropagators(propagators).build()
 
       GlobalOpenTelemetry.resetForTest()
       GlobalOpenTelemetry.set(ot)
       val tracer: Tracer = ot.getTracer("testTracer")
 
-      val span = tracer
-        .spanBuilder("outer span")
-        .startSpan()
+      val span = tracer.spanBuilder("outer span").startSpan()
 
       val scope = span.makeCurrent()
 

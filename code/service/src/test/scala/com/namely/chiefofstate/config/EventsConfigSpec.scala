@@ -7,7 +7,7 @@
 package com.namely.chiefofstate.config
 
 import com.namely.chiefofstate.helper.BaseSpec
-import com.typesafe.config.{Config, ConfigException, ConfigFactory}
+import com.typesafe.config.{ Config, ConfigException, ConfigFactory }
 
 class EventsConfigSpec extends BaseSpec {
   "Loading events config" should {
