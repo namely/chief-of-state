@@ -7,9 +7,9 @@
 package com.namely.chiefofstate.plugin
 
 import com.google.protobuf.ByteString
-import com.namely.chiefofstate.helper.{BaseSpec, EnvironmentHelper}
-import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Header, Headers}
-import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Header.Value.{BytesValue, StringValue}
+import com.namely.chiefofstate.helper.{ BaseSpec, EnvironmentHelper }
+import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{ Header, Headers }
+import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Header.Value.{ BytesValue, StringValue }
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
 import io.grpc.Metadata
 import org.scalamock.scalatest.MockFactory
@@ -67,9 +67,7 @@ class PersistedHeadersSpec extends BaseSpec with MockFactory {
     "return an empty header" in {
       EnvironmentHelper.setEnv(PersistedHeaders.envName, "not-a-key,not-a-key-bin")
 
-      val actual: Option[com.google.protobuf.any.Any] = PersistedHeaders
-        .apply()
-        .run(processCommandRequest, metadata)
+      val actual: Option[com.google.protobuf.any.Any] = PersistedHeaders.apply().run(processCommandRequest, metadata)
 
       actual should be(None)
     }

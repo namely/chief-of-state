@@ -9,9 +9,9 @@ package com.namely.chiefofstate
 import com.google.protobuf.any
 import com.namely.chiefofstate.config.GrpcConfig
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
-import com.namely.protobuf.chiefofstate.v1.writeside.{HandleEventRequest, HandleEventResponse}
+import com.namely.protobuf.chiefofstate.v1.writeside.{ HandleEventRequest, HandleEventResponse }
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{ Logger, LoggerFactory }
 
 import java.util.concurrent.TimeUnit
 import scala.util.Try
@@ -35,18 +35,11 @@ case class RemoteEventHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: Wr
    */
   def handleEvent(event: any.Any, priorState: any.Any, eventMeta: MetaData): Try[HandleEventResponse] = {
     Try {
-      log.debug(
-        s"sending request to the event handler, ${event.typeUrl}"
-      )
+      log.debug(s"sending request to the event handler, ${event.typeUrl}")
 
       writeHandlerServicetub
         .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
-        .handleEvent(
-          HandleEventRequest()
-            .withEvent(event)
-            .withPriorState(priorState)
-            .withEventMeta(eventMeta)
-        )
+        .handleEvent(HandleEventRequest().withEvent(event).withPriorState(priorState).withEventMeta(eventMeta))
     }
   }
 }

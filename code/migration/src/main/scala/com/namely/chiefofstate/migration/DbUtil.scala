@@ -25,9 +25,7 @@ object DbUtil {
    */
   def tableExists(dbConfig: DatabaseConfig[JdbcProfile], tableName: String): Boolean = {
     val tables: Seq[MTable] = Await.result(dbConfig.db.run(MTable.getTables), Duration.Inf)
-    tables
-      .filter(_.tableType == "TABLE")
-      .exists(_.name.name.equals(tableName))
+    tables.filter(_.tableType == "TABLE").exists(_.name.name.equals(tableName))
   }
 
   /**
@@ -38,10 +36,7 @@ object DbUtil {
    */
   def dropTableIfExists(tableName: String, dbConfig: DatabaseConfig[JdbcProfile]): Int = {
     Await.result(
-      dbConfig.db.run(
-        sqlu"""DROP TABLE IF EXISTS #$tableName CASCADE""".withPinnedSession.transactionally
-      ),
-      Duration.Inf
-    )
+      dbConfig.db.run(sqlu"""DROP TABLE IF EXISTS #$tableName CASCADE""".withPinnedSession.transactionally),
+      Duration.Inf)
   }
 }

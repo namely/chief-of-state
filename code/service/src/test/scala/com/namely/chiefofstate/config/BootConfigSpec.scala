@@ -6,7 +6,7 @@
 
 package com.namely.chiefofstate.config
 
-import com.namely.chiefofstate.helper.{BaseSpec, EnvironmentHelper}
+import com.namely.chiefofstate.helper.{ BaseSpec, EnvironmentHelper }
 import com.typesafe.config.Config
 
 class BootConfigSpec extends BaseSpec {

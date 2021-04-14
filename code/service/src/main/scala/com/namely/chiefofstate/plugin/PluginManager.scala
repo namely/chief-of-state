@@ -9,11 +9,11 @@ package com.namely.chiefofstate.plugin
 import com.google.protobuf.any.Any
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
 import com.typesafe.config.Config
-import io.grpc.{Metadata, Status, StatusException, StatusRuntimeException}
-import org.slf4j.{Logger, LoggerFactory}
+import io.grpc.{ Metadata, Status, StatusException, StatusRuntimeException }
+import org.slf4j.{ Logger, LoggerFactory }
 
 import scala.reflect.runtime.universe
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 /**
  * Active Plugins class to house an instance of plugins
@@ -75,9 +75,7 @@ object PluginManager {
   /**
    * Default COS Plugins
    */
-  final val DEFAULT_PLUGINS: Seq[String] = Seq(
-    "com.namely.chiefofstate.plugin.PersistedHeaders"
-  )
+  final val DEFAULT_PLUGINS: Seq[String] = Seq("com.namely.chiefofstate.plugin.PersistedHeaders")
 
   /**
    * Given a sequence of plugin packages strings, reflects the packages and packs the results
@@ -106,12 +104,7 @@ object PluginManager {
    * @return Sequence of PluginBase
    */
   def getPlugins(config: Config): PluginManager = {
-    val plugins: Seq[String] = config
-      .getString(HOCON_PATH)
-      .split(",")
-      .toSeq
-      .map(_.trim)
-      .filter(_.nonEmpty)
+    val plugins: Seq[String] = config.getString(HOCON_PATH).split(",").toSeq.map(_.trim).filter(_.nonEmpty)
 
     val reflectedPlugins: Seq[PluginBase] = reflectPlugins(plugins)
 

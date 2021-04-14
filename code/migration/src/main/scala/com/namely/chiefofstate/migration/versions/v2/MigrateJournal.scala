@@ -6,28 +6,28 @@
 
 package com.namely.chiefofstate.migration.versions.v2
 
-import akka.{actor, Done}
+import akka.{ actor, Done }
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.adapter.TypedActorSystemOps
 import akka.persistence.PersistentRepr
-import akka.persistence.jdbc.config.{JournalConfig, ReadJournalConfig}
+import akka.persistence.jdbc.config.{ JournalConfig, ReadJournalConfig }
 import akka.persistence.jdbc.db.SlickExtension
-import akka.persistence.jdbc.journal.dao.{legacy, AkkaSerialization, JournalQueries}
+import akka.persistence.jdbc.journal.dao.{ legacy, AkkaSerialization, JournalQueries }
 import akka.persistence.jdbc.journal.dao.legacy.ByteArrayJournalSerializer
-import akka.persistence.jdbc.journal.dao.JournalTables.{JournalAkkaSerializationRow, TagRow}
+import akka.persistence.jdbc.journal.dao.JournalTables.{ JournalAkkaSerializationRow, TagRow }
 import akka.persistence.jdbc.query.dao.legacy.ReadJournalQueries
 import akka.serialization.Serialization
 import akka.stream.scaladsl.Source
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{ Logger, LoggerFactory }
 import slick.dbio.Effect
-import slick.jdbc.{JdbcBackend, JdbcProfile, ResultSetConcurrency, ResultSetType}
+import slick.jdbc.{ JdbcBackend, JdbcProfile, ResultSetConcurrency, ResultSetType }
 import slick.jdbc.PostgresProfile.api._
 import slick.sql.FixedSqlAction
 import slickProfile.api._
 
-import scala.concurrent.{Await, ExecutionContextExecutor, Future}
+import scala.concurrent.{ Await, ExecutionContextExecutor, Future }
 import scala.concurrent.duration.Duration
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 
 /**
  * Migrate the old legacy journal data to the new journal table
@@ -37,11 +37,11 @@ import scala.util.{Failure, Success}
  * @param serialization the akka serialization
  * @param pageSize number of records to write at once
  */
-case class MigrateJournal(system: ActorSystem[_],
-                          profile: JdbcProfile,
-                          serialization: Serialization,
-                          pageSize: Int = 1000
-) {
+case class MigrateJournal(
+    system: ActorSystem[_],
+    profile: JdbcProfile,
+    serialization: Serialization,
+    pageSize: Int = 1000) {
   implicit val ec: ExecutionContextExecutor = system.executionContext
   implicit val classicSys: actor.ActorSystem = system.toClassic
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -49,8 +49,7 @@ case class MigrateJournal(system: ActorSystem[_],
   // the journal, read journal and snapshot config
   private val journalConfig: JournalConfig = new JournalConfig(system.settings.config.getConfig("jdbc-journal"))
   private val readJournalConfig: ReadJournalConfig = new ReadJournalConfig(
-    system.settings.config.getConfig("jdbc-read-journal")
-  )
+    system.settings.config.getConfig("jdbc-read-journal"))
   // the various databases
   private val journaldb: JdbcBackend.Database =
     SlickExtension(system).database(system.settings.config.getConfig("jdbc-read-journal")).database
@@ -77,8 +76,7 @@ case class MigrateJournal(system: ActorSystem[_],
         .withStatementParameters(
           rsType = ResultSetType.ForwardOnly,
           rsConcurrency = ResultSetConcurrency.ReadOnly,
-          fetchSize = pageSize
-        )
+          fetchSize = pageSize)
         .transactionally
 
     val pipeline: Future[Done] = Source
@@ -123,8 +121,7 @@ case class MigrateJournal(system: ActorSystem[_],
 
     val eventualLong: Future[Long] = for {
       seqName: String <- journaldb.run(
-        sql"""SELECT pg_get_serial_sequence($legacyTableName, 'ordering')""".as[String].head
-      )
+        sql"""SELECT pg_get_serial_sequence($legacyTableName, 'ordering')""".as[String].head)
       nextVal <- journaldb.run(sql""" SELECT pg_catalog.nextval($seqName);""".as[Long].head)
     } yield nextVal
 
@@ -140,8 +137,7 @@ case class MigrateJournal(system: ActorSystem[_],
 
     for {
       sequenceName: String <- journaldb.run(
-        sql"""SELECT pg_get_serial_sequence($tableName, 'ordering')""".as[String].head
-      )
+        sql"""SELECT pg_get_serial_sequence($tableName, 'ordering')""".as[String].head)
       value <- journaldb.run(sql""" SELECT pg_catalog.setval($sequenceName, $nextVal, false)""".as[Long].head)
     } yield value
   }
@@ -155,10 +151,9 @@ case class MigrateJournal(system: ActorSystem[_],
    * @return the tuple of JournalAkkaSerializationRow and set of tags
    */
   private[versions] def serialize(
-    persistentRepr: PersistentRepr,
-    tags: Set[String],
-    ordering: Long
-  ): (JournalAkkaSerializationRow, Set[String]) = {
+      persistentRepr: PersistentRepr,
+      tags: Set[String],
+      ordering: Long): (JournalAkkaSerializationRow, Set[String]) = {
 
     val serializedPayload: AkkaSerialization.AkkaSerialized =
       AkkaSerialization.serialize(serialization, persistentRepr.payload) match {
@@ -181,24 +176,20 @@ case class MigrateJournal(system: ActorSystem[_],
       serializedPayload.serManifest,
       serializedMetadata.map(_.payload),
       serializedMetadata.map(_.serId),
-      serializedMetadata.map(_.serManifest)
-    )
+      serializedMetadata.map(_.serManifest))
 
     (row, tags)
   }
 
   private[versions] def writeJournalRowsStatements(
-    journalSerializedRow: JournalAkkaSerializationRow,
-    tags: Set[String]
-  ): DBIO[Unit] = {
+      journalSerializedRow: JournalAkkaSerializationRow,
+      tags: Set[String]): DBIO[Unit] = {
     val journalInsert: DBIO[Long] = newJournalQueries.JournalTable
       .returning(newJournalQueries.JournalTable.map(_.ordering))
       .forceInsert(journalSerializedRow)
 
     val tagInserts: FixedSqlAction[Option[Int], NoStream, Effect.Write] =
-      newJournalQueries.TagTable ++= tags
-        .map(tag => TagRow(journalSerializedRow.ordering, tag))
-        .toSeq
+      newJournalQueries.TagTable ++= tags.map(tag => TagRow(journalSerializedRow.ordering, tag)).toSeq
 
     journalInsert.flatMap(_ => tagInserts.asInstanceOf[DBIO[Unit]])
   }

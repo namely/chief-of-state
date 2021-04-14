@@ -6,7 +6,7 @@
 
 package com.namely.chiefofstate.migration
 
-import slick.dbio.{DBIO, DBIOAction}
+import slick.dbio.{ DBIO, DBIOAction }
 
 class VersionSpec extends BaseSpec {
 
