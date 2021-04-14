@@ -10,11 +10,11 @@ import com.namely.chiefofstate.config.GrpcConfig
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand.Header.Value
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
-import com.namely.protobuf.chiefofstate.v1.writeside.{HandleCommandRequest, HandleCommandResponse}
+import com.namely.protobuf.chiefofstate.v1.writeside.{ HandleCommandRequest, HandleCommandResponse }
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{ Logger, LoggerFactory }
 
 import java.util.concurrent.TimeUnit
 import scala.util.Try
@@ -37,9 +37,7 @@ case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: 
    * @return an eventual HandleCommandResponse
    */
   def handleCommand(remoteCommand: RemoteCommand, priorState: StateWrapper): Try[HandleCommandResponse] = {
-    log.debug(
-      s"sending request to the command handler, ${remoteCommand.getCommand.typeUrl}"
-    )
+    log.debug(s"sending request to the command handler, ${remoteCommand.getCommand.typeUrl}")
 
     // let us set the client request headers
     val headers: Metadata = new Metadata()
@@ -63,8 +61,7 @@ case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: 
           HandleCommandRequest()
             .withPriorState(priorState.getState)
             .withCommand(remoteCommand.getCommand)
-            .withPriorEventMeta(priorState.getMeta)
-        )
+            .withPriorEventMeta(priorState.getMeta))
     }
   }
 }

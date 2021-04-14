@@ -14,7 +14,7 @@ import com.namely.protobuf.chiefofstate.v1.readside.{
   ReadSideHandlerServiceGrpc
 }
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
-import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened}
+import com.namely.protobuf.chiefofstate.v1.tests.{ Account, AccountOpened }
 import io.grpc.Status
 import io.grpc.inprocess._
 
@@ -43,9 +43,7 @@ class RemoteReadSideProcessorSpec extends BaseSpec {
       // mock the grpc server
       val mockImpl = mock[ReadSideHandlerServiceGrpc.ReadSideHandlerService]
 
-      (mockImpl.handleReadSide _)
-        .expects(request)
-        .returning(Future.successful(expected))
+      (mockImpl.handleReadSide _).expects(request).returning(Future.successful(expected))
 
       val service = ReadSideHandlerServiceGrpc.bindService(mockImpl, global)
 
@@ -53,21 +51,10 @@ class RemoteReadSideProcessorSpec extends BaseSpec {
 
       // register a server that intercepts traces and reports errors
       closeables.register(
-        InProcessServerBuilder
-          .forName(serverName)
-          .directExecutor()
-          .addService(service)
-          .build()
-          .start()
-      )
+        InProcessServerBuilder.forName(serverName).directExecutor().addService(service).build().start())
 
       val serverChannel = {
-        closeables.register(
-          InProcessChannelBuilder
-            .forName(serverName)
-            .directExecutor()
-            .build()
-        )
+        closeables.register(InProcessChannelBuilder.forName(serverName).directExecutor().build())
       }
 
       val readSideHandlerServiceStub: ReadSideHandlerServiceBlockingStub =
@@ -76,11 +63,11 @@ class RemoteReadSideProcessorSpec extends BaseSpec {
       val remoteReadSideProcessor = new RemoteReadSideProcessor(readSideHandlerServiceStub)
 
       val triedHandleReadSideResponse =
-        remoteReadSideProcessor.processEvent(com.google.protobuf.any.Any.pack(accountOpened),
-                                             eventTag,
-                                             resultingState,
-                                             meta
-        )
+        remoteReadSideProcessor.processEvent(
+          com.google.protobuf.any.Any.pack(accountOpened),
+          eventTag,
+          resultingState,
+          meta)
 
       triedHandleReadSideResponse.success.value shouldBe expected
     }
@@ -101,9 +88,7 @@ class RemoteReadSideProcessorSpec extends BaseSpec {
 
       val mockImpl = mock[ReadSideHandlerServiceGrpc.ReadSideHandlerService]
 
-      (mockImpl.handleReadSide _)
-        .expects(request)
-        .returning(Future.failed(Status.INTERNAL.asException()))
+      (mockImpl.handleReadSide _).expects(request).returning(Future.failed(Status.INTERNAL.asException()))
 
       val service = ReadSideHandlerServiceGrpc.bindService(mockImpl, global)
 
@@ -111,21 +96,10 @@ class RemoteReadSideProcessorSpec extends BaseSpec {
 
       // register a server that intercepts traces and reports errors
       closeables.register(
-        InProcessServerBuilder
-          .forName(serverName)
-          .directExecutor()
-          .addService(service)
-          .build()
-          .start()
-      )
+        InProcessServerBuilder.forName(serverName).directExecutor().addService(service).build().start())
 
       val serverChannel = {
-        closeables.register(
-          InProcessChannelBuilder
-            .forName(serverName)
-            .directExecutor()
-            .build()
-        )
+        closeables.register(InProcessChannelBuilder.forName(serverName).directExecutor().build())
       }
 
       val readSideHandlerServiceStub: ReadSideHandlerServiceBlockingStub =
@@ -133,11 +107,11 @@ class RemoteReadSideProcessorSpec extends BaseSpec {
 
       val remoteReadSideProcessor = new RemoteReadSideProcessor(readSideHandlerServiceStub)
       val triedHandleReadSideResponse =
-        remoteReadSideProcessor.processEvent(com.google.protobuf.any.Any.pack(accountOpened),
-                                             eventTag,
-                                             resultingState,
-                                             meta
-        )
+        remoteReadSideProcessor.processEvent(
+          com.google.protobuf.any.Any.pack(accountOpened),
+          eventTag,
+          resultingState,
+          meta)
 
       (triedHandleReadSideResponse.failure.exception should have).message("INTERNAL")
     }

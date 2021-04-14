@@ -8,7 +8,7 @@ package com.namely.chiefofstate.migration
 
 import slick.dbio.DBIO
 
-import scala.util.{Success, Try}
+import scala.util.{ Success, Try }
 
 /**
  * this trait is used to create and migrate the COS db schema. These version

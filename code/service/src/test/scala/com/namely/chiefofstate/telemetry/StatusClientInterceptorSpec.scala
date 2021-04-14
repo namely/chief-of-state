@@ -7,11 +7,11 @@
 package com.namely.chiefofstate.telemetry
 
 import com.namely.chiefofstate.helper.BaseSpec
-import com.namely.protobuf.chiefofstate.test.helloworld.{GreeterGrpc, HelloReply, HelloRequest}
+import com.namely.protobuf.chiefofstate.test.helloworld.{ GreeterGrpc, HelloReply, HelloRequest }
 import com.namely.protobuf.chiefofstate.test.helloworld.GreeterGrpc.Greeter
-import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
-import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
-import io.opentelemetry.api.{GlobalOpenTelemetry, OpenTelemetry}
+import io.grpc.{ ManagedChannel, ServerServiceDefinition, Status }
+import io.grpc.inprocess.{ InProcessChannelBuilder, InProcessServerBuilder }
+import io.opentelemetry.api.{ GlobalOpenTelemetry, OpenTelemetry }
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
@@ -46,40 +46,26 @@ class StatusClientInterceptorSpec extends BaseSpec {
       val serverName: String = InProcessServerBuilder.generateName();
       val serviceImpl: Greeter = mock[Greeter]
       val err: Throwable = Status.NOT_FOUND.withDescription("not found").asException()
-      (serviceImpl.sayHello _)
-        .expects(*)
-        .returning(Future.failed(err))
+      (serviceImpl.sayHello _).expects(*).returning(Future.failed(err))
 
       val service: ServerServiceDefinition = Greeter.bindService(serviceImpl, global)
 
       closeables.register(
-        InProcessServerBuilder
-          .forName(serverName)
-          .directExecutor()
-          .addService(service)
-          .build()
-          .start()
-      )
+        InProcessServerBuilder.forName(serverName).directExecutor().addService(service).build().start())
 
       val statusInterceptor = new StatusClientInterceptor()
       val channel: ManagedChannel =
         InProcessChannelBuilder
           .forName(serverName)
           .directExecutor()
-          .intercept(
-            GrpcTracing.create(GlobalOpenTelemetry.get()).newClientInterceptor(),
-            statusInterceptor
-          )
+          .intercept(GrpcTracing.create(GlobalOpenTelemetry.get()).newClientInterceptor(), statusInterceptor)
           .build()
 
       closeables.register(channel)
 
       val stub: GreeterGrpc.GreeterBlockingStub = GreeterGrpc.blockingStub(channel)
 
-      val span: Span = openTelemetry
-        .getTracer("test")
-        .spanBuilder("foo")
-        .startSpan()
+      val span: Span = openTelemetry.getTracer("test").spanBuilder("foo").startSpan()
 
       val scope = span.makeCurrent()
 

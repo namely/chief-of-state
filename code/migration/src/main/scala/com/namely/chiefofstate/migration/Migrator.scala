@@ -6,7 +6,7 @@
 
 package com.namely.chiefofstate.migration
 
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{ Logger, LoggerFactory }
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import slick.jdbc.PostgresProfile.api._
@@ -14,9 +14,9 @@ import slick.sql.SqlAction
 
 import java.time.Instant
 import scala.collection.mutable
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{ Await, Future }
 import scala.concurrent.duration.Duration
-import scala.util.{Success, Try}
+import scala.util.{ Success, Try }
 
 class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
   val logger: Logger = Migrator.logger
@@ -82,14 +82,13 @@ class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
           val versionsToUpgrade: Seq[Version] = getVersions(versionNumber + 1)
 
           if (versionsToUpgrade.nonEmpty) {
-            logger
-              .info(s"upgrading COS schema, currentVersion: $versionNumber, newerVersions: ${versionsToUpgrade.size}")
+            logger.info(
+              s"upgrading COS schema, currentVersion: $versionNumber, newerVersions: ${versionsToUpgrade.size}")
 
             versionsToUpgrade.foldLeft(Try {})((output, version) => {
-              output
-                .flatMap(_ => {
-                  Migrator.upgradeVersion(this.journalDbConfig, version)
-                })
+              output.flatMap(_ => {
+                Migrator.upgradeVersion(this.journalDbConfig, version)
+              })
             })
           } else {
             logger.info("COS schema is up to date")
@@ -141,10 +140,8 @@ object Migrator {
       require(priorVersionNumber >= 0, "no prior version, cannot upgrade")
       require(
         priorVersionNumber + 1 == version.versionNumber,
-        s"cannot upgrade from version $priorVersionNumber to ${version.versionNumber}"
-      )
-    }
-      .flatMap(_ => version.beforeUpgrade())
+        s"cannot upgrade from version $priorVersionNumber to ${version.versionNumber}")
+    }.flatMap(_ => version.beforeUpgrade())
       // run upgrade
       .flatMap(_ => {
         val stmt = version
@@ -206,10 +203,9 @@ object Migrator {
    * @return success/failure for db operation (blocking)
    */
   private[chiefofstate] def setCurrentVersionNumber(
-    dbConfig: DatabaseConfig[JdbcProfile],
-    versionNumber: Int,
-    isSnapshot: Boolean
-  ): SqlAction[Int, NoStream, Effect] = {
+      dbConfig: DatabaseConfig[JdbcProfile],
+      versionNumber: Int,
+      isSnapshot: Boolean): SqlAction[Int, NoStream, Effect] = {
     val currentTs: Long = Instant.now().toEpochMilli()
 
     sqlu"""
@@ -230,9 +226,7 @@ object Migrator {
       if (getCurrentVersionNumber(journalDbConfig).isEmpty) {
         // if provided, bootstrap to this version number
         if (sys.env.keySet.contains(COS_MIGRATIONS_INITIAL_VERSION)) {
-          val envValue: String = sys.env
-            .getOrElse(COS_MIGRATIONS_INITIAL_VERSION, "")
-            .trim()
+          val envValue: String = sys.env.getOrElse(COS_MIGRATIONS_INITIAL_VERSION, "").trim()
 
           require(envValue.nonEmpty, s"${COS_MIGRATIONS_INITIAL_VERSION} setting provided empty")
           require(Try(envValue.toInt).isSuccess, s"${COS_MIGRATIONS_INITIAL_VERSION} cannot be '$envValue'")
