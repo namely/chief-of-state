@@ -8,10 +8,10 @@ lazy val root: Project = project
   .enablePlugins(JavaAppPackaging)
   .settings(
     headerLicense := None,
-    mainClass in Compile := Some("com.namely.chiefofstate.StartNode"),
+    Compile / mainClass := Some("com.namely.chiefofstate.StartNode"),
     makeBatScripts := Seq(),
     executableScriptName := "entrypoint",
-    javaOptions in Universal ++= Seq(
+    Universal / javaOptions ++= Seq(
       // -J params will be added as jvm parameters
       "-J-Xms256M",
       "-J-Xmx1G",
