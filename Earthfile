@@ -78,8 +78,7 @@ codecov:
     ARG BRANCH_NAME=""
     ARG BUILD_NUMBER=""
     RUN curl -s https://codecov.io/bash > codecov.sh && chmod +x codecov.sh
-    RUN --secret CODECOV_TOKEN=+secrets/CODECOV_TOKEN \
-        ./codecov.sh -t "${CODECOV_TOKEN}" -B "${BRANCH_NAME}" -C "${COMMIT_HASH}" -b "${BUILD_NUMBER}"
+    RUN ./codecov.sh -B "${BRANCH_NAME}" -C "${COMMIT_HASH}" -b "${BUILD_NUMBER}"
 
 test-all:
     BUILD +test-local
