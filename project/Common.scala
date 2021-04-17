@@ -1,5 +1,5 @@
-import sbt.{compilerPlugin, plugins, url, AutoPlugin, CrossVersion, Plugins, Resolver, _}
-import sbt.Keys.{resolvers, _}
+import sbt.{ compilerPlugin, plugins, url, AutoPlugin, CrossVersion, Plugins, Resolver, _ }
+import sbt.Keys.{ resolvers, _ }
 import Dependencies.Versions
 import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{
   headerLicense,
@@ -25,20 +25,14 @@ object Common extends AutoPlugin {
       startYear := Some(2020),
       licenses += ("MIT", new URL("https://opensource.org/licenses/MIT")),
       headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax,
-      headerLicense := Some(
-        HeaderLicense.Custom(
-          """|Copyright (c) 2020 Namely Inc.
+      headerLicense := Some(HeaderLicense.Custom("""|Copyright (c) 2020 Namely Inc.
              |
-             |""".stripMargin
-        )
-      ),
+             |""".stripMargin)),
       developers += Developer(
         "contributors",
         "Contributors",
         "",
-        url("https://github.com/namely/chief-of-state/graphs/contributors")
-      )
-    )
+        url("https://github.com/namely/chief-of-state/graphs/contributors")))
 
   override def projectSettings =
     Seq(
@@ -49,24 +43,17 @@ object Common extends AutoPlugin {
         "-P:silencer:checkUnused",
         "-P:silencer:pathFilters=.protogen[/].*",
         "-P:silencer:globalFilters=Unused import;deprecated",
-        "-P:silencer:globalFilters=Marked as deprecated in proto file;Could not find any member to link;unbalanced or unclosed heading"
-      ),
+        "-P:silencer:globalFilters=Marked as deprecated in proto file;Could not find any member to link;unbalanced or unclosed heading"),
       resolvers ++= Seq(Resolver.jcenterRepo, Resolver.sonatypeRepo("public"), Resolver.sonatypeRepo("snapshots")),
       libraryDependencies ++= Seq(
-        compilerPlugin(
-          ("com.github.ghik" % "silencer-plugin" % Versions.SilencerVersion)
-            .cross(CrossVersion.full)
-        ),
-        ("com.github.ghik" % "silencer-lib" % Versions.SilencerVersion % Provided)
-          .cross(CrossVersion.full)
-      ),
+        compilerPlugin(("com.github.ghik" % "silencer-plugin" % Versions.SilencerVersion).cross(CrossVersion.full)),
+        ("com.github.ghik" % "silencer-lib" % Versions.SilencerVersion % Provided).cross(CrossVersion.full)),
       scalafmtOnCompile := true,
       // show full stack traces and test case durations
-      testOptions in Test += Tests.Argument("-oDF"),
-      logBuffered in Test := false,
+      Test / testOptions += Tests.Argument("-oDF"),
+      Test / logBuffered := false,
       coverageExcludedPackages := "<empty>;com.namely.protobuf.*;" +
-        "com.namely.chiefofstate.StartNodeBehaviour;" +
-        "com.namely.chiefofstate.StartNode;",
-      fork in Test := true
-    )
+      "com.namely.chiefofstate.StartNodeBehaviour;" +
+      "com.namely.chiefofstate.StartNode;",
+      Test / fork := true)
 }

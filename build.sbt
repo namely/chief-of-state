@@ -1,4 +1,4 @@
-parallelExecution in test := false
+test / parallelExecution := false
 Test / fork := true
 
 lazy val root: Project = project
@@ -15,9 +15,7 @@ lazy val root: Project = project
       // -J params will be added as jvm parameters
       "-J-Xms256M",
       "-J-Xmx1G",
-      "-J-XX:+UseG1GC"
-    )
-  )
+      "-J-XX:+UseG1GC"))
   .dependsOn(chiefofstate)
   .aggregate(protogen, chiefofstate, chiefofstateplugins, protogenTest, migration)
 
@@ -72,10 +70,8 @@ lazy val protogen: Project = project
       file("proto/internal"),
       // includes external protobufs (like google dependencies)
       baseDirectory.value / "target/protobuf_external"),
-    PB.targets := Seq(scalapb.gen(
-      flatPackage = false,
-      javaConversions = false,
-      grpc = true) -> (sourceManaged in Compile).value / "scalapb"))))
+    PB.targets := Seq(scalapb
+      .gen(flatPackage = false, javaConversions = false, grpc = true) -> (Compile / sourceManaged).value / "scalapb"))))
 
 lazy val protogenTest: Project = project
   .in(file("code/.protogen_test"))
@@ -90,7 +86,5 @@ lazy val protogenTest: Project = project
       file("proto/test"),
       // includes external protobufs (like google dependencies)
       baseDirectory.value / "target/protobuf_external"),
-    PB.targets := Seq(scalapb.gen(
-      flatPackage = false,
-      javaConversions = false,
-      grpc = true) -> (sourceManaged in Compile).value / "scalapb"))))
+    PB.targets := Seq(scalapb
+      .gen(flatPackage = false, javaConversions = false, grpc = true) -> (Compile / sourceManaged).value / "scalapb"))))
