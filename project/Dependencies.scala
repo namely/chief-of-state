@@ -1,12 +1,12 @@
-import sbt.{Test, _}
-import scalapb.compiler.Version.{grpcJavaVersion, scalapbVersion}
+import sbt.{ Test, _ }
+import scalapb.compiler.Version.{ grpcJavaVersion, scalapbVersion }
 
 object Dependencies {
 
   // Package versions
   object Versions {
     val ScalaVersion: String = "2.13.5"
-    val AkkaVersion: String = "2.6.13"
+    val AkkaVersion: String = "2.6.14"
     val SilencerVersion: String = "1.7.3"
     val LogbackVersion: String = "1.2.3"
     val ScalapbCommonProtoVersion: String = "1.18.1-1"
@@ -22,7 +22,7 @@ object Dependencies {
     val JaninoVersion: String = "3.1.3"
     val LogstashLogbackVersion: String = "6.3"
 
-    val OpenTelemetryVersion: String = "1.0.1"
+    val OpenTelemetryVersion: String = "1.1.0"
     val OpenTelemetryGRPCVersion: String = "1.0.1-alpha"
     val OpenTelemetryMetricsVersion: String = "1.0.1-alpha"
     val PrometheusServerVersion: String = "0.10.0"
@@ -73,8 +73,7 @@ object Dependencies {
     ("io.opentelemetry" % "opentelemetry-exporter-jaeger-thrift" % OpenTelemetryVersion).excludeAll(excludeGRPC),
     "io.opentelemetry" % "opentelemetry-exporter-prometheus" % OpenTelemetryMetricsVersion,
     "io.opentelemetry" % "opentelemetry-sdk-testing" % OpenTelemetryVersion % Test,
-    "io.prometheus" % "simpleclient_httpserver" % PrometheusServerVersion
-  )
+    "io.prometheus" % "simpleclient_httpserver" % PrometheusServerVersion)
 
   val testJars: Seq[ModuleID] = Seq(
     "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % Test,
@@ -84,6 +83,5 @@ object Dependencies {
     "io.grpc" % "grpc-testing" % grpcJavaVersion % Test,
     // test containers
     "com.dimafeng" %% "testcontainers-scala-scalatest" % Versions.TestContainers % Test,
-    "com.dimafeng" %% "testcontainers-scala-postgresql" % Versions.TestContainers % Test
-  )
+    "com.dimafeng" %% "testcontainers-scala-postgresql" % Versions.TestContainers % Test)
 }
