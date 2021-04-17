@@ -6,14 +6,14 @@
 
 package com.namely.chiefofstate.migration.versions.v4
 
-import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import com.namely.chiefofstate.migration.{BaseSpec, DbUtil, SchemasUtil}
+import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil, SchemasUtil }
 import com.namely.chiefofstate.migration.helper.TestConfig
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import java.sql.{Connection, DriverManager}
+import java.sql.{ Connection, DriverManager }
 import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -23,18 +23,11 @@ class V4Spec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
 
   override val container: PostgreSQLContainer = PostgreSQLContainer
-    .Def(
-      dockerImageName = DockerImageName.parse("postgres"),
-      urlParams = Map("currentSchema" -> cosSchema)
-    )
+    .Def(dockerImageName = DockerImageName.parse("postgres"), urlParams = Map("currentSchema" -> cosSchema))
     .createContainer()
 
-  lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] = TestConfig.dbConfigFromUrl(
-    container.jdbcUrl,
-    container.username,
-    container.password,
-    "write-side-slick"
-  )
+  lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
+    TestConfig.dbConfigFromUrl(container.jdbcUrl, container.username, container.password, "write-side-slick")
 
   /**
    * create connection to the container db for test statements
@@ -43,8 +36,7 @@ class V4Spec extends BaseSpec with ForAllTestContainer {
     // load the driver
     Class.forName("org.postgresql.Driver")
 
-    DriverManager
-      .getConnection(container.jdbcUrl, container.username, container.password)
+    DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
   }
 
   // drop the COS schema between tests
@@ -106,7 +98,7 @@ class V4Spec extends BaseSpec with ForAllTestContainer {
   ".upgrade" should {
     "update journal/snapshot id and manifest" in {
       // create the journal/tags tables
-      SchemasUtil.createJournalTables(journalJdbcConfig)
+      SchemasUtil.createStoreTables(journalJdbcConfig)
       DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
       DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
 

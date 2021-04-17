@@ -14,10 +14,10 @@ import io.opentelemetry.api.trace.Span
  * gRPC server interceptor that adds the gRPC status codes details to the traces
  */
 class StatusServerInterceptor extends ServerInterceptor {
-  override def interceptCall[ReqT, RespT](call: ServerCall[ReqT, RespT],
-                                          headers: Metadata,
-                                          next: ServerCallHandler[ReqT, RespT]
-  ): ServerCall.Listener[ReqT] = {
+  override def interceptCall[ReqT, RespT](
+      call: ServerCall[ReqT, RespT],
+      headers: Metadata,
+      next: ServerCallHandler[ReqT, RespT]): ServerCall.Listener[ReqT] = {
     next.startCall(new StatusServerInterceptor.CustomServerCall(call), headers)
   }
 }

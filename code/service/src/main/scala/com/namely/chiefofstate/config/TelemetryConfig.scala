@@ -8,11 +8,7 @@ package com.namely.chiefofstate.config
 
 import com.typesafe.config.Config
 
-case class TelemetryConfig(
-  propagators: Seq[String],
-  otlpEndpoint: String,
-  namespace: String
-)
+case class TelemetryConfig(propagators: Seq[String], otlpEndpoint: String, namespace: String)
 
 object TelemetryConfig {
   val otlpEndpointKey = "chiefofstate.telemetry.otlp_endpoint"
@@ -23,7 +19,6 @@ object TelemetryConfig {
     new TelemetryConfig(
       config.getString(propagatorKey).split(',').toSeq,
       config.getString(otlpEndpointKey),
-      config.getString(namespaceKey)
-    )
+      config.getString(namespaceKey))
   }
 }

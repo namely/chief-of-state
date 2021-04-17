@@ -7,15 +7,15 @@
 package com.namely.chiefofstate.migration.versions.v2
 
 import akka.actor.typed.ActorSystem
-import akka.serialization.{Serialization, SerializationExtension}
-import com.namely.chiefofstate.migration.{SchemasUtil, Version}
-import org.slf4j.{Logger, LoggerFactory}
+import akka.serialization.{ Serialization, SerializationExtension }
+import com.namely.chiefofstate.migration.{ SchemasUtil, Version }
+import org.slf4j.{ Logger, LoggerFactory }
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.ExecutionContextExecutor
-import scala.util.{Success, Try}
+import scala.util.{ Success, Try }
 
 /**
  * V2 migration moves the legacy journal data into the new journal
@@ -25,8 +25,8 @@ import scala.util.{Success, Try}
  * @param system the actor system
  */
 case class V2(journalJdbcConfig: DatabaseConfig[JdbcProfile], projectionJdbcConfig: DatabaseConfig[JdbcProfile])(
-  implicit system: ActorSystem[_]
-) extends Version {
+    implicit system: ActorSystem[_])
+    extends Version {
   implicit val ec: ExecutionContextExecutor = system.executionContext
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -68,7 +68,7 @@ case class V2(journalJdbcConfig: DatabaseConfig[JdbcProfile], projectionJdbcConf
       SchemasUtil.dropJournalTables(journalJdbcConfig)
 
       log.info("creating new ChiefOfState journal tables")
-      SchemasUtil.createJournalTables(journalJdbcConfig)
+      SchemasUtil.createStoreTables(journalJdbcConfig)
 
       log.info("migrating ChiefOfState old journal data to the new journal table")
       journalMigrator.run()

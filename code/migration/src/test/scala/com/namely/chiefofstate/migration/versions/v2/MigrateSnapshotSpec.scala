@@ -11,28 +11,25 @@ import akka.actor.typed.ActorSystem
 import akka.persistence.jdbc.config.SnapshotConfig
 import akka.persistence.jdbc.db.SlickExtension
 import akka.persistence.jdbc.snapshot.dao
-import akka.persistence.jdbc.snapshot.dao.legacy.{ByteArraySnapshotDao, SnapshotQueries}
-import akka.serialization.{Serialization, SerializationExtension}
-import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import com.namely.chiefofstate.migration.{BaseSpec, DbUtil, JdbcConfig, SchemasUtil}
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import akka.persistence.jdbc.snapshot.dao.legacy.{ ByteArraySnapshotDao, SnapshotQueries }
+import akka.serialization.{ Serialization, SerializationExtension }
+import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil, JdbcConfig, SchemasUtil }
+import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
-import slick.jdbc.{JdbcBackend, JdbcProfile}
+import slick.jdbc.{ JdbcBackend, JdbcProfile }
 import slick.jdbc.PostgresProfile.api._
 
-import java.sql.{Connection, DriverManager}
-import scala.concurrent.{Await, ExecutionContextExecutor}
+import java.sql.{ Connection, DriverManager }
+import scala.concurrent.{ Await, ExecutionContextExecutor }
 import scala.concurrent.duration.Duration
 
 class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
 
   override val container: PostgreSQLContainer = PostgreSQLContainer
-    .Def(
-      dockerImageName = DockerImageName.parse("postgres"),
-      urlParams = Map("currentSchema" -> cosSchema)
-    )
+    .Def(dockerImageName = DockerImageName.parse("postgres"), urlParams = Map("currentSchema" -> cosSchema))
     .createContainer()
 
   /**
@@ -42,8 +39,7 @@ class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
     // load the driver
     Class.forName("org.postgresql.Driver")
 
-    DriverManager
-      .getConnection(container.jdbcUrl, container.username, container.password)
+    DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
   }
 
   // helper to drop the schema
@@ -96,12 +92,7 @@ class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
       val legacySnapshotDao: ByteArraySnapshotDao =
         new ByteArraySnapshotDao(snapshotdb, profile, snapshotConfig, serialization)
 
-      val migrator: MigrateSnapshot = MigrateSnapshot(
-        testKit.system,
-        profile,
-        serialization,
-        pageSize = 2
-      )
+      val migrator: MigrateSnapshot = MigrateSnapshot(testKit.system, profile, serialization, pageSize = 2)
 
       // let us create the legacy tables
       noException shouldBe thrownBy(SchemasUtil.createLegacyJournalAndSnapshot(journalJdbcConfig))
@@ -114,7 +105,7 @@ class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
       countLegacySnapshot(journalJdbcConfig, queries) shouldBe 4
 
       // let us create the new snapshot table
-      noException shouldBe thrownBy(SchemasUtil.createJournalTables(journalJdbcConfig))
+      noException shouldBe thrownBy(SchemasUtil.createStoreTables(journalJdbcConfig))
 
       DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
 
@@ -122,10 +113,9 @@ class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
       noException shouldBe thrownBy(migrator.migrate())
 
       // let us get the number of records in the new snapshot
-      Await.result(journalJdbcConfig.db
-                     .run(newQueries.SnapshotTable.length.result),
-                   Duration.Inf
-      ) shouldBe countLegacySnapshot(journalJdbcConfig, queries)
+      Await.result(
+        journalJdbcConfig.db.run(newQueries.SnapshotTable.length.result),
+        Duration.Inf) shouldBe countLegacySnapshot(journalJdbcConfig, queries)
     }
   }
 }

@@ -7,7 +7,7 @@
 package com.namely.chiefofstate.migration.versions.v3
 
 import com.namely.chiefofstate.migration.Version
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{ Logger, LoggerFactory }
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
@@ -18,9 +18,7 @@ import slick.jdbc.PostgresProfile.api._
  *
  * @param projectionJdbcConfig the projection configuration
  */
-case class V3(
-  journalJdbcConfig: DatabaseConfig[JdbcProfile]
-) extends Version {
+case class V3(journalJdbcConfig: DatabaseConfig[JdbcProfile]) extends Version {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -50,7 +48,11 @@ case class V3(
       sqlu"""
         UPDATE event_tag
         SET tag = regexp_replace(tag, '^chiefofstate', '')
-      """
-    )
+      """,
+      // remove "chieofstate" prefix from read_side_offsets
+      sqlu"""
+         UPDATE read_side_offsets
+        SET projection_key = regexp_replace(projection_key, '^chiefofstate', '')
+      """)
   }
 }

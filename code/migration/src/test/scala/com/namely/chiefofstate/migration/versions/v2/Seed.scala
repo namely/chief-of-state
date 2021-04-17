@@ -6,19 +6,19 @@
 
 package com.namely.chiefofstate.migration.versions.v2
 
-import akka.persistence.{PersistentRepr, SnapshotMetadata}
+import akka.persistence.{ PersistentRepr, SnapshotMetadata }
 import akka.persistence.jdbc.journal.dao.legacy
 import akka.persistence.jdbc.snapshot.dao.legacy.ByteArraySnapshotDao
 import akka.serialization.Serialization
 import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
-import com.namely.protobuf.chiefofstate.v1.tests.{Account, AccountOpened}
+import com.namely.protobuf.chiefofstate.v1.tests.{ Account, AccountOpened }
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import slick.jdbc.PostgresProfile.api._
 
 import java.time.Instant
 import java.util.UUID
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ Await, ExecutionContext, Future }
 import scala.concurrent.duration.Duration
 
 object Seed {
@@ -31,23 +31,14 @@ object Seed {
         persistenceId = persistenceId,
         sequenceNumber = i,
         message = serialization
-          .serialize(
-            PersistentRepr(
-              payload = EventWrapper().withEvent(
-                com.google.protobuf.any.Any.pack(
-                  AccountOpened()
-                    .withAccountNumber(s"account-number-$i")
-                    .withAccountUuid(s"account-id-$i")
-                )
-              ),
-              sequenceNr = i,
-              persistenceId = persistenceId,
-              deleted = false
-            )
-          )
+          .serialize(PersistentRepr(
+            payload = EventWrapper().withEvent(com.google.protobuf.any.Any
+              .pack(AccountOpened().withAccountNumber(s"account-number-$i").withAccountUuid(s"account-id-$i"))),
+            sequenceNr = i,
+            persistenceId = persistenceId,
+            deleted = false))
           .getOrElse(Seq.empty[Byte].toArray), // to avoid scalastyle yelling
-        tags = Some(s"tag-$i")
-      )
+        tags = Some(s"tag-$i"))
     })
   }
 
@@ -57,28 +48,22 @@ object Seed {
       s :+ SnapshotMetadata(
         persistenceId = persistenceId,
         sequenceNr = i,
-        timestamp = Instant.now().getEpochSecond
-      ) -> Account.defaultInstance.withAccountUuid(persistenceId)
+        timestamp = Instant.now().getEpochSecond) -> Account.defaultInstance.withAccountUuid(persistenceId)
     })
   }
 
   def legacyJournal(
-    serialization: Serialization,
-    journalQueries: legacy.JournalQueries,
-    journalJdbcConfig: DatabaseConfig[JdbcProfile],
-    numRows: Int = 6
-  ): Seq[Long] = {
+      serialization: Serialization,
+      journalQueries: legacy.JournalQueries,
+      journalJdbcConfig: DatabaseConfig[JdbcProfile],
+      numRows: Int = 6): Seq[Long] = {
     val action: DBIO[Seq[Long]] =
-      journalQueries.JournalTable.returning(journalQueries.JournalTable.map(_.ordering)) ++= journalRows(
-        serialization,
-        numRows
-      )
+      journalQueries.JournalTable
+        .returning(journalQueries.JournalTable.map(_.ordering)) ++= journalRows(serialization, numRows)
     Await.result(journalJdbcConfig.db.run(action), Duration.Inf)
   }
 
-  def legacySnapshot(legacyDao: ByteArraySnapshotDao, numRows: Int = 4)(implicit
-    ec: ExecutionContext
-  ): Seq[Unit] = {
+  def legacySnapshot(legacyDao: ByteArraySnapshotDao, numRows: Int = 4)(implicit ec: ExecutionContext): Seq[Unit] = {
     val future = Future.sequence(snapshotRows(numRows).map({ case (metadata, account) =>
       legacyDao.save(metadata, account)
     }))

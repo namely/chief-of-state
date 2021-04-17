@@ -6,7 +6,7 @@
 
 package com.namely.chiefofstate.migration.helper
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{ Config, ConfigFactory }
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -52,11 +52,11 @@ object TestConfig {
   }
 
   // construct a database config for a given jdbc url
-  def dbConfigFromUrl(url: String,
-                      user: String,
-                      password: String,
-                      rootKey: String = "jdbc-default"
-  ): DatabaseConfig[JdbcProfile] = {
+  def dbConfigFromUrl(
+      url: String,
+      user: String,
+      password: String,
+      rootKey: String = "jdbc-default"): DatabaseConfig[JdbcProfile] = {
     val cfg = getTypesafeConfigUrl(rootKey, url, user, password)
     DatabaseConfig.forConfig[JdbcProfile](rootKey, cfg)
   }

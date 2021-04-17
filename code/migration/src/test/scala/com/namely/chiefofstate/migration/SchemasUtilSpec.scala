@@ -7,7 +7,7 @@
 package com.namely.chiefofstate.migration
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
+import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
 import com.namely.chiefofstate.migration.helper.TestConfig
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
@@ -15,7 +15,7 @@ import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
 import slick.jdbc.PostgresProfile.api._
 
-import java.sql.{Connection, DriverManager}
+import java.sql.{ Connection, DriverManager }
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -25,19 +25,12 @@ class SchemasUtilSpec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
 
   override val container: PostgreSQLContainer = PostgreSQLContainer
-    .Def(
-      dockerImageName = DockerImageName.parse("postgres"),
-      urlParams = Map("currentSchema" -> cosSchema)
-    )
+    .Def(dockerImageName = DockerImageName.parse("postgres"), urlParams = Map("currentSchema" -> cosSchema))
     .createContainer()
 
   // journal jdbc config
-  lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] = TestConfig.dbConfigFromUrl(
-    container.jdbcUrl,
-    container.username,
-    container.password,
-    "write-side-slick"
-  )
+  lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
+    TestConfig.dbConfigFromUrl(container.jdbcUrl, container.username, container.password, "write-side-slick")
 
   def runAndWait[R](a: DBIOAction[R, NoStream, Nothing]): R = {
     Await.result(journalJdbcConfig.db.run(a), Duration.Inf)
@@ -50,8 +43,7 @@ class SchemasUtilSpec extends BaseSpec with ForAllTestContainer {
     // load the driver
     Class.forName("org.postgresql.Driver")
 
-    DriverManager
-      .getConnection(container.jdbcUrl, container.username, container.password)
+    DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
   }
 
   // helper to drop the schema
@@ -68,14 +60,14 @@ class SchemasUtilSpec extends BaseSpec with ForAllTestContainer {
 
   "An instance of SchemasUtils" should {
     "create the journal tables" in {
-      SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
+      SchemasUtil.createStoreTables(journalJdbcConfig) shouldBe {}
       DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
       DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
       DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
     }
 
     " drop the journal tables" in {
-      SchemasUtil.createJournalTables(journalJdbcConfig) shouldBe {}
+      SchemasUtil.createStoreTables(journalJdbcConfig) shouldBe {}
       DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
       DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
       DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true

@@ -45,9 +45,7 @@ jobs:
 
     - name: Build
       env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         COMMIT_HASH: ${{ github.sha }}
         VERSION: ${{ steps.version.outputs.VERSION }}
         EARTHLY_BUILD_ARGS: "BRANCH_NAME,COMMIT_HASH,VERSION"
-        EARTHLY_SECRETS: "CODECOV_TOKEN"
       run: earthly -P --push +all

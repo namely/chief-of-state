@@ -36,11 +36,9 @@ code:
 docker-stage:
     # package the jars/executables
     FROM +code
-    # TODO: use a simpler linux packager
-    # https://www.scala-sbt.org/sbt-native-packager/formats/debian.html
-    RUN sbt docker:stage
-    RUN chmod -R u=rX,g=rX code/service/target/docker/stage
-    SAVE ARTIFACT code/service/target/docker/stage/0/opt/docker /target
+    RUN sbt stage
+    RUN chmod -R u=rX,g=rX target/universal/stage
+    SAVE ARTIFACT target/universal/stage/ /target
 
 docker-build:
     # bundle into a slimmer, runnable container
@@ -60,14 +58,11 @@ docker-build:
     # set runtime user to cos
     USER cos
 
-    ENV JAVA_OPTS="-Xms256M -Xmx1G -XX:+UseG1GC"
-
     ENTRYPOINT /opt/docker/bin/entrypoint
     CMD []
 
     # build the image and push remotely (if all steps are successful)
     SAVE IMAGE --push namely/chief-of-state:${VERSION}
-
 
 test-local:
     FROM +code
@@ -83,8 +78,7 @@ codecov:
     ARG BRANCH_NAME=""
     ARG BUILD_NUMBER=""
     RUN curl -s https://codecov.io/bash > codecov.sh && chmod +x codecov.sh
-    RUN --secret CODECOV_TOKEN=+secrets/CODECOV_TOKEN \
-        ./codecov.sh -t "${CODECOV_TOKEN}" -B "${BRANCH_NAME}" -C "${COMMIT_HASH}" -b "${BUILD_NUMBER}"
+    RUN ./codecov.sh -B "${BRANCH_NAME}" -C "${COMMIT_HASH}" -b "${BUILD_NUMBER}"
 
 test-all:
     BUILD +test-local

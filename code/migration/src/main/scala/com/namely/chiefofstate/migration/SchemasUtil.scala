@@ -96,8 +96,7 @@ object SchemasUtil {
    * @return the DBIOAction creating the table and offset
    */
   private[migration] def createReadSideOffsetsStmt(
-    tableName: String = "read_side_offsets"
-  ): DBIOAction[Unit, NoStream, Effect] = {
+      tableName: String = "read_side_offsets"): DBIOAction[Unit, NoStream, Effect] = {
 
     val table = sqlu"""
       CREATE TABLE IF NOT EXISTS #$tableName (
@@ -121,15 +120,14 @@ object SchemasUtil {
   /**
    * creates the various write-side stores and read-side offset stores
    */
-  def createJournalTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
+  def createStoreTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
     val ddlSeq = DBIO
       .seq(
         createEventJournalStmt,
         createEventJournalIndexStmt,
         createEventTagStmt,
         createSnapshotStmt,
-        createReadSideOffsetsStmt()
-      )
+        createReadSideOffsetsStmt())
       .withPinnedSession
       .transactionally
 
@@ -165,8 +163,7 @@ object SchemasUtil {
             """,
         sqlu"""
         DROP INDEX IF EXISTS event_journal_ordering_idx;
-      """
-      )
+      """)
       .withPinnedSession
       .transactionally
 
@@ -202,14 +199,7 @@ object SchemasUtil {
       PRIMARY KEY (persistence_id, sequence_number)
      )"""
 
-    val actions: DBIO[Unit] = DBIO
-      .seq(
-        createStmt,
-        ixStmt,
-        snpashotStmt
-      )
-      .withPinnedSession
-      .transactionally
+    val actions: DBIO[Unit] = DBIO.seq(createStmt, ixStmt, snpashotStmt).withPinnedSession.transactionally
 
     Await.result(journalJdbcConfig.db.run(actions), Duration.Inf)
   }

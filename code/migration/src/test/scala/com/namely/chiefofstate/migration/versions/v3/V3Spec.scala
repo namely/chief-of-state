@@ -6,14 +6,14 @@
 
 package com.namely.chiefofstate.migration.versions.v3
 
-import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import com.namely.chiefofstate.migration.{BaseSpec, DbUtil, SchemasUtil}
+import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil, SchemasUtil }
 import com.namely.chiefofstate.migration.helper.TestConfig
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import java.sql.{Connection, DriverManager}
+import java.sql.{ Connection, DriverManager, ResultSet, Statement }
 import java.util.concurrent.ExecutionException
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -23,18 +23,11 @@ class V3Spec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
 
   override val container: PostgreSQLContainer = PostgreSQLContainer
-    .Def(
-      dockerImageName = DockerImageName.parse("postgres"),
-      urlParams = Map("currentSchema" -> cosSchema)
-    )
+    .Def(dockerImageName = DockerImageName.parse("postgres"), urlParams = Map("currentSchema" -> cosSchema))
     .createContainer()
 
-  lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] = TestConfig.dbConfigFromUrl(
-    container.jdbcUrl,
-    container.username,
-    container.password,
-    "write-side-slick"
-  )
+  lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
+    TestConfig.dbConfigFromUrl(container.jdbcUrl, container.username, container.password, "write-side-slick")
 
   /**
    * create connection to the container db for test statements
@@ -43,8 +36,7 @@ class V3Spec extends BaseSpec with ForAllTestContainer {
     // load the driver
     Class.forName("org.postgresql.Driver")
 
-    DriverManager
-      .getConnection(container.jdbcUrl, container.username, container.password)
+    DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
   }
 
   // drop the COS schema between tests
@@ -60,13 +52,14 @@ class V3Spec extends BaseSpec with ForAllTestContainer {
   }
 
   ".upgrade" should {
-    "strip prefixes from journal persistence IDs, snapshots, and tags" in {
+    "strip prefixes from journal persistence IDs, snapshots, readside offsets and tags" in {
 
-      // create the journal/tags tables
-      SchemasUtil.createJournalTables(journalJdbcConfig)
+      // create the journal/tags, snapshot and read_side_offsets tables
+      SchemasUtil.createStoreTables(journalJdbcConfig)
       DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
       DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
       DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
+      DbUtil.tableExists(journalJdbcConfig, "read_side_offsets") shouldBe true
 
       val testConn = getConnection(container)
       val statement = getConnection(container).createStatement()
@@ -103,20 +96,46 @@ class V3Spec extends BaseSpec with ForAllTestContainer {
       def insertTag(id: Int, tag: String): String =
         s"""insert into event_tag (event_id, tag) values ($id, '$tag')"""
 
+      def insertOffsets(key: String, offset: String, time: Long): String = {
+        s"""
+            insert into read_side_offsets(
+              projection_name,
+              projection_key,
+              current_offset,
+              manifest,
+              mergeable,
+              last_updated
+            ) values (
+              'LOGGER_READSIDE',
+              '$key',
+              '$offset',
+              'SEQ',
+              false,
+              $time
+            )
+        """
+      }
+
       val id1: String = "chiefOfState|1234"
+
       statement.addBatch(insertJournal(1, id1))
       statement.addBatch(insertSnapshot(id1))
       statement.addBatch(insertTag(1, "chiefofstate3"))
+      statement.addBatch(insertOffsets("chiefofstate0", "19697", 1617676050105L))
 
       val id2: String = "chiefOfState|a|b|c"
+
       statement.addBatch(insertJournal(2, id2))
       statement.addBatch(insertSnapshot(id2))
       statement.addBatch(insertTag(2, "chiefofstate2"))
+      statement.addBatch(insertOffsets("chiefofstate1", "19695", 1617675137185L))
 
       val id3: String = "chiefOfState|chiefOfState|but-why-did-you-do-this"
+
       statement.addBatch(insertJournal(3, id3))
       statement.addBatch(insertSnapshot(id3))
       statement.addBatch(insertTag(3, "chiefofstate1"))
+      statement.addBatch(insertOffsets("chiefofstate3", "19711", 1617682341675L))
 
       statement.executeBatch()
 
@@ -134,22 +153,55 @@ class V3Spec extends BaseSpec with ForAllTestContainer {
         order by j.ordering
       """)
 
-      val actual = (1 to 3)
-        .map(ordering => {
-          results.next() shouldBe true
-          (results.getLong(1), results.getString(2), results.getString(3), results.getString(4))
-        })
-        .toSeq
+      val actual = (1 to 3).map(_ => {
+        results.next() shouldBe true
+        (results.getLong(1), results.getString(2), results.getString(3), results.getString(4))
+      })
 
       val expected = Seq(
         (1, "1234", "3", "1234"),
         (2, "a|b|c", "2", "a|b|c"),
-        (3, "chiefOfState|but-why-did-you-do-this", "1", "chiefOfState|but-why-did-you-do-this")
-      )
+        (3, "chiefOfState|but-why-did-you-do-this", "1", "chiefOfState|but-why-did-you-do-this"))
 
       results.next() shouldBe false
 
       actual should contain theSameElementsAs expected
+
+      // assert the read side offsets
+      val stmt: Statement = testConn.createStatement()
+      // let us query the read_side_offsets
+      val sql: String =
+        s"""select
+           |projection_name,
+           |projection_key,
+           |current_offset,
+           |manifest,
+           |mergeable,
+           |last_updated
+           |from read_side_offsets
+           |""".stripMargin
+      val resultSet: ResultSet = stmt.executeQuery(sql)
+
+      // we only insert three rows so we can safely loop through them
+      val actualReadSideRows =
+        (1 to 3).map(_ => {
+          resultSet.next() shouldBe true
+          (
+            resultSet.getString("projection_name"),
+            resultSet.getString("projection_key"),
+            resultSet.getString("current_offset"),
+            resultSet.getString("manifest"),
+            resultSet.getString("mergeable"),
+            resultSet.getString("last_updated"))
+        })
+
+      val expectedReadSideRows = Seq(
+        ("LOGGER_READSIDE", "0", "19697", "SEQ", "f", "1617676050105"),
+        ("LOGGER_READSIDE", "1", "19695", "SEQ", "f", "1617675137185"),
+        ("LOGGER_READSIDE", "3", "19711", "SEQ", "f", "1617682341675"))
+      resultSet.next() shouldBe false
+
+      actualReadSideRows should contain theSameElementsAs expectedReadSideRows
 
       testConn.close()
     }

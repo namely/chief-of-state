@@ -8,8 +8,8 @@ package com.namely.chiefofstate.telemetry
 
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.context.Context
-import io.opentelemetry.context.propagation.{TextMapGetter, TextMapSetter}
-import org.slf4j.{Logger, LoggerFactory}
+import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapSetter }
+import org.slf4j.{ Logger, LoggerFactory }
 
 import java.lang
 import scala.collection.mutable

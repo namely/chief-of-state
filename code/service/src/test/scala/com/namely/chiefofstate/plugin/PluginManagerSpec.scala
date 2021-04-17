@@ -8,10 +8,10 @@ package com.namely.chiefofstate.plugin
 
 import com.google.protobuf.any
 import com.google.protobuf.wrappers.StringValue
-import com.namely.chiefofstate.helper.{BaseSpec, EnvironmentHelper}
+import com.namely.chiefofstate.helper.{ BaseSpec, EnvironmentHelper }
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
-import com.typesafe.config.{Config, ConfigFactory, ConfigValue, ConfigValueFactory}
-import io.grpc.{Metadata, Status, StatusException}
+import com.typesafe.config.{ Config, ConfigFactory, ConfigValue, ConfigValueFactory }
+import io.grpc.{ Metadata, Status, StatusException }
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 
@@ -130,13 +130,9 @@ class PluginManagerSpec extends BaseSpec {
       "return a failure" in {
         val mockPluginBase: PluginBase = mock[PluginBase]
 
-        (mockPluginBase.run _)
-          .expects(processCommandRequest, metadata)
-          .throws(new RuntimeException("test"))
+        (mockPluginBase.run _).expects(processCommandRequest, metadata).throws(new RuntimeException("test"))
 
-        (() => mockPluginBase.pluginId)
-          .expects()
-          .returning("some-plugin-id")
+        (() => mockPluginBase.pluginId).expects().returning("some-plugin-id")
 
         val pluginManager: PluginManager = new PluginManager(Seq(mockPluginBase))
 
@@ -162,7 +158,7 @@ object PluginManagerSpecCompanion extends Matchers {
   def compare(actual: Seq[PluginBase], expected: Seq[String]): Assertion = {
     actual.size should be(expected.size)
     (actual.map(x => x.getClass.getName.replace("$", "")) should
-      contain).theSameElementsInOrderAs(expected)
+    contain).theSameElementsInOrderAs(expected)
   }
 
   /**

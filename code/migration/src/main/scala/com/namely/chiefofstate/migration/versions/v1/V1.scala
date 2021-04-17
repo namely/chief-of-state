@@ -6,12 +6,18 @@
 
 package com.namely.chiefofstate.migration.versions.v1
 
-import com.namely.chiefofstate.migration.{DbUtil, StringImprovements, Version}
-import com.namely.chiefofstate.migration.versions.v1.V1.{createTable, insertInto, offsetTableName, tempTable, OffsetRow}
-import org.slf4j.{Logger, LoggerFactory}
+import com.namely.chiefofstate.migration.{ DbUtil, StringImprovements, Version }
+import com.namely.chiefofstate.migration.versions.v1.V1.{
+  createTable,
+  insertInto,
+  offsetTableName,
+  tempTable,
+  OffsetRow
+}
+import org.slf4j.{ Logger, LoggerFactory }
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
-import slick.jdbc.{GetResult, JdbcProfile}
+import slick.jdbc.{ GetResult, JdbcProfile }
 import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.Await
@@ -25,10 +31,10 @@ import scala.util.Try
  * @param projectionJdbcConfig the projection configuration
  */
 case class V1(
-  journalJdbcConfig: DatabaseConfig[JdbcProfile],
-  projectionJdbcConfig: DatabaseConfig[JdbcProfile],
-  priorOffsetStoreTable: String
-) extends Version {
+    journalJdbcConfig: DatabaseConfig[JdbcProfile],
+    projectionJdbcConfig: DatabaseConfig[JdbcProfile],
+    priorOffsetStoreTable: String)
+    extends Version {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -69,24 +75,22 @@ case class V1(
       // renaming the temporary table in the new projection connection
       sqlu"""ALTER TABLE #$tempTable RENAME TO #$offsetTableName""",
       // creating the required index on the renamed table
-      sqlu"""CREATE INDEX #${offsetTableName}_projection_name_index ON #$offsetTableName (projection_name)"""
-    )
+      sqlu"""CREATE INDEX #${offsetTableName}_projection_name_index ON #$offsetTableName (projection_name)""")
   }
 
   /**
    * move the data from the old read side offset store table to the new temporay offset store table by
    * reading all records into memory.
-   *
-   * @return the number of the record inserted into the table
    */
-  private def migrate(): Int = {
-    // let us fetch the records
-    val data: Seq[OffsetRow] = fetchOffsetRows()
-
-    log.info(s"num records migrating to $tempTable: ${data.size}")
-
-    // let us insert the data into the temporary table
-    insertInto(tempTable, journalJdbcConfig, data)
+  private[v1] def migrate(): Unit = {
+    val oldTable: String = transformTableName()
+    if (DbUtil.tableExists(projectionJdbcConfig, oldTable)) {
+      // let us fetch the records
+      val data: Seq[OffsetRow] = fetchOffsetRows()
+      log.info(s"num records migrating to $tempTable: ${data.size}")
+      // let us insert the data into the temporary table
+      insertInto(tempTable, journalJdbcConfig, data)
+    }
   }
 
   /**
@@ -105,9 +109,7 @@ case class V1(
                 c."MERGEABLE",
                 c."LAST_UPDATED"
             FROM #$table as c
-        """
-        .as[OffsetRow]
-        .withPinnedSession
+        """.as[OffsetRow].withPinnedSession
 
     Await.result(projectionJdbcConfig.db.run(query), Duration.Inf)
   }
@@ -151,15 +153,12 @@ object V1 {
   private[v1] def insertInto(tableName: String, dbConfig: DatabaseConfig[JdbcProfile], data: Seq[OffsetRow]): Int = {
     // let us build the insert statement
     val combined: DBIO[Seq[Int]] = DBIO
-      .sequence(
-        data
-          .map(row => {
-            sqlu"""
+      .sequence(data.map(row => {
+        sqlu"""
                 INSERT INTO #$tableName
                 VALUES (${row.projectionName}, ${row.projectionKey}, ${row.currentOffset}, ${row.manifest}, ${row.mergeable}, ${row.lastUpdated})
             """
-          })
-      )
+      }))
       .withPinnedSession
       .transactionally
 
@@ -173,8 +172,7 @@ object V1 {
    * @return the DBIOAction creating the table and offset
    */
   private[v1] def createReadSideOffsetsStmt(
-    tableName: String = "read_side_offsets"
-  ): DBIOAction[Unit, NoStream, Effect] = {
+      tableName: String = "read_side_offsets"): DBIOAction[Unit, NoStream, Effect] = {
 
     val table = sqlu"""
       CREATE TABLE IF NOT EXISTS #$tableName (
@@ -196,13 +194,12 @@ object V1 {
   }
 
   private[v1] case class OffsetRow(
-    projectionName: String,
-    projectionKey: String,
-    currentOffset: String,
-    manifest: String,
-    mergeable: Boolean,
-    lastUpdated: Long
-  )
+      projectionName: String,
+      projectionKey: String,
+      currentOffset: String,
+      manifest: String,
+      mergeable: Boolean,
+      lastUpdated: Long)
 
   implicit val getOffSetRowResult: AnyRef with GetResult[OffsetRow] =
     GetResult(r => OffsetRow(r.<<, r.<<, r.<<, r.<<, r.<<, r.<<))
