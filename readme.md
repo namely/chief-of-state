@@ -31,6 +31,15 @@ reacting to state changes.
 
 ![Architecture Diagram](img/anatomy.png?raw=true "Title")
 
+### Chief Of State Service
+
+The main entry point of a chief-of-state based application is the
+[Service](https://github.com/namely/chief-of-state-protos/blob/master/chief_of_state/v1/service.proto). Developers will
+interact with chief of state via:
+
+- `ProcessCommand` is used by the application to send commands to process via [Write Handler](#write-handler).
+- `GetState` is used by the application to retrieve the current state of a persistent entity
+
 ### Write Handler
 
 Developers describe state mutations by implementing two RPC’s in
@@ -57,13 +66,24 @@ Some potential read side handlers might:
 ## Features
 
 - Journal and Snapshot serialization using google protocol buffer message format
-- Preconfigured Akka clustering and and domain entity sharding with the split-brain-resolver algorithm
+- Preconfigured Akka clustering and domain entity sharding with the split-brain-resolver algorithm
 - Automatic caching and entity passivation
 - Automatic configuration of postgres storage on boot
 - Opentelemetry integration for tracing and prometheus metrics
 - Direct integration to Kubernetes to form a cluster
 
 ### Documentation
+
+## Get Started
+
+- Add the chief-of-state proto definitions to your application. One way to do it is to use git submodule
+
+```bash
+git submodule add https://github.com/namely/chief-of-state-protos
+```
+
+- Generate the various service definitions according to your
+  application [programming language](https://www.grpc.io/docs/languages/).
 
 The following docs are available:
 
