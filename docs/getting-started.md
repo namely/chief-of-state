@@ -40,7 +40,7 @@ uses internally). Namely also offers an open-source docker-based solution
 [namely/docker-protoc](https://github.com/namely/docker-protoc) with support
 for many languages.
 
-## Implement a "Write Handler"
+## Implement a "Write Side"
 
 Drawing from CQRS terminology, COS defines a [writeside interface](https://github.com/namely/chief-of-state-protos/blob/master/chief_of_state/v1/writeside.proto) that you must implement to define how state
 is created and updated.
@@ -82,7 +82,7 @@ can be processed in parallel.
 `GetState` accepts an entity ID and returns the latest state of that entity. Use
 this like a key/value lookup.
 
-## Implement a "Read Handler"
+## Implement a "Read Side"
 
 COS defines a [readside interface](https://github.com/namely/chief-of-state-protos/blob/master/chief_of_state/v1/readside.proto)
 and allows you to implement many "readsides" (from CQRS "read side") to
