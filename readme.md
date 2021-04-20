@@ -76,6 +76,7 @@ Some potential read side handlers might:
 
 The following docs are available:
 
+- [Getting Started](./docs/getting-started.md)
 - [Configuration options](./docs/configuration.md)
 - [Docker Deployment](./docs/docker-deployment.md)
 - [Kubernetes Deployment](./docs/kubernetes-deployment.md)

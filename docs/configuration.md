@@ -68,4 +68,4 @@ b3**, **b3multi**, **tracecontext**, **baggage**, **jaeger** and **ottracer**
 
 | environment variable | description | default |
 |--- | --- | --- |
-| COS_READ_SIDE_CONFIG__<SETTING_NAME>_<READSIDE_ID> | readside configuration settings | <none> |
+| COS_READ_SIDE_CONFIG__<SETTING_NAME>__<READSIDE_ID> | readside configuration settings | <none> |
