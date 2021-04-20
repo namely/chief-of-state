@@ -89,13 +89,40 @@ sbt:
     FROM openjdk:11-jdk-stretch
 
     # Install sbt
-    ARG SBT_VERSION=1.4.9
+    ARG SBT_VERSION=1.5.0
+    ARG USER_ID=1001
+    ARG GROUP_ID=1001
+
+    # Install sbt
     RUN \
-        curl -L -o sbt.deb https://dl.bintray.com/sbt/debian/sbt-${SBT_VERSION}.deb && \
-        dpkg -i sbt.deb && \
-        rm sbt.deb && \
-        apt-get update && \
-        apt-get install sbt
+      curl -fsL "https://github.com/sbt/sbt/releases/download/v$SBT_VERSION/sbt-$SBT_VERSION.tgz" | tar xfz - -C /usr/share && \
+      chown -R root:root /usr/share/sbt && \
+      chmod -R 755 /usr/share/sbt && \
+      ln -s /usr/share/sbt/bin/sbt /usr/local/bin/sbt
+
+    # Add and use user sbtuser
+    RUN groupadd --gid $GROUP_ID sbtuser && useradd --gid $GROUP_ID --uid $USER_ID sbtuser --shell /bin/bash
+    RUN chown -R sbtuser:sbtuser /opt
+    RUN mkdir /home/sbtuser && chown -R sbtuser:sbtuser /home/sbtuser
+    RUN mkdir /logs && chown -R sbtuser:sbtuser /logs
+    USER sbtuser
+
+    # Switch working directory
+    WORKDIR /home/sbtuser
+
+    # This triggers a bunch of useful downloads.
+    RUN sbt sbtVersion
+
+    USER root
+    RUN \
+      mkdir -p /home/sbtuser/.ivy2 && \
+      chown -R sbtuser:sbtuser /home/sbtuser/.ivy2 && \
+      ln -s /home/sbtuser/.cache /root/.cache && \
+      ln -s /home/sbtuser/.ivy2 /root/.ivy2 && \
+      ln -s /home/sbtuser/.sbt /root/.sbt
+
+    # Switch working directory back to root
+    WORKDIR /root
 
     # install docker tools
     # https://docs.docker.com/engine/install/debian/
