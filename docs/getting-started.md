@@ -52,7 +52,7 @@ an event called `UserEmailUpdated`. This method is encouraged to throw exception
 (as gRPC error statuses) **if** the inbound command (request) is invalid.
 
 `HandleEvent` accepts an event and the prior state of an entity and returns a new state.
-For example, given a UserEmailUpdated event and a User, this RPC would return a
+For example, given a `UserEmailUpdated` event and a User, this RPC would return a
 new User instance with the email updated. It's advisable to do all your
 validations in `HandleCommand` such that this method is unlikely to encounter
 invalid data. If `HandleCommand` fails, `HandleEvent` is not called for that
