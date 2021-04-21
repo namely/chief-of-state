@@ -46,7 +46,7 @@ Drawing from CQRS terminology, COS defines a [writeside interface](https://githu
 is created and updated.
 
 ### Methods
-`HandleCommand` accepts a command (think "request") and a prior state and returns an event.
+`HandleCommand` accepts a command (or a "request" if you will) and a prior state and returns an event.
 For example, given a command to `UpdateUserEmail` and a User, this RPC might return
 an event called `UserEmailUpdated`. This method is encouraged to throw exceptions
 (as gRPC error statuses) **if** the inbound command (request) is invalid.
