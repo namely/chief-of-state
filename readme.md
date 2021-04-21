@@ -74,17 +74,6 @@ Some potential read side handlers might:
 
 ### Documentation
 
-## Get Started
-
-- Add the chief-of-state proto definitions to your application. One way to do it is to use git submodule
-
-```bash
-git submodule add https://github.com/namely/chief-of-state-protos
-```
-
-- Generate the various service definitions according to your
-  application [programming language](https://www.grpc.io/docs/languages/).
-
 The following docs are available:
 
 - [Configuration options](./docs/configuration.md)
