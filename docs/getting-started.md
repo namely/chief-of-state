@@ -48,8 +48,8 @@ is created and updated.
 ### Methods
 `HandleCommand` accepts a command (think "request") and a prior state and returns an event.
 For example, given a command to `UpdateUserEmail` and a User, this RPC might return
-an event called `UserEmailUpdated`. This method is allowed to throw exceptions
-(as gRPC error statuses) if the inbound command (request) is invalid.
+an event called `UserEmailUpdated`. This method is encouraged to throw exceptions
+(as gRPC error statuses) **if** the inbound command (request) is invalid.
 
 `HandleEvent` accepts an event and the prior state of an entity and returns a new state.
 For example, given a UserEmailUpdated event and a User, this RPC would return a
