@@ -28,6 +28,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{ Failure, Success, Try }
 import com.namely.protobuf.chiefofstate.v1.common.Header
+import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{ Headers, Header => LegacyHeader }
 
 class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
     implicit val askTimeout: Timeout)
@@ -62,11 +63,16 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
         val propagatedHeaders: Seq[Header] = Util.extractHeaders(metadata, writeSideConfig.propagatedHeaders)
         val persistedHeaders: Seq[Header] = Util.extractHeaders(metadata, writeSideConfig.persistedHeaders)
 
+        // temporarily inject the legacy plugin headers for backwards compatibility
+        val legacyHeaderKey: String = "persisted_headers.v1"
+        val legacyHeaders: Headers = GrpcServiceImpl.adaptLegacyHeaders(persistedHeaders)
+        val newPluginData: Map[String, any.Any] = pluginData.updated(legacyHeaderKey, any.Any.pack(legacyHeaders))
+
         val remoteCommand: RemoteCommand = RemoteCommand(
           command = request.command,
           propagatedHeaders = propagatedHeaders,
           persistedHeaders = persistedHeaders,
-          data = pluginData)
+          data = newPluginData)
 
         // ask entity for response to aggregate command
         entityRef ? ((replyTo: ActorRef[GeneratedMessage]) => {
@@ -152,5 +158,25 @@ object GrpcServiceImpl {
         Failure(
           new StatusException(Status.INTERNAL.withDescription(s"unknown CommandReply ${default.getClass.getName}")))
     }
+  }
+
+  /**
+   * temporary adapter for legacy plugin headers for backwards compatibility
+   *
+   * @param headers sequence of COS metadata headers
+   * @return a legacy plugin 'Headers' instance
+   */
+  private[chiefofstate] def adaptLegacyHeaders(headers: Seq[Header]): Headers = {
+    val legacyHeaders = headers.map(header => {
+      LegacyHeader(
+        header.key,
+        header.value match {
+          case Header.Value.Empty              => LegacyHeader.Value.Empty
+          case Header.Value.StringValue(value) => LegacyHeader.Value.StringValue(value)
+          case Header.Value.BytesValue(value)  => LegacyHeader.Value.BytesValue(value)
+        })
+    })
+
+    Headers(legacyHeaders)
   }
 }
