@@ -22,6 +22,8 @@ import io.grpc.protobuf.StatusProto
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.Success
+import com.namely.protobuf.chiefofstate.v1.common.Header
+import com.google.protobuf.ByteString
 
 class GrpcServiceImplSpec extends BaseSpec {
 
@@ -82,6 +84,27 @@ class GrpcServiceImplSpec extends BaseSpec {
       assertThrows[StatusException] {
         GrpcServiceImpl.handleCommandReply(commandReply).get
       }
+    }
+  }
+
+  ".adaptLegacyHeaders" should {
+    "transform string, byte, and empty values" in {
+
+      val stringHeader = Header().withKey("string-key").withStringValue("string-value")
+      val bytesHeader = Header().withKey("bytes-key").withBytesValue(ByteString.copyFrom(Array[Byte](Byte.MaxValue)))
+      val emptyHeader = Header().withKey("empty-key")
+      val headers: Seq[Header] = Seq(stringHeader, bytesHeader, emptyHeader)
+
+      val actual = GrpcServiceImpl.adaptLegacyHeaders(headers)
+      actual.headers.size shouldBe 3
+
+      actual.headers.find(_.key == stringHeader.key).get.getStringValue shouldBe stringHeader.getStringValue
+      actual.headers.find(_.key == bytesHeader.key).get.getBytesValue shouldBe bytesHeader.getBytesValue
+      actual.headers.find(_.key == emptyHeader.key).get.value.isEmpty shouldBe true
+    }
+    "handle empty headers" in {
+      val actual = GrpcServiceImpl.adaptLegacyHeaders(Seq.empty[Header])
+      actual.headers.isEmpty shouldBe true
     }
   }
 }
