@@ -11,7 +11,8 @@ import com.google.protobuf.ByteString
 import com.namely.chiefofstate.config.{ GrpcClient, GrpcConfig, GrpcServer }
 import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
-import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand.Header.Value
+import com.namely.protobuf.chiefofstate.v1.common.Header
+import com.namely.protobuf.chiefofstate.v1.common.Header.Value
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.tests.{ Account, AccountOpened, OpenAccount }
 import com.namely.protobuf.chiefofstate.v1.writeside.{
@@ -67,7 +68,7 @@ class RemoteCommandHandlerSpec extends BaseSpec {
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .withHeaders(Seq(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1")))
+        .withPropagatedHeaders(Seq(Header().withKey("header-1").withStringValue("header-value-1")))
 
       val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(grpcConfig, writeHandlerServicetub)
       val triedHandleCommandResponse: Try[HandleCommandResponse] =
@@ -100,12 +101,9 @@ class RemoteCommandHandlerSpec extends BaseSpec {
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .withHeaders(Seq(
-          RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"),
-          RemoteCommand
-            .Header()
-            .withKey("header-2-bin")
-            .withBytesValue(ByteString.copyFrom("header-value-2".getBytes))))
+        .withPropagatedHeaders(Seq(
+          Header().withKey("header-1").withStringValue("header-value-1"),
+          Header().withKey("header-2-bin").withBytesValue(ByteString.copyFrom("header-value-2".getBytes))))
 
       val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(grpcConfig, writeHandlerServicetub)
       val triedHandleCommandResponse: Try[HandleCommandResponse] =
@@ -127,10 +125,10 @@ class RemoteCommandHandlerSpec extends BaseSpec {
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .withHeaders(
+        .withPropagatedHeaders(
           Seq(
-            RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"),
-            RemoteCommand.Header().withKey("header-2").withValue(Value.Empty)))
+            Header().withKey("header-1").withStringValue("header-value-1"),
+            Header().withKey("header-2").withValue(Value.Empty)))
 
       val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(grpcConfig, writeHandlerServicetub)
 

@@ -59,14 +59,12 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
       .flatMap(pluginData => {
         val entityRef: EntityRef[MessageWithActorRef] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
 
-        val propagatedHeaders: Seq[RemoteCommand.Header] =
-          Util.transformMetadataToRemoteCommandHeader(metadata, writeSideConfig.propagatedHeaders)
-
-        val persistedHeaders: Seq[Header] = PersistedHeaders.extract(writeSideConfig.persistedHeaders, metadata)
+        val propagatedHeaders: Seq[Header] = Util.extractHeaders(metadata, writeSideConfig.propagatedHeaders)
+        val persistedHeaders: Seq[Header] = Util.extractHeaders(metadata, writeSideConfig.persistedHeaders)
 
         val remoteCommand: RemoteCommand = RemoteCommand(
           command = request.command,
-          headers = propagatedHeaders,
+          propagatedHeaders = propagatedHeaders,
           persistedHeaders = persistedHeaders,
           data = pluginData)
 
@@ -118,26 +116,6 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
 }
 
 object GrpcServiceImpl {
-
-  /**
-   * builds the remote command to execute
-   *
-   * @param writeSideConfig the write side config instance
-   * @param processCommandRequest the initial request
-   * @param metadata the gRPC metadata
-   * @return the RemoteCommand object
-   */
-  private[chiefofstate] def getRemoteCommand(
-      writeSideConfig: WriteSideConfig,
-      processCommandRequest: ProcessCommandRequest,
-      metadata: Metadata,
-      pluginData: Map[String, any.Any]): RemoteCommand = {
-    // get the headers to forward
-    val propagatedHeaders: Seq[RemoteCommand.Header] =
-      Util.transformMetadataToRemoteCommandHeader(metadata, writeSideConfig.propagatedHeaders)
-
-    RemoteCommand(command = processCommandRequest.command, headers = propagatedHeaders, data = pluginData)
-  }
 
   /**
    * checks whether an entity ID is empty or not

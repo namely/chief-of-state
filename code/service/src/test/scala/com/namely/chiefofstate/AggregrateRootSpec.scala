@@ -15,7 +15,7 @@ import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate.config.CosConfig
 import com.namely.chiefofstate.helper.BaseActorSpec
 import com.namely.chiefofstate.serialization.MessageWithActorRef
-import com.namely.protobuf.chiefofstate.v1.common.MetaData
+import com.namely.protobuf.chiefofstate.v1.common.{ Header, MetaData }
 import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
@@ -190,7 +190,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
       aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
@@ -255,7 +255,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
       aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
@@ -362,7 +362,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
       aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
@@ -421,7 +421,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
       aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
@@ -483,7 +483,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
       aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
@@ -555,7 +555,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
       aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
@@ -619,7 +619,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
       aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
@@ -685,7 +685,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
       aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
