@@ -85,7 +85,7 @@ class UtilSpec extends BaseSpec {
       metadata.put(bazKey, baz)
 
       val desiredHeaders: Seq[String] = Seq("foo", "bar-bin", "not-a-key")
-      val actual: Seq[Header] = PersistedHeaders.extract(desiredHeaders, metadata)
+      val actual: Seq[Header] = Util.extractHeaders(metadata, desiredHeaders)
       val expected: Seq[Header] = Seq(fooHeader1, fooHeader2, barHeader)
       actual should contain theSameElementsAs expected
     }
