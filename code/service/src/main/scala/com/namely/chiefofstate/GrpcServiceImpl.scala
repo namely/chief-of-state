@@ -27,6 +27,7 @@ import scalapb.GeneratedMessage
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{ Failure, Success, Try }
+import com.namely.protobuf.chiefofstate.v1.common.Header
 
 class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
     implicit val askTimeout: Timeout)
@@ -58,8 +59,16 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
       .flatMap(pluginData => {
         val entityRef: EntityRef[MessageWithActorRef] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
 
-        val remoteCommand: RemoteCommand =
-          GrpcServiceImpl.getRemoteCommand(writeSideConfig, request, metadata, pluginData)
+        val propagatedHeaders: Seq[RemoteCommand.Header] =
+          Util.transformMetadataToRemoteCommandHeader(metadata, writeSideConfig.propagatedHeaders)
+
+        val persistedHeaders: Seq[Header] = PersistedHeaders.extract(writeSideConfig.persistedHeaders, metadata)
+
+        val remoteCommand: RemoteCommand = RemoteCommand(
+          command = request.command,
+          headers = propagatedHeaders,
+          persistedHeaders = persistedHeaders,
+          data = pluginData)
 
         // ask entity for response to aggregate command
         entityRef ? ((replyTo: ActorRef[GeneratedMessage]) => {

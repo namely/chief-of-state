@@ -4,26 +4,26 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.namely.chiefofstate.plugin
+package com.namely.chiefofstate
 
 import com.google.protobuf.ByteString
-import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{ Header, Headers }
+import com.namely.protobuf.chiefofstate.v1.common.Header
 import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
 import io.grpc.Metadata
 import org.slf4j.{ Logger, LoggerFactory }
 
 import scala.collection.mutable
 
-private[this] class PersistedHeaders(persistedHeaders: Seq[String]) extends PluginBase {
+object PersistedHeaders {
 
-  import PersistedHeaders.logger
+  val envName: String = "COS_WRITE_PERSISTED_HEADERS"
 
-  override val pluginId: String = "persisted_headers.v1"
+  val logger: Logger = LoggerFactory.getLogger(getClass)
 
-  override def run(
-      processCommandRequest: ProcessCommandRequest,
-      metadata: Metadata): Option[com.google.protobuf.any.Any] = {
+  def persistedHeaders: Seq[String] =
+    sys.env.get(envName).map(_.split(",").map(_.trim).toSeq).getOrElse(Seq.empty[String])
 
+  def extract(persistedHeaders: Seq[String], metadata: Metadata): Seq[Header] = {
     val capturedHeaders: mutable.ListBuffer[Header] = mutable.ListBuffer.empty[Header]
 
     persistedHeaders.foreach(key => {
@@ -51,22 +51,6 @@ private[this] class PersistedHeaders(persistedHeaders: Seq[String]) extends Plug
       }
     })
 
-    if (capturedHeaders.nonEmpty) {
-      Some(com.google.protobuf.any.Any.pack(Headers().withHeaders(capturedHeaders.toSeq)))
-    } else {
-      None
-    }
+    capturedHeaders.toSeq
   }
-}
-
-object PersistedHeaders extends PluginFactory {
-
-  val envName: String = "COS_WRITE_PERSISTED_HEADERS"
-
-  val logger: Logger = LoggerFactory.getLogger(getClass)
-
-  def persistedHeaders: Seq[String] =
-    sys.env.get(envName).map(_.split(",").map(_.trim).toSeq).getOrElse(Seq.empty[String])
-
-  override def apply(): PluginBase = new PersistedHeaders(persistedHeaders)
 }

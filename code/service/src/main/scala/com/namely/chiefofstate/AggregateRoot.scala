@@ -195,6 +195,7 @@ object AggregateRoot {
             .withRevisionDate(Instant.now().toTimestamp)
             .withData(data)
             .withEntityId(priorState.getMeta.entityId)
+            .withHeaders(command.persistedHeaders)
 
           val priorStateAny: com.google.protobuf.any.Any = priorState.getState
 

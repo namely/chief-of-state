@@ -37,7 +37,8 @@ class GrpcServiceImplSpec extends BaseSpec {
         enableProtoValidation = false,
         eventsProtos = Seq.empty[String],
         statesProtos = Seq.empty[String],
-        propagatedHeaders = Seq(key))
+        propagatedHeaders = Seq(key),
+        persistedHeaders = Seq(key))
 
       val metadata: Metadata = new Metadata()
       val stringHeaderKey: Metadata.Key[String] = Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER)
