@@ -97,16 +97,11 @@ object V5 {
             .map(upgradeHeader)
             .filterNot(header => eventWrapper.getMeta.headers.contains(header))
 
-          if (newHeaders.nonEmpty) {
-            val newWrapper = eventWrapper.withMeta(eventWrapper.getMeta.addHeaders(newHeaders: _*))
-            Some((ordering, newWrapper))
-          } else {
-            None
-          }
+          val newWrapper = eventWrapper.withMeta(eventWrapper.getMeta.addHeaders(newHeaders: _*))
+          (ordering, newWrapper)
         }
       })
-      .filter(_.isDefined)
-      .map(_.get)
+      .filter({ case(_, newWrapper) => newWrapper.getMeta.headers.nonEmpty })
       .map({
         case (ordering, eventWrapper) => {
 
