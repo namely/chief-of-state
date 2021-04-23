@@ -101,7 +101,7 @@ object V5 {
           (ordering, newWrapper)
         }
       })
-      .filter({ case(_, newWrapper) => newWrapper.getMeta.headers.nonEmpty })
+      .filter({ case (_, newWrapper) => newWrapper.getMeta.headers.nonEmpty })
       .map({
         case (ordering, eventWrapper) => {
 
