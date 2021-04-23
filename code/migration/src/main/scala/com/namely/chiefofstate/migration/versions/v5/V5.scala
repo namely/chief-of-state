@@ -163,7 +163,7 @@ object V5 {
           (ordering, sequenceNumber, newWrapper)
         }
       })
-      .filter({ case(_, _, wrapper) => wrapper.getMeta.headers.nonEmpty }
+      .filter({ case (_, _, wrapper) => wrapper.getMeta.headers.nonEmpty })
       .map({
         case (id: String, sequenceNumber: Long, stateWrapper: StateWrapper) => {
 
