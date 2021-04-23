@@ -17,6 +17,7 @@ import java.sql.{ Connection, DriverManager }
 import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import com.namely.chiefofstate.migration.helper.DbHelper._
 
 class V4Spec extends BaseSpec with ForAllTestContainer {
 
@@ -49,50 +50,6 @@ class V4Spec extends BaseSpec with ForAllTestContainer {
 
   override def beforeEach(): Unit = {
     recreateSchema(container)
-  }
-
-  def insertJournal(id: String, serId: Int, serManifest: String): String =
-    s"""
-    insert into event_journal (
-      persistence_id,
-      sequence_number,
-      deleted,
-      writer,
-      write_timestamp,
-      adapter_manifest,
-      event_ser_id,
-      event_ser_manifest,
-      event_payload
-    ) values (
-      '$id',
-      1,
-      false,
-      'some-writer',
-      0,
-      'some-manifest',
-      $serId,
-      '$serManifest',
-      'DEADBEEF'::bytea
-    )"""
-
-  def insertSnapshot(id: String, serId: Int, serManifest: String): String = {
-    s"""
-    insert into state_snapshot (
-      persistence_id,
-      sequence_number,
-      created,
-      snapshot_ser_id,
-      snapshot_ser_manifest,
-      snapshot_payload
-    ) values (
-      '$id',
-      1,
-      0,
-      $serId,
-      '$serManifest',
-      'DEADBEEF'::bytea
-    )
-    """
   }
 
   ".upgrade" should {

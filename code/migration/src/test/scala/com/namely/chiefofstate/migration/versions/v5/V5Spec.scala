@@ -18,6 +18,13 @@ import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
+import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
+import com.namely.protobuf.chiefofstate.v1.common.MetaData
+import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Header
+import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Headers
+import com.google.protobuf.any
+import com.namely.chiefofstate.migration.helper.DbHelper
+import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 
 class V5Spec extends BaseSpec with ForAllTestContainer {
   override val container: PostgreSQLContainer = PostgreSQLContainer
@@ -58,15 +65,84 @@ class V5Spec extends BaseSpec with ForAllTestContainer {
     }
   }
 
-  ".migrateJournal" should {
+  ".beforeUpgrade" should {
     "upgrade the journal headers" in {
-      // TODO
-    }
-  }
+      val testConn = V5Spec.getConnection(container)
 
-  ".migrateSnapshots" should {
+      val headers = Headers()
+        .addHeaders(Header().withKey("1").withStringValue("one"))
+        .addHeaders(Header().withKey("2").withStringValue("two"))
+
+      val meta = MetaData().withData(Map(V5.pluginId -> any.Any.pack(headers)))
+
+      val eventWrapper = EventWrapper().withMeta(meta)
+
+      SchemasUtil.createStoreTables(journalJdbcConfig)
+
+      val insertStmt = testConn.createStatement()
+      insertStmt.addBatch(DbHelper.insertJournal(id = "1", payload = eventWrapper.toByteArray))
+      insertStmt.addBatch(DbHelper.insertJournal(id = "2", payload = eventWrapper.toByteArray))
+      insertStmt.addBatch(DbHelper.insertJournal(id = "3", payload = eventWrapper.toByteArray))
+
+      insertStmt.executeBatch().sum shouldBe 3
+
+      val version = V5(testKit.system, journalJdbcConfig)
+      version.beforeUpgrade().isSuccess shouldBe true
+
+      val resultStmt = testConn.createStatement()
+
+      val results = resultStmt.executeQuery("""
+        select distinct event_payload
+        from event_journal
+      """)
+
+      results.next() shouldBe true
+      val actual = EventWrapper.parseFrom(results.getBytes(1))
+      results.next() shouldBe false
+      testConn.close()
+
+      actual.getMeta.headers.size shouldBe 2
+      actual.getMeta.headers.find(_.key == "1").isDefined shouldBe true
+      actual.getMeta.headers.find(_.key == "2").isDefined shouldBe true
+    }
     "upgrade the snapshot headers" in {
-      // TODO
+      val testConn = V5Spec.getConnection(container)
+
+      val headers = Headers()
+        .addHeaders(Header().withKey("1").withStringValue("one"))
+        .addHeaders(Header().withKey("2").withStringValue("two"))
+
+      val meta = MetaData().withData(Map(V5.pluginId -> any.Any.pack(headers)))
+
+      val stateWrapper = StateWrapper().withMeta(meta)
+
+      SchemasUtil.createStoreTables(journalJdbcConfig)
+
+      val insertStmt = testConn.createStatement()
+      insertStmt.addBatch(DbHelper.insertSnapshot(id = "1", payload = stateWrapper.toByteArray))
+      insertStmt.addBatch(DbHelper.insertSnapshot(id = "2", payload = stateWrapper.toByteArray))
+      insertStmt.addBatch(DbHelper.insertSnapshot(id = "3", payload = stateWrapper.toByteArray))
+
+      insertStmt.executeBatch().sum shouldBe 3
+
+      val version = V5(testKit.system, journalJdbcConfig)
+      version.beforeUpgrade().isSuccess shouldBe true
+
+      val resultStmt = testConn.createStatement()
+
+      val results = resultStmt.executeQuery("""
+        select distinct snapshot_payload
+        from state_snapshot
+      """)
+
+      results.next() shouldBe true
+      val actual = StateWrapper.parseFrom(results.getBytes(1))
+      results.next() shouldBe false
+      testConn.close()
+
+      actual.getMeta.headers.size shouldBe 2
+      actual.getMeta.headers.find(_.key == "1").isDefined shouldBe true
+      actual.getMeta.headers.find(_.key == "2").isDefined shouldBe true
     }
   }
 }

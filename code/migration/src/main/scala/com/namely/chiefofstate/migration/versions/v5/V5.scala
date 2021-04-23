@@ -59,8 +59,8 @@ case class V5(system: ActorSystem[_], journalJdbcConfig: DatabaseConfig[JdbcProf
 object V5 {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
-  private val pluginId: String = "persisted_headers.v1"
-  private val pageSize: Int = 1000
+  val pluginId: String = "persisted_headers.v1"
+  val pageSize: Int = 1000
 
   /**
    * adds headers to event meta
