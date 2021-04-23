@@ -159,16 +159,11 @@ object V5 {
             .map(upgradeHeader)
             .filterNot(header => stateWrapper.getMeta.headers.contains(header))
 
-          if (newHeaders.nonEmpty) {
-            val newWrapper = stateWrapper.withMeta(stateWrapper.getMeta.addHeaders(newHeaders: _*))
-            Some((ordering, sequenceNumber, newWrapper))
-          } else {
-            None
-          }
+          val newWrapper = stateWrapper.withMeta(stateWrapper.getMeta.addHeaders(newHeaders: _*))
+          (ordering, sequenceNumber, newWrapper)
         }
       })
-      .filter(_.isDefined)
-      .map(_.get)
+      .filter({ case(_, _, wrapper) => wrapper.getMeta.headers.nonEmpty }
       .map({
         case (id: String, sequenceNumber: Long, stateWrapper: StateWrapper) => {
 
