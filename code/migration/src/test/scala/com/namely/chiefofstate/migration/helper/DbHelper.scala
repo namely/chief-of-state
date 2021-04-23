@@ -6,8 +6,7 @@
 
 package com.namely.chiefofstate.migration.helper
 
-import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
-import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
+import com.namely.protobuf.chiefofstate.v1.persistence.{EventWrapper, StateWrapper}
 
 object DbHelper {
   val serializerId = 5001

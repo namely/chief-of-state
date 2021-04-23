@@ -8,7 +8,7 @@ package com.namely.chiefofstate.migration.versions.v5
 
 import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil, SchemasUtil }
 import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
-import com.namely.chiefofstate.migration.helper.TestConfig
+import com.namely.chiefofstate.migration.helper.{TestConfig, DbHelper}
 import org.testcontainers.utility.DockerImageName
 import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import slick.basic.DatabaseConfig
@@ -18,13 +18,10 @@ import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
+import com.namely.protobuf.chiefofstate.v1.persistence.{EventWrapper, StateWrapper}
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
-import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Header
-import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Headers
+import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Headers, Header}
 import com.google.protobuf.any
-import com.namely.chiefofstate.migration.helper.DbHelper
-import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 
 class V5Spec extends BaseSpec with ForAllTestContainer {
   override val container: PostgreSQLContainer = PostgreSQLContainer

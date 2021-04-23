@@ -11,17 +11,15 @@ import com.namely.protobuf.chiefofstate.v1.persistence.{ EventWrapper, StateWrap
 import org.slf4j.{ Logger, LoggerFactory }
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
-import slick.jdbc.JdbcProfile
+import slick.jdbc.{ GetResult, ResultSetConcurrency, ResultSetType, JdbcProfile }
 import slick.jdbc.PostgresProfile.api._
 import V5.log
 import scala.util.Try
-import slick.jdbc.{ GetResult, ResultSetConcurrency, ResultSetType }
 import akka.stream.scaladsl.Source
-import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Future, Await}
 import akka.actor.typed.ActorSystem
 import akka.Done
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{
   Header => LegacyHeader,
   Headers => LegacyHeaders
