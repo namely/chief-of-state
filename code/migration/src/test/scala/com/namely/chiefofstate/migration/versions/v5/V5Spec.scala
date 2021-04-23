@@ -8,7 +8,7 @@ package com.namely.chiefofstate.migration.versions.v5
 
 import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil, SchemasUtil }
 import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
-import com.namely.chiefofstate.migration.helper.{TestConfig, DbHelper}
+import com.namely.chiefofstate.migration.helper.{ DbHelper, TestConfig }
 import org.testcontainers.utility.DockerImageName
 import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import slick.basic.DatabaseConfig
@@ -18,14 +18,17 @@ import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import com.namely.protobuf.chiefofstate.v1.persistence.{EventWrapper, StateWrapper}
+import com.namely.protobuf.chiefofstate.v1.persistence.{ EventWrapper, StateWrapper }
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
-import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Headers, Header}
+import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{ Header, Headers }
 import com.google.protobuf.any
 
 class V5Spec extends BaseSpec with ForAllTestContainer {
+
+  val cosSchema: String = "cos"
+
   override val container: PostgreSQLContainer = PostgreSQLContainer
-    .Def(dockerImageName = DockerImageName.parse("postgres"), urlParams = Map("currentSchema" -> V5Spec.cosSchema))
+    .Def(dockerImageName = DockerImageName.parse("postgres"), urlParams = Map("currentSchema" -> cosSchema))
     .createContainer()
 
   lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
@@ -43,7 +46,7 @@ class V5Spec extends BaseSpec with ForAllTestContainer {
   lazy val testKit: ActorTestKit = ActorTestKit(config)
 
   override def beforeEach(): Unit = {
-    V5Spec.recreateSchema(container)
+    DbHelper.recreateSchema(container, cosSchema)
   }
 
   override protected def afterAll(): Unit = {
@@ -64,7 +67,7 @@ class V5Spec extends BaseSpec with ForAllTestContainer {
 
   ".beforeUpgrade" should {
     "upgrade the journal headers" in {
-      val testConn = V5Spec.getConnection(container)
+      val testConn = DbHelper.getConnection(container)
 
       val headers = Headers()
         .addHeaders(Header().withKey("1").withStringValue("one"))
@@ -103,7 +106,7 @@ class V5Spec extends BaseSpec with ForAllTestContainer {
       actual.getMeta.headers.find(_.key == "2").isDefined shouldBe true
     }
     "upgrade the snapshot headers" in {
-      val testConn = V5Spec.getConnection(container)
+      val testConn = DbHelper.getConnection(container)
 
       val headers = Headers()
         .addHeaders(Header().withKey("1").withStringValue("one"))
@@ -142,30 +145,4 @@ class V5Spec extends BaseSpec with ForAllTestContainer {
       actual.getMeta.headers.find(_.key == "2").isDefined shouldBe true
     }
   }
-}
-
-object V5Spec {
-
-  val cosSchema: String = "cos"
-
-  /**
-   * create connection to the container db for test statements
-   */
-  def getConnection(container: PostgreSQLContainer): Connection = {
-    // load the driver
-    Class.forName("org.postgresql.Driver")
-
-    DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
-  }
-
-  // drop the COS schema between tests
-  def recreateSchema(container: PostgreSQLContainer): Unit = {
-    val conn = getConnection(container)
-    val statement = conn.createStatement()
-    statement.addBatch(s"drop schema if exists $cosSchema cascade")
-    statement.addBatch(s"create schema $cosSchema")
-    statement.executeBatch()
-    conn.close()
-  }
-
 }

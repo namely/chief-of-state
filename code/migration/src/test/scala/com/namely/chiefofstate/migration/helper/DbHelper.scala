@@ -6,7 +6,9 @@
 
 package com.namely.chiefofstate.migration.helper
 
-import com.namely.protobuf.chiefofstate.v1.persistence.{EventWrapper, StateWrapper}
+import com.namely.protobuf.chiefofstate.v1.persistence.{ EventWrapper, StateWrapper }
+import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+import java.sql.{ Connection, DriverManager }
 
 object DbHelper {
   val serializerId = 5001
@@ -65,5 +67,25 @@ object DbHelper {
       decode('${java.util.Base64.getEncoder().encodeToString(payload)}', 'base64')
     )
     """
+  }
+
+  /**
+   * create connection to the container db for test statements
+   */
+  def getConnection(container: PostgreSQLContainer): Connection = {
+    // load the driver
+    Class.forName("org.postgresql.Driver")
+
+    DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
+  }
+
+  // drop the COS schema between tests
+  def recreateSchema(container: PostgreSQLContainer, schema: String): Unit = {
+    val conn = getConnection(container)
+    val statement = conn.createStatement()
+    statement.addBatch(s"drop schema if exists $schema cascade")
+    statement.addBatch(s"create schema $schema")
+    statement.executeBatch()
+    conn.close()
   }
 }

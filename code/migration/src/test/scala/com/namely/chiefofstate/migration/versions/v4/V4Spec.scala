@@ -30,26 +30,8 @@ class V4Spec extends BaseSpec with ForAllTestContainer {
   lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
     TestConfig.dbConfigFromUrl(container.jdbcUrl, container.username, container.password, "write-side-slick")
 
-  /**
-   * create connection to the container db for test statements
-   */
-  def getConnection(container: PostgreSQLContainer): Connection = {
-    // load the driver
-    Class.forName("org.postgresql.Driver")
-
-    DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
-  }
-
-  // drop the COS schema between tests
-  def recreateSchema(container: PostgreSQLContainer): Unit = {
-    val statement = getConnection(container).createStatement()
-    statement.addBatch(s"drop schema if exists $cosSchema cascade")
-    statement.addBatch(s"create schema $cosSchema")
-    statement.executeBatch()
-  }
-
   override def beforeEach(): Unit = {
-    recreateSchema(container)
+    recreateSchema(container, cosSchema)
   }
 
   ".upgrade" should {

@@ -23,6 +23,7 @@ import java.sql.{ Connection, DriverManager }
 import java.time.Instant
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import com.namely.chiefofstate.migration.helper.DbHelper._
 
 class V1Spec extends BaseSpec with ForAllTestContainer {
 
@@ -39,23 +40,6 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
     .createContainer()
 
   override val container: MultipleContainers = MultipleContainers(projectionPg, journalPg)
-
-  /**
-   * create connection to the container db for test statements
-   */
-  def getConnection(container: PostgreSQLContainer): Connection = {
-    // load the driver
-    Class.forName("org.postgresql.Driver")
-
-    DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
-  }
-
-  def recreateSchema(container: PostgreSQLContainer): Unit = {
-    val statement = getConnection(container).createStatement()
-    statement.addBatch(s"drop schema if exists $cosSchema cascade")
-    statement.addBatch(s"create schema $cosSchema")
-    statement.executeBatch()
-  }
 
   // old projection jdbc config
   lazy val projectionJdbcConfig: DatabaseConfig[JdbcProfile] = {
@@ -141,8 +125,8 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
   }
 
   override def beforeEach(): Unit = {
-    recreateSchema(journalPg)
-    recreateSchema(projectionPg)
+    recreateSchema(journalPg, cosSchema)
+    recreateSchema(projectionPg, cosSchema)
   }
 
   override protected def afterAll(): Unit = {
