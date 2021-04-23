@@ -43,6 +43,7 @@ class CosConfigSpec extends BaseSpec {
                 states-protos = ""
                 events-protos = ""
                 propagated-headers = ""
+                persisted-headers = ""
               }
               read-side {
                 # set this value to true whenever a readSide config is set

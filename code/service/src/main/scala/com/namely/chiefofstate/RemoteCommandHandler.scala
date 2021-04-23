@@ -8,7 +8,7 @@ package com.namely.chiefofstate
 
 import com.namely.chiefofstate.config.GrpcConfig
 import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
-import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand.Header.Value
+import com.namely.protobuf.chiefofstate.v1.common.Header.Value
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.writeside.{ HandleCommandRequest, HandleCommandResponse }
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
@@ -43,7 +43,7 @@ case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: 
     val headers: Metadata = new Metadata()
 
     Try {
-      remoteCommand.headers.foreach(header => {
+      remoteCommand.propagatedHeaders.foreach(header => {
         header.value match {
           case Value.StringValue(value) =>
             headers.put(Metadata.Key.of(header.key, Metadata.ASCII_STRING_MARSHALLER), value)

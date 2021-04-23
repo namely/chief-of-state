@@ -18,6 +18,7 @@ import com.namely.protobuf.chiefofstate.v1.internal.{
   SendCommand,
   WireMessageWithActorRef
 }
+import com.namely.protobuf.chiefofstate.v1.common.Header
 import com.namely.protobuf.chiefofstate.v1.tests.OpenAccount
 import scalapb.GeneratedMessage
 
@@ -45,7 +46,7 @@ class CosSerializerSpec extends BaseActorSpec(s"""
 
       val remoteCommand = RemoteCommand()
         .withCommand(Any.pack(OpenAccount()))
-        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
 
       val sendCommand = SendCommand().withRemoteCommand(remoteCommand)
 

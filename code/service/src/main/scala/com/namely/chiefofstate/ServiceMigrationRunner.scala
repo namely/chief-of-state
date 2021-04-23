@@ -13,6 +13,7 @@ import com.namely.chiefofstate.migration.versions.v1.V1
 import com.namely.chiefofstate.migration.versions.v2.V2
 import com.namely.chiefofstate.migration.versions.v3.V3
 import com.namely.chiefofstate.migration.versions.v4.V4
+import com.namely.chiefofstate.migration.versions.v5.V5
 import com.namely.chiefofstate.serialization.{ MessageWithActorRef, ScalaMessage }
 import com.namely.protobuf.chiefofstate.v1.internal.{ DoMigration, MigrationDone }
 import com.typesafe.config.Config
@@ -66,10 +67,16 @@ object ServiceMigrationRunner {
           val v2: V2 = V2(journalJdbcConfig, projectionJdbcConfig)(context.system)
           val v3: V3 = V3(journalJdbcConfig)
           val v4: V4 = V4(journalJdbcConfig)
+          val v5: V5 = V5(context.system, journalJdbcConfig)
 
           // instance of the migrator
           val migrator: Migrator =
-            new Migrator(journalJdbcConfig).addVersion(v1).addVersion(v2).addVersion(v3).addVersion(v4)
+            new Migrator(journalJdbcConfig)
+              .addVersion(v1)
+              .addVersion(v2)
+              .addVersion(v3)
+              .addVersion(v4)
+              .addVersion(v5)
 
           migrator.run()
         }

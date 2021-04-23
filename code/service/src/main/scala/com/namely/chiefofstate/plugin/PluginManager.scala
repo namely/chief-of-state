@@ -75,7 +75,7 @@ object PluginManager {
   /**
    * Default COS Plugins
    */
-  final val DEFAULT_PLUGINS: Seq[String] = Seq("com.namely.chiefofstate.plugin.PersistedHeaders")
+  final val DEFAULT_PLUGINS: Seq[String] = Seq.empty[String]
 
   /**
    * Given a sequence of plugin packages strings, reflects the packages and packs the results

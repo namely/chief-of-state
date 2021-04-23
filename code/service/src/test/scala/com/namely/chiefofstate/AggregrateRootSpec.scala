@@ -15,7 +15,7 @@ import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate.config.CosConfig
 import com.namely.chiefofstate.helper.BaseActorSpec
 import com.namely.chiefofstate.serialization.MessageWithActorRef
-import com.namely.protobuf.chiefofstate.v1.common.MetaData
+import com.namely.protobuf.chiefofstate.v1.common.{ Header, MetaData }
 import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
@@ -87,6 +87,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
                 states-protos = ""
                 events-protos = ""
                 propagated-headers = ""
+                persisted-headers = ""
               }
               read-side {
                 # set this value to true whenever a readSide config is set
@@ -189,7 +190,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
       aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
@@ -254,7 +255,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
       aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
@@ -361,7 +362,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
       aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
@@ -420,7 +421,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
       aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
@@ -434,50 +435,10 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       }
     }
     "return a failure when an invalid event is received" in {
-      val config: Config = ConfigFactory.parseString(s"""
-            akka.cluster.sharding.number-of-shards = 1
-            chiefofstate {
-             	service-name = "chiefofstate"
-              ask-timeout = 5
-              snapshot-criteria {
-                disable-snapshot = false
-                retention-frequency = 1
-                retention-number = 1
-                delete-events-on-snapshot = true
-              }
-              events {
-                tagname: "cos"
-              }
-              grpc {
-                client {
-                  deadline-timeout = 3000
-                }
-                server {
-                  address = "0.0.0.0"
-                  port = 9000
-                }
-              }
-              write-side {
-                host = "localhost"
-                port = 6000
-                use-tls = false
-                enable-protos-validation = true
-                states-protos = ""
-                events-protos = ""
-                propagated-headers = ""
-              }
-              read-side {
-                # set this value to true whenever a readSide config is set
-                enabled = false
-              }
-              telemetry {
-                namespace = ""
-                otlp_endpoint = ""
-                trace_propagators = "b3multi"
-              }
-            }
-          """)
-      val mainConfig = CosConfig(config)
+      val writeSideConfig =
+        cosConfig.writeSideConfig.copy(enableProtoValidation = true, eventsProtos = Seq(), statesProtos = Seq())
+
+      val mainConfig = cosConfig.copy(writeSideConfig = writeSideConfig)
 
       val aggregateId: String = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
@@ -522,7 +483,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
       aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
@@ -537,50 +498,12 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
     }
     "return a failure when an invalid state is received" in {
-      val config: Config = ConfigFactory.parseString(s"""
-            akka.cluster.sharding.number-of-shards = 1
-            chiefofstate {
-             	service-name = "chiefofstate"
-              ask-timeout = 5
-              snapshot-criteria {
-                disable-snapshot = true
-                retention-frequency = 1
-                retention-number = 1
-                delete-events-on-snapshot = false
-              }
-              events {
-                tagname: "cos"
-              }
-              grpc {
-                client {
-                  deadline-timeout = 3000
-                }
-                server {
-                  address = "0.0.0.0"
-                  port = 9000
-                }
-              }
-              write-side {
-                host = "localhost"
-                port = 6000
-                use-tls = false
-                enable-protos-validation = true
-                states-protos = ""
-                events-protos = "chief_of_state.v1.AccountOpened"
-                propagated-headers = ""
-              }
-              read-side {
-                # set this value to true whenever a readSide config is set
-                enabled = false
-              }
-              telemetry {
-                namespace = ""
-                otlp_endpoint = ""
-                trace_propagators = "b3multi"
-              }
-            }
-          """)
-      val mainConfig = CosConfig(config)
+      val writeSideConfig = cosConfig.writeSideConfig.copy(
+        enableProtoValidation = true,
+        eventsProtos = Seq("chief_of_state.v1.AccountOpened"),
+        statesProtos = Seq())
+
+      val mainConfig = cosConfig.copy(writeSideConfig = writeSideConfig)
 
       val aggregateId: String = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
@@ -632,7 +555,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
       aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
@@ -648,50 +571,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
     }
 
     "return a failure when an empty state is received" in {
-      val config: Config = ConfigFactory.parseString(s"""
-            akka.cluster.sharding.number-of-shards = 1
-            chiefofstate {
-             	service-name = "chiefofstate"
-              ask-timeout = 5
-              snapshot-criteria {
-                disable-snapshot = true
-                retention-frequency = 1
-                retention-number = 1
-                delete-events-on-snapshot = false
-              }
-              events {
-                tagname: "cos"
-              }
-              grpc {
-                client {
-                  deadline-timeout = 3000
-                }
-                server {
-                  address = "0.0.0.0"
-                  port = 9000
-                }
-              }
-              write-side {
-                host = "localhost"
-                port = 6000
-                use-tls = false
-                enable-protos-validation = true
-                states-protos = ""
-                events-protos = "chief_of_state.v1.AccountOpened"
-                propagated-headers = ""
-              }
-              read-side {
-                # set this value to true whenever a readSide config is set
-                enabled = false
-              }
-              telemetry {
-                namespace = ""
-                otlp_endpoint = ""
-                trace_propagators = "b3multi"
-              }
-            }
-          """)
-      val mainConfig = CosConfig(config)
+      val mainConfig = cosConfig.copy()
 
       val aggregateId: String = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
@@ -739,7 +619,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
       aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
@@ -805,7 +685,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
-        .addHeaders(RemoteCommand.Header().withKey("header-1").withStringValue("header-value-1"))
+        .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
       aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)

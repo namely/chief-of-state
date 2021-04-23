@@ -8,6 +8,7 @@ option java_outer_classname = "CosInternalProto";
 
 import "google/protobuf/any.proto";
 import "chief_of_state/v1/persistence.proto";
+import "chief_of_state/v1/common.proto";
 import "google/rpc/status.proto";
 
 // THESE ARE INTERNAL MESSAGES FOR THE COS SERVICE
@@ -39,11 +40,12 @@ message RemoteCommand {
   string entity_id = 1;
   // the message to send
   google.protobuf.Any command = 2;
-  // the grpc headers/metadata
-  repeated Header headers = 3;
-
+  // the grpc headers/metadata to propagate to the command handler
+  repeated chief_of_state.v1.Header propagated_headers = 3;
+  // the grpc headers/metadata to persist to journal metatdata
+  repeated chief_of_state.v1.Header persisted_headers = 4;
   // additional data to be added to the state meta
-  map<string, google.protobuf.Any> data = 4;
+  map<string, google.protobuf.Any> data = 5;
 }
 
 // GetStateCommand returns the current state of a

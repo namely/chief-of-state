@@ -17,6 +17,7 @@ import com.typesafe.config.Config
  * @param eventsProtos the list of the events proto messages package names
  * @param statesProtos the list of the states proto messages package names
  * @param propagatedHeaders the list of gRPC headers to propagate
+ * @param persistedHeaders the list of gRPC headers to persist
  */
 case class WriteSideConfig(
     host: String,
@@ -25,7 +26,8 @@ case class WriteSideConfig(
     enableProtoValidation: Boolean,
     eventsProtos: Seq[String],
     statesProtos: Seq[String],
-    propagatedHeaders: Seq[String])
+    propagatedHeaders: Seq[String],
+    persistedHeaders: Seq[String])
 
 object WriteSideConfig {
 
@@ -36,6 +38,7 @@ object WriteSideConfig {
   private val eventsProtosKey: String = "chiefofstate.write-side.events-protos"
   private val statesProtosKey: String = "chiefofstate.write-side.states-protos"
   private val propagatedHeadersKey: String = "chiefofstate.write-side.propagated-headers"
+  private val persistedHeadersKey: String = "chiefofstate.write-side.persisted-headers"
 
   /**
    * creates an instancee of WriteSideConfig
@@ -46,12 +49,23 @@ object WriteSideConfig {
   def apply(config: Config): WriteSideConfig = {
 
     WriteSideConfig(
-      config.getString(hostKey),
-      config.getInt(portKey),
-      config.getBoolean(useTlsKey),
-      config.getBoolean(protoValidationKey),
-      config.getString(eventsProtosKey).trim.split(",").toSeq.map(_.trim).filter(_.nonEmpty),
-      config.getString(statesProtosKey).trim.split(",").toSeq.map(_.trim).filter(_.nonEmpty),
-      config.getString(propagatedHeadersKey).trim.split(",").toSeq.map(_.trim).filter(_.nonEmpty))
+      host = config.getString(hostKey),
+      port = config.getInt(portKey),
+      useTls = config.getBoolean(useTlsKey),
+      enableProtoValidation = config.getBoolean(protoValidationKey),
+      eventsProtos = csvSplitDistinct(config.getString(eventsProtosKey)),
+      statesProtos = csvSplitDistinct(config.getString(statesProtosKey)),
+      propagatedHeaders = csvSplitDistinct(config.getString(propagatedHeadersKey)),
+      persistedHeaders = csvSplitDistinct(config.getString(persistedHeadersKey)))
+  }
+
+  /**
+   * split config string on a comma
+   *
+   * @param s a string
+   * @return a sequence of values
+   */
+  private def csvSplitDistinct(s: String): Seq[String] = {
+    s.trim.split(",").toSeq.map(_.trim).filter(_.nonEmpty).distinct
   }
 }

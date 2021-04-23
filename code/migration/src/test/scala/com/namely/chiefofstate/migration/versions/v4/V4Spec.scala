@@ -17,6 +17,7 @@ import java.sql.{ Connection, DriverManager }
 import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import com.namely.chiefofstate.migration.helper.DbHelper._
 
 class V4Spec extends BaseSpec with ForAllTestContainer {
 
@@ -29,70 +30,8 @@ class V4Spec extends BaseSpec with ForAllTestContainer {
   lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
     TestConfig.dbConfigFromUrl(container.jdbcUrl, container.username, container.password, "write-side-slick")
 
-  /**
-   * create connection to the container db for test statements
-   */
-  def getConnection(container: PostgreSQLContainer): Connection = {
-    // load the driver
-    Class.forName("org.postgresql.Driver")
-
-    DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
-  }
-
-  // drop the COS schema between tests
-  def recreateSchema(container: PostgreSQLContainer): Unit = {
-    val statement = getConnection(container).createStatement()
-    statement.addBatch(s"drop schema if exists $cosSchema cascade")
-    statement.addBatch(s"create schema $cosSchema")
-    statement.executeBatch()
-  }
-
   override def beforeEach(): Unit = {
-    recreateSchema(container)
-  }
-
-  def insertJournal(id: String, serId: Int, serManifest: String): String =
-    s"""
-    insert into event_journal (
-      persistence_id,
-      sequence_number,
-      deleted,
-      writer,
-      write_timestamp,
-      adapter_manifest,
-      event_ser_id,
-      event_ser_manifest,
-      event_payload
-    ) values (
-      '$id',
-      1,
-      false,
-      'some-writer',
-      0,
-      'some-manifest',
-      $serId,
-      '$serManifest',
-      'DEADBEEF'::bytea
-    )"""
-
-  def insertSnapshot(id: String, serId: Int, serManifest: String): String = {
-    s"""
-    insert into state_snapshot (
-      persistence_id,
-      sequence_number,
-      created,
-      snapshot_ser_id,
-      snapshot_ser_manifest,
-      snapshot_payload
-    ) values (
-      '$id',
-      1,
-      0,
-      $serId,
-      '$serManifest',
-      'DEADBEEF'::bytea
-    )
-    """
+    recreateSchema(container, cosSchema)
   }
 
   ".upgrade" should {
@@ -186,17 +125,6 @@ class V4Spec extends BaseSpec with ForAllTestContainer {
       actualSnapshot(id3) shouldBe ((unrelatedId, unrelatedManifest))
 
       testConn.close()
-    }
-  }
-
-  ".snapshot" should {
-    "create the new journal, snapshot and read side store" in {
-      val v4 = V4(journalJdbcConfig)
-      Await.result(journalJdbcConfig.db.run(v4.snapshot()), Duration.Inf) shouldBe {}
-      DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
-      DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
-      DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
-      DbUtil.tableExists(journalJdbcConfig, "read_side_offsets") shouldBe true
     }
   }
 

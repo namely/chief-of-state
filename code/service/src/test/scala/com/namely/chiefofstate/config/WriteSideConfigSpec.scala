@@ -22,6 +22,7 @@ class WriteSideConfigSpec extends BaseSpec {
                 states-protos = ""
                 events-protos = ""
                 propagated-headers = ""
+                persisted-headers = ""
               }
             }
           """)
