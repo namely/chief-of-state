@@ -31,6 +31,12 @@ import com.namely.protobuf.chiefofstate.v1.common.Header
 case class V5(system: ActorSystem[_], journalJdbcConfig: DatabaseConfig[JdbcProfile]) extends Version {
   override def versionNumber: Int = 5
 
+  /**
+   * runs header migrations before the commit transaction. these operations
+   * are idempotent.
+   *
+   * @return Success/failure
+   */
   override def beforeUpgrade(): Try[Unit] = Try {
     V5.migrateEvents(journalJdbcConfig)(system)
     V5.migrateSnapshots(journalJdbcConfig)(system)
@@ -56,6 +62,12 @@ object V5 {
   private val pluginId: String = "persisted_headers.v1"
   private val pageSize: Int = 1000
 
+  /**
+   * adds headers to event meta
+   *
+   * @param dbConfig db config to run
+   * @param system actor system
+   */
   def migrateEvents(dbConfig: DatabaseConfig[JdbcProfile])(implicit system: ActorSystem[_]): Unit = {
     implicit val rowType1 = GetResult(r => (r.nextLong(), r.nextBytes()))
 
@@ -116,6 +128,12 @@ object V5 {
     Await.result(pipeline, Duration.Inf)
   }
 
+  /**
+   * adds headers to snapshot
+   *
+   * @param dbConfig db config to run
+   * @param system actor system
+   */
   def migrateSnapshots(dbConfig: DatabaseConfig[JdbcProfile])(implicit system: ActorSystem[_]): Unit = {
     implicit val rowType2 = GetResult(r => (r.nextString(), r.nextLong(), r.nextBytes()))
 
