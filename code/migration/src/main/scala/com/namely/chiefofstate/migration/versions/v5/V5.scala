@@ -38,7 +38,7 @@ case class V5(system: ActorSystem[_], journalJdbcConfig: DatabaseConfig[JdbcProf
    * @return Success/failure
    */
   override def beforeUpgrade(): Try[Unit] = Try {
-    V5.migrateEvents(journalJdbcConfig)(system)
+    V5.migrateJournal(journalJdbcConfig)(system)
     V5.migrateSnapshots(journalJdbcConfig)(system)
   }
 
@@ -68,7 +68,8 @@ object V5 {
    * @param dbConfig db config to run
    * @param system actor system
    */
-  def migrateEvents(dbConfig: DatabaseConfig[JdbcProfile])(implicit system: ActorSystem[_]): Unit = {
+  def migrateJournal(dbConfig: DatabaseConfig[JdbcProfile])(implicit system: ActorSystem[_]): Unit = {
+    log.info("updating headers in journal")
     implicit val rowType1 = GetResult(r => (r.nextLong(), r.nextBytes()))
 
     val query = sql"""
@@ -135,6 +136,7 @@ object V5 {
    * @param system actor system
    */
   def migrateSnapshots(dbConfig: DatabaseConfig[JdbcProfile])(implicit system: ActorSystem[_]): Unit = {
+    log.info("updating headers in snapshots")
     implicit val rowType2 = GetResult(r => (r.nextString(), r.nextLong(), r.nextBytes()))
 
     val query = sql"""
