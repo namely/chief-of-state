@@ -56,14 +56,6 @@ object V5 {
   private val pluginId: String = "persisted_headers.v1"
   private val pageSize: Int = 1000
 
-  def getResult(row: slick.jdbc.PositionedResult): (Long, Array[Byte]) = {
-    (row.nextLong(), row.nextBytes())
-  }
-
-  def insertEvents(records: Seq[EventWrapper]): Try[Unit] = ???
-
-  def insertState(records: Seq[StateWrapper]): Try[Unit] = ???
-
   def migrateEvents(dbConfig: DatabaseConfig[JdbcProfile])(implicit system: ActorSystem[_]): Unit = {
     implicit val rowType1 = GetResult(r => (r.nextLong(), r.nextBytes()))
 
