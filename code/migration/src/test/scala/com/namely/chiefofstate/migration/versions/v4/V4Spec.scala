@@ -189,15 +189,4 @@ class V4Spec extends BaseSpec with ForAllTestContainer {
     }
   }
 
-  ".snapshot" should {
-    "create the new journal, snapshot and read side store" in {
-      val v4 = V4(journalJdbcConfig)
-      Await.result(journalJdbcConfig.db.run(v4.snapshot()), Duration.Inf) shouldBe {}
-      DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
-      DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
-      DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
-      DbUtil.tableExists(journalJdbcConfig, "read_side_offsets") shouldBe true
-    }
-  }
-
 }
