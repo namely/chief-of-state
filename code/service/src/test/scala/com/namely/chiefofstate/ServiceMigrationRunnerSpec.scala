@@ -92,7 +92,7 @@ class ServiceMigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
       // create the versions table
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
 
-      // set the current version to 4
+      // set the current version to 5
       val stmt = Migrator.setCurrentVersionNumber(dbConfig, 5, true)
 
       Await.ready(dbConfig.db.run(stmt), Duration.Inf)
