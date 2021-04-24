@@ -96,7 +96,8 @@ object SchemasUtil {
    * @return the DBIOAction creating the table and offset
    */
   private[migration] def createReadSideOffsetsStmt(
-      tableName: String = "read_side_offsets"): DBIOAction[Unit, NoStream, Effect] = {
+      tableName: String = "read_side_offsets",
+      projectionsTableName: String = "projections"): DBIOAction[Unit, NoStream, Effect] = {
 
     val table = sqlu"""
       CREATE TABLE IF NOT EXISTS #$tableName (
@@ -110,11 +111,22 @@ object SchemasUtil {
       )
     """
 
+    val projectionTable =
+      sqlu"""
+        CREATE TABLE IF NOT EXISTS #$projectionsTableName (
+          projection_name VARCHAR(255) NOT NULL,
+          projection_key VARCHAR(255) NOT NULL,
+          paused BOOLEAN NOT NULL,
+          last_updated BIGINT NOT NULL,
+          PRIMARY KEY(projection_name, projection_key)
+        )
+      """
+
     val ix = sqlu"""
     CREATE INDEX IF NOT EXISTS projection_name_index ON #$tableName (projection_name);
     """
 
-    DBIO.seq(table, ix)
+    DBIO.seq(table, ix, projectionTable)
   }
 
   /**
