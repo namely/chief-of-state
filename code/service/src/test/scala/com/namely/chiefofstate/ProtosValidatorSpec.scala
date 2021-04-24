@@ -13,25 +13,24 @@ import com.namely.protobuf.chiefofstate.v1.tests.{ Account, AccountOpened }
 import com.typesafe.config.{ Config, ConfigFactory }
 
 class ProtosValidatorSpec extends BaseSpec {
+
+  val sharedConfig: WriteSideConfig = WriteSideConfig(
+    host = "localhost",
+    port = 1000,
+    useTls = false,
+    enableProtoValidation = false,
+    eventsProtos = Seq(),
+    statesProtos = Seq(),
+    propagatedHeaders = Seq(),
+    persistedHeaders = Seq())
+
   "Events and State protos validation" should {
     "pass through successfully when validation is disabled" in {
-      val config: Config = ConfigFactory.parseString(s"""
-            chiefofstate {
-              write-side {
-                host = "localhost"
-                port = 1000
-                use-tls = false
-                enable-protos-validation = false
-                states-protos = ""
-                events-protos = ""
-                propagated-headers = ""
-              }
-            }
-          """)
-      val writeSideConfig: WriteSideConfig = WriteSideConfig(config)
+      val writeSideConfig = sharedConfig.copy(enableProtoValidation = false)
 
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(writeSideConfig)
+
       val event = AccountOpened()
       val state = Account()
       var isValid = eventsAndStateProtosValidation.validateEvent(Any.pack(event))
@@ -41,25 +40,18 @@ class ProtosValidatorSpec extends BaseSpec {
     }
 
     "validate events and state proto successfully" in {
-      val config: Config = ConfigFactory.parseString(s"""
-            chiefofstate {
-              write-side {
-                host = "localhost"
-                port = 1000
-                use-tls = false
-                enable-protos-validation = true
-                states-protos = "chief_of_state.v1.Account"
-                events-protos = "chief_of_state.v1.AccountOpened"
-                propagated-headers = ""
-              }
-            }
-          """)
-      val writeSideConfig: WriteSideConfig = WriteSideConfig(config)
+      val event = AccountOpened()
+      val state = Account()
+
+      val stateUrl = state.companion.scalaDescriptor.fullName
+      val eventUrl = event.companion.scalaDescriptor.fullName
+
+      val writeSideConfig =
+        sharedConfig.copy(enableProtoValidation = true, eventsProtos = Seq(eventUrl), statesProtos = Seq(stateUrl))
 
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(writeSideConfig)
-      val event = AccountOpened()
-      val state = Account()
+
       var isValid = eventsAndStateProtosValidation.validateEvent(Any.pack(event))
       isValid shouldBe true
       isValid = eventsAndStateProtosValidation.validateState(Any.pack(state))
@@ -67,20 +59,7 @@ class ProtosValidatorSpec extends BaseSpec {
     }
 
     "invalidate events and state proto successfully" in {
-      val config: Config = ConfigFactory.parseString(s"""
-            chiefofstate {
-              write-side {
-                host = "localhost"
-                port = 1000
-                use-tls = false
-                enable-protos-validation = true
-                states-protos = ""
-                events-protos = ""
-                propagated-headers = ""
-              }
-            }
-          """)
-      val writeSideConfig: WriteSideConfig = WriteSideConfig(config)
+      val writeSideConfig = sharedConfig.copy(enableProtoValidation = true, eventsProtos = Seq(), statesProtos = Seq())
 
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(writeSideConfig)
@@ -93,20 +72,7 @@ class ProtosValidatorSpec extends BaseSpec {
     }
 
     "throws when an event or state is invalid" in {
-      val config: Config = ConfigFactory.parseString(s"""
-            chiefofstate {
-              write-side {
-                host = "localhost"
-                port = 1000
-                use-tls = false
-                enable-protos-validation = true
-                states-protos = ""
-                events-protos = ""
-                propagated-headers = ""
-              }
-            }
-          """)
-      val writeSideConfig: WriteSideConfig = WriteSideConfig(config)
+      val writeSideConfig = sharedConfig.copy(enableProtoValidation = true, eventsProtos = Seq(), statesProtos = Seq())
 
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(writeSideConfig)

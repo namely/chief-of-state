@@ -9,7 +9,7 @@ package com.namely.chiefofstate
 import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
 import com.google.protobuf.timestamp.Timestamp
-import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand.Header
+import com.namely.protobuf.chiefofstate.v1.common.Header
 import io.grpc.{ Metadata, Status, StatusException, StatusRuntimeException }
 import io.grpc.protobuf.StatusProto
 
@@ -69,13 +69,13 @@ object Util {
   }
 
   /**
-   * transforms a gRPC metadata to a RemoteCommand.Header
+   * transforms a gRPC metadata to a COS Header
    *
    * @param metadata the gRPC metadata
    * @param keys the header keys to look for
    * @return the list RemoteCommand.Header
    */
-  def transformMetadataToRemoteCommandHeader(metadata: Metadata, keys: Seq[String]): Seq[Header] = {
+  def extractHeaders(metadata: Metadata, keys: Seq[String]): Seq[Header] = {
     val output: mutable.ListBuffer[Header] = mutable.ListBuffer.empty[Header]
 
     keys.foreach(key => {

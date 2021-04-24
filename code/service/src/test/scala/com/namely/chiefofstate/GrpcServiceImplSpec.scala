@@ -22,38 +22,10 @@ import io.grpc.protobuf.StatusProto
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.Success
+import com.namely.protobuf.chiefofstate.v1.common.Header
+import com.google.protobuf.ByteString
 
 class GrpcServiceImplSpec extends BaseSpec {
-  ".getRemoteCommand" should {
-    "invoke the Util helper" in {
-
-      val key: String = "some-header"
-      val value: String = "some value"
-
-      val config: WriteSideConfig = WriteSideConfig(
-        host = "x",
-        port = 0,
-        useTls = false,
-        enableProtoValidation = false,
-        eventsProtos = Seq.empty[String],
-        statesProtos = Seq.empty[String],
-        propagatedHeaders = Seq(key))
-
-      val metadata: Metadata = new Metadata()
-      val stringHeaderKey: Metadata.Key[String] = Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER)
-      metadata.put(stringHeaderKey, value)
-
-      val command = ProcessCommandRequest().withCommand(any.Any.pack(StringValue("x")))
-
-      val actual = GrpcServiceImpl.getRemoteCommand(config, command, metadata, Map())
-
-      val expected = RemoteCommand()
-        .withCommand(command.getCommand)
-        .addHeaders(RemoteCommand.Header().withKey(key).withStringValue(value))
-
-      actual shouldBe expected
-    }
-  }
 
   ".requireEntityId" should {
     "fail if entity missing" in {
@@ -112,6 +84,27 @@ class GrpcServiceImplSpec extends BaseSpec {
       assertThrows[StatusException] {
         GrpcServiceImpl.handleCommandReply(commandReply).get
       }
+    }
+  }
+
+  ".adaptLegacyHeaders" should {
+    "transform string, byte, and empty values" in {
+
+      val stringHeader = Header().withKey("string-key").withStringValue("string-value")
+      val bytesHeader = Header().withKey("bytes-key").withBytesValue(ByteString.copyFrom(Array[Byte](Byte.MaxValue)))
+      val emptyHeader = Header().withKey("empty-key")
+      val headers: Seq[Header] = Seq(stringHeader, bytesHeader, emptyHeader)
+
+      val actual = GrpcServiceImpl.adaptLegacyHeaders(headers)
+      actual.headers.size shouldBe 3
+
+      actual.headers.find(_.key == stringHeader.key).get.getStringValue shouldBe stringHeader.getStringValue
+      actual.headers.find(_.key == bytesHeader.key).get.getBytesValue shouldBe bytesHeader.getBytesValue
+      actual.headers.find(_.key == emptyHeader.key).get.value.isEmpty shouldBe true
+    }
+    "handle empty headers" in {
+      val actual = GrpcServiceImpl.adaptLegacyHeaders(Seq.empty[Header])
+      actual.headers.isEmpty shouldBe true
     }
   }
 }

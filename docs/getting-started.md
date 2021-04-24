@@ -50,7 +50,7 @@ COS_WRITE_SIDE_HOST: localhost
 COS_WRITE_SIDE_PORT: 50051
 ```
 
-(If you are new to setting up COS, see the full [configuration](docs/configuration.md) guide.)
+(If you are new to setting up COS, see the full [configuration](configuration.md) guide.)
 
 ### Sending requests to COS
 Once you have implemented a write handler and registered it with COS, you are able to start sending requests to chief-of-state with the chief-of-state [gRPC client methods](https://github.com/namely/chief-of-state-protos/blob/master/chief_of_state/v1/service.proto).
@@ -80,4 +80,4 @@ COS_READ_SIDE_CONFIG__HOST__KAFKA: localhost
 COS_READ_SIDE_CONFIG__PORT__KAFKA: 50053
 ```
 
-See the readside configuration settings in our [configuration docs](./docs/configuration.md) for more details.
+See the readside configuration settings in our [configuration docs](./configuration.md) for more details.

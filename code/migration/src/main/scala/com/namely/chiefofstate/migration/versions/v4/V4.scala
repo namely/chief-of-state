@@ -48,17 +48,6 @@ case class V4(journalJdbcConfig: DatabaseConfig[JdbcProfile]) extends Version {
         WHERE snapshot_ser_id = #${V4.oldSerializerId} AND snapshot_ser_manifest = ${V4.oldSerializerManifestState}
       """)
   }
-
-  /**
-   * creates the latest COS schema if no prior versions found.
-   *
-   * @return a DBIO that creates the version snapshot
-   */
-  override def snapshot(): DBIO[Unit] = {
-    log.info(s"running snapshot for version #$versionNumber")
-    SchemasUtil.createStoreTables(journalJdbcConfig)
-    DBIO.successful {}
-  }
 }
 
 object V4 {

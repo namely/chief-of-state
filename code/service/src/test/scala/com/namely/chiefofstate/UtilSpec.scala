@@ -13,9 +13,12 @@ import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.tests.AccountOpened
 import io.grpc.{ Metadata, Status, StatusException, StatusRuntimeException }
 import io.grpc.protobuf.StatusProto
+import com.namely.protobuf.chiefofstate.v1.common.Header
+import com.namely.protobuf.chiefofstate.v1.common.Header.Value.{ BytesValue, StringValue }
 
 import java.time.{ Instant, ZoneId }
 import scala.util.Failure
+import com.google.protobuf.ByteString
 
 class UtilSpec extends BaseSpec {
   "A protobuf Timestamp date" should {
@@ -53,16 +56,38 @@ class UtilSpec extends BaseSpec {
       packageName shouldBe "chief_of_state.v1.AccountOpened"
     }
   }
-  "Transform gRPC metadata into RemoteCommand.Header" should {
+  ".extractHeaders" should {
     "successfully parse gRPC headers" in {
-      val metadata: Metadata = new Metadata()
-      val stringHeaderKey: Metadata.Key[String] = Metadata.Key.of("some-header", Metadata.ASCII_STRING_MARSHALLER)
-      metadata.put(stringHeaderKey, "some header")
-      val byteHeaderKey: Metadata.Key[Array[Byte]] = Metadata.Key.of("byte-header-bin", Metadata.BINARY_BYTE_MARSHALLER)
-      metadata.put(byteHeaderKey, "".getBytes)
+      val fooKeyName: String = "foo"
+      val fooKey: Metadata.Key[String] = Metadata.Key.of(fooKeyName, Metadata.ASCII_STRING_MARSHALLER)
 
-      val transformed = Util.transformMetadataToRemoteCommandHeader(metadata, Seq("some-header", "byte-header-bin"))
-      transformed.size shouldBe 2
+      val foo1: String = "foo"
+      val fooStringValue1: StringValue = StringValue(foo1)
+      val fooHeader1: Header = Header(fooKeyName, fooStringValue1)
+
+      val foo2: String = "someOtherFoo"
+      val fooStringValue2: StringValue = StringValue(foo2)
+      val fooHeader2: Header = Header(fooKeyName, fooStringValue2)
+
+      val barKeyName: String = "bar-bin"
+      val bar: Array[Byte] = "bar".getBytes
+      val barKey: Metadata.Key[Array[Byte]] = Metadata.Key.of(barKeyName, Metadata.BINARY_BYTE_MARSHALLER)
+      val barBytesValue: BytesValue = BytesValue(ByteString.copyFrom(bar))
+      val barHeader: Header = Header(barKeyName, barBytesValue)
+
+      val baz: String = "baz"
+      val bazKey: Metadata.Key[String] = Metadata.Key.of(baz, Metadata.ASCII_STRING_MARSHALLER)
+
+      val metadata: Metadata = new Metadata()
+      metadata.put(fooKey, foo1)
+      metadata.put(fooKey, foo2)
+      metadata.put(barKey, bar)
+      metadata.put(bazKey, baz)
+
+      val desiredHeaders: Seq[String] = Seq("foo", "bar-bin", "not-a-key")
+      val actual: Seq[Header] = Util.extractHeaders(metadata, desiredHeaders)
+      val expected: Seq[Header] = Seq(fooHeader1, fooHeader2, barHeader)
+      actual should contain theSameElementsAs expected
     }
   }
 
