@@ -13,7 +13,7 @@ object Dependencies {
     val ScalapbValidationVersion: String = "0.1.4"
     val ScalaTestVersion: String = "3.2.8"
     val AkkaManagementVersion: String = "1.0.10"
-    val AkkaProjectionVersion: String = "1.1.0"
+    val AkkaProjectionVersion: String = "1.2.0"
     val PostgresDriverVersion: String = "42.2.20"
     val SlickVersion: String = "3.3.3"
     val AkkaPersistenceJdbcVersion: String = "5.0.0"
@@ -51,9 +51,9 @@ object Dependencies {
     "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % AkkaManagementVersion,
     "com.lightbend.akka.management" %% "akka-management-cluster-http" % AkkaManagementVersion,
     "com.lightbend.akka" %% "akka-projection-core" % AkkaProjectionVersion,
-    "com.lightbend.akka" %% "akka-projection-slick" % AkkaProjectionVersion,
     "com.lightbend.akka" %% "akka-projection-kafka" % AkkaProjectionVersion,
     "com.lightbend.akka" %% "akka-projection-eventsourced" % Versions.AkkaProjectionVersion,
+    "com.lightbend.akka" %% "akka-projection-jdbc" % Versions.AkkaProjectionVersion,
     "com.typesafe.akka" %% "akka-persistence-typed" % AkkaVersion,
     "org.postgresql" % "postgresql" % Versions.PostgresDriverVersion,
     "com.lightbend.akka" %% "akka-persistence-jdbc" % AkkaPersistenceJdbcVersion,
