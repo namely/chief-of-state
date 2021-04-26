@@ -97,7 +97,7 @@ object SchemasUtil {
    */
   private[migration] def createReadSideOffsetsStmt(
       tableName: String = "read_side_offsets",
-      projectionsTableName: String = "projections"): DBIOAction[Unit, NoStream, Effect] = {
+      projectionsTableName: String = "read_sides"): DBIOAction[Unit, NoStream, Effect] = {
 
     val table = sqlu"""
       CREATE TABLE IF NOT EXISTS #$tableName (
