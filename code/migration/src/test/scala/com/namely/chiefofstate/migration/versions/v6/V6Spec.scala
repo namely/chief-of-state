@@ -41,7 +41,7 @@ class V6Spec extends BaseSpec with ForAllTestContainer {
       DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
       DbUtil.tableExists(journalJdbcConfig, "state_snapshot") shouldBe true
       DbUtil.tableExists(journalJdbcConfig, "read_side_offsets") shouldBe true
-      DbUtil.tableExists(journalJdbcConfig, "projections") shouldBe true
+      DbUtil.tableExists(journalJdbcConfig, "read_sides") shouldBe true
     }
   }
 }
