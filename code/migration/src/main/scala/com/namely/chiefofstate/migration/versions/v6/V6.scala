@@ -6,12 +6,13 @@
 
 package com.namely.chiefofstate.migration.versions.v6
 import com.namely.chiefofstate.migration.{ SchemasUtil, Version }
-import com.namely.chiefofstate.migration.versions.v5.V5.log
+import org.slf4j.{ Logger, LoggerFactory }
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
 
 case class V6(journalJdbcConfig: DatabaseConfig[JdbcProfile]) extends Version {
+  final val log: Logger = LoggerFactory.getLogger(getClass)
   override def versionNumber: Int = 6
 
   /**
