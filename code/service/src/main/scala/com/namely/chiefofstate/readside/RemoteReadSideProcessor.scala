@@ -41,30 +41,33 @@ private[readside] class RemoteReadSideProcessor(
       eventTag: String,
       resultingState: com.google.protobuf.any.Any,
       meta: MetaData): Try[HandleReadSideResponse] = {
-    Try {
-      // start the span
-      val span: Span = GlobalOpenTelemetry
+
+    // start the span
+    val span: Try[Span] = Try {
+      GlobalOpenTelemetry
         .getTracer(getClass.getPackage().getName())
         .spanBuilder("RemoteReadSideProcessor.processEvent")
         .setAttribute("component", this.getClass.getName)
         .startSpan()
+    }
 
-      val scope = span.makeCurrent()
+    val scope = span.map(_.makeCurrent())
 
+    val response: Try[HandleReadSideResponse] = Try {
       val headers = new Metadata()
       headers.put(Metadata.Key.of(COS_ENTITY_ID_HEADER, Metadata.ASCII_STRING_MARSHALLER), meta.entityId)
       headers.put(Metadata.Key.of(COS_EVENT_TAG_HEADER, Metadata.ASCII_STRING_MARSHALLER), eventTag)
 
-      val response = MetadataUtils
+      MetadataUtils
         .attachHeaders(readSideHandlerServiceBlockingStub, headers)
         .handleReadSide(HandleReadSideRequest().withEvent(event).withState(resultingState).withMeta(meta))
-
-      // finish the span
-      scope.close()
-      span.end()
-
-      // return the response
-      response
     }
+
+    // finish the span
+    scope.foreach(_.close())
+    span.foreach(_.end())
+
+    // return the response
+    response
   }
 }

@@ -17,11 +17,35 @@ import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.R
 import com.namely.protobuf.chiefofstate.v1.tests.{ Account, AccountOpened }
 import io.grpc.Status
 import io.grpc.inprocess._
+import io.opentelemetry.api.{ GlobalOpenTelemetry, OpenTelemetry }
+import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
+import io.opentelemetry.sdk.OpenTelemetrySdk
+import io.opentelemetry.sdk.trace.data.SpanData
 
+import scala.jdk.CollectionConverters.ListHasAsScala
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.Future
+import scala.util.{ Failure, Success, Try }
+import io.opentelemetry.sdk.trace.SdkTracerProvider
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
+import io.opentelemetry.context.propagation.ContextPropagators
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
+import io.grpc.StatusRuntimeException
 
 class RemoteReadSideProcessorSpec extends BaseSpec {
+
+  var testExporter: InMemorySpanExporter = _
+  var openTelemetry: OpenTelemetry = _
+
+  override def beforeEach(): Unit = {
+    GlobalOpenTelemetry.resetForTest()
+
+    testExporter = InMemorySpanExporter.create
+    openTelemetry = OpenTelemetrySdk.builder
+      .setTracerProvider(SdkTracerProvider.builder.addSpanProcessor(SimpleSpanProcessor.create(testExporter)).build)
+      .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance))
+      .buildAndRegisterGlobal
+  }
 
   "RemoteReadSideProcessor" should {
     "handle events as expected" in {
@@ -69,7 +93,7 @@ class RemoteReadSideProcessorSpec extends BaseSpec {
           resultingState,
           meta)
 
-      triedHandleReadSideResponse.success.value shouldBe expected
+      triedHandleReadSideResponse shouldBe Success(expected)
     }
 
     "handle event when there is an exception" in {
@@ -88,7 +112,8 @@ class RemoteReadSideProcessorSpec extends BaseSpec {
 
       val mockImpl = mock[ReadSideHandlerServiceGrpc.ReadSideHandlerService]
 
-      (mockImpl.handleReadSide _).expects(request).returning(Future.failed(Status.INTERNAL.asException()))
+      val expectedError = Status.INTERNAL.asRuntimeException()
+      (mockImpl.handleReadSide _).expects(request).returning(Future.failed(expectedError))
 
       val service = ReadSideHandlerServiceGrpc.bindService(mockImpl, global)
 
@@ -113,7 +138,16 @@ class RemoteReadSideProcessorSpec extends BaseSpec {
           resultingState,
           meta)
 
-      (triedHandleReadSideResponse.failure.exception should have).message("INTERNAL")
+      val error = intercept[StatusRuntimeException] {
+        triedHandleReadSideResponse.get
+      }
+      error.getStatus() shouldBe expectedError.getStatus()
+      // assert the span was closed even in case of a failure
+      testExporter
+        .getFinishedSpanItems()
+        .asScala
+        .find(_.getName() == "RemoteReadSideProcessor.processEvent")
+        .isDefined shouldBe true
     }
   }
 }
