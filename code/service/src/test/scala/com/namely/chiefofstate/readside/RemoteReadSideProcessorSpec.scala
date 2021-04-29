@@ -30,6 +30,7 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
 import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
+import io.grpc.StatusRuntimeException
 
 class RemoteReadSideProcessorSpec extends BaseSpec {
 
@@ -111,7 +112,7 @@ class RemoteReadSideProcessorSpec extends BaseSpec {
 
       val mockImpl = mock[ReadSideHandlerServiceGrpc.ReadSideHandlerService]
 
-      val expectedError = Status.INTERNAL.asException()
+      val expectedError = Status.INTERNAL.asRuntimeException()
       (mockImpl.handleReadSide _).expects(request).returning(Future.failed(expectedError))
 
       val service = ReadSideHandlerServiceGrpc.bindService(mockImpl, global)
@@ -137,7 +138,10 @@ class RemoteReadSideProcessorSpec extends BaseSpec {
           resultingState,
           meta)
 
-      triedHandleReadSideResponse shouldBe Failure(expectedError)
+      val error = intercept[StatusRuntimeException] {
+        triedHandleReadSideResponse.get
+      }
+      error.getStatus() shouldBe expectedError.getStatus()
       // assert the span was closed even in case of a failure
       testExporter
         .getFinishedSpanItems()
