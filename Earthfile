@@ -21,17 +21,17 @@ code:
 
     # copy configurations
     COPY .scalafmt.conf build.sbt .
-    COPY -dir project .
+    COPY --dir project .
 
     # clean & install dependencies
     RUN sbt clean cleanFiles update
 
     # copy proto definitions & generate
-    COPY -dir proto .
+    COPY --dir proto .
     RUN sbt protocGenerate
 
     # copy code
-    COPY -dir code .
+    COPY --dir code .
 
 docker-stage:
     # package the jars/executables
