@@ -96,6 +96,54 @@ class ReadSideHandlerImplSpec extends BaseSpec {
       triedHandleReadSideResponse shouldBe true
     }
 
+    "handle response with explicit failure" in {
+      val accountOpened = AccountOpened()
+      val account = Account()
+      val eventTag = "chiefofstate8"
+      val resultingState =
+        com.google.protobuf.any.Any.pack(account.withBalance(200))
+
+      val meta: MetaData = MetaData().withEntityId("231")
+
+      val request: HandleReadSideRequest = HandleReadSideRequest()
+        .withEvent(com.google.protobuf.any.Any.pack(accountOpened))
+        .withState(resultingState)
+        .withMeta(meta)
+
+      val expected: HandleReadSideResponse = HandleReadSideResponse().withSuccessful(false)
+
+      // mock the grpc server
+      val mockImpl = mock[ReadSideHandlerServiceGrpc.ReadSideHandlerService]
+
+      (mockImpl.handleReadSide _).expects(request).returning(Future.successful(expected))
+
+      val service = ReadSideHandlerServiceGrpc.bindService(mockImpl, global)
+
+      val serverName = InProcessServerBuilder.generateName()
+
+      // register a server that intercepts traces and reports errors
+      closeables.register(
+        InProcessServerBuilder.forName(serverName).directExecutor().addService(service).build().start())
+
+      val serverChannel = {
+        closeables.register(InProcessChannelBuilder.forName(serverName).directExecutor().build())
+      }
+
+      val readSideHandlerServiceStub: ReadSideHandlerServiceBlockingStub =
+        new ReadSideHandlerServiceBlockingStub(serverChannel)
+
+      val readSideHandlerImpl = new ReadSideHandlerImpl("id", readSideHandlerServiceStub)
+
+      val triedHandleReadSideResponse =
+        readSideHandlerImpl.processEvent(
+          com.google.protobuf.any.Any.pack(accountOpened),
+          eventTag,
+          resultingState,
+          meta)
+
+      triedHandleReadSideResponse shouldBe false
+    }
+
     "handle event when there is an exception" in {
       val accountOpened = AccountOpened()
       val account = Account()
