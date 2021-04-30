@@ -26,6 +26,7 @@ class ReadSideManagerSpec extends BaseSpec with ForAllTestContainer {
     .withValue("jdbc-default.user", ConfigValueFactory.fromAnyRef(container.username))
     .withValue("jdbc-default.password", ConfigValueFactory.fromAnyRef(container.password))
     .withValue("jdbc-default.hikari-settings.max-pool-size", ConfigValueFactory.fromAnyRef(1))
+    .withValue("jdbc-default.hikari-settings.min-idle-connections", ConfigValueFactory.fromAnyRef(1))
     .withValue("jdbc-default.idle-timeout-ms", ConfigValueFactory.fromAnyRef(1000))
     .withValue("jdbc-default.max-lifetime-ms", ConfigValueFactory.fromAnyRef(3000))
     .resolve()
