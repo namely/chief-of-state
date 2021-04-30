@@ -21,7 +21,7 @@ class ReadSideManagerSpec extends BaseSpec with ForAllTestContainer {
     .createContainer()
 
   lazy val config: Config = ConfigFactory
-    .empty()
+    .parseResources("test.conf")
     .withValue("jdbc-default.url", ConfigValueFactory.fromAnyRef(container.jdbcUrl))
     .withValue("jdbc-default.user", ConfigValueFactory.fromAnyRef(container.username))
     .withValue("jdbc-default.password", ConfigValueFactory.fromAnyRef(container.password))

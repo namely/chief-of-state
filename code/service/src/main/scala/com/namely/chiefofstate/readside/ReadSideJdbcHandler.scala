@@ -19,11 +19,11 @@ import scala.util.{ Failure, Success, Try }
 
 /**
  * Implements the akka JdbcHandler interface and forwards events to the
- * provided remote read side processor
+ * provided read side handler
  *
  * @param eventTag tag for this handler
  * @param processorId read side processor id
- * @param remoteReadProcessor a remote processor to forward events to
+ * @param readSideHandler a remote handler implementation
  */
 private[readside] class ReadSideJdbcHandler(eventTag: String, processorId: String, readSideHandler: ReadSideHandler)
     extends JdbcHandler[EventEnvelope[EventWrapper], JdbcSession] {
@@ -31,8 +31,7 @@ private[readside] class ReadSideJdbcHandler(eventTag: String, processorId: Strin
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   /**
-   * process an event inside the jdbc session by invoking the remote
-   * read processor
+   * process an event inside the jdbc session by invoking the read handler
    *
    * @param session a JdbcSession implementation
    * @param envelope the wrapped event to process
