@@ -1,4 +1,4 @@
-import sbt.{ compilerPlugin, plugins, url, AutoPlugin, CrossVersion, Plugins, Resolver, _ }
+import sbt._
 import sbt.Keys.{ resolvers, _ }
 import Dependencies.Versions
 import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{
@@ -8,7 +8,7 @@ import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{
   HeaderLicenseStyle
 }
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport.scalafmtOnCompile
-import scoverage.ScoverageKeys.coverageExcludedPackages
+import scoverage.ScoverageKeys.{coverageExcludedPackages, coverageFailOnMinimum, coverageMinimum}
 
 object Common extends AutoPlugin {
 
@@ -49,6 +49,9 @@ object Common extends AutoPlugin {
         compilerPlugin(("com.github.ghik" % "silencer-plugin" % Versions.SilencerVersion).cross(CrossVersion.full)),
         ("com.github.ghik" % "silencer-lib" % Versions.SilencerVersion % Provided).cross(CrossVersion.full)),
       scalafmtOnCompile := true,
+      // require test coverage
+      coverageMinimum := 80,
+      coverageFailOnMinimum := true,
       // show full stack traces and test case durations
       Test / testOptions += Tests.Argument("-oDF"),
       Test / logBuffered := false,
