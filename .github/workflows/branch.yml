@@ -12,6 +12,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      EARTHLY_SECRETS: "CODECOV_TOKEN"
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USER }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       GIT_URL_INSTEAD_OF: "https://github.com/=git@github.com:"
