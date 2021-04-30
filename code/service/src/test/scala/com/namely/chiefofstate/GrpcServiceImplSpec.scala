@@ -134,6 +134,7 @@ class GrpcServiceImplSpec extends BaseActorSpec(s"""
     "inject persisted and propagated headers" in {
       // define a config that persists & propagates headers
       val headerKey = "x-custom-header"
+      val headerValue = "value"
       val customWriteConfig =
         writeSideConfig.copy(persistedHeaders = Seq(headerKey), propagatedHeaders = Seq(headerKey))
       // create the expected state
@@ -171,7 +172,6 @@ class GrpcServiceImplSpec extends BaseActorSpec(s"""
       val client = ChiefOfStateServiceGrpc.blockingStub(channel)
 
       // send request
-      val headerValue = "value"
       val requestHeaders: Metadata = GrpcHelpers.getHeaders((headerKey, headerValue))
       val request = ProcessCommandRequest(entityId = entityId).withCommand(any.Any.pack(StringValue("some-command")))
 
