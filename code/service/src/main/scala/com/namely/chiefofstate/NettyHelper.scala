@@ -24,6 +24,6 @@ object NettyHelper {
     // decide on negotiation type
     val negotiationType: NegotiationType = if (useTls) TLS else PLAINTEXT
 
-    NettyChannelBuilder.forAddress(host, port).negotiationType(negotiationType)
+    NettyChannelBuilder.forAddress(host, port).enableRetry().negotiationType(negotiationType)
   }
 }
