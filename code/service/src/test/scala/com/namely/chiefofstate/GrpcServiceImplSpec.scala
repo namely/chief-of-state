@@ -13,8 +13,8 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.javadsl.{ClusterSharding => ClusterShardingJava}
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef, EntityTypeKey}
 import akka.cluster.sharding.typed.testkit.scaladsl.TestEntityRef
-import com.google.protobuf.{ByteString, any}
 import com.google.protobuf.wrappers.StringValue
+import com.google.protobuf.{ByteString, any}
 import com.google.rpc.code
 import com.google.rpc.error_details.BadRequest
 import com.google.rpc.status.Status
@@ -33,8 +33,8 @@ import io.grpc.protobuf.StatusProto
 import io.grpc.stub.MetadataUtils
 import io.grpc.{ManagedChannel, Metadata, StatusException}
 
-import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.{Await, ExecutionContext}
 import scala.util.Success
 
 class GrpcServiceImplSpec extends BaseActorSpec(s"""
