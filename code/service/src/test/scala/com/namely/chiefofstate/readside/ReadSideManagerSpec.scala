@@ -21,12 +21,12 @@ class ReadSideManagerSpec extends BaseSpec with ForAllTestContainer {
     .createContainer()
 
   lazy val config: Config = ConfigFactory
-    .empty()
+    .parseResources("test.conf")
     .withValue("jdbc-default.url", ConfigValueFactory.fromAnyRef(container.jdbcUrl))
     .withValue("jdbc-default.user", ConfigValueFactory.fromAnyRef(container.username))
     .withValue("jdbc-default.password", ConfigValueFactory.fromAnyRef(container.password))
-    .withValue("jdbc-default.hikari-settings.hikari-settings.max-pool-size", ConfigValueFactory.fromAnyRef(1))
-    .withValue("jdbc-default.hikari-settings.hikari-settings.min-idle-connections", ConfigValueFactory.fromAnyRef(1))
+    .withValue("jdbc-default.hikari-settings.max-pool-size", ConfigValueFactory.fromAnyRef(1))
+    .withValue("jdbc-default.hikari-settings.min-idle-connections", ConfigValueFactory.fromAnyRef(1))
     .withValue("jdbc-default.hikari-settings.idle-timeout-ms", ConfigValueFactory.fromAnyRef(1000))
     .withValue("jdbc-default.hikari-settings.max-lifetime-ms", ConfigValueFactory.fromAnyRef(3000))
     .resolve()
