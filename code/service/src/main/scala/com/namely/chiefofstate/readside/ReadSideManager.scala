@@ -7,26 +7,13 @@
 package com.namely.chiefofstate.readside
 
 import akka.actor.typed.ActorSystem
-import com.namely.chiefofstate.config.{ ReadSideConfig, ReadSideConfigReader }
 import com.namely.chiefofstate.NettyHelper
+import com.namely.chiefofstate.config.{ReadSideConfig, ReadSideConfigReader}
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.typesafe.config.Config
-import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
+import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import io.grpc.ClientInterceptor
-import org.slf4j.{ Logger, LoggerFactory }
-import akka.actor.typed.Behavior
-import akka.projection.ProjectionBehavior
-import akka.cluster.sharding.typed.scaladsl.ShardedDaemonProcess
-import akka.cluster.sharding.typed.ShardedDaemonProcessSettings
-import akka.projection.jdbc.scaladsl.JdbcProjection
-import akka.projection.ProjectionId
-import akka.projection.scaladsl.SourceProvider
-import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
-import akka.projection.eventsourced.scaladsl.EventSourcedProvider
-import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
-import akka.persistence.query.Offset
-import akka.projection.eventsourced.EventEnvelope
-import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
  * Used to configure and start all read side processors
