@@ -17,7 +17,7 @@ import com.namely.chiefofstate.serialization.MessageWithActorRef
 import com.namely.chiefofstate.telemetry.GrpcHeadersInterceptor
 import com.namely.chiefofstate.telemetry.TracingHelpers
 import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.Headers
-import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Header => LegacyHeader}
+import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{ Header => LegacyHeader }
 import com.namely.protobuf.chiefofstate.v1.common.Header
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
 import com.namely.protobuf.chiefofstate.v1.internal._

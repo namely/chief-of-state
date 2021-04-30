@@ -6,55 +6,36 @@
 
 package com.namely.chiefofstate
 
-import com.google.protobuf.any
+import java.util.concurrent.TimeUnit
+
+import akka.actor.typed.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
+import akka.cluster.sharding.typed.javadsl.{ClusterSharding => ClusterShardingJava}
+import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef, EntityTypeKey}
+import akka.cluster.sharding.typed.testkit.scaladsl.TestEntityRef
+import com.google.protobuf.{ByteString, any}
 import com.google.protobuf.wrappers.StringValue
+import com.google.rpc.code
 import com.google.rpc.error_details.BadRequest
 import com.google.rpc.status.Status
 import com.namely.chiefofstate.config.WriteSideConfig
-import com.namely.chiefofstate.helper.{ BaseSpec, TestConfig }
-import com.namely.protobuf.chiefofstate.v1.common.MetaData
-import com.namely.protobuf.chiefofstate.v1.internal.{ CommandReply, RemoteCommand }
-import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
-import com.namely.protobuf.chiefofstate.v1.service.ProcessCommandRequest
-import io.grpc.{ Metadata, StatusException }
-import io.grpc.protobuf.StatusProto
-
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import scala.util.Success
-import com.namely.protobuf.chiefofstate.v1.common.Header
-import com.google.protobuf.ByteString
-import akka.actor.typed.Behavior
-import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, EntityRef, EntityTypeKey }
-import akka.cluster.sharding.typed.javadsl.{ ClusterSharding => ClusterShardingJava }
-import com.namely.chiefofstate.serialization.MessageWithActorRef
+import com.namely.chiefofstate.helper.{BaseActorSpec, GrpcHelpers, TestConfig}
 import com.namely.chiefofstate.plugin.PluginManager
-import com.namely.protobuf.chiefofstate.v1.service.GetStateRequest
-import com.namely.chiefofstate.helper.BaseActorSpec
-import io.grpc.Status.Code
-import akka.cluster.typed.Cluster
-import akka.actor.typed.ActorSystem
-import akka.cluster.sharding.typed.scaladsl.Entity
-import akka.persistence.typed.PersistenceId
-import akka.actor.testkit.typed.scaladsl.TestProbe
-import scalapb.GeneratedMessage
-import scala.concurrent.duration.FiniteDuration
-import java.util.concurrent.TimeUnit
-import akka.actor.typed.scaladsl.Behaviors
-import com.namely.chiefofstate.serialization.ScalaMessage
-import akka.cluster.sharding.typed.testkit.scaladsl.TestEntityRef
-import com.namely.protobuf.chiefofstate.v1.internal.SendCommand
-import com.google.rpc.code
-import io.grpc.StatusRuntimeException
-import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc
-import scala.concurrent.ExecutionContext
-import io.grpc.inprocess.InProcessServerBuilder
+import com.namely.chiefofstate.serialization.{MessageWithActorRef, ScalaMessage}
 import com.namely.chiefofstate.telemetry.GrpcHeadersInterceptor
-import io.grpc.ManagedChannel
-import io.grpc.inprocess.InProcessChannelBuilder
-import com.namely.chiefofstate.helper.GrpcHelpers
+import com.namely.protobuf.chiefofstate.v1.common.{Header, MetaData}
+import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, RemoteCommand, SendCommand}
+import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
+import com.namely.protobuf.chiefofstate.v1.service.{ChiefOfStateServiceGrpc, GetStateRequest, ProcessCommandRequest}
+import io.grpc.Status.Code
+import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
+import io.grpc.protobuf.StatusProto
 import io.grpc.stub.MetadataUtils
-import com.namely.protobuf.chiefofstate.v1.internal.GetStateCommand
+import io.grpc.{ManagedChannel, Metadata, StatusException}
+
+import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.util.Success
 
 class GrpcServiceImplSpec extends BaseActorSpec(s"""
       akka.cluster.sharding.number-of-shards = 1
