@@ -32,7 +32,7 @@ import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.grpc.StatusRuntimeException
 
-class RemoteReadSideProcessorSpec extends BaseSpec {
+class ReadSideHandlerImplSpec extends BaseSpec {
 
   var testExporter: InMemorySpanExporter = _
   var openTelemetry: OpenTelemetry = _
@@ -47,7 +47,7 @@ class RemoteReadSideProcessorSpec extends BaseSpec {
       .buildAndRegisterGlobal
   }
 
-  "RemoteReadSideProcessor" should {
+  "ReadSideHandlerImpl" should {
     "handle events as expected" in {
       val accountOpened = AccountOpened()
       val account = Account()
@@ -84,16 +84,64 @@ class RemoteReadSideProcessorSpec extends BaseSpec {
       val readSideHandlerServiceStub: ReadSideHandlerServiceBlockingStub =
         new ReadSideHandlerServiceBlockingStub(serverChannel)
 
-      val remoteReadSideProcessor = new RemoteReadSideProcessor(readSideHandlerServiceStub)
+      val readSideHandlerImpl = new ReadSideHandlerImpl("id", readSideHandlerServiceStub)
 
       val triedHandleReadSideResponse =
-        remoteReadSideProcessor.processEvent(
+        readSideHandlerImpl.processEvent(
           com.google.protobuf.any.Any.pack(accountOpened),
           eventTag,
           resultingState,
           meta)
 
-      triedHandleReadSideResponse shouldBe Success(expected)
+      triedHandleReadSideResponse shouldBe true
+    }
+
+    "handle response with explicit failure" in {
+      val accountOpened = AccountOpened()
+      val account = Account()
+      val eventTag = "chiefofstate8"
+      val resultingState =
+        com.google.protobuf.any.Any.pack(account.withBalance(200))
+
+      val meta: MetaData = MetaData().withEntityId("231")
+
+      val request: HandleReadSideRequest = HandleReadSideRequest()
+        .withEvent(com.google.protobuf.any.Any.pack(accountOpened))
+        .withState(resultingState)
+        .withMeta(meta)
+
+      val expected: HandleReadSideResponse = HandleReadSideResponse().withSuccessful(false)
+
+      // mock the grpc server
+      val mockImpl = mock[ReadSideHandlerServiceGrpc.ReadSideHandlerService]
+
+      (mockImpl.handleReadSide _).expects(request).returning(Future.successful(expected))
+
+      val service = ReadSideHandlerServiceGrpc.bindService(mockImpl, global)
+
+      val serverName = InProcessServerBuilder.generateName()
+
+      // register a server that intercepts traces and reports errors
+      closeables.register(
+        InProcessServerBuilder.forName(serverName).directExecutor().addService(service).build().start())
+
+      val serverChannel = {
+        closeables.register(InProcessChannelBuilder.forName(serverName).directExecutor().build())
+      }
+
+      val readSideHandlerServiceStub: ReadSideHandlerServiceBlockingStub =
+        new ReadSideHandlerServiceBlockingStub(serverChannel)
+
+      val readSideHandlerImpl = new ReadSideHandlerImpl("id", readSideHandlerServiceStub)
+
+      val triedHandleReadSideResponse =
+        readSideHandlerImpl.processEvent(
+          com.google.protobuf.any.Any.pack(accountOpened),
+          eventTag,
+          resultingState,
+          meta)
+
+      triedHandleReadSideResponse shouldBe false
     }
 
     "handle event when there is an exception" in {
@@ -130,23 +178,21 @@ class RemoteReadSideProcessorSpec extends BaseSpec {
       val readSideHandlerServiceStub: ReadSideHandlerServiceBlockingStub =
         new ReadSideHandlerServiceBlockingStub(serverChannel)
 
-      val remoteReadSideProcessor = new RemoteReadSideProcessor(readSideHandlerServiceStub)
+      val readSideHandlerImpl = new ReadSideHandlerImpl("id", readSideHandlerServiceStub)
       val triedHandleReadSideResponse =
-        remoteReadSideProcessor.processEvent(
+        readSideHandlerImpl.processEvent(
           com.google.protobuf.any.Any.pack(accountOpened),
           eventTag,
           resultingState,
           meta)
 
-      val error = intercept[StatusRuntimeException] {
-        triedHandleReadSideResponse.get
-      }
-      error.getStatus() shouldBe expectedError.getStatus()
+      triedHandleReadSideResponse shouldBe false
+
       // assert the span was closed even in case of a failure
       testExporter
         .getFinishedSpanItems()
         .asScala
-        .find(_.getName() == "RemoteReadSideProcessor.processEvent")
+        .find(_.getName() == readSideHandlerImpl.spanName)
         .isDefined shouldBe true
     }
   }

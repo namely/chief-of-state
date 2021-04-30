@@ -28,7 +28,7 @@ object ReadSideConfigReader {
     })
 
     if (envVars.isEmpty) {
-      throw new RuntimeException("No readSide configuration is set...")
+      logger.warn("read sides are enabled but none are configured")
     }
 
     if (envVars.keySet.exists(v => v.split("__").length != 3)) {
