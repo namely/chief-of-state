@@ -15,6 +15,11 @@ class ReadSideConfigReaderSpec extends BaseSpec {
     EnvironmentHelper.clearEnv()
   }
 
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    EnvironmentHelper.clearEnv()
+  }
+
   "ReadSideConfigFactory" should {
     "help load all read side config" in {
 

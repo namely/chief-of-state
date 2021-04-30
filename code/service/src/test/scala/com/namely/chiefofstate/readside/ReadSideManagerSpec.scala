@@ -29,6 +29,7 @@ class ReadSideManagerSpec extends BaseSpec with ForAllTestContainer {
     .withValue("jdbc-default.hikari-settings.min-idle-connections", ConfigValueFactory.fromAnyRef(1))
     .withValue("jdbc-default.hikari-settings.idle-timeout-ms", ConfigValueFactory.fromAnyRef(1000))
     .withValue("jdbc-default.hikari-settings.max-lifetime-ms", ConfigValueFactory.fromAnyRef(3000))
+    .withValue("chief-of-state.read-side.enabled", ConfigValueFactory.fromAnyRef(true))
     .resolve()
 
   lazy val testKit: ActorTestKit = ActorTestKit(config)
