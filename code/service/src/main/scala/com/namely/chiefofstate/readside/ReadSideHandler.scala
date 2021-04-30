@@ -7,15 +7,17 @@
 package com.namely.chiefofstate.readside
 
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
-import com.namely.protobuf.chiefofstate.v1.readside.{ HandleReadSideRequest, HandleReadSideResponse }
+import com.namely.protobuf.chiefofstate.v1.readside.{HandleReadSideRequest, HandleReadSideResponse}
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.Span
-import org.slf4j.{ Logger, LoggerFactory }
+import org.slf4j.{Logger, LoggerFactory}
 
-import scala.util.{ Failure, Success, Try }
+import java.time.Duration
+import scala.annotation.tailrec
+import scala.util.{Failure, Success, Try}
 
 /**
  * read side processor that sends messages to a gRPC server that implements
@@ -44,7 +46,7 @@ private[readside] class ReadSideHandlerImpl(
    * @param meta           the additional meta data
    * @return an eventual HandleReadSideResponse
    */
-  def processEvent(
+  override def doProcessEvent(
       event: com.google.protobuf.any.Any,
       eventTag: String,
       resultingState: com.google.protobuf.any.Any,
@@ -102,29 +104,44 @@ private[readside] class ReadSideHandlerImpl(
   }
 }
 
-/**
- * Processes events read from the Journal
- *
- * @param event          the actual event
- * @param eventTag       the event tag
- * @param resultingState the resulting state of the applied event
- * @param meta           the additional meta data
- * @return an eventual HandleReadSideResponse
- */
 private[readside] trait ReadSideHandler {
 
   /**
-   * handles a read side message
+   * Processes events read from the Journal
    *
-   * @param event
-   * @param eventTag
-   * @param resultingState
-   * @param meta
-   * @return
+   * @param event          the actual event
+   * @param eventTag       the event tag
+   * @param resultingState the resulting state of the applied event
+   * @param meta           the additional meta data
+   * @return Boolean for success
    */
-  def processEvent(
-      event: com.google.protobuf.any.Any,
-      eventTag: String,
-      resultingState: com.google.protobuf.any.Any,
-      meta: MetaData): Boolean
+  @tailrec
+  protected final def processEvent(
+    event: com.google.protobuf.any.Any,
+    eventTag: String,
+    resultingState: com.google.protobuf.any.Any,
+    meta: MetaData,
+    numAttempts: Int = 0,
+    minBackOffSeconds: Long = 1,
+    maxBackOffSeconds: Long = 30): Boolean = {
+
+    val isSuccess: Boolean = doProcessEvent(event, eventTag, resultingState, meta)
+
+    if (!isSuccess) {
+      val backoffSeconds: Long = Math.min(maxBackOffSeconds, (minBackOffSeconds * Math.pow(1.1, numAttempts)).toLong)
+
+      Thread.sleep(Duration.ofSeconds(backoffSeconds).toMillis)
+
+      processEvent(event, eventTag, resultingState, meta, numAttempts + 1, minBackOffSeconds, maxBackOffSeconds)
+    } else {
+      isSuccess
+    }
+
+  }
+
+  def doProcessEvent(
+    event: com.google.protobuf.any.Any,
+    eventTag: String,
+    resultingState: com.google.protobuf.any.Any,
+    meta: MetaData): Boolean
 }
