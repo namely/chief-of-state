@@ -6,7 +6,7 @@
 
 package com.namely.chiefofstate.readside
 
-import akka.actor.typed.{ActorSystem, Behavior}
+import akka.actor.typed.{ ActorSystem, Behavior }
 import akka.cluster.sharding.typed.ShardedDaemonProcessSettings
 import akka.cluster.sharding.typed.scaladsl.ShardedDaemonProcess
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
@@ -15,10 +15,10 @@ import akka.projection.eventsourced.EventEnvelope
 import akka.projection.eventsourced.scaladsl.EventSourcedProvider
 import akka.projection.jdbc.scaladsl.JdbcProjection
 import akka.projection.scaladsl.SourceProvider
-import akka.projection.{ProjectionBehavior, ProjectionId}
+import akka.projection.{ ProjectionBehavior, ProjectionId }
 import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
 import javax.sql.DataSource
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{ Logger, LoggerFactory }
 
 /**
  * Read side processor creates a sharded daemon process for handling

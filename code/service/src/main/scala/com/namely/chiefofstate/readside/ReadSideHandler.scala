@@ -7,17 +7,17 @@
 package com.namely.chiefofstate.readside
 
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
-import com.namely.protobuf.chiefofstate.v1.readside.{HandleReadSideRequest, HandleReadSideResponse}
+import com.namely.protobuf.chiefofstate.v1.readside.{ HandleReadSideRequest, HandleReadSideResponse }
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.Span
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{ Logger, LoggerFactory }
 
 import java.time.Duration
 import scala.annotation.tailrec
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 /**
  * read side processor that sends messages to a gRPC server that implements
@@ -106,42 +106,78 @@ private[readside] class ReadSideHandlerImpl(
 
 private[readside] trait ReadSideHandler {
 
+  def onBeginProcess(): Unit = {}
+  def onEndProcess(): Unit = {}
+
   /**
-   * Processes events read from the Journal
+   * Processes events read from the Journal.
+   * Exponentially backoff with a 10& gain modifier until it reaches the upper threshold of maxBackoffSeconds.
+   * If maxAttempts is set to a value 0 or less, it will backoff indefinitely, otherwise it
+   * will run a number of times up to to the maxAttempts.
    *
-   * @param event          the actual event
-   * @param eventTag       the event tag
-   * @param resultingState the resulting state of the applied event
-   * @param meta           the additional meta data
-   * @return Boolean for success
+   * @param event               the actual event
+   * @param eventTag            the event tag
+   * @param resultingState      the resulting state of the applied event
+   * @param meta                the additional meta data
+   * @param maxAttempts         the max number of attempts before quit, infinite if set to 0
+   * @param minBackoffSeconds   the minimum number of seconds to backoff
+   * @param maxBackoffSeconds   the maximum number of seconds to backoff
+   * @return                    Boolean for success
    */
-  @tailrec
-  protected final def processEvent(
-    event: com.google.protobuf.any.Any,
-    eventTag: String,
-    resultingState: com.google.protobuf.any.Any,
-    meta: MetaData,
-    numAttempts: Int = 0,
-    minBackOffSeconds: Long = 1,
-    maxBackOffSeconds: Long = 30): Boolean = {
+  def processEvent(
+      event: com.google.protobuf.any.Any,
+      eventTag: String,
+      resultingState: com.google.protobuf.any.Any,
+      meta: MetaData,
+      maxAttempts: Int = 0,
+      minBackoffSeconds: Long = 1,
+      maxBackoffSeconds: Long = 30): Boolean = {
 
-    val isSuccess: Boolean = doProcessEvent(event, eventTag, resultingState, meta)
+    /**
+     * Recursive function that incorporates exponential backOff
+     *
+     * @param numAttempts the attempt number
+     * @return            Boolean for success
+     */
+    @tailrec
+    def loop(numAttempts: Int = 0): Boolean = {
+      val isSuccess: Boolean = doProcessEvent(event, eventTag, resultingState, meta)
 
-    if (!isSuccess) {
-      val backoffSeconds: Long = Math.min(maxBackOffSeconds, (minBackOffSeconds * Math.pow(1.1, numAttempts)).toLong)
+      if (!isSuccess && (maxAttempts <= 0 || numAttempts >= maxAttempts)) {
+        val backoffSeconds: Long = Math.min(maxBackoffSeconds, (minBackoffSeconds * Math.pow(1.1, numAttempts)).toLong)
 
-      Thread.sleep(Duration.ofSeconds(backoffSeconds).toMillis)
+        Thread.sleep(Duration.ofSeconds(backoffSeconds).toMillis)
 
-      processEvent(event, eventTag, resultingState, meta, numAttempts + 1, minBackOffSeconds, maxBackOffSeconds)
-    } else {
-      isSuccess
+        loop(numAttempts + 1)
+      } else {
+        isSuccess
+      }
     }
 
+    require(minBackoffSeconds > 0, "minBackOffSeconds must be greater than 0")
+    require(
+      maxBackoffSeconds >= minBackoffSeconds,
+      "maxBackOffSeconds must be greater than or equal to minBackOffSeconds")
+
+    onBeginProcess()
+    val result: Boolean = loop()
+    onEndProcess()
+
+    result
   }
 
-  def doProcessEvent(
-    event: com.google.protobuf.any.Any,
-    eventTag: String,
-    resultingState: com.google.protobuf.any.Any,
-    meta: MetaData): Boolean
+  /**
+   * Processes events read from the Journal.
+   *
+   * @param event               the actual event
+   * @param eventTag            the event tag
+   * @param resultingState      the resulting state of the applied event
+   * @param meta                the additional meta data
+   * @return                    Boolean for success
+   */
+  protected def doProcessEvent(
+      event: com.google.protobuf.any.Any,
+      eventTag: String,
+      resultingState: com.google.protobuf.any.Any,
+      meta: MetaData): Boolean
 }
