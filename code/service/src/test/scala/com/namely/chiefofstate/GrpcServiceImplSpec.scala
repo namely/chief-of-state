@@ -10,31 +10,31 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
-import akka.cluster.sharding.typed.javadsl.{ClusterSharding => ClusterShardingJava}
-import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef, EntityTypeKey}
+import akka.cluster.sharding.typed.javadsl.{ ClusterSharding => ClusterShardingJava }
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, EntityRef, EntityTypeKey }
 import akka.cluster.sharding.typed.testkit.scaladsl.TestEntityRef
 import com.google.protobuf.wrappers.StringValue
-import com.google.protobuf.{ByteString, any}
+import com.google.protobuf.{ any, ByteString }
 import com.google.rpc.code
 import com.google.rpc.error_details.BadRequest
 import com.google.rpc.status.Status
 import com.namely.chiefofstate.config.WriteSideConfig
-import com.namely.chiefofstate.helper.{BaseActorSpec, GrpcHelpers, TestConfig}
+import com.namely.chiefofstate.helper.{ BaseActorSpec, GrpcHelpers, TestConfig }
 import com.namely.chiefofstate.plugin.PluginManager
-import com.namely.chiefofstate.serialization.{MessageWithActorRef, ScalaMessage}
+import com.namely.chiefofstate.serialization.{ MessageWithActorRef, ScalaMessage }
 import com.namely.chiefofstate.telemetry.GrpcHeadersInterceptor
-import com.namely.protobuf.chiefofstate.v1.common.{Header, MetaData}
-import com.namely.protobuf.chiefofstate.v1.internal.{CommandReply, RemoteCommand, SendCommand}
+import com.namely.protobuf.chiefofstate.v1.common.{ Header, MetaData }
+import com.namely.protobuf.chiefofstate.v1.internal.{ CommandReply, RemoteCommand, SendCommand }
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
-import com.namely.protobuf.chiefofstate.v1.service.{ChiefOfStateServiceGrpc, GetStateRequest, ProcessCommandRequest}
+import com.namely.protobuf.chiefofstate.v1.service.{ ChiefOfStateServiceGrpc, GetStateRequest, ProcessCommandRequest }
 import io.grpc.Status.Code
-import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
+import io.grpc.inprocess.{ InProcessChannelBuilder, InProcessServerBuilder }
 import io.grpc.protobuf.StatusProto
 import io.grpc.stub.MetadataUtils
-import io.grpc.{ManagedChannel, Metadata, StatusException}
+import io.grpc.{ ManagedChannel, Metadata, StatusException }
 
-import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.duration.{ Duration, FiniteDuration }
+import scala.concurrent.{ Await, ExecutionContext }
 import scala.util.Success
 
 class GrpcServiceImplSpec extends BaseActorSpec(s"""
