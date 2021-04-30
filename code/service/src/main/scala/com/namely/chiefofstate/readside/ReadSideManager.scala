@@ -7,13 +7,13 @@
 package com.namely.chiefofstate.readside
 
 import akka.actor.typed.ActorSystem
-import com.namely.chiefofstate.config.{ ReadSideConfig, ReadSideConfigReader }
 import com.namely.chiefofstate.NettyHelper
+import com.namely.chiefofstate.config.{ReadSideConfig, ReadSideConfigReader}
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.typesafe.config.Config
-import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
+import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import io.grpc.ClientInterceptor
-import org.slf4j.{ Logger, LoggerFactory }
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
  * Used to configure and start all read side processors
@@ -50,17 +50,12 @@ class ReadSideManager(
       val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(
         NettyHelper.builder(rsconfig.host, rsconfig.port, rsconfig.useTls).build).withInterceptors(interceptors: _*)
       // instantiate a remote read side processor with the gRPC client
-      val remoteReadSideProcessor: RemoteReadSideProcessor = new RemoteReadSideProcessor(rpcClient)
-      // instantiate the read side processor with the remote processor
-      val readSideProcessor: ReadSideProcessor =
-        new ReadSideProcessor(
-          actorSystem = system,
-          processorId = rsconfig.processorId,
-          dataSource = dataSource,
-          remoteReadProcessor = remoteReadSideProcessor,
-          numShards = numShards)
-
-      readSideProcessor.init()
+      val remoteReadSideProcessor: ReadSideHandlerImpl = new ReadSideHandlerImpl(rsconfig.processorId, rpcClient)
+      // instantiate the read side projection with the remote processor
+      val projection =
+        new ReadSideProjection(system, rsconfig.processorId, dataSource, remoteReadSideProcessor, numShards)
+      // start the sharded daemon process
+      projection.start()
     })
   }
 }
@@ -73,14 +68,7 @@ object ReadSideManager {
       // read the jdbc-default settings
       val jdbcCfg: Config = system.settings.config.getConfig("jdbc-default")
 
-      DbConfig(
-        jdbcUrl = jdbcCfg.getString("url"),
-        username = jdbcCfg.getString("user"),
-        password = jdbcCfg.getString("password"),
-        maxPoolSize = jdbcCfg.getInt("hikari-settings.max-pool-size"),
-        minIdleConnections = jdbcCfg.getInt("hikari-settings.min-idle-connections"),
-        idleTimeoutMs = jdbcCfg.getLong("hikari-settings.idle-timeout-ms"),
-        maxLifetimeMs = jdbcCfg.getLong("hikari-settings.max-lifetime-ms"))
+      DbConfig(jdbcCfg)
     }
 
     // get the individual read side configs
@@ -93,16 +81,6 @@ object ReadSideManager {
       readSideConfigs = configs,
       numShards = numShards)
   }
-
-  // convenience case class for passing around the hikari settings
-  private[readside] case class DbConfig(
-      jdbcUrl: String,
-      username: String,
-      password: String,
-      maxPoolSize: Int,
-      minIdleConnections: Int,
-      idleTimeoutMs: Long,
-      maxLifetimeMs: Long)
 
   /**
    * create a hikari data source using a dbconfig class
@@ -131,5 +109,28 @@ object ReadSideManager {
     hikariCfg.setMaxLifetime(dbConfig.maxLifetimeMs)
     // return the data source
     new HikariDataSource(hikariCfg)
+  }
+
+  // convenience case class for passing around the hikari settings
+  private[readside] case class DbConfig(
+      jdbcUrl: String,
+      username: String,
+      password: String,
+      maxPoolSize: Int,
+      minIdleConnections: Int,
+      idleTimeoutMs: Long,
+      maxLifetimeMs: Long)
+
+  private[readside] object DbConfig {
+    def apply(jdbcCfg: Config): DbConfig = {
+      DbConfig(
+        jdbcUrl = jdbcCfg.getString("url"),
+        username = jdbcCfg.getString("user"),
+        password = jdbcCfg.getString("password"),
+        maxPoolSize = jdbcCfg.getInt("hikari-settings.max-pool-size"),
+        minIdleConnections = jdbcCfg.getInt("hikari-settings.min-idle-connections"),
+        idleTimeoutMs = jdbcCfg.getLong("hikari-settings.idle-timeout-ms"),
+        maxLifetimeMs = jdbcCfg.getLong("hikari-settings.max-lifetime-ms"))
+    }
   }
 }

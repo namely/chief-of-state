@@ -7,28 +7,28 @@
 package com.namely.chiefofstate
 
 import akka.actor.typed.ActorRef
-import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, EntityRef }
 import akka.util.Timeout
 import com.google.protobuf.any
 import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.serialization.MessageWithActorRef
-import com.namely.chiefofstate.telemetry.{GrpcHeadersInterceptor, TracingHelpers}
-import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{Headers, Header => LegacyHeader}
+import com.namely.chiefofstate.telemetry.{ GrpcHeadersInterceptor, TracingHelpers }
+import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{ Headers, Header => LegacyHeader }
 import com.namely.protobuf.chiefofstate.v1.common.Header
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
 import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.service._
-import io.grpc.{Metadata, Status, StatusException}
+import io.grpc.{ Metadata, Status, StatusException }
 import io.grpc.protobuf.StatusProto
 import io.opentelemetry.context.Context
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{ Logger, LoggerFactory }
 import scalapb.GeneratedMessage
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
     implicit val askTimeout: Timeout)

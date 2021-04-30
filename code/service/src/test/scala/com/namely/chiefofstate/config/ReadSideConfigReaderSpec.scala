@@ -15,6 +15,11 @@ class ReadSideConfigReaderSpec extends BaseSpec {
     EnvironmentHelper.clearEnv()
   }
 
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    EnvironmentHelper.clearEnv()
+  }
+
   "ReadSideConfigFactory" should {
     "help load all read side config" in {
 
@@ -45,9 +50,8 @@ class ReadSideConfigReaderSpec extends BaseSpec {
       actual should contain theSameElementsAs expected
     }
 
-    "throw an exception when there is no setting" in {
-      val exception: Exception = intercept[Exception](ReadSideConfigReader.getReadSideSettings)
-      exception.getMessage shouldBe "No readSide configuration is set..."
+    "throw no exception when there is no setting" in {
+      noException shouldBe thrownBy(ReadSideConfigReader.getReadSideSettings)
     }
 
     "throw an exception if one or more of the read side configurations is invalid" in {
