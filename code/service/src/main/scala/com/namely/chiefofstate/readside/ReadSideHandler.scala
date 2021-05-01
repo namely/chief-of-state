@@ -133,12 +133,7 @@ private[readside] trait ReadSideHandler {
       minBackoffSeconds: Long = 1,
       maxBackoffSeconds: Long = 30): Boolean = {
 
-    /**
-     * Recursive function that incorporates exponential backOff
-     *
-     * @param numAttempts the attempt number
-     * @return            Boolean for success
-     */
+    // Recursive function that incorporates exponential backOff
     @tailrec
     def loop(numAttempts: Int = 0): Boolean = {
       val isSuccess: Boolean = doProcessEvent(event, eventTag, resultingState, meta)

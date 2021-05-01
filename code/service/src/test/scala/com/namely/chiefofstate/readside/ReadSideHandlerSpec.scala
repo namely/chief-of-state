@@ -218,7 +218,6 @@ class ReadSideHandlerSpec extends BaseSpec {
 
       f.cancel()
 
-      println(readSideHandler.getNumRuns)
       readSideHandler.getNumRuns should be > 1L
       readSideHandler.isStarted shouldBe true
       readSideHandler.isEnded shouldBe false
@@ -226,17 +225,15 @@ class ReadSideHandlerSpec extends BaseSpec {
 
     "fail minBackoffSeconds requirement" in {
       val readSideHandler: MockReadSideHandler = new MockReadSideHandler
-      val err: IllegalArgumentException = intercept[IllegalArgumentException] {
-        readSideHandler.processEvent(null, null, null, null, minBackoffSeconds = 0)
-      }
+      val err: IllegalArgumentException = intercept[IllegalArgumentException]{
+        readSideHandler.processEvent(null, null, null, null, minBackoffSeconds = 0)}
       err.getMessage shouldBe "requirement failed: minBackOffSeconds must be greater than 0"
     }
 
     "fail maxBackoffSeconds requirement" in {
       val readSideHandler: MockReadSideHandler = new MockReadSideHandler
-      val err: IllegalArgumentException = intercept[IllegalArgumentException] {
-        readSideHandler.processEvent(null, null, null, null, minBackoffSeconds = 100, maxBackoffSeconds = 0)
-      }
+      val err: IllegalArgumentException = intercept[IllegalArgumentException]{
+        readSideHandler.processEvent(null, null, null, null, minBackoffSeconds = 100, maxBackoffSeconds = 0)}
       err.getMessage shouldBe "requirement failed: maxBackOffSeconds must be greater than or equal to minBackOffSeconds"
     }
   }
