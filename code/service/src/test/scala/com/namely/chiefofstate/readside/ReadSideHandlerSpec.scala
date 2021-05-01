@@ -56,11 +56,13 @@ class ReadSideHandlerImplSpec extends BaseSpec {
         com.google.protobuf.any.Any.pack(account.withBalance(200))
 
       val meta: MetaData = MetaData().withEntityId("231")
+      val readSideId = "my-read-side-id"
 
       val request: HandleReadSideRequest = HandleReadSideRequest()
         .withEvent(com.google.protobuf.any.Any.pack(accountOpened))
         .withState(resultingState)
         .withMeta(meta)
+        .withReadSideId(readSideId)
 
       val expected: HandleReadSideResponse = HandleReadSideResponse().withSuccessful(true)
 
@@ -84,7 +86,7 @@ class ReadSideHandlerImplSpec extends BaseSpec {
       val readSideHandlerServiceStub: ReadSideHandlerServiceBlockingStub =
         new ReadSideHandlerServiceBlockingStub(serverChannel)
 
-      val readSideHandlerImpl = new ReadSideHandlerImpl("id", readSideHandlerServiceStub)
+      val readSideHandlerImpl = new ReadSideHandlerImpl(readSideId, readSideHandlerServiceStub)
 
       val triedHandleReadSideResponse =
         readSideHandlerImpl.processEvent(
@@ -104,11 +106,13 @@ class ReadSideHandlerImplSpec extends BaseSpec {
         com.google.protobuf.any.Any.pack(account.withBalance(200))
 
       val meta: MetaData = MetaData().withEntityId("231")
+      val readSideId = "my-read-side-id"
 
       val request: HandleReadSideRequest = HandleReadSideRequest()
         .withEvent(com.google.protobuf.any.Any.pack(accountOpened))
         .withState(resultingState)
         .withMeta(meta)
+        .withReadSideId(readSideId)
 
       val expected: HandleReadSideResponse = HandleReadSideResponse().withSuccessful(false)
 
@@ -132,7 +136,7 @@ class ReadSideHandlerImplSpec extends BaseSpec {
       val readSideHandlerServiceStub: ReadSideHandlerServiceBlockingStub =
         new ReadSideHandlerServiceBlockingStub(serverChannel)
 
-      val readSideHandlerImpl = new ReadSideHandlerImpl("id", readSideHandlerServiceStub)
+      val readSideHandlerImpl = new ReadSideHandlerImpl(readSideId, readSideHandlerServiceStub)
 
       val triedHandleReadSideResponse =
         readSideHandlerImpl.processEvent(
@@ -152,11 +156,13 @@ class ReadSideHandlerImplSpec extends BaseSpec {
         com.google.protobuf.any.Any.pack(account.withBalance(200))
 
       val meta: MetaData = MetaData().withEntityId("231")
+      val readSideId = "my-read-side-id"
 
       val request: HandleReadSideRequest = HandleReadSideRequest()
         .withEvent(com.google.protobuf.any.Any.pack(accountOpened))
         .withState(resultingState)
         .withMeta(meta)
+        .withReadSideId(readSideId)
 
       val mockImpl = mock[ReadSideHandlerServiceGrpc.ReadSideHandlerService]
 
@@ -178,7 +184,7 @@ class ReadSideHandlerImplSpec extends BaseSpec {
       val readSideHandlerServiceStub: ReadSideHandlerServiceBlockingStub =
         new ReadSideHandlerServiceBlockingStub(serverChannel)
 
-      val readSideHandlerImpl = new ReadSideHandlerImpl("id", readSideHandlerServiceStub)
+      val readSideHandlerImpl = new ReadSideHandlerImpl(readSideId, readSideHandlerServiceStub)
       val triedHandleReadSideResponse =
         readSideHandlerImpl.processEvent(
           com.google.protobuf.any.Any.pack(accountOpened),

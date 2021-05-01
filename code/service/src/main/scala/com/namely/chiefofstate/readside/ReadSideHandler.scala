@@ -68,7 +68,8 @@ private[readside] class ReadSideHandlerImpl(
 
       MetadataUtils
         .attachHeaders(readSideHandlerServiceBlockingStub, headers)
-        .handleReadSide(HandleReadSideRequest().withEvent(event).withState(resultingState).withMeta(meta))
+        .handleReadSide(
+          HandleReadSideRequest().withEvent(event).withState(resultingState).withMeta(meta).withReadSideId(processorId))
     }
 
     // finish the span
