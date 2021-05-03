@@ -14,7 +14,6 @@ import com.typesafe.config.Config
 import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
 import io.grpc.ClientInterceptor
 import org.slf4j.{ Logger, LoggerFactory }
-
 import scala.concurrent.ExecutionContext
 
 /**
