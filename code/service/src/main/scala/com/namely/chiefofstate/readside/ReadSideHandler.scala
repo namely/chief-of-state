@@ -15,8 +15,9 @@ import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.Span
 import org.slf4j.{ Logger, LoggerFactory }
 
-import java.time.Duration
-import scala.annotation.tailrec
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ ExecutionContext, Future, Promise }
 import scala.util.{ Failure, Success, Try }
 
 /**
@@ -28,7 +29,7 @@ import scala.util.{ Failure, Success, Try }
  */
 private[readside] class ReadSideHandlerImpl(
     processorId: String,
-    readSideHandlerServiceBlockingStub: ReadSideHandlerServiceBlockingStub)
+    readSideHandlerServiceBlockingStub: ReadSideHandlerServiceBlockingStub)(implicit val ec: ExecutionContext)
     extends ReadSideHandler {
 
   private val COS_EVENT_TAG_HEADER = "x-cos-event-tag"
@@ -106,59 +107,41 @@ private[readside] class ReadSideHandlerImpl(
 
 private[readside] trait ReadSideHandler {
 
-  def onBeginProcess(): Unit = {}
-  def onEndProcess(): Unit = {}
+  implicit val ec: ExecutionContext
 
   /**
    * Processes events read from the Journal.
    * Exponentially backoff with a 10& gain modifier until it reaches the upper threshold of maxBackoffSeconds.
-   * If maxAttempts is set to a value 0 or less, it will backoff indefinitely, otherwise it
-   * will run a number of times up to to the maxAttempts.
    *
    * @param event               the actual event
    * @param eventTag            the event tag
    * @param resultingState      the resulting state of the applied event
    * @param meta                the additional meta data
-   * @param maxAttempts         the max number of attempts before quit, infinite if set to 0
+   * @param policy              the retry policy. If provided, overrides the default backoff policy. Testing method
    * @param minBackoffSeconds   the minimum number of seconds to backoff
    * @param maxBackoffSeconds   the maximum number of seconds to backoff
-   * @return                    Boolean for success
+   * @return                    Future[Boolean] for success
    */
   def processEvent(
       event: com.google.protobuf.any.Any,
       eventTag: String,
       resultingState: com.google.protobuf.any.Any,
       meta: MetaData,
-      maxAttempts: Int = 0,
-      minBackoffSeconds: Long = 1,
-      maxBackoffSeconds: Long = 30): Boolean = {
+      policy: Option[retry.Policy] = Some(retry.Directly()),
+      minBackoffSeconds: Long = 1L,
+      maxBackoffSeconds: Long = 30L): Future[Boolean] = {
 
-    // Recursive function that incorporates exponential backOff
-    @tailrec
-    def loop(numAttempts: Int = 0): Boolean = {
-      val isSuccess: Boolean = doProcessEvent(event, eventTag, resultingState, meta)
+    implicit val success: retry.Success[Boolean] = retry.Success(x => x)
 
-      if (!isSuccess && (maxAttempts <= 0 || numAttempts >= maxAttempts)) {
-        val backoffSeconds: Long = Math.min(maxBackoffSeconds, (minBackoffSeconds * Math.pow(1.1, numAttempts)).toLong)
+    val finalPolicy: retry.Policy =
+      policy.getOrElse(retry.Backoff(maxBackoffSeconds.toInt, FiniteDuration(minBackoffSeconds, TimeUnit.SECONDS)))
 
-        Thread.sleep(Duration.ofSeconds(backoffSeconds).toMillis)
+    val f: Future[Boolean] = finalPolicy.apply(() =>
+      Future {
+        doProcessEvent(event, eventTag, resultingState, meta)
+      })
 
-        loop(numAttempts + 1)
-      } else {
-        isSuccess
-      }
-    }
-
-    require(minBackoffSeconds > 0, "minBackOffSeconds must be greater than 0")
-    require(
-      maxBackoffSeconds >= minBackoffSeconds,
-      "maxBackOffSeconds must be greater than or equal to minBackOffSeconds")
-
-    onBeginProcess()
-    val result: Boolean = loop()
-    onEndProcess()
-
-    result
+    f
   }
 
   /**

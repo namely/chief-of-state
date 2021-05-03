@@ -28,6 +28,8 @@ object Dependencies {
     val PrometheusServerVersion: String = "0.10.0"
 
     val TestContainers: String = "0.39.3"
+
+    val RetryVersion: String = "0.3.3"
   }
 
   import Dependencies.Versions._
@@ -73,7 +75,9 @@ object Dependencies {
     ("io.opentelemetry" % "opentelemetry-exporter-jaeger-thrift" % OpenTelemetryVersion).excludeAll(excludeGRPC),
     "io.opentelemetry" % "opentelemetry-exporter-prometheus" % OpenTelemetryMetricsVersion,
     "io.opentelemetry" % "opentelemetry-sdk-testing" % OpenTelemetryVersion % Test,
-    "io.prometheus" % "simpleclient_httpserver" % PrometheusServerVersion)
+    "io.prometheus" % "simpleclient_httpserver" % PrometheusServerVersion,
+    "com.softwaremill.retry" %% "retry" % RetryVersion
+  )
 
   val testJars: Seq[ModuleID] = Seq(
     "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % Test,

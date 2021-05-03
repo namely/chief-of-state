@@ -6,9 +6,10 @@
 
 package com.namely.chiefofstate.readside
 
-import com.namely.chiefofstate.helper.BaseSpec
+import com.namely.chiefofstate.helper.{ BaseSpec, ExecutionContextHelper }
 import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
 import org.testcontainers.utility.DockerImageName
+
 import java.sql.{ Connection, DriverManager }
 import akka.projection.jdbc.JdbcSession
 import akka.projection.eventsourced.EventEnvelope
@@ -18,7 +19,9 @@ import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.google.protobuf.any
 import com.google.protobuf.wrappers.StringValue
 
-class ReadSideJdbcHandlerSpec extends BaseSpec with ForAllTestContainer {
+import scala.concurrent.Future
+
+class ReadSideJdbcHandlerSpec extends BaseSpec with ForAllTestContainer with ExecutionContextHelper {
 
   val cosSchema: String = "cos"
 
@@ -41,7 +44,7 @@ class ReadSideJdbcHandlerSpec extends BaseSpec with ForAllTestContainer {
       // mock read handler that returns success
       val readHandler = mock[ReadSideHandler]
 
-      (readHandler.processEvent _).expects(*, *, *, *, *, *, *).returning(true).once()
+      (readHandler.processEvent _).expects(*, *, *, *, *, *, *).returning(Future(true)).once()
 
       val jdbcHandler = new ReadSideJdbcHandler("tag", "processor", readHandler)
       val jdbcSession: JdbcSession = mock[JdbcSession]
@@ -59,7 +62,7 @@ class ReadSideJdbcHandlerSpec extends BaseSpec with ForAllTestContainer {
       // mock read handler that returns success
       val readHandler = mock[ReadSideHandler]
 
-      (readHandler.processEvent _).expects(*, *, *, *, *, *, *).returning(false).once()
+      (readHandler.processEvent _).expects(*, *, *, *, *, *, *).returning(Future(false)).once()
 
       val jdbcHandler = new ReadSideJdbcHandler("tag", "processor", readHandler)
       val jdbcSession: JdbcSession = mock[JdbcSession]

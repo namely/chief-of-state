@@ -157,11 +157,15 @@ object ServiceBootstrapper {
       system: ActorSystem[_],
       cosConfig: CosConfig,
       interceptors: Seq[ClientInterceptor]): Unit = {
+
+    val readSideEc: ExecutionContext = TracedExecutorService.get()
+
     // if read side is enabled
     if (cosConfig.enableReadSide) {
       // instantiate a read side manager
       val readSideManager: ReadSideManager =
-        ReadSideManager(system = system, interceptors = interceptors, numShards = cosConfig.eventsConfig.numShards)
+        ReadSideManager(system = system, interceptors = interceptors, numShards = cosConfig.eventsConfig.numShards)(
+          readSideEc)
       // initialize all configured read sides
       readSideManager.init()
     }

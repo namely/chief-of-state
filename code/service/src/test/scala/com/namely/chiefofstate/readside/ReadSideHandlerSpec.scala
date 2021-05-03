@@ -7,7 +7,7 @@
 package com.namely.chiefofstate.readside
 
 import com.google.protobuf.any
-import com.namely.chiefofstate.helper.BaseSpec
+import com.namely.chiefofstate.helper.{ BaseSpec, ExecutionContextHelper }
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.readside.{
   HandleReadSideRequest,
@@ -24,16 +24,15 @@ import io.opentelemetry.sdk.OpenTelemetrySdk
 
 import scala.jdk.CollectionConverters.ListHasAsScala
 import scala.concurrent.ExecutionContext.global
-import scala.concurrent.{ Await, Awaitable, CanAwait, ExecutionContext, Future }
+import scala.concurrent.{ Await, ExecutionContext, Future }
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
 import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 
-import java.util.concurrent.Executors
 import scala.concurrent.duration.Duration
 
-class ReadSideHandlerSpec extends BaseSpec {
+class ReadSideHandlerSpec extends BaseSpec with ExecutionContextHelper {
 
   var testExporter: InMemorySpanExporter = _
   var openTelemetry: OpenTelemetry = _
@@ -87,15 +86,17 @@ class ReadSideHandlerSpec extends BaseSpec {
 
       val readSideHandlerImpl = new ReadSideHandlerImpl("id", readSideHandlerServiceStub)
 
-      val triedHandleReadSideResponse =
+      val triedHandleReadSideResponse: Future[Boolean] =
         readSideHandlerImpl.processEvent(
           event = com.google.protobuf.any.Any.pack(accountOpened),
           eventTag = eventTag,
           resultingState = resultingState,
           meta = meta,
-          maxAttempts = 5)
+          policy = Some(retry.Directly()))
 
-      triedHandleReadSideResponse shouldBe true
+      val result: Boolean = Await.result(triedHandleReadSideResponse, Duration.Inf)
+
+      result shouldBe true
     }
 
     "handle response with explicit failure" in {
@@ -142,9 +143,11 @@ class ReadSideHandlerSpec extends BaseSpec {
           eventTag = eventTag,
           resultingState = resultingState,
           meta = meta,
-          maxAttempts = 5)
+          policy = Some(retry.Directly()))
 
-      triedHandleReadSideResponse shouldBe false
+      val result: Boolean = Await.result(triedHandleReadSideResponse, Duration.Inf)
+
+      result shouldBe false
     }
 
     "handle event when there is an exception" in {
@@ -188,74 +191,14 @@ class ReadSideHandlerSpec extends BaseSpec {
           eventTag = eventTag,
           resultingState = resultingState,
           meta = meta,
-          maxAttempts = 5)
+          policy = Some(retry.Directly()))
 
-      triedHandleReadSideResponse shouldBe false
+      val result: Boolean = Await.result(triedHandleReadSideResponse, Duration.Inf)
+
+      result shouldBe false
 
       // assert the span was closed even in case of a failure
       testExporter.getFinishedSpanItems.asScala.exists(_.getName == readSideHandlerImpl.spanName) shouldBe true
     }
-  }
-
-  "ReadSideHandler" should {
-    "run up to the maxAttempts" in {
-      val readSideHandler: MockReadSideHandler = new MockReadSideHandler
-      val actual: Boolean = readSideHandler.processEvent(null, null, null, null, maxAttempts = 1)
-
-      actual shouldBe false
-      readSideHandler.getNumRuns should be > 0L
-      readSideHandler.isStarted shouldBe true
-      readSideHandler.isEnded shouldBe true
-    }
-
-    "run indefinitely" in {
-      val readSideHandler: MockReadSideHandler = new MockReadSideHandler
-
-      val ec: ExecutionContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(1))
-      val f = new Cancellable[Boolean](ec, readSideHandler.processEvent(null, null, null, null, maxBackoffSeconds = 1))
-
-      Thread.sleep(2000) // 2 seconds
-
-      f.cancel()
-
-      readSideHandler.getNumRuns should be > 1L
-      readSideHandler.isStarted shouldBe true
-      readSideHandler.isEnded shouldBe false
-    }
-
-    "fail minBackoffSeconds requirement" in {
-      val readSideHandler: MockReadSideHandler = new MockReadSideHandler
-      val err: IllegalArgumentException = intercept[IllegalArgumentException]{
-        readSideHandler.processEvent(null, null, null, null, minBackoffSeconds = 0)}
-      err.getMessage shouldBe "requirement failed: minBackOffSeconds must be greater than 0"
-    }
-
-    "fail maxBackoffSeconds requirement" in {
-      val readSideHandler: MockReadSideHandler = new MockReadSideHandler
-      val err: IllegalArgumentException = intercept[IllegalArgumentException]{
-        readSideHandler.processEvent(null, null, null, null, minBackoffSeconds = 100, maxBackoffSeconds = 0)}
-      err.getMessage shouldBe "requirement failed: maxBackOffSeconds must be greater than or equal to minBackOffSeconds"
-    }
-  }
-}
-
-class MockReadSideHandler extends ReadSideHandler {
-  private var started: Boolean = false
-  private var ended: Boolean = false
-  private var numRuns: Long = 0
-
-  def isStarted: Boolean = started
-  def isEnded: Boolean = ended
-  def getNumRuns: Long = numRuns
-
-  override def onBeginProcess(): Unit = { started = true }
-  override def onEndProcess(): Unit = { ended = true }
-  override protected def doProcessEvent(
-      event: any.Any,
-      eventTag: String,
-      resultingState: any.Any,
-      meta: MetaData): Boolean = {
-    numRuns = numRuns + 1L
-    false
   }
 }

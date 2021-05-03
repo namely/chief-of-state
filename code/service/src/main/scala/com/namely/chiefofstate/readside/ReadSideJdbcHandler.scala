@@ -14,6 +14,11 @@ import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
 import org.slf4j.{ Logger, LoggerFactory }
 
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.Duration
+import scala.concurrent.{ Await, ExecutionContext, Future }
+import scala.util.{ Failure, Success }
+
 /**
  * Implements the akka JdbcHandler interface and forwards events to the
  * provided read side handler
@@ -40,7 +45,10 @@ private[readside] class ReadSideJdbcHandler(eventTag: String, processorId: Strin
     val meta: MetaData = envelope.event.getMeta
 
     // invoke remote processor, get result
-    val readSideSuccess: Boolean = readSideHandler.processEvent(event, eventTag, resultingState, meta)
+    val processEvent: Future[Boolean] = readSideHandler.processEvent(event, eventTag, resultingState, meta)
+
+    // TODO: Make this configurable
+    val readSideSuccess: Boolean = Await.result(processEvent, Duration.apply(60L, TimeUnit.SECONDS))
 
     if (!readSideSuccess) {
       val errMsg: String =

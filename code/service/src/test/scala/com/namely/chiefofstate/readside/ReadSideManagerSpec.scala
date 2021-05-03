@@ -6,13 +6,13 @@
 
 package com.namely.chiefofstate.readside
 
-import com.namely.chiefofstate.helper.BaseSpec
+import com.namely.chiefofstate.helper.{ BaseSpec, ExecutionContextHelper }
 import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
 import org.testcontainers.utility.DockerImageName
 import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 
-class ReadSideManagerSpec extends BaseSpec with ForAllTestContainer {
+class ReadSideManagerSpec extends BaseSpec with ForAllTestContainer with ExecutionContextHelper {
 
   val cosSchema: String = "cos"
 

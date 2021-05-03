@@ -15,6 +15,8 @@ import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
 import io.grpc.ClientInterceptor
 import org.slf4j.{ Logger, LoggerFactory }
 
+import scala.concurrent.ExecutionContext
+
 /**
  * Used to configure and start all read side processors
  *
@@ -29,7 +31,7 @@ class ReadSideManager(
     interceptors: Seq[ClientInterceptor],
     dbConfig: ReadSideManager.DbConfig,
     readSideConfigs: Seq[ReadSideConfig],
-    numShards: Int) {
+    numShards: Int)(implicit ec: ExecutionContext) {
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -62,7 +64,8 @@ class ReadSideManager(
 
 object ReadSideManager {
 
-  def apply(system: ActorSystem[_], interceptors: Seq[ClientInterceptor], numShards: Int): ReadSideManager = {
+  def apply(system: ActorSystem[_], interceptors: Seq[ClientInterceptor], numShards: Int)(
+      implicit ec: ExecutionContext): ReadSideManager = {
 
     val dbConfig: DbConfig = {
       // read the jdbc-default settings
