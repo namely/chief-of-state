@@ -11,13 +11,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      EARTHLY_SECRETS: "CODECOV_TOKEN"
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USER }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-      GIT_URL_INSTEAD_OF: "https://github.com/=git@github.com:"
-      FORCE_COLOR: 1
     steps:
     - uses: actions/checkout@v2
       with:
@@ -26,6 +19,9 @@ jobs:
     - uses: nelonoel/branch-name@v1.0.1
 
     - name: Docker Login
+      env:
+        DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USER }}
+        DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       run: docker login --username "$DOCKERHUB_USERNAME" --password "$DOCKERHUB_TOKEN"
 
     - name: Download latest earthly
@@ -47,7 +43,10 @@ jobs:
 
     - name: Build
       env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        EARTHLY_SECRETS: "CODECOV_TOKEN"
+        EARTHLY_BUILD_ARGS: "BRANCH_NAME,COMMIT_HASH,VERSION"
+        FORCE_COLOR: 1
         COMMIT_HASH: ${{ github.sha }}
         VERSION: ${{ steps.version.outputs.VERSION }}
-        EARTHLY_BUILD_ARGS: "BRANCH_NAME,COMMIT_HASH,VERSION"
       run: earthly -P --push +all

@@ -5,7 +5,7 @@ all:
     BUILD +test-all
     BUILD +docker-build
 
-code:
+dependencies:
     # copy relevant files in, save as a base image
     FROM +sbt
 
@@ -26,6 +26,11 @@ code:
     # clean & install dependencies
     RUN sbt clean cleanFiles update
 
+    # save for cache
+    SAVE IMAGE --cache-hint
+
+code:
+    FROM +dependencies
     # copy proto definitions & generate
     COPY --dir proto .
     RUN sbt protocGenerate
@@ -146,3 +151,6 @@ sbt:
 
     RUN apt-get update
     RUN apt-get install -y docker-ce docker-ce-cli containerd.io
+
+    # save for cache
+    SAVE IMAGE --cache-hint
