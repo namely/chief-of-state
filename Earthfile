@@ -31,7 +31,7 @@ dependencies:
     RUN sbt clean cleanFiles update
 
     # save for cache
-    SAVE IMAGE --cache-hint
+    SAVE IMAGE --push namely/chief-of-state:earthly-cache
 
 code:
     FROM +dependencies
