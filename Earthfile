@@ -157,5 +157,3 @@ sbt:
     RUN apt-get update
     RUN apt-get install -y docker-ce docker-ce-cli containerd.io
 
-    # save for cache
-    SAVE IMAGE --cache-hint
