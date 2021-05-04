@@ -3,11 +3,11 @@ FROM busybox:1.32
 test-and-build:
     # target running tests and
     BUILD +test-all
-    BUILD +docker-build
+    BUILD +prepare-image
 
-test-and-release:
+release:
     BUILD +test-all
-    BUILD +release
+    BUILD +build-image
 
 dependencies:
     # copy relevant files in, save as a base image
@@ -49,7 +49,7 @@ stage:
     RUN chmod -R u=rX,g=rX target/universal/stage
     SAVE ARTIFACT target/universal/stage/ /target
 
-build:
+prepare-image:
     # bundle into a slimmer, runnable container
     FROM openjdk:11-jre-slim
 
@@ -70,7 +70,7 @@ build:
     ENTRYPOINT /opt/docker/bin/entrypoint
     CMD []
 
-release:
+build-image:
     # build the image and push remotely (if all steps are successful)
     SAVE IMAGE --push namely/chief-of-state:${VERSION}
 
