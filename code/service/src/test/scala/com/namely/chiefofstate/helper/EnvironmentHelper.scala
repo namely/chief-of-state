@@ -17,6 +17,7 @@ object EnvironmentHelper {
   }
 
   def clearEnv(): Unit = {
+    println("hello")
     val field = System.getenv().getClass.getDeclaredField("m")
     field.setAccessible(true)
     val map: java.util.Map[java.lang.String, java.lang.String] =
