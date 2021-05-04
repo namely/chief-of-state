@@ -187,6 +187,8 @@ class UtilSpec extends BaseSpec {
 
       // assert that error status with details was not lost
       actualStatus shouldBe expectedStatus
+
+      println("hello world")
     }
   }
 
