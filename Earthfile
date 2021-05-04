@@ -42,7 +42,7 @@ code:
     # copy code
     COPY --dir code .
 
-stage:
+compile:
     # package the jars/executables
     FROM +code
     RUN sbt stage
@@ -62,7 +62,7 @@ prepare-image:
 
     # copy over files
     WORKDIR /opt/docker
-    COPY --chown cos:root +docker-stage/target .
+    COPY --chown cos:root +compile/target .
 
     # set runtime user to cos
     USER cos
