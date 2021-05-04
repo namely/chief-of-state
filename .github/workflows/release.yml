@@ -49,4 +49,4 @@ jobs:
         FORCE_COLOR: 1
         COMMIT_HASH: ${{ github.sha }}
         VERSION: ${{ steps.version.outputs.VERSION }}
-      run: earthly -P --push +all
+      run: earthly -P --ci --push +test-and-release

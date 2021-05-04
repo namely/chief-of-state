@@ -1,9 +1,13 @@
 FROM busybox:1.32
 
-all:
-    # target running it all
+test-and-build:
+    # target running tests and
     BUILD +test-all
     BUILD +docker-build
+
+test-and-release:
+    BUILD +test-all
+    BUILD +release
 
 dependencies:
     # copy relevant files in, save as a base image
@@ -38,14 +42,14 @@ code:
     # copy code
     COPY --dir code .
 
-docker-stage:
+stage:
     # package the jars/executables
     FROM +code
     RUN sbt stage
     RUN chmod -R u=rX,g=rX target/universal/stage
     SAVE ARTIFACT target/universal/stage/ /target
 
-docker-build:
+build:
     # bundle into a slimmer, runnable container
     FROM openjdk:11-jre-slim
 
@@ -66,6 +70,7 @@ docker-build:
     ENTRYPOINT /opt/docker/bin/entrypoint
     CMD []
 
+release:
     # build the image and push remotely (if all steps are successful)
     SAVE IMAGE --push namely/chief-of-state:${VERSION}
 

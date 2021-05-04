@@ -37,4 +37,5 @@ jobs:
         COMMIT_HASH: ${{ github.sha }}
         EARTHLY_BUILD_ARGS: "BRANCH_NAME,COMMIT_HASH"
         FORCE_COLOR: 1
-      run: earthly -P +all
+        EARTHLY_REMOTE_CACHE: namely/chief-of-state:earthly-cache
+      run: earthly -P --ci --push +test-and-build
