@@ -88,7 +88,7 @@ The following docs are available:
 brew install earthly
 
 # locally build the image
-earthly +docker-build
+earthly +build-image
 
 # run tests
 earthly -P +test-local
