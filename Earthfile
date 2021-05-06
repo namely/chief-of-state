@@ -30,9 +30,6 @@ dependencies:
     # clean & install dependencies
     RUN sbt clean cleanFiles update
 
-    # save for cache
-    SAVE IMAGE --push namely/chief-of-state:earthly-cache
-
 code:
     FROM +dependencies
     # copy proto definitions & generate
@@ -80,6 +77,9 @@ test-local:
     WITH DOCKER --pull postgres
         RUN sbt coverage test coverageAggregate
     END
+
+    # push to earthly cache
+    SAVE IMAGE --cache-hint
 
 
 codecov:
@@ -156,4 +156,3 @@ sbt:
 
     RUN apt-get update
     RUN apt-get install -y docker-ce docker-ce-cli containerd.io
-
