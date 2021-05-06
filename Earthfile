@@ -1,11 +1,12 @@
 FROM busybox:1.32
 
 test-and-build:
-    # target running tests and
+    # target running tests and building image
     BUILD +test-all
     BUILD +prepare-image
 
 release:
+    # target running tests and pushing image
     BUILD +test-all
     BUILD +build-image
 
