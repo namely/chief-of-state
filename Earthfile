@@ -79,7 +79,7 @@ test-local:
     END
 
     # push to earthly cache
-    SAVE IMAGE --cache-hint
+    # SAVE IMAGE --cache-hint
 
 
 codecov:
