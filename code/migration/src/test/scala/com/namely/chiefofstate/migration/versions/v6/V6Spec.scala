@@ -44,4 +44,13 @@ class V6Spec extends BaseSpec with ForAllTestContainer {
       DbUtil.tableExists(journalJdbcConfig, "read_sides") shouldBe true
     }
   }
+
+  ".upgrade" should {
+    "only create the read_sides management table" in {
+      val version = V6(journalJdbcConfig)
+      DbUtil.tableExists(journalJdbcConfig, "read_sides") shouldBe false
+      Await.ready(journalJdbcConfig.db.run(version.upgrade()), Duration.Inf)
+      DbUtil.tableExists(journalJdbcConfig, "read_sides") shouldBe true
+    }
+  }
 }
