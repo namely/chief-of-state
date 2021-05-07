@@ -51,8 +51,6 @@ prepare-image:
     # bundle into a slimmer, runnable container
     FROM openjdk:11-jre-slim
 
-    ARG VERSION=dev
-
     USER root
 
     # create cos user for the service
@@ -70,6 +68,7 @@ prepare-image:
 
 build-image:
     # build the image and push remotely (if all steps are successful)
+    ARG VERSION=dev
     SAVE IMAGE --push namely/chief-of-state:${VERSION}
 
 test-local:
