@@ -36,7 +36,6 @@ code:
     # copy proto definitions & generate
     COPY --dir proto .
     RUN sbt protocGenerate
-
     # copy code
     COPY --dir code .
 
@@ -74,8 +73,11 @@ build-image:
 
 test-local:
     FROM +code
+    # enable coverage mode and compile tests
+    RUN sbt coverage test:compile compile
+
     # run with docker to enable testcontainers
-    WITH DOCKER --pull postgres
+    WITH DOCKER
         RUN sbt coverage test coverageAggregate
     END
 
