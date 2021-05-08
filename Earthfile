@@ -66,6 +66,7 @@ prepare-image:
     CMD []
 
 build-image:
+    FROM +prepare-image
     # build the image and push remotely (if all steps are successful)
     ARG VERSION=dev
     SAVE IMAGE --push namely/chief-of-state:${VERSION}
