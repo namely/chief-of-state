@@ -11,7 +11,7 @@ import com.namely.protobuf.chiefofstate.test.helloworld.{ GreeterGrpc, HelloRepl
 import com.namely.protobuf.chiefofstate.test.helloworld.GreeterGrpc.Greeter
 import io.grpc.{ ManagedChannel, ServerServiceDefinition, Status }
 import io.grpc.inprocess.{ InProcessChannelBuilder, InProcessServerBuilder }
-import io.opentelemetry.api.{ GlobalOpenTelemetry, OpenTelemetry }
+import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
@@ -32,13 +32,11 @@ class StatusClientInterceptorSpec extends BaseSpec {
   var openTelemetry: OpenTelemetry = _
 
   override def beforeEach(): Unit = {
-    GlobalOpenTelemetry.resetForTest()
-
     testExporter = InMemorySpanExporter.create
     openTelemetry = OpenTelemetrySdk.builder
       .setTracerProvider(SdkTracerProvider.builder.addSpanProcessor(SimpleSpanProcessor.create(testExporter)).build)
       .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance))
-      .buildAndRegisterGlobal
+      .build()
   }
 
   "interceptor" should {
@@ -46,7 +44,8 @@ class StatusClientInterceptorSpec extends BaseSpec {
       // create a mock server that returns an error status
       val serverName: String = InProcessServerBuilder.generateName();
       val serviceImpl: Greeter = mock[Greeter]
-      val err: Throwable = Status.NOT_FOUND.withDescription("not found").asException()
+      val errStatus = Status.NOT_FOUND.withDescription("not found")
+      val err: Throwable = errStatus.asException()
       (serviceImpl.sayHello _).expects(*).returning(Future.failed(err))
 
       val service: ServerServiceDefinition = Greeter.bindService(serviceImpl, global)
@@ -55,7 +54,7 @@ class StatusClientInterceptorSpec extends BaseSpec {
         InProcessServerBuilder.forName(serverName).directExecutor().addService(service).build().start())
 
       // create generic opentelemetry gRPC interceptor
-      val grpcInterceptor = GrpcTracing.create(GlobalOpenTelemetry.get()).newClientInterceptor()
+      val grpcInterceptor = GrpcTracing.create(openTelemetry).newClientInterceptor()
 
       // create custom status client interceptor
       val statusInterceptor = new StatusClientInterceptor()
@@ -87,7 +86,7 @@ class StatusClientInterceptorSpec extends BaseSpec {
       spans.size() shouldBe 2
       val attributeData = spans.get(0).getAttributes
       attributeData.get(AttributeKey.stringKey("grpc.kind")) shouldBe "client"
-      attributeData.get(AttributeKey.stringKey("grpc.status_code")) shouldBe "NOT_FOUND"
+      attributeData.get(AttributeKey.stringKey("grpc.status_code")) shouldBe errStatus.getCode().name()
       attributeData.get(AttributeKey.stringKey("grpc.ok")) shouldBe "false"
 
     }
