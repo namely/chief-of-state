@@ -43,6 +43,7 @@ class StatusClientInterceptorSpec extends BaseSpec {
 
   "interceptor" should {
     "add gRPC status code to span" in {
+      // create a mock server that returns an error status
       val serverName: String = InProcessServerBuilder.generateName();
       val serviceImpl: Greeter = mock[Greeter]
       val err: Throwable = Status.NOT_FOUND.withDescription("not found").asException()
@@ -53,12 +54,18 @@ class StatusClientInterceptorSpec extends BaseSpec {
       closeables.register(
         InProcessServerBuilder.forName(serverName).directExecutor().addService(service).build().start())
 
+      // create generic opentelemetry gRPC interceptor
+      val grpcInterceptor = GrpcTracing.create(GlobalOpenTelemetry.get()).newClientInterceptor()
+
+      // create custom status client interceptor
       val statusInterceptor = new StatusClientInterceptor()
+
+      // create
       val channel: ManagedChannel =
         InProcessChannelBuilder
           .forName(serverName)
           .directExecutor()
-          .intercept(GrpcTracing.create(GlobalOpenTelemetry.get()).newClientInterceptor(), statusInterceptor)
+          .intercept(grpcInterceptor, statusInterceptor)
           .build()
 
       closeables.register(channel)
