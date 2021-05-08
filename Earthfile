@@ -79,7 +79,7 @@ test-local:
     END
 
     # push to earthly cache
-    SAVE IMAGE --cache-hint
+    SAVE IMAGE --push namely/chief-of-state:earthly-cache
 
 codecov:
     FROM +test-local

@@ -49,5 +49,4 @@ jobs:
           FORCE_COLOR: 1
           COMMIT_HASH: ${{ github.sha }}
           VERSION: ${{ steps.version.outputs.VERSION }}
-          EARTHLY_REMOTE_CACHE: namely/chief-of-state:earthly-cache
         run: earthly -P --ci --push +release
