@@ -7,6 +7,7 @@ test-and-build:
 
 release:
     # uploads the image to registry
+    BUILD +test-all
     BUILD +build-image
 
 dependencies:
