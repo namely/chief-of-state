@@ -6,8 +6,7 @@ test-and-build:
     BUILD +prepare-image
 
 release:
-    # target running tests and pushing image
-    BUILD +test-all
+    # uploads the image to registry
     BUILD +build-image
 
 dependencies:
@@ -79,8 +78,7 @@ test-local:
     END
 
     # push to earthly cache
-    # SAVE IMAGE --cache-hint
-
+    SAVE IMAGE --cache-hint
 
 codecov:
     FROM +test-local
