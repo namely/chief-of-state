@@ -91,7 +91,7 @@ brew install earthly
 earthly +build-image
 
 # run tests
-earthly -P +test-local
+earthly -P --no-output +test-local
 
 # run local cluster with docker/docker-compose.yml
 docker-compose -f ./docker/docker-compose.yml --project-directory . up -d
