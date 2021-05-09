@@ -14,7 +14,7 @@ import java.sql.DriverManager
 
 class DbUtilSpec extends BaseSpec with ForAllTestContainer {
   override val container: PostgreSQLContainer =
-    PostgreSQLContainer.Def(dockerImageName = DockerImageName.parse("postgres")).createContainer()
+    PostgreSQLContainer.Def(dockerImageName = DockerImageName.parse("postgres:11")).createContainer()
 
   def connection = {
     // load the driver

@@ -96,8 +96,7 @@ object SchemasUtil {
    * @return the DBIOAction creating the table and offset
    */
   private[migration] def createReadSideOffsetsStmt(
-      tableName: String = "read_side_offsets",
-      projectionsTableName: String = "read_sides"): DBIOAction[Unit, NoStream, Effect] = {
+      tableName: String = "read_side_offsets"): DBIOAction[Unit, NoStream, Effect] = {
 
     val table = sqlu"""
       CREATE TABLE IF NOT EXISTS #$tableName (
@@ -111,9 +110,21 @@ object SchemasUtil {
       )
     """
 
-    val projectionTable =
-      sqlu"""
-        CREATE TABLE IF NOT EXISTS #$projectionsTableName (
+    val ix = sqlu"""
+    CREATE INDEX IF NOT EXISTS projection_name_index ON #$tableName (projection_name);
+    """
+
+    DBIO.seq(table, ix)
+  }
+
+  /**
+   * creates the read side offsets management
+   *
+   * @return the DBIOAction creating the table and offset
+   */
+  private[migration] def createReadSidesStmt() = {
+    sqlu"""
+        CREATE TABLE IF NOT EXISTS read_sides (
           projection_name VARCHAR(255) NOT NULL,
           projection_key VARCHAR(255) NOT NULL,
           paused BOOLEAN NOT NULL,
@@ -121,29 +132,30 @@ object SchemasUtil {
           PRIMARY KEY(projection_name, projection_key)
         )
       """
-
-    val ix = sqlu"""
-    CREATE INDEX IF NOT EXISTS projection_name_index ON #$tableName (projection_name);
-    """
-
-    DBIO.seq(table, ix, projectionTable)
   }
 
   /**
    * creates the various write-side stores and read-side offset stores
    */
   def createStoreTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
-    val ddlSeq = DBIO
+    Await.result(journalJdbcConfig.db.run(createStoreTablesStmt()), Duration.Inf)
+  }
+
+  /**
+   * creates the various write-side stores and read-side offset stores sql statement
+   * that will be run against the database.
+   */
+  def createStoreTablesStmt(): DBIO[Unit] = {
+    DBIO
       .seq(
         createEventJournalStmt,
         createEventJournalIndexStmt,
         createEventTagStmt,
         createSnapshotStmt,
-        createReadSideOffsetsStmt())
+        createReadSideOffsetsStmt(),
+        createReadSidesStmt())
       .withPinnedSession
       .transactionally
-
-    Await.result(journalJdbcConfig.db.run(ddlSeq), Duration.Inf)
   }
 
   /**
