@@ -32,11 +32,11 @@ class V1Spec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
 
   val projectionPg: PostgreSQLContainer = PostgreSQLContainer
-    .Def(dockerImageName = DockerImageName.parse("postgres"), urlParams = Map("currentSchema" -> cosSchema))
+    .Def(dockerImageName = DockerImageName.parse("postgres:11"), urlParams = Map("currentSchema" -> cosSchema))
     .createContainer()
 
   val journalPg: PostgreSQLContainer = PostgreSQLContainer
-    .Def(dockerImageName = DockerImageName.parse("postgres"), urlParams = Map("currentSchema" -> cosSchema))
+    .Def(dockerImageName = DockerImageName.parse("postgres:11"), urlParams = Map("currentSchema" -> cosSchema))
     .createContainer()
 
   override val container: MultipleContainers = MultipleContainers(projectionPg, journalPg)

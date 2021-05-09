@@ -11,7 +11,7 @@ import com.namely.protobuf.chiefofstate.test.helloworld.{ GreeterGrpc, HelloRepl
 import com.namely.protobuf.chiefofstate.test.helloworld.GreeterGrpc.Greeter
 import io.grpc.{ ManagedChannel, ServerServiceDefinition, Status }
 import io.grpc.inprocess.{ InProcessChannelBuilder, InProcessServerBuilder }
-import io.opentelemetry.api.{ GlobalOpenTelemetry, OpenTelemetry }
+import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
@@ -32,13 +32,11 @@ class StatusServerInterceptorSpec extends BaseSpec {
   var openTelemetry: OpenTelemetry = _
 
   override def beforeEach(): Unit = {
-    GlobalOpenTelemetry.resetForTest()
-
     testExporter = InMemorySpanExporter.create
     openTelemetry = OpenTelemetrySdk.builder
       .setTracerProvider(SdkTracerProvider.builder.addSpanProcessor(SimpleSpanProcessor.create(testExporter)).build)
       .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance))
-      .buildAndRegisterGlobal
+      .build()
   }
 
   "interceptor" should {
