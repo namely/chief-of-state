@@ -14,8 +14,10 @@ import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.serialization.MessageWithActorRef
 import com.namely.chiefofstate.telemetry.{ GrpcHeadersInterceptor, TracingHelpers }
-import com.namely.protobuf.chiefofstate.v1.internal._
+import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{ Headers, Header => LegacyHeader }
+import com.namely.protobuf.chiefofstate.v1.common.Header
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
+import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.service._
 import io.grpc.{ Metadata, Status, StatusException }
@@ -27,8 +29,6 @@ import scalapb.GeneratedMessage
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{ Failure, Success, Try }
-import com.namely.protobuf.chiefofstate.v1.common.Header
-import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{ Headers, Header => LegacyHeader }
 
 class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
     implicit val askTimeout: Timeout)
@@ -69,6 +69,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
         val newPluginData: Map[String, any.Any] = pluginData.updated(legacyHeaderKey, any.Any.pack(legacyHeaders))
 
         val remoteCommand: RemoteCommand = RemoteCommand(
+          entityId = request.entityId,
           command = request.command,
           propagatedHeaders = propagatedHeaders,
           persistedHeaders = persistedHeaders,

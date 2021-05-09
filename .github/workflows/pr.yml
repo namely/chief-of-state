@@ -1,12 +1,9 @@
-# .github/workflows/release.yml
+# .github/workflows/branch.yml
 
-name: Release
+name: PR
 
 on:
-  push:
-    tags:
-      - 'v*'
-
+  pull_request:
 
 jobs:
   build:
@@ -30,23 +27,11 @@ jobs:
       - name: Earthly Version
         run: earthly --version
 
-      - name: Create Version
-        id: version
-        run: |
-          # TODO: find a better way to version from tags
-          # Strip git ref prefix from version
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-          # Strip "v" prefix from tag name
-          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-          # set to output var
-          echo ::set-output name=VERSION::${VERSION}
-
       - name: Build
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
           EARTHLY_SECRETS: "CODECOV_TOKEN"
-          EARTHLY_BUILD_ARGS: "BRANCH_NAME,COMMIT_HASH,VERSION"
-          FORCE_COLOR: 1
           COMMIT_HASH: ${{ github.sha }}
-          VERSION: ${{ steps.version.outputs.VERSION }}
-        run: earthly -P --ci --push +release
+          EARTHLY_BUILD_ARGS: "BRANCH_NAME,COMMIT_HASH"
+          FORCE_COLOR: 1
+        run: earthly -P --ci +test-and-build

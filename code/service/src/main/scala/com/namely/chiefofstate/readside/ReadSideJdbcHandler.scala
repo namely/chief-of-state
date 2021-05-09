@@ -19,23 +19,19 @@ import scala.util.{ Failure, Success, Try }
 
 /**
  * Implements the akka JdbcHandler interface and forwards events to the
- * provided remote read side processor
+ * provided read side handler
  *
  * @param eventTag tag for this handler
  * @param processorId read side processor id
- * @param remoteReadProcessor a remote processor to forward events to
+ * @param readSideHandler a remote handler implementation
  */
-private[readside] class ReadSideJdbcHandler(
-    eventTag: String,
-    processorId: String,
-    remoteReadProcessor: RemoteReadSideProcessor)
+private[readside] class ReadSideJdbcHandler(eventTag: String, processorId: String, readSideHandler: ReadSideHandler)
     extends JdbcHandler[EventEnvelope[EventWrapper], JdbcSession] {
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   /**
-   * process an event inside the jdbc session by invoking the remote
-   * read processor
+   * process an event inside the jdbc session by invoking the read handler
    *
    * @param session a JdbcSession implementation
    * @param envelope the wrapped event to process
@@ -47,29 +43,14 @@ private[readside] class ReadSideJdbcHandler(
     val meta: MetaData = envelope.event.getMeta
 
     // invoke remote processor, get result
-    val responseAttempt: Try[HandleReadSideResponse] =
-      remoteReadProcessor.processEvent(event, eventTag, resultingState, meta)
+    val readSideSuccess: Boolean =
+      readSideHandler.processEvent(event, eventTag, resultingState, meta)
 
-    responseAttempt match {
-      // handle successful response
-      case Success(response) if response.successful =>
-        logger.debug(s"success for id=${meta.entityId}, revisionNumber=${meta.revisionNumber}")
-
-      // handle successful gRPC call where server indicated "successful = false"
-      case Success(_) =>
-        val errMsg: String =
-          s"read side returned failure, processor=${processorId}, id=${meta.entityId}, revisionNumber=${meta.revisionNumber}"
-        logger.warn(errMsg)
-        throw new RuntimeException(errMsg)
-
-      // handle failed gRPC call
-      case Failure(exception) =>
-        logger.error(
-          s"read side processing failure, processor=${processorId}, id=${meta.entityId}, revisionNumber=${meta.revisionNumber}, cause=${exception
-            .getMessage()}")
-        // for debug purposes, log the stack trace as well
-        logger.debug("remote handler failure", exception)
-        throw exception
+    if (!readSideSuccess) {
+      val errMsg: String =
+        s"read side returned failure, processor=${processorId}, id=${meta.entityId}, revisionNumber=${meta.revisionNumber}"
+      logger.warn(errMsg)
+      throw new RuntimeException(errMsg)
     }
   }
 }

@@ -29,7 +29,7 @@ class ServiceMigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
   val replyTimeout: FiniteDuration = FiniteDuration(30, TimeUnit.SECONDS)
 
   override val container: PostgreSQLContainer = PostgreSQLContainer
-    .Def(dockerImageName = DockerImageName.parse("postgres"), urlParams = Map("currentSchema" -> cosSchema))
+    .Def(dockerImageName = DockerImageName.parse("postgres:11"), urlParams = Map("currentSchema" -> cosSchema))
     .createContainer()
 
   def recreateSchema(): Unit = {

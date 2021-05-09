@@ -6,12 +6,13 @@
 
 package com.namely.chiefofstate.migration.versions.v6
 import com.namely.chiefofstate.migration.{ SchemasUtil, Version }
-import com.namely.chiefofstate.migration.versions.v5.V5.log
+import org.slf4j.{ Logger, LoggerFactory }
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
 
 case class V6(journalJdbcConfig: DatabaseConfig[JdbcProfile]) extends Version {
+  final val log: Logger = LoggerFactory.getLogger(getClass)
   override def versionNumber: Int = 6
 
   /**
@@ -21,7 +22,10 @@ case class V6(journalJdbcConfig: DatabaseConfig[JdbcProfile]) extends Version {
    *
    * @return a DBIO that runs this upgrade
    */
-  override def upgrade(): DBIO[Unit] = DBIO.successful {}
+  override def upgrade(): DBIO[Unit] = {
+    log.info(s"running upgrade for version #$versionNumber")
+    SchemasUtil.createReadSidesStmt().andThen(DBIO.successful {})
+  }
 
   /**
    * creates the latest COS schema if no prior versions found.
@@ -30,7 +34,6 @@ case class V6(journalJdbcConfig: DatabaseConfig[JdbcProfile]) extends Version {
    */
   override def snapshot(): DBIO[Unit] = {
     log.info(s"running snapshot for version #$versionNumber")
-    SchemasUtil.createStoreTables(journalJdbcConfig)
-    DBIO.successful {}
+    SchemasUtil.createStoreTablesStmt()
   }
 }

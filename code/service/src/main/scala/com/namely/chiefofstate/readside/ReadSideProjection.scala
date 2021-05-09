@@ -6,18 +6,18 @@
 
 package com.namely.chiefofstate.readside
 
-import akka.actor.typed.ActorSystem
-import akka.cluster.sharding.typed.scaladsl.ShardedDaemonProcess
+import akka.actor.typed.{ ActorSystem, Behavior }
 import akka.cluster.sharding.typed.ShardedDaemonProcessSettings
+import akka.cluster.sharding.typed.scaladsl.ShardedDaemonProcess
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import akka.persistence.query.Offset
-import akka.projection.{ ProjectionBehavior, ProjectionId }
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.eventsourced.scaladsl.EventSourcedProvider
 import akka.projection.jdbc.scaladsl.JdbcProjection
-import akka.projection.scaladsl.{ ExactlyOnceProjection, SourceProvider }
+import akka.projection.scaladsl.SourceProvider
+import akka.projection.{ ProjectionBehavior, ProjectionId }
 import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
-import com.zaxxer.hikari.HikariDataSource
+import javax.sql.DataSource
 import org.slf4j.{ Logger, LoggerFactory }
 
 /**
@@ -27,14 +27,14 @@ import org.slf4j.{ Logger, LoggerFactory }
  * @param actorSystem actor system
  * @param processorId ID for this read side
  * @param dataSource hikari data source to connect through
- * @param remoteReadProcessor forwards messages remotely via gRPC
+ * @param readSideHandler the handler implementation for the read side
  * @param numShards number of shards for projections/tags
  */
-private[readside] class ReadSideProcessor(
+private[readside] class ReadSideProjection(
     actorSystem: ActorSystem[_],
     val processorId: String,
-    val dataSource: HikariDataSource,
-    remoteReadProcessor: RemoteReadSideProcessor,
+    val dataSource: DataSource,
+    readSideHandler: ReadSideHandler,
     val numShards: Int) {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -43,33 +43,46 @@ private[readside] class ReadSideProcessor(
   /**
    * Initialize the projection to start fetching the events that are emitted
    */
-  def init(): Unit = {
+  def start(): Unit = {
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
       name = processorId,
       numberOfInstances = numShards,
-      behaviorFactory = shardNumber => ProjectionBehavior(jdbcProjection(shardNumber.toString)),
+      behaviorFactory = shardNumber => jdbcProjection(shardNumber.toString),
       settings = ShardedDaemonProcessSettings(actorSystem),
       stopMessage = Some(ProjectionBehavior.Stop))
   }
 
-  private[readside] def jdbcProjection(tagName: String): ExactlyOnceProjection[Offset, EventEnvelope[EventWrapper]] = {
-    JdbcProjection.exactlyOnce(
+  /**
+   * creates a jdbc projection behavior
+   *
+   * @param tagName the name of the tag
+   * @return a behavior for this projection
+   */
+  private[readside] def jdbcProjection(tagName: String): Behavior[ProjectionBehavior.Command] = {
+    val projection = JdbcProjection.exactlyOnce(
       projectionId = ProjectionId(processorId, tagName),
-      sourceProvider = sourceProvider(tagName),
+      sourceProvider = ReadSideProjection.sourceProvider(actorSystem, tagName),
       // defines a session factory that returns a jdbc
       // session connected to the hikari pool
       sessionFactory = () => new ReadSideJdbcSession(dataSource.getConnection()),
-      handler = () => new ReadSideJdbcHandler(tagName, processorId, remoteReadProcessor))
+      handler = () => new ReadSideJdbcHandler(tagName, processorId, readSideHandler))
 
+    ProjectionBehavior(projection)
   }
+}
+
+private[readside] object ReadSideProjection {
 
   /**
    * Set the Event Sourced Provider per tag
    *
+   * @param system the actor system
    * @param tag the event tag
    * @return the event sourced provider
    */
-  protected def sourceProvider(tag: String): SourceProvider[Offset, EventEnvelope[EventWrapper]] = {
-    EventSourcedProvider.eventsByTag[EventWrapper](actorSystem, readJournalPluginId = JdbcReadJournal.Identifier, tag)
+  private[readside] def sourceProvider(
+      system: ActorSystem[_],
+      tag: String): SourceProvider[Offset, EventEnvelope[EventWrapper]] = {
+    EventSourcedProvider.eventsByTag[EventWrapper](system, readJournalPluginId = JdbcReadJournal.Identifier, tag)
   }
 }
