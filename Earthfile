@@ -1,11 +1,16 @@
 FROM busybox:1.32
 
-all:
-    # target running it all
+test-and-build:
+    # target running tests and building image
     BUILD +test-all
-    BUILD +docker-build
+    BUILD +prepare-image
 
-code:
+release:
+    # uploads the image to registry
+    BUILD +test-all
+    BUILD +build-image
+
+dependencies:
     # copy relevant files in, save as a base image
     FROM +sbt
 
@@ -26,25 +31,24 @@ code:
     # clean & install dependencies
     RUN sbt clean cleanFiles update
 
+code:
+    FROM +dependencies
     # copy proto definitions & generate
     COPY --dir proto .
     RUN sbt protocGenerate
-
     # copy code
     COPY --dir code .
 
-docker-stage:
+compile:
     # package the jars/executables
     FROM +code
     RUN sbt stage
     RUN chmod -R u=rX,g=rX target/universal/stage
     SAVE ARTIFACT target/universal/stage/ /target
 
-docker-build:
+prepare-image:
     # bundle into a slimmer, runnable container
     FROM openjdk:11-jre-slim
-
-    ARG VERSION=dev
 
     USER root
 
@@ -53,7 +57,7 @@ docker-build:
 
     # copy over files
     WORKDIR /opt/docker
-    COPY --chown cos:root +docker-stage/target .
+    COPY --chown cos:root +compile/target .
 
     # set runtime user to cos
     USER cos
@@ -61,16 +65,24 @@ docker-build:
     ENTRYPOINT /opt/docker/bin/entrypoint
     CMD []
 
+build-image:
+    FROM +prepare-image
     # build the image and push remotely (if all steps are successful)
+    ARG VERSION=dev
     SAVE IMAGE --push namely/chief-of-state:${VERSION}
 
 test-local:
     FROM +code
+    # enable coverage mode and compile tests
+    RUN sbt coverage test:compile compile
+
     # run with docker to enable testcontainers
-    WITH DOCKER --pull postgres
+    WITH DOCKER
         RUN sbt coverage test coverageAggregate
     END
 
+    # push to earthly cache
+    SAVE IMAGE --push namely/chief-of-state:earthly-cache
 
 codecov:
     FROM +test-local
