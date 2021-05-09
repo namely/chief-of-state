@@ -6,7 +6,7 @@ test-and-build:
     BUILD +prepare-image
 
 release:
-    # target running tests and pushing image
+    # uploads the image to registry
     BUILD +test-all
     BUILD +build-image
 
@@ -36,7 +36,6 @@ code:
     # copy proto definitions & generate
     COPY --dir proto .
     RUN sbt protocGenerate
-
     # copy code
     COPY --dir code .
 
@@ -50,8 +49,6 @@ compile:
 prepare-image:
     # bundle into a slimmer, runnable container
     FROM openjdk:11-jre-slim
-
-    ARG VERSION=dev
 
     USER root
 
@@ -69,19 +66,23 @@ prepare-image:
     CMD []
 
 build-image:
+    FROM +prepare-image
     # build the image and push remotely (if all steps are successful)
+    ARG VERSION=dev
     SAVE IMAGE --push namely/chief-of-state:${VERSION}
 
 test-local:
     FROM +code
+    # enable coverage mode and compile tests
+    RUN sbt coverage test:compile compile
+
     # run with docker to enable testcontainers
-    WITH DOCKER --pull postgres
+    WITH DOCKER
         RUN sbt coverage test coverageAggregate
     END
 
     # push to earthly cache
-    SAVE IMAGE --cache-hint
-
+    SAVE IMAGE --push namely/chief-of-state:earthly-cache
 
 codecov:
     FROM +test-local
