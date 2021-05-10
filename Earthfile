@@ -102,7 +102,7 @@ sbt:
     FROM openjdk:11-jdk-stretch
 
     # Install sbt
-    ARG SBT_VERSION=1.5.1
+    ARG SBT_VERSION=1.5.2
     ARG USER_ID=1001
     ARG GROUP_ID=1001
 
