@@ -15,7 +15,6 @@ import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
 import com.namely.chiefofstate.config.{ CosConfig, SnapshotConfig }
 import com.namely.chiefofstate.Util.{ makeFailedStatusPf, toRpcStatus, Instants }
-import com.namely.chiefofstate.telemetry.TracingHelpers
 import com.namely.chiefofstate.WriteHandlerHelpers.{ NewState, NoOp }
 import com.namely.chiefofstate.serialization.MessageWithActorRef
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
@@ -25,6 +24,7 @@ import io.grpc.{ Status, StatusException }
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.{ Span, StatusCode }
 import io.opentelemetry.context.Context
+import io.superflat.otel.tools.TracingHelpers
 import org.slf4j.{ Logger, LoggerFactory }
 
 import java.time.Instant

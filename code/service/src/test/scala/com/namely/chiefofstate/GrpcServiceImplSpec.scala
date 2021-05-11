@@ -7,7 +7,6 @@
 package com.namely.chiefofstate
 
 import java.util.concurrent.TimeUnit
-
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.javadsl.{ ClusterSharding => ClusterShardingJava }
@@ -22,7 +21,6 @@ import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.helper.{ BaseActorSpec, GrpcHelpers, TestConfig }
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.serialization.{ MessageWithActorRef, ScalaMessage }
-import com.namely.chiefofstate.telemetry.GrpcHeadersInterceptor
 import com.namely.protobuf.chiefofstate.v1.common.{ Header, MetaData }
 import com.namely.protobuf.chiefofstate.v1.internal.{ CommandReply, RemoteCommand, SendCommand }
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
@@ -32,6 +30,7 @@ import io.grpc.inprocess.{ InProcessChannelBuilder, InProcessServerBuilder }
 import io.grpc.protobuf.StatusProto
 import io.grpc.stub.MetadataUtils
 import io.grpc.{ ManagedChannel, Metadata, StatusException }
+import io.superflat.otel.tools.GrpcHeadersInterceptor
 
 import scala.concurrent.duration.{ Duration, FiniteDuration }
 import scala.concurrent.{ Await, ExecutionContext }
