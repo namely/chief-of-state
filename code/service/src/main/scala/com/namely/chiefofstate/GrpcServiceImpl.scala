@@ -10,6 +10,7 @@ import akka.actor.typed.ActorRef
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, EntityRef }
 import akka.util.Timeout
 import com.google.protobuf.any
+import com.google.rpc.status.Status.toJavaProto
 import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.serialization.MessageWithActorRef
@@ -150,8 +151,7 @@ object GrpcServiceImpl {
       case Reply.State(value: StateWrapper) => Success(value)
 
       case Reply.Error(status: com.google.rpc.status.Status) =>
-        val javaStatus: com.google.rpc.Status =
-          com.google.rpc.Status.parseFrom(status.toByteArray)
+        val javaStatus: com.google.rpc.Status = toJavaProto(status)
 
         Failure(StatusProto.toStatusException(javaStatus))
 

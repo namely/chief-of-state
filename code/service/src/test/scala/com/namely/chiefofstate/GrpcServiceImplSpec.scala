@@ -357,7 +357,7 @@ class GrpcServiceImplSpec extends BaseActorSpec(s"""
 
       val javaStatus = StatusProto.fromStatusAndTrailers(statusException.getStatus(), statusException.getTrailers())
 
-      val actual = Status.parseFrom(javaStatus.toByteArray())
+      val actual = Status.fromJavaProto(javaStatus)
 
       actual shouldBe expectedStatus
 
