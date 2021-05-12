@@ -22,6 +22,8 @@ object Dependencies {
     val JaninoVersion: String = "3.1.4"
     val LogstashLogbackVersion: String = "6.3"
 
+    val OpenTelemetryVersion: String = "1.2.0"
+
     val TestContainers: String = "0.39.3"
 
     val OtelToolsVersion: String = "0.0.0+1-114ae6f7-SNAPSHOT"
@@ -60,6 +62,8 @@ object Dependencies {
     "net.logstash.logback" % "logstash-logback-encoder" % Versions.LogstashLogbackVersion,
     "org.codehaus.janino" % "janino" % Versions.JaninoVersion,
     "org.scala-lang" % "scala-reflect" % Versions.ScalaVersion,
+    // Opentelemetry
+    "io.opentelemetry" % "opentelemetry-sdk-testing" % OpenTelemetryVersion % Test,
     // Otel tools
     "io.superflat" % "otel-tools_2.13" % OtelToolsVersion
   )
