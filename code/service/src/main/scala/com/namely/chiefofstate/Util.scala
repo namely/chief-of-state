@@ -156,7 +156,7 @@ object Util {
     // convert to a java status
     val javaStatus = StatusProto.fromStatusAndTrailers(status, trailers)
     // convert to the scala equivalent
-    com.google.rpc.status.Status.parseFrom(javaStatus.toByteArray())
+    com.google.rpc.status.Status.fromJavaProto(javaStatus)
   }
 
   /**
