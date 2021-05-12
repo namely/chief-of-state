@@ -26,7 +26,7 @@ object Dependencies {
 
     val TestContainers: String = "0.39.4"
 
-    val OtelToolsVersion: String = "0.0.0+1-3a03e21d-SNAPSHOT"
+    val OtelToolsVersion: String = "0.1.5"
   }
 
   import Dependencies.Versions._
