@@ -27,7 +27,7 @@ object Dependencies {
     val OpenTelemetryMetricsVersion: String = "1.0.1-alpha"
     val PrometheusServerVersion: String = "0.10.0"
 
-    val TestContainers: String = "0.39.3"
+    val TestContainers: String = "0.39.4"
   }
 
   import Dependencies.Versions._
