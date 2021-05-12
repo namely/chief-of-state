@@ -33,11 +33,11 @@ object Dependencies {
 
   val excludeGRPC = ExclusionRule(organization = "io.grpc")
   val jars: Seq[ModuleID] = Seq(
-    "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % ScalapbCommonProtoVersion,
+    "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.10" % ScalapbCommonProtoVersion,
     "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf",
     "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % scalapbVersion,
     "com.thesamet.scalapb" %% "scalapb-validate-core" % scalapb.validate.compiler.BuildInfo.version % "protobuf",
-    "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % ScalapbCommonProtoVersion % "protobuf",
+    "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.10" % ScalapbCommonProtoVersion % "protobuf",
     "io.grpc" % "grpc-netty" % grpcJavaVersion,
     "com.typesafe.akka" %% "akka-persistence-typed" % AkkaVersion,
     "com.typesafe.akka" %% "akka-serialization-jackson" % AkkaVersion,
