@@ -8,6 +8,7 @@ package com.namely.chiefofstate.config
 
 import akka.util.Timeout
 import com.typesafe.config.Config
+import io.superflat.otel.tools.TelemetryConfig
 
 import scala.concurrent.duration.DurationInt
 
@@ -51,6 +52,6 @@ object CosConfig {
       GrpcConfig(config),
       WriteSideConfig(config),
       config.getBoolean(enableReadSideKey),
-      TelemetryConfig(config))
+      TelemetryConfigFactory(config))
   }
 }

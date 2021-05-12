@@ -14,7 +14,6 @@ import akka.util.Timeout
 import com.namely.chiefofstate.config.CosConfig
 import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.readside.ReadSideManager
-import com.namely.chiefofstate.telemetry._
 import com.namely.protobuf.chiefofstate.v1.internal.MigrationDone
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
@@ -23,6 +22,13 @@ import io.grpc._
 import io.grpc.netty.NettyServerBuilder
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.instrumentation.grpc.v1_5.GrpcTracing
+import io.superflat.otel.tools.{
+  GrpcHeadersInterceptor,
+  StatusClientInterceptor,
+  StatusServerInterceptor,
+  TelemetryTools,
+  TracedExecutorService
+}
 import org.slf4j.{ Logger, LoggerFactory }
 
 import java.net.InetSocketAddress
@@ -49,7 +55,7 @@ object ServiceBootstrapper {
     Behaviors.receiveMessage[scalapb.GeneratedMessage] {
       case _: MigrationDone =>
         // start the telemetry tools and register global tracer
-        TelemetryTools(cosConfig).start()
+        TelemetryTools(cosConfig.telemetryConfig).start()
 
         // We only proceed when the data stores and various migrations are done successfully.
         log.info("Journal and snapshot store created successfully. About to start...")
