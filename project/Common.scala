@@ -50,7 +50,7 @@ object Common extends AutoPlugin {
         ("com.github.ghik" % "silencer-lib" % Versions.SilencerVersion % Provided).cross(CrossVersion.full)),
       scalafmtOnCompile := true,
       // require test coverage
-      coverageMinimum := 80,
+      coverageMinimum := 85,
       coverageFailOnMinimum := true,
       // show full stack traces and test case durations
       Test / testOptions += Tests.Argument("-oDF"),
