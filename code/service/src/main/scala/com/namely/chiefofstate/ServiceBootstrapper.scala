@@ -58,7 +58,7 @@ object ServiceBootstrapper {
         TelemetryTools(cosConfig.telemetryConfig).start()
 
         // We only proceed when the data stores and various migrations are done successfully.
-        log.info("Journal and snapshot store created successfully. About to start...")
+        log.info("Data store migration complete. About to start...")
 
         val channel: ManagedChannel =
           NettyHelper
