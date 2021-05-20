@@ -69,7 +69,7 @@ object ServiceMigrationRunner {
           val v3: V3 = V3(journalJdbcConfig)
           val v4: V4 = V4(journalJdbcConfig)
           val v5: V5 = V5(context.system, journalJdbcConfig)
-          val v6: V6 = V6(journalJdbcConfig)
+          val v6: V6 = V6(journalJdbcConfig, config.getString("jdbc-default.schema"))
 
           // instance of the migrator
           val migrator: Migrator =

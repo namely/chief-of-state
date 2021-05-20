@@ -17,6 +17,13 @@ import scala.concurrent.duration.Duration
 object SchemasUtil {
 
   /**
+   * COS schema DDL stmt
+   */
+  private[migration] def createSchemaStmt(schema: String): SqlAction[Int, NoStream, Effect] = {
+    sqlu"""CREATE SCHEMA IF NOT EXISTS #$schema"""
+  }
+
+  /**
    * event_journal DDL statement
    */
   private[migration] val createEventJournalStmt: SqlAction[Int, NoStream, Effect] = {
@@ -139,6 +146,16 @@ object SchemasUtil {
    */
   def createStoreTables(journalJdbcConfig: DatabaseConfig[JdbcProfile]): Unit = {
     Await.result(journalJdbcConfig.db.run(createStoreTablesStmt()), Duration.Inf)
+  }
+
+  /**
+   * Create the COS schema
+   *
+   * @param schema a schema name to create
+   * @return slick DBIO for the operation
+   */
+  def createSchema(schema: String): DBIO[Unit] = {
+    DBIO.seq(createSchemaStmt(schema)).withPinnedSession.transactionally
   }
 
   /**
