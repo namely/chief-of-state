@@ -256,6 +256,7 @@ object Migrator {
    * @return success/failure
    */
   private[migration] def createSchema(journalJdbcConfig: DatabaseConfig[JdbcProfile], schema: String): Try[Unit] = Try {
+    logger.info(s"creating schema '$schema' if not exists")
     // create the schema
     val conn = journalJdbcConfig.db.source.createConnection()
     try {
