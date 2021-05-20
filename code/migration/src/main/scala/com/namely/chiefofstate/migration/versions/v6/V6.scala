@@ -17,7 +17,7 @@ import slick.jdbc.JdbcProfile
  * @param journalJdbcConfig a db config
  * @param schema the COS schema name
  */
-case class V6(journalJdbcConfig: DatabaseConfig[JdbcProfile], schema: String) extends Version {
+case class V6(journalJdbcConfig: DatabaseConfig[JdbcProfile]) extends Version {
   final val log: Logger = LoggerFactory.getLogger(getClass)
   override def versionNumber: Int = 6
 
@@ -40,11 +40,6 @@ case class V6(journalJdbcConfig: DatabaseConfig[JdbcProfile], schema: String) ex
    */
   override def snapshot(): DBIO[Unit] = {
     log.info(s"running snapshot for version #$versionNumber")
-    // create the schema
-    SchemasUtil
-      .createSchema(schema)
-      .andThen(
-        // then create all the tables
-        SchemasUtil.createStoreTablesStmt())
+    SchemasUtil.createStoreTablesStmt()
   }
 }

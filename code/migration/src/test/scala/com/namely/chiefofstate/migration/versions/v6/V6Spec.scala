@@ -25,13 +25,17 @@ class V6Spec extends BaseSpec with ForAllTestContainer {
   lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
     TestConfig.dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
 
+  override def beforeEach(): Unit = {
+    DbHelper.recreateSchema(container, cosSchema)
+  }
+
   override protected def afterAll(): Unit = {
     super.afterAll()
   }
 
   ".snapshot" should {
     "create the new journal, snapshot and read side stores" in {
-      val version = V6(journalJdbcConfig, cosSchema)
+      val version = V6(journalJdbcConfig)
       Await.result(journalJdbcConfig.db.run(version.snapshot()), Duration.Inf) shouldBe {}
       DbUtil.tableExists(journalJdbcConfig, "event_journal") shouldBe true
       DbUtil.tableExists(journalJdbcConfig, "event_tag") shouldBe true
@@ -43,8 +47,7 @@ class V6Spec extends BaseSpec with ForAllTestContainer {
 
   ".upgrade" should {
     "only create the read_sides management table" in {
-      val version = V6(journalJdbcConfig, cosSchema)
-      DbHelper.recreateSchema(container, cosSchema)
+      val version = V6(journalJdbcConfig)
       DbUtil.tableExists(journalJdbcConfig, "read_sides") shouldBe false
       Await.ready(journalJdbcConfig.db.run(version.upgrade()), Duration.Inf)
       DbUtil.tableExists(journalJdbcConfig, "read_sides") shouldBe true

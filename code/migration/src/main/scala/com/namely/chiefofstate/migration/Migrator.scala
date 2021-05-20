@@ -18,7 +18,13 @@ import scala.concurrent.{ Await, Future }
 import scala.concurrent.duration.Duration
 import scala.util.{ Success, Try }
 
-class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
+/**
+ * Runs the provided migrations
+ *
+ * @param journalDbConfig a jdbc config
+ * @param schema the schema name
+ */
+class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile], schema: String) {
   val logger: Logger = Migrator.logger
 
   // create the priority queue of versions sorted by version number
@@ -53,9 +59,11 @@ class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile]) {
    * runs before all migration steps, used to configure the migrator state, etc.
    */
   private[migration] def beforeAll(): Try[Unit] = {
-    // create the versions table
+    // create the schema
     Migrator
-      .createMigrationsTable(journalDbConfig)
+      .createSchema(journalDbConfig, schema)
+      // create the versions table
+      .flatMap(_ => Migrator.createMigrationsTable(journalDbConfig))
       // set initial version if provided
       .flatMap(_ => Migrator.setInitialVersion(journalDbConfig))
   }
@@ -238,6 +246,22 @@ object Migrator {
           Await.result(journalDbConfig.db.run(stmt), Duration.Inf)
         }
       }
+    }
+  }
+
+  /**
+   * creates the COS schema
+   *
+   * @param journalJdbcConfig a journal jdbc config
+   * @return success/failure
+   */
+  private[migration] def createSchema(journalJdbcConfig: DatabaseConfig[JdbcProfile], schema: String): Try[Unit] = Try {
+    // create the schema
+    val conn = journalJdbcConfig.db.source.createConnection()
+    try {
+      conn.createStatement().execute(s"create schema if not exists $schema")
+    } finally {
+      conn.close()
     }
   }
 }
