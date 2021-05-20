@@ -9,6 +9,7 @@ package com.namely.chiefofstate.migration.helper
 import com.namely.protobuf.chiefofstate.v1.persistence.{ EventWrapper, StateWrapper }
 import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
 import java.sql.{ Connection, DriverManager }
+import org.checkerframework.checker.units.qual.s
 
 object DbHelper {
   val serializerId = 5001
@@ -87,5 +88,34 @@ object DbHelper {
     statement.addBatch(s"create schema $schema")
     statement.executeBatch()
     conn.close()
+  }
+
+  // drop the schema for creation testing
+  def dropSchema(container: PostgreSQLContainer, schema: String): Unit = {
+    val conn = getConnection(container)
+    val statement = conn.createStatement()
+    statement.addBatch(s"drop schema if exists $schema cascade")
+    statement.executeBatch()
+    conn.close()
+  }
+
+  /**
+   * returns true if schema exists (for testing)
+   *
+   * @param container test container for postgres
+   * @param schema schema name
+   * @return true if schema exists
+   */
+  def schemaExists(container: PostgreSQLContainer, schema: String): Boolean = {
+    val conn = getConnection(container)
+    val statement = conn.createStatement()
+    val sql = s"SELECT count(schema_name) FROM information_schema.schemata WHERE schema_name = '$schema';"
+    val result = statement.executeQuery(sql)
+    require(result.next, "broken resultset")
+    val numSchemas = result.getInt(1)
+    require(numSchemas < 2, "broken resultset")
+    conn.close()
+    // return true if found
+    numSchemas == 1
   }
 }
