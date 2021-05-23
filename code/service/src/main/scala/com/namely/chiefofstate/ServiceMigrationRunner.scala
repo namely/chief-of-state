@@ -64,6 +64,8 @@ object ServiceMigrationRunner {
           val priorOffsetStoreName: String =
             config.getString("chiefofstate.migration.v1.slick.offset-store.table")
 
+          val schema: String = config.getString("jdbc-default.schema")
+
           val v1: V1 = V1(journalJdbcConfig, priorProjectionJdbcConfig, priorOffsetStoreName)
           val v2: V2 = V2(journalJdbcConfig, projectionJdbcConfig)(context.system)
           val v3: V3 = V3(journalJdbcConfig)
@@ -73,7 +75,7 @@ object ServiceMigrationRunner {
 
           // instance of the migrator
           val migrator: Migrator =
-            new Migrator(journalJdbcConfig)
+            new Migrator(journalJdbcConfig, schema)
               .addVersion(v1)
               .addVersion(v2)
               .addVersion(v3)
