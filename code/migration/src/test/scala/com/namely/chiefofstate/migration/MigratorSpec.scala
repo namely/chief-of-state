@@ -20,6 +20,7 @@ import java.sql.DriverManager
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.Success
+import com.namely.chiefofstate.migration.helper.DbHelper
 
 class MigratorSpec extends BaseSpec with ForAllTestContainer {
 
@@ -85,7 +86,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
   ".addVersion" should {
     "add to the versions queue in order" in {
       val dbConfig = getDbConfig()
-      val migrator: Migrator = new Migrator(dbConfig)
+      val migrator: Migrator = new Migrator(dbConfig, cosSchema)
 
       // add versions out of order
       migrator.addVersion(getMockVersion(2))
@@ -105,7 +106,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
   ".getVersions" should {
     "filter versions" in {
       val dbConfig = getDbConfig()
-      val migrator: Migrator = new Migrator(dbConfig)
+      val migrator: Migrator = new Migrator(dbConfig, cosSchema)
 
       // add versions
       migrator.addVersion(getMockVersion(1))
@@ -127,7 +128,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
   ".beforeAll" should {
     "create the versions table" in {
       val dbConfig = getDbConfig()
-      val migrator = new Migrator(dbConfig)
+      val migrator = new Migrator(dbConfig, cosSchema)
 
       DbUtil.tableExists(dbConfig, Migrator.COS_MIGRATIONS_TABLE) shouldBe false
 
@@ -140,7 +141,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       setEnv(Migrator.COS_MIGRATIONS_INITIAL_VERSION, "3")
 
       val dbConfig = getDbConfig()
-      val migrator = new Migrator(dbConfig)
+      val migrator = new Migrator(dbConfig, cosSchema)
 
       migrator.beforeAll().isSuccess shouldBe true
 
@@ -165,7 +166,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
         .once()
 
       // define a migrator with two versions
-      val migrator = new Migrator(dbConfig).addVersion(version1).addVersion(version2)
+      val migrator = new Migrator(dbConfig, cosSchema).addVersion(version1).addVersion(version2)
 
       val result = migrator.run()
 
@@ -182,7 +183,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       Migrator.getCurrentVersionNumber(dbConfig) shouldBe Some(1)
 
       // define a migrator
-      val migrator = new Migrator(dbConfig)
+      val migrator = new Migrator(dbConfig, cosSchema)
 
       // define 3 dynamic versions
       (2 to 4).foreach(versionNumber => {
@@ -208,7 +209,10 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
 
       // define a migrator with versions that should not run (nothing mocked)
       val migrator =
-        new Migrator(dbConfig).addVersion(getMockVersion(1)).addVersion(getMockVersion(2)).addVersion(getMockVersion(3))
+        new Migrator(dbConfig, cosSchema)
+          .addVersion(getMockVersion(1))
+          .addVersion(getMockVersion(2))
+          .addVersion(getMockVersion(3))
 
       // set db version number to the highest version
       Migrator.createMigrationsTable(dbConfig)
@@ -428,6 +432,22 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       // check error
       actual.isFailure shouldBe true
       actual.failed.map(_.getMessage.endsWith("cannot be 'X'")) shouldBe Success(true)
+    }
+  }
+
+  ".createSchema" should {
+    "create the schema if not exists" in {
+      // first, drop the schema
+      DbHelper.dropSchema(container, cosSchema)
+      // ensure schema not exists
+      DbHelper.schemaExists(container, cosSchema) shouldBe false
+      // construct db config
+      val dbConfig: DatabaseConfig[JdbcProfile] =
+        dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
+      // run create schema
+      Migrator.createSchema(dbConfig, cosSchema)
+      // ensure exists
+      DbHelper.schemaExists(container, cosSchema) shouldBe true
     }
   }
 }
