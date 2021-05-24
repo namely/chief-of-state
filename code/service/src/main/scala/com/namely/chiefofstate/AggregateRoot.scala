@@ -178,18 +178,29 @@ object AggregateRoot {
       protosValidator: ProtosValidator,
       data: Map[String, com.google.protobuf.any.Any]): ReplyEffect[EventWrapper, StateWrapper] = {
 
-    val handlerOutput: Try[WriteHandlerHelpers.WriteTransitions] = commandHandler
-      .handleCommand(command, priorState)
-      .map(_.event match {
-        case Some(newEvent) =>
-          protosValidator.requireValidEvent(newEvent)
-          WriteHandlerHelpers.NewEvent(newEvent)
+    // state will be updated with the resulting state of each HandleEventResponse
+    var state = priorState.getState
 
-        case None =>
-          WriteHandlerHelpers.NoOp
-      })
-      .flatMap({
-        case WriteHandlerHelpers.NewEvent(newEvent) =>
+    val handlerOutput: Try[WriteHandlerHelpers.WriteTransitions] =
+      commandHandler
+        .handleCommand(command, priorState)
+	// use events or fallback to event in case events is empty
+        .map(response =>
+          response.events.isEmpty match {
+            case true =>
+              response.event match {
+                case Some(newEvent) => Seq(newEvent)
+                case None           => Seq.empty[any.Any]
+              }
+            case _ => response.events
+          })
+        .map(_.filter(x => x != any.Any()) // ignore empty events and validate types
+          .map(newEvent => {
+            protosValidator.requireValidEvent(newEvent)
+            newEvent
+          }))
+	// call handleEvent for each event, while passing the updated resulting state from previous call
+        .map(_.map(newEvent => {
           val newEventMeta: MetaData = MetaData()
             .withRevisionNumber(priorState.getMeta.revisionNumber + 1)
             .withRevisionDate(Instant.now().toTimestamp)
@@ -197,21 +208,25 @@ object AggregateRoot {
             .withEntityId(priorState.getMeta.entityId)
             .withHeaders(command.persistedHeaders)
 
-          val priorStateAny: com.google.protobuf.any.Any = priorState.getState
+          val priorStateAny: com.google.protobuf.any.Any = state
 
           eventHandler
             .handleEvent(newEvent, priorStateAny, newEventMeta)
             .map(response => {
               require(response.resultingState.isDefined, "event handler replied with empty state")
               protosValidator.requireValidState(response.getResultingState)
-              WriteHandlerHelpers.NewState(newEvent, response.getResultingState, newEventMeta)
+              state = response.getResultingState
+              WriteHandlerHelpers.NewState(newEvent, state, newEventMeta)
             })
-
-        case x =>
-          Success(x)
-      })
-      .recoverWith(makeFailedStatusPf)
-
+        })
+	// extract WriteTransitions from Try or fail and get the last one (if any exists)
+	.map(_.get).lastOption)
+        .map(x =>
+          x match {
+            case None           => WriteHandlerHelpers.NoOp
+            case Some(newState) => newState
+          })
+        .recoverWith(makeFailedStatusPf)
     handlerOutput match {
       case Success(NoOp) =>
         Effect.reply(replyTo)(CommandReply().withState(priorState))
