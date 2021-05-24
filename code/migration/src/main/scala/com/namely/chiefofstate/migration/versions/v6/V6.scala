@@ -11,6 +11,12 @@ import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
 
+/**
+ * V6 migration
+ *
+ * @param journalJdbcConfig a db config
+ * @param schema the COS schema name
+ */
 case class V6(journalJdbcConfig: DatabaseConfig[JdbcProfile]) extends Version {
   final val log: Logger = LoggerFactory.getLogger(getClass)
   override def versionNumber: Int = 6

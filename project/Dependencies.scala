@@ -7,7 +7,7 @@ object Dependencies {
   object Versions {
     val ScalaVersion: String = "2.13.6"
     val AkkaVersion: String = "2.6.14"
-    val SilencerVersion: String = "1.7.3"
+    val SilencerVersion: String = "1.7.4"
     val LogbackVersion: String = "1.2.3"
     val ScalapbCommonProtoVersion: String = "1.18.1-1"
     val ScalapbValidationVersion: String = "0.1.4"
@@ -36,7 +36,6 @@ object Dependencies {
     "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.10" % ScalapbCommonProtoVersion,
     "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf",
     "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % scalapbVersion,
-    "com.thesamet.scalapb" %% "scalapb-validate-core" % scalapb.validate.compiler.BuildInfo.version % "protobuf",
     "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.10" % ScalapbCommonProtoVersion % "protobuf",
     "io.grpc" % "grpc-netty" % grpcJavaVersion,
     "com.typesafe.akka" %% "akka-persistence-typed" % AkkaVersion,
@@ -65,8 +64,7 @@ object Dependencies {
     // Opentelemetry
     "io.opentelemetry" % "opentelemetry-sdk-testing" % OpenTelemetryVersion % Test,
     // Otel tools
-    "io.superflat" % "otel-tools_2.13" % OtelToolsVersion
-  )
+    "io.superflat" % "otel-tools_2.13" % OtelToolsVersion)
 
   val testJars: Seq[ModuleID] = Seq(
     "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % Test,
@@ -76,6 +74,5 @@ object Dependencies {
     "io.grpc" % "grpc-testing" % grpcJavaVersion % Test,
     // test containers
     "com.dimafeng" %% "testcontainers-scala-scalatest" % Versions.TestContainers % Test,
-    "com.dimafeng" %% "testcontainers-scala-postgresql" % Versions.TestContainers % Test
-  )
+    "com.dimafeng" %% "testcontainers-scala-postgresql" % Versions.TestContainers % Test)
 }
