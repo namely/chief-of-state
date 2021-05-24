@@ -219,7 +219,7 @@ object AggregateRoot {
               WriteHandlerHelpers.NewState(newEvent, state, newEventMeta)
             })
         })
-	// extract WriteTransitions from Try or fail and get the last one (if any exists)
+	// extract WriteTransitions of each Try or fail, then get the last one (if any exists)
 	.map(_.get).lastOption)
         .map(x =>
           x match {
