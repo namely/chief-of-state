@@ -18,9 +18,9 @@ import scala.util.{ Failure, Success, Try }
 /**
  * Active Plugins class to house an instance of plugins
  *
- * @param plugins Sequence of PluginBase
+ * @param plugins Sequence of Plugin
  */
-case class PluginManager(plugins: Seq[PluginBase]) {
+case class PluginManager(plugins: Seq[Plugin]) {
   import PluginManager.logger
 
   /**
@@ -84,7 +84,7 @@ object PluginManager {
    * @param plugins Sequence of plugin package strings
    * @return Sequence of PluginBase
    */
-  def reflectPlugins(plugins: Seq[String] = Seq()): Seq[PluginBase] = {
+  def reflectPlugins(plugins: Seq[String] = Seq()): Seq[Plugin] = {
     (DEFAULT_PLUGINS ++ plugins).map(className => {
 
       val runtimeMirror: universe.Mirror = universe.runtimeMirror(getClass.getClassLoader)
@@ -106,7 +106,7 @@ object PluginManager {
   def getPlugins(config: Config): PluginManager = {
     val plugins: Seq[String] = config.getString(HOCON_PATH).split(",").toSeq.map(_.trim).filter(_.nonEmpty)
 
-    val reflectedPlugins: Seq[PluginBase] = reflectPlugins(plugins)
+    val reflectedPlugins: Seq[Plugin] = reflectPlugins(plugins)
 
     new PluginManager(reflectedPlugins)
   }

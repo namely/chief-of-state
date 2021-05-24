@@ -12,8 +12,11 @@ import io.grpc.Metadata
 /**
  * Interface for the Chief-of-state plugins
  */
-trait PluginBase {
+trait Plugin {
 
+  /**
+   * the plugin unique ID
+   */
   def pluginId: String
 
   /**
@@ -27,14 +30,14 @@ trait PluginBase {
 }
 
 /**
- * Factory of PluginBase
+ * Factory of Plugins
  */
 trait PluginFactory {
 
   /**
-   * Returns a PluginBase
+   * Returns a Plugin
    *
-   * @return PluginBase instance
+   * @return Plugin instance
    */
-  def apply(): PluginBase
+  def apply(): Plugin
 }

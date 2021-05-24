@@ -17,24 +17,24 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.util.Try
 
-private[this] class MockPlugin1() extends PluginBase {
+private[this] class MockPlugin1() extends Plugin {
   override val pluginId: String = "MockPluginBase"
 
   override def run(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Option[any.Any] = None
 }
 
 private[this] object MockPlugin1 extends PluginFactory {
-  override def apply(): PluginBase = new MockPlugin1()
+  override def apply(): Plugin = new MockPlugin1()
 }
 
-private[this] class MockPlugin2() extends PluginBase {
+private[this] class MockPlugin2() extends Plugin {
   override val pluginId: String = "MockPluginBase"
 
   override def run(processCommandRequest: ProcessCommandRequest, metadata: Metadata): Option[any.Any] = None
 }
 
 private[this] object MockPlugin2 extends PluginFactory {
-  override def apply(): PluginBase = new MockPlugin2()
+  override def apply(): Plugin = new MockPlugin2()
 }
 
 class PluginManagerSpec extends BaseSpec {
@@ -53,13 +53,13 @@ class PluginManagerSpec extends BaseSpec {
       "return all plugin instances" in {
         val plugins: Seq[String] = Seq(classPackage1, classPackage2)
 
-        val actual: Seq[PluginBase] = PluginManager.reflectPlugins(plugins)
+        val actual: Seq[Plugin] = PluginManager.reflectPlugins(plugins)
         val expected: Seq[String] = PluginManager.DEFAULT_PLUGINS ++ plugins
 
         PluginManagerSpecCompanion.compare(actual, expected)
       }
       "return the default plugins in order" in {
-        val actual: Seq[PluginBase] = PluginManager.reflectPlugins()
+        val actual: Seq[Plugin] = PluginManager.reflectPlugins()
         PluginManagerSpecCompanion.compare(actual, PluginManager.DEFAULT_PLUGINS)
       }
       "throw on a bad path" in {
@@ -105,7 +105,7 @@ class PluginManagerSpec extends BaseSpec {
 
         val anyProto: com.google.protobuf.any.Any = com.google.protobuf.any.Any.pack(StringValue(foo))
 
-        val mockPluginBase: PluginBase = mock[PluginBase]
+        val mockPluginBase: Plugin = mock[Plugin]
         (() => mockPluginBase.pluginId).expects().returning(pluginId)
         (mockPluginBase.run _).expects(processCommandRequest, metadata).returning(Some(anyProto))
         val pluginManager: PluginManager = new PluginManager(Seq(mockPluginBase))
@@ -118,7 +118,7 @@ class PluginManagerSpec extends BaseSpec {
       }
 
       "return None" in {
-        val mockPluginBase: PluginBase = mock[PluginBase]
+        val mockPluginBase: Plugin = mock[Plugin]
         (mockPluginBase.run _).expects(processCommandRequest, metadata).returning(None)
         val pluginManager: PluginManager = new PluginManager(Seq(mockPluginBase))
 
@@ -128,7 +128,7 @@ class PluginManagerSpec extends BaseSpec {
       }
 
       "return a failure" in {
-        val mockPluginBase: PluginBase = mock[PluginBase]
+        val mockPluginBase: Plugin = mock[Plugin]
 
         (mockPluginBase.run _).expects(processCommandRequest, metadata).throws(new RuntimeException("test"))
 
@@ -155,7 +155,7 @@ object PluginManagerSpecCompanion extends Matchers {
    * @param expected Sequence of Package Names
    * @return Assertion
    */
-  def compare(actual: Seq[PluginBase], expected: Seq[String]): Assertion = {
+  def compare(actual: Seq[Plugin], expected: Seq[String]): Assertion = {
     actual.size should be(expected.size)
     (actual.map(x => x.getClass.getName.replace("$", "")) should
     contain).theSameElementsInOrderAs(expected)

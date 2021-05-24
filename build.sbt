@@ -17,7 +17,7 @@ lazy val root: Project = project
       "-J-Xmx1G",
       "-J-XX:+UseG1GC"))
   .dependsOn(chiefofstate)
-  .aggregate(protogen, chiefofstate, chiefofstateplugins, protogenTest, migration)
+  .aggregate(protogen, chiefofstate, protogenTest, migration)
 
 lazy val chiefofstate: Project = project
   .in(file("code/service"))
@@ -26,19 +26,7 @@ lazy val chiefofstate: Project = project
   .enablePlugins(NoPublish)
   .enablePlugins(AutomateHeaderPlugin)
   .settings(name := "chiefofstate", headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax)
-  .dependsOn(protogen, chiefofstateplugins, protogenTest % "test->compile", migration)
-
-lazy val chiefofstateplugins = project
-  .in(file("code/plugin"))
-  .enablePlugins(Common)
-  .enablePlugins(BuildSettings)
-  .enablePlugins(NoPublish)
-  .enablePlugins(AutomateHeaderPlugin)
-  .settings(
-    name := "chiefofstate-plugins",
-    description := "Chief of State Plugins",
-    headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax)
-  .dependsOn(protogen)
+  .dependsOn(protogen, protogenTest % "test->compile", migration)
 
 lazy val migration = project
   .in(file("code/migration"))
