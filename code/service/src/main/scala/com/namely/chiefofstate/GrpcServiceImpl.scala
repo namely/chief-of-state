@@ -55,7 +55,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSi
     GrpcServiceImpl
       .requireEntityId(entityId)
       // run remote command
-      .flatMap(pluginData => {
+      .flatMap(_ => {
         val entityRef: EntityRef[MessageWithActorRef] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
 
         val propagatedHeaders: Seq[Header] = Util.extractHeaders(metadata, writeSideConfig.propagatedHeaders)
