@@ -12,12 +12,11 @@ import akka.util.Timeout
 import com.google.protobuf.any
 import com.google.rpc.status.Status.toJavaProto
 import com.namely.chiefofstate.config.WriteSideConfig
-import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.serialization.MessageWithActorRef
 import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{ Headers, Header => LegacyHeader }
 import com.namely.protobuf.chiefofstate.v1.common.Header
-import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
 import com.namely.protobuf.chiefofstate.v1.internal._
+import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.service._
 import io.grpc.{ Metadata, Status, StatusException }
@@ -31,7 +30,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{ Failure, Success, Try }
 
-class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginManager, writeSideConfig: WriteSideConfig)(
+class GrpcServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSideConfig)(
     implicit val askTimeout: Timeout)
     extends ChiefOfStateServiceGrpc.ChiefOfStateService {
 
@@ -55,8 +54,6 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
     // ascertain the entity ID
     GrpcServiceImpl
       .requireEntityId(entityId)
-      // run plugins to get meta
-      .flatMap(_ => Future.fromTry(pluginManager.run(request, metadata)))
       // run remote command
       .flatMap(pluginData => {
         val entityRef: EntityRef[MessageWithActorRef] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
@@ -67,7 +64,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, pluginManager: PluginMan
         // temporarily inject the legacy plugin headers for backwards compatibility
         val legacyHeaderKey: String = "persisted_headers.v1"
         val legacyHeaders: Headers = GrpcServiceImpl.adaptLegacyHeaders(persistedHeaders)
-        val newPluginData: Map[String, any.Any] = pluginData.updated(legacyHeaderKey, any.Any.pack(legacyHeaders))
+        val newPluginData: Map[String, any.Any] = Map(legacyHeaderKey -> any.Any.pack(legacyHeaders))
 
         val remoteCommand: RemoteCommand = RemoteCommand(
           entityId = request.entityId,
