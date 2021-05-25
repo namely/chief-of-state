@@ -8,7 +8,7 @@ import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{
   HeaderLicenseStyle
 }
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport.scalafmtOnCompile
-import scoverage.ScoverageKeys.{coverageExcludedPackages, coverageFailOnMinimum, coverageMinimum}
+import scoverage.ScoverageKeys.{ coverageExcludedPackages, coverageFailOnMinimum, coverageMinimum }
 
 object Common extends AutoPlugin {
 
@@ -57,6 +57,7 @@ object Common extends AutoPlugin {
       Test / logBuffered := false,
       coverageExcludedPackages := "<empty>;com.namely.protobuf.*;" +
       "com.namely.chiefofstate.StartNodeBehaviour;" +
+      "com.namely.chiefofstate.ServiceBootstrapper;" +
       "com.namely.chiefofstate.StartNode;",
       Test / fork := true)
 }
