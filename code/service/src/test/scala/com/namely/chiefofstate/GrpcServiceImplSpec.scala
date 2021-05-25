@@ -6,34 +6,33 @@
 
 package com.namely.chiefofstate
 
-import java.util.concurrent.TimeUnit
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.javadsl.{ ClusterSharding => ClusterShardingJava }
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, EntityRef, EntityTypeKey }
 import akka.cluster.sharding.typed.testkit.scaladsl.TestEntityRef
-import com.google.protobuf.wrappers.StringValue
 import com.google.protobuf.{ any, ByteString }
+import com.google.protobuf.wrappers.StringValue
 import com.google.rpc.code
 import com.google.rpc.error_details.BadRequest
 import com.google.rpc.status.Status
 import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.helper.{ BaseActorSpec, GrpcHelpers, TestConfig }
-import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.serialization.{ MessageWithActorRef, ScalaMessage }
 import com.namely.protobuf.chiefofstate.v1.common.{ Header, MetaData }
 import com.namely.protobuf.chiefofstate.v1.internal.{ CommandReply, RemoteCommand, SendCommand }
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.service.{ ChiefOfStateServiceGrpc, GetStateRequest, ProcessCommandRequest }
+import io.grpc.{ ManagedChannel, Metadata, StatusException }
 import io.grpc.Status.Code
 import io.grpc.inprocess.{ InProcessChannelBuilder, InProcessServerBuilder }
 import io.grpc.protobuf.StatusProto
 import io.grpc.stub.MetadataUtils
-import io.grpc.{ ManagedChannel, Metadata, StatusException }
 import io.superflat.otel.tools.GrpcHeadersInterceptor
 
-import scala.concurrent.duration.{ Duration, FiniteDuration }
+import java.util.concurrent.TimeUnit
 import scala.concurrent.{ Await, ExecutionContext }
+import scala.concurrent.duration.{ Duration, FiniteDuration }
 import scala.util.Success
 
 class GrpcServiceImplSpec extends BaseActorSpec(s"""
@@ -74,14 +73,12 @@ class GrpcServiceImplSpec extends BaseActorSpec(s"""
     propagatedHeaders = Seq(),
     persistedHeaders = Seq())
 
-  val pluginManager: PluginManager = PluginManager(Seq())
-
   val cosConfig = TestConfig.cosConfig
 
   ".processCommand" should {
     "require entity ID" in {
       val clusterSharding: ClusterSharding = mock[FakeClusterSharding]
-      val impl = new GrpcServiceImpl(clusterSharding, pluginManager, writeSideConfig)
+      val impl = new GrpcServiceImpl(clusterSharding, writeSideConfig)
 
       val request = ProcessCommandRequest(entityId = "")
 
@@ -110,7 +107,7 @@ class GrpcServiceImplSpec extends BaseActorSpec(s"""
       val testEntityRef: EntityRef[MessageWithActorRef] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding = getClusterShard(testEntityRef)
       // instantiate the service
-      val impl = new GrpcServiceImpl(clusterSharding, pluginManager, writeSideConfig)
+      val impl = new GrpcServiceImpl(clusterSharding, writeSideConfig)
       // call method
       val request =
         ProcessCommandRequest().withEntityId(entityId).withCommand(any.Any.pack(StringValue("some-command")))
@@ -153,7 +150,7 @@ class GrpcServiceImplSpec extends BaseActorSpec(s"""
       val testEntityRef: EntityRef[MessageWithActorRef] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding = getClusterShard(testEntityRef)
       // instantiate the service
-      val impl = new GrpcServiceImpl(clusterSharding, pluginManager, customWriteConfig)
+      val impl = new GrpcServiceImpl(clusterSharding, customWriteConfig)
       // bind service and intercept headers
       val serverName: String = InProcessServerBuilder.generateName();
       val service = ChiefOfStateServiceGrpc.bindService(impl, ExecutionContext.global)
@@ -200,7 +197,7 @@ class GrpcServiceImplSpec extends BaseActorSpec(s"""
       val testEntityRef: EntityRef[MessageWithActorRef] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding = getClusterShard(testEntityRef)
       // instantiate the service
-      val impl = new GrpcServiceImpl(clusterSharding, pluginManager, writeSideConfig)
+      val impl = new GrpcServiceImpl(clusterSharding, writeSideConfig)
       // call method
       val request = ProcessCommandRequest().withEntityId(entityId)
       val sendFuture = impl.processCommand(request)
@@ -225,7 +222,7 @@ class GrpcServiceImplSpec extends BaseActorSpec(s"""
   ".getState" should {
     "require entity ID" in {
       val clusterSharding: ClusterSharding = mock[FakeClusterSharding]
-      val impl = new GrpcServiceImpl(clusterSharding, pluginManager, writeSideConfig)
+      val impl = new GrpcServiceImpl(clusterSharding, writeSideConfig)
 
       val request = GetStateRequest(entityId = "")
       val actualErr = intercept[StatusException] {
@@ -253,7 +250,7 @@ class GrpcServiceImplSpec extends BaseActorSpec(s"""
       val testEntityRef: EntityRef[MessageWithActorRef] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding = getClusterShard(testEntityRef)
       // instantiate the service
-      val impl = new GrpcServiceImpl(clusterSharding, pluginManager, writeSideConfig)
+      val impl = new GrpcServiceImpl(clusterSharding, writeSideConfig)
       // call method
       val request = GetStateRequest().withEntityId(entityId)
       val sendFuture = impl.getState(request)
@@ -289,7 +286,7 @@ class GrpcServiceImplSpec extends BaseActorSpec(s"""
       val testEntityRef: EntityRef[MessageWithActorRef] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding = getClusterShard(testEntityRef)
       // instantiate the service
-      val impl = new GrpcServiceImpl(clusterSharding, pluginManager, writeSideConfig)
+      val impl = new GrpcServiceImpl(clusterSharding, writeSideConfig)
       // call method
       val request = GetStateRequest().withEntityId(entityId)
       val sendFuture = impl.getState(request)
