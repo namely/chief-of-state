@@ -12,7 +12,6 @@ import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.CosConfig
-import com.namely.chiefofstate.plugin.PluginManager
 import com.namely.chiefofstate.readside.ReadSideManager
 import com.namely.protobuf.chiefofstate.v1.internal.MigrationDone
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
@@ -22,13 +21,7 @@ import io.grpc._
 import io.grpc.netty.NettyServerBuilder
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.instrumentation.grpc.v1_5.GrpcTracing
-import io.superflat.otel.tools.{
-  GrpcHeadersInterceptor,
-  StatusClientInterceptor,
-  StatusServerInterceptor,
-  TelemetryTools,
-  TracedExecutorService
-}
+import io.superflat.otel.tools._
 import org.slf4j.{ Logger, LoggerFactory }
 
 import java.net.InetSocketAddress
@@ -128,7 +121,7 @@ object ServiceBootstrapper {
 
     // instantiate the grpc service, bind do the execution context
     val serviceImpl: GrpcServiceImpl =
-      new GrpcServiceImpl(clusterSharding, PluginManager.getPlugins(config), cosConfig.writeSideConfig)
+      new GrpcServiceImpl(clusterSharding, cosConfig.writeSideConfig)
 
     // intercept the service
     val service: ServerServiceDefinition = ServerInterceptors.intercept(
