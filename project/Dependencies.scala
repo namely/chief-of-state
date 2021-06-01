@@ -5,7 +5,7 @@ object Dependencies {
 
   // Package versions
   object Versions {
-    val ScalaVersion: String = "2.13.5"
+    val ScalaVersion: String = "2.13.6"
     val AkkaVersion: String = "2.6.14"
     val SilencerVersion: String = "1.7.4"
     val LogbackVersion: String = "1.2.3"
@@ -24,7 +24,7 @@ object Dependencies {
 
     val OpenTelemetryVersion: String = "1.2.0"
 
-    val TestContainers: String = "0.39.4"
+    val TestContainers: String = "0.39.5"
 
     val OtelToolsVersion: String = "0.1.6"
   }
