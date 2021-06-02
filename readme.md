@@ -4,7 +4,6 @@
 [![Codacy grade](https://img.shields.io/codacy/grade/47a0f8ca3b614b32b1be2ec451c3e2e4?style=for-the-badge)](https://app.codacy.com/gh/namely/chief-of-state?utm_source=github.com&utm_medium=referral&utm_content=namely/chief-of-state&utm_campaign=Badge_Grade_Settings)
 [![Codecov](https://img.shields.io/codecov/c/github/namely/chief-of-state?style=for-the-badge)](https://codecov.io/gh/namely/chief-of-state)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Gitter](https://img.shields.io/gitter/room/namely/chief-of-state?style=for-the-badge)](https://gitter.im/namely/chief-of-state?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Docker Hub](https://img.shields.io/badge/docker%20hub-namely-blue?style=for-the-badge)](https://hub.docker.com/repository/docker/namely/chief-of-state)
 ![Docker Pulls](https://img.shields.io/docker/pulls/namely/chief-of-state?style=for-the-badge)
 
@@ -82,7 +81,21 @@ The following docs are available:
 - [Docker Deployment](./docs/docker-deployment.md)
 - [Kubernetes Deployment](./docs/kubernetes-deployment.md)
 
-### Locally build / test
+### Community
+
+You can join these groups and chat to discuss and ask Chief Of State related questions on:
+
+[![Gitter](https://img.shields.io/gitter/room/namely/chief-of-state?style=for-the-badge)](https://gitter.im/namely/chief-of-state?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![Github: namely/chief-of-state](https://img.shields.io/badge/github%3A-issues-blue.svg?style=for-the-badge)](https://github.com/namely/chief-of-state/issues)
+
+### Contribution
+
+Contributions are welcome!
+
+If you see an issue that you'd like to see fixed, the best way to make it happen is to help out by submitting a pull request implementing it. To test your implementation locally follow the steps below:
+
+
+#### Locally build / test
 
 ```bash
 # install earthly cli
