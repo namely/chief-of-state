@@ -2,7 +2,7 @@
 
 [![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/namely/chief-of-state/Build/master?style=for-the-badge)](https://github.com/namely/chief-of-state/actions?query=workflow%3ABuild)
 [![Codacy grade](https://img.shields.io/codacy/grade/47a0f8ca3b614b32b1be2ec451c3e2e4?style=for-the-badge)](https://app.codacy.com/gh/namely/chief-of-state?utm_source=github.com&utm_medium=referral&utm_content=namely/chief-of-state&utm_campaign=Badge_Grade_Settings)
-[![Codecov](https://img.shields.io/codecov/c/github/namely/chief-of-state?style=for-the-badge)](https://codecov.io/gh/namely/chief-of-state)
+[![Codecov](https://img.shields.io/codecov/c/github/namely/chief-of-state?color=red&style=for-the-badge)](https://codecov.io/gh/namely/chief-of-state)
 [![Docker Hub](https://img.shields.io/badge/docker%20hub-namely-blue?style=for-the-badge)](https://hub.docker.com/repository/docker/namely/chief-of-state)
 ![Docker Pulls](https://img.shields.io/docker/pulls/namely/chief-of-state?style=for-the-badge)
 
