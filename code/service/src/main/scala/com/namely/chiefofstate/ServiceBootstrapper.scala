@@ -48,7 +48,9 @@ object ServiceBootstrapper {
     Behaviors.receiveMessage[scalapb.GeneratedMessage] {
       case _: MigrationDone =>
         // start the telemetry tools and register global tracer
-        TelemetryTools(cosConfig.telemetryConfig).start()
+        TelemetryTools(cosConfig.telemetryConfig)
+          .start()
+          .buildAndRegisterGlobal()
 
         // We only proceed when the data stores and various migrations are done successfully.
         log.info("Data store migration complete. About to start...")
