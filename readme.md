@@ -105,15 +105,6 @@ earthly +build-image
 
 # run tests
 earthly -P --no-output +test-local
-
-# run local cluster with docker/docker-compose.yml
-docker-compose -f ./docker/docker-compose.yml --project-directory . up -d
-
-# observe containers
-docker-compose -f ./docker/docker-compose.yml --project-directory . ps
-
-# shut it down
-docker-compose -f ./docker/docker-compose.yml down -t 0 --remove-orphans
 ```
 
 ## License
