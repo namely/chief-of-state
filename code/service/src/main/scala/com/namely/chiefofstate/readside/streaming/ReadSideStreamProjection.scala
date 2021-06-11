@@ -4,17 +4,19 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.namely.chiefofstate.readside
+package com.namely.chiefofstate.readside.streaming
+
 import akka.actor.typed.{ ActorSystem, Behavior }
 import akka.cluster.sharding.typed.scaladsl.ShardedDaemonProcess
 import akka.cluster.sharding.typed.ShardedDaemonProcessSettings
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import akka.persistence.query.Offset
+import akka.projection.{ ProjectionBehavior, ProjectionId }
 import akka.projection.eventsourced.scaladsl.EventSourcedProvider
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.jdbc.scaladsl.JdbcProjection
 import akka.projection.scaladsl.{ GroupedProjection, SourceProvider }
-import akka.projection.{ ProjectionBehavior, ProjectionId }
+import com.namely.chiefofstate.readside.{ ReadSideJdbcSession, ReadSideProjection }
 import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
 import org.slf4j.{ Logger, LoggerFactory }
 

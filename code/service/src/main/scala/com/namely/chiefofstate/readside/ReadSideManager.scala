@@ -9,6 +9,7 @@ package com.namely.chiefofstate.readside
 import akka.actor.typed.ActorSystem
 import com.namely.chiefofstate.NettyHelper
 import com.namely.chiefofstate.config.{ GrpcConfig, ReadSideConfig, ReadSideConfigReader }
+import com.namely.chiefofstate.readside.streaming.{ ReadSideStreamHandlerImpl, ReadSideStreamProjection }
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.{
   ReadSideHandlerServiceBlockingStub,
   ReadSideHandlerServiceStub

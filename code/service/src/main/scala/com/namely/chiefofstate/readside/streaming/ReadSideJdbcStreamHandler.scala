@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.namely.chiefofstate.readside
+package com.namely.chiefofstate.readside.streaming
+
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.jdbc.scaladsl.JdbcHandler
 import akka.projection.jdbc.JdbcSession

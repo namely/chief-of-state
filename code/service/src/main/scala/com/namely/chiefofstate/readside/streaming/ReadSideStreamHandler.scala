@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.namely.chiefofstate.readside
+package com.namely.chiefofstate.readside.streaming
+
 import com.google.protobuf.any
 import com.namely.chiefofstate.config.GrpcConfig
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
