@@ -8,7 +8,7 @@ package com.namely.chiefofstate.readside
 import com.google.protobuf.any
 import com.namely.chiefofstate.config.GrpcConfig
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
-import com.namely.protobuf.chiefofstate.v1.readside.{ HandleReadSideRequest, HandleReadSideResponse }
+import com.namely.protobuf.chiefofstate.v1.readside.{ HandleReadSideStreamRequest, HandleReadSideStreamResponse }
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceStub
 import io.grpc.stub.StreamObserver
 import io.grpc.Status
@@ -37,11 +37,11 @@ private[readside] trait ReadSideStreamHandler {
  * @param doneSignal the async signal notification
  */
 private[readside] case class HandleReadSideResponseStreamObserver(processorId: String, doneSignal: CountDownLatch)
-    extends StreamObserver[HandleReadSideResponse] {
+    extends StreamObserver[HandleReadSideStreamResponse] {
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-  override def onNext(response: HandleReadSideResponse): Unit = {
+  override def onNext(response: HandleReadSideStreamResponse): Unit = {
     // onNext will be called only once after the server has finished processing the messages
     logger.info("received a server response...")
     if (!response.successful) {
@@ -95,7 +95,7 @@ private[readside] case class ReadSideStreamHandlerImpl(
       HandleReadSideResponseStreamObserver(processorId = processorId, doneSignal = doneSignal)
 
     // create the readSide request observer
-    val readSideRequestObserver: StreamObserver[HandleReadSideRequest] =
+    val readSideRequestObserver: StreamObserver[HandleReadSideStreamRequest] =
       readSideHandlerServiceStub
         .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
         .handleReadSideStream(readSideResponseStreamObserver)
@@ -105,8 +105,12 @@ private[readside] case class ReadSideStreamHandlerImpl(
       val proceed: Boolean = doneSignal.getCount == 0
       while (proceed && it.hasNext) {
         val (event, resultingState, meta) = it.next()
-        val readSideRequest: HandleReadSideRequest =
-          HandleReadSideRequest().withEvent(event).withState(resultingState).withMeta(meta).withReadSideId(processorId)
+        val readSideRequest: HandleReadSideStreamRequest =
+          HandleReadSideStreamRequest()
+            .withEvent(event)
+            .withState(resultingState)
+            .withMeta(meta)
+            .withReadSideId(processorId)
 
         // send the request to the server
         readSideRequestObserver.onNext(readSideRequest)
