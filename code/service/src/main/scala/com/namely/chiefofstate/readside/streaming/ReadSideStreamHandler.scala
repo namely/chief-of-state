@@ -16,6 +16,7 @@ import io.grpc.Status
 import org.slf4j.{ Logger, LoggerFactory }
 
 import java.util.concurrent.{ CountDownLatch, TimeUnit }
+import scala.util.{ Failure, Success, Try }
 
 /**
  *  Processes events read from the Journal by sending them to the read side server
@@ -101,27 +102,29 @@ private[readside] case class ReadSideStreamHandlerImpl(
         .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
         .handleReadSideStream(readSideResponseStreamObserver)
 
-    try {
-      val it = events.iterator
+    Try {
       val proceed: Boolean = doneSignal.getCount == 0
-      while (proceed && it.hasNext) {
-        val (event, resultingState, meta) = it.next()
-        val readSideRequest: HandleReadSideStreamRequest =
-          HandleReadSideStreamRequest()
-            .withEvent(event)
-            .withState(resultingState)
-            .withMeta(meta)
-            .withReadSideId(processorId)
+      events.foreach(elt => {
+        if (proceed) {
+          val (event, resultingState, meta) = elt
+          val readSideRequest: HandleReadSideStreamRequest =
+            HandleReadSideStreamRequest()
+              .withEvent(event)
+              .withState(resultingState)
+              .withMeta(meta)
+              .withReadSideId(processorId)
 
-        // send the request to the server
-        readSideRequestObserver.onNext(readSideRequest)
-      }
-    } catch {
-      case e: RuntimeException =>
+          // send the request to the server
+          readSideRequestObserver.onNext(readSideRequest)
+        }
+      })
+    } match {
+      case Failure(e) =>
         logger.error(s"read side processing failure, processor=$processorId, cause=${e.getMessage}")
         // Cancel RPC call
         readSideRequestObserver.onError(e)
         throw e;
+      case Success(_) =>
     }
 
     // we tell the server that the client is done sending data
