@@ -34,14 +34,18 @@ class ReadSideConfigReaderSpec extends BaseSpec {
       EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__HOST__RS3", "host3")
       EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__PORT__RS3", "3")
       EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__USE_TLS__RS3", "true")
+      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__USE_STREAMING__RS3", "true")
 
       val grpcReadSideSetting1: ReadSideConfig =
-        ReadSideConfig("RS1", "host1", 1, false).addSetting("GRPC_SOME_SETTING", "setting1")
+        ReadSideConfig("RS1", "host1", 1, false, Map.empty[String, String], false)
+          .addSetting("GRPC_SOME_SETTING", "setting1")
 
       val grpcReadSideSetting2: ReadSideConfig =
-        ReadSideConfig("RS2", "host2", 2, false).addSetting("GRPC_SOME_SETTING", "setting2")
+        ReadSideConfig("RS2", "host2", 2, false, Map.empty[String, String], false)
+          .addSetting("GRPC_SOME_SETTING", "setting2")
 
-      val grpcReadSideSetting3: ReadSideConfig = ReadSideConfig("RS3", "host3", 3, true)
+      val grpcReadSideSetting3: ReadSideConfig =
+        ReadSideConfig("RS3", "host3", 3, true, Map.empty[String, String], true)
 
       val actual: Seq[ReadSideConfig] = ReadSideConfigReader.getReadSideSettings
       val expected: Seq[ReadSideConfig] = Seq(grpcReadSideSetting1, grpcReadSideSetting2, grpcReadSideSetting3)

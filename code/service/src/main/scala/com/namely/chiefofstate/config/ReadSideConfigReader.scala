@@ -12,6 +12,7 @@ object ReadSideConfigReader {
   val READ_SIDE_HOST_KEY: String = "HOST"
   val READ_SIDE_PORT_KEY: String = "PORT"
   val READ_SIDE_TLS_KEY: String = "USE_TLS"
+  val READ_SIDE_USE_STREAMING_KEY: String = "USE_STREAMING"
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -56,6 +57,9 @@ object ReadSideConfigReader {
 
             case (config, (READ_SIDE_TLS_KEY, value)) =>
               config.copy(useTls = value.toBooleanOption.getOrElse(false))
+
+            case (config, (READ_SIDE_USE_STREAMING_KEY, value)) =>
+              config.copy(useStreaming = value.toBooleanOption.getOrElse(false))
 
             case (config, (key, value)) =>
               config.addSetting(key, value)

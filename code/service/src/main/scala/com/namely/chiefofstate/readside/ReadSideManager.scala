@@ -8,8 +8,11 @@ package com.namely.chiefofstate.readside
 
 import akka.actor.typed.ActorSystem
 import com.namely.chiefofstate.NettyHelper
-import com.namely.chiefofstate.config.{ ReadSideConfig, ReadSideConfigReader }
-import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
+import com.namely.chiefofstate.config.{ GrpcConfig, ReadSideConfig, ReadSideConfigReader }
+import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.{
+  ReadSideHandlerServiceBlockingStub,
+  ReadSideHandlerServiceStub
+}
 import com.typesafe.config.Config
 import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
 import io.grpc.ClientInterceptor
@@ -23,13 +26,15 @@ import org.slf4j.{ Logger, LoggerFactory }
  * @param dbConfig the DB config for creating a hikari data source
  * @param readSideConfigs sequence of configs for specific read sides
  * @param numShards number of shards for projections/tags
+ * @param grpcConfig the grpc configuration
  */
 class ReadSideManager(
     system: ActorSystem[_],
     interceptors: Seq[ClientInterceptor],
     dbConfig: ReadSideManager.DbConfig,
     readSideConfigs: Seq[ReadSideConfig],
-    numShards: Int) {
+    numShards: Int,
+    grpcConfig: GrpcConfig) {
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -44,18 +49,40 @@ class ReadSideManager(
     readSideConfigs.foreach(rsconfig => {
 
       logger.info(s"starting read side, id=${rsconfig.processorId}")
+      // FIXME draft implementation
+      if (rsconfig.useStreaming) {
+        // construct a remote gRPC streaming read side client
+        val rpcStreamingClient =
+          new ReadSideHandlerServiceStub(NettyHelper.builder(rsconfig.host, rsconfig.port, rsconfig.useTls).build)
+            .withInterceptors(interceptors: _*)
 
-      // construct a remote gRPC read side client for this read side
-      // and register interceptors
-      val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(
-        NettyHelper.builder(rsconfig.host, rsconfig.port, rsconfig.useTls).build).withInterceptors(interceptors: _*)
-      // instantiate a remote read side processor with the gRPC client
-      val remoteReadSideProcessor: ReadSideHandlerImpl = new ReadSideHandlerImpl(rsconfig.processorId, rpcClient)
-      // instantiate the read side projection with the remote processor
-      val projection =
-        new ReadSideProjection(system, rsconfig.processorId, dataSource, remoteReadSideProcessor, numShards)
-      // start the sharded daemon process
-      projection.start()
+        // instantiate a remote read side stream processor with the gRPC client
+        val remoteReadSideStreamProcessor: ReadSideStreamHandlerImpl =
+          ReadSideStreamHandlerImpl(rsconfig.processorId, grpcConfig, rpcStreamingClient)
+
+        // instantiate the read side projection with the remote processor
+        val projection: ReadSideStreamProjection =
+          new ReadSideStreamProjection(
+            system,
+            rsconfig.processorId,
+            dataSource,
+            remoteReadSideStreamProcessor,
+            numShards)
+        // start the sharded daemon process
+        projection.start()
+      } else {
+        // construct a remote gRPC read side client for this read side
+        // and register interceptors
+        val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(
+          NettyHelper.builder(rsconfig.host, rsconfig.port, rsconfig.useTls).build).withInterceptors(interceptors: _*)
+        // instantiate a remote read side processor with the gRPC client
+        val remoteReadSideProcessor: ReadSideHandlerImpl = new ReadSideHandlerImpl(rsconfig.processorId, rpcClient)
+        // instantiate the read side projection with the remote processor
+        val projection =
+          new ReadSideProjection(system, rsconfig.processorId, dataSource, remoteReadSideProcessor, numShards)
+        // start the sharded daemon process
+        projection.start()
+      }
     })
   }
 }
@@ -71,6 +98,8 @@ object ReadSideManager {
       DbConfig(jdbcCfg)
     }
 
+    val grpcConfig: GrpcConfig = GrpcConfig(system.settings.config)
+
     // get the individual read side configs
     val configs: Seq[ReadSideConfig] = ReadSideConfigReader.getReadSideSettings
     // make the manager
@@ -79,7 +108,8 @@ object ReadSideManager {
       interceptors = interceptors,
       dbConfig = dbConfig,
       readSideConfigs = configs,
-      numShards = numShards)
+      numShards = numShards,
+      grpcConfig)
   }
 
   /**
