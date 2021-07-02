@@ -20,6 +20,7 @@ import com.typesafe.config.Config
 import io.grpc._
 import io.grpc.netty.NettyServerBuilder
 import io.opentelemetry.api.GlobalOpenTelemetry
+import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.instrumentation.grpc.v1_5.GrpcTracing
 import io.superflat.otel.tools._
 import org.slf4j.{ Logger, LoggerFactory }
@@ -48,9 +49,8 @@ object ServiceBootstrapper {
     Behaviors.receiveMessage[scalapb.GeneratedMessage] {
       case _: MigrationDone =>
         // start the telemetry tools and register global tracer
-        TelemetryTools(cosConfig.telemetryConfig)
-          .start()
-          .buildAndRegisterGlobal()
+        val otelSdk: OpenTelemetrySdk = TelemetryTools(cosConfig.telemetryConfig).start()
+        GlobalOpenTelemetry.set(otelSdk)
 
         // We only proceed when the data stores and various migrations are done successfully.
         log.info("Data store migration complete. About to start...")

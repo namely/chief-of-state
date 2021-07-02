@@ -6,7 +6,7 @@ object Dependencies {
   // Package versions
   object Versions {
     val ScalaVersion: String = "2.13.6"
-    val AkkaVersion: String = "2.6.14"
+    val AkkaVersion: String = "2.6.15"
     val SilencerVersion: String = "1.7.5"
     val LogbackVersion: String = "1.2.3"
     val ScalapbCommonProtoVersion: String = "1.18.1-1"
@@ -14,7 +14,7 @@ object Dependencies {
     val ScalaTestVersion: String = "3.2.9"
     val AkkaManagementVersion: String = "1.1.0"
     val AkkaProjectionVersion: String = "1.2.1"
-    val PostgresDriverVersion: String = "42.2.20"
+    val PostgresDriverVersion: String = "42.2.22"
     val SlickVersion: String = "3.3.3"
     val AkkaPersistenceJdbcVersion: String = "5.0.0"
     val ScalaMockVersion: String = "5.1.0"
@@ -22,7 +22,7 @@ object Dependencies {
     val JaninoVersion: String = "3.1.4"
     val LogstashLogbackVersion: String = "6.3"
 
-    val OpenTelemetryVersion: String = "1.2.0"
+    val OpenTelemetryVersion: String = "1.3.0"
 
     val TestContainers: String = "0.39.5"
 
