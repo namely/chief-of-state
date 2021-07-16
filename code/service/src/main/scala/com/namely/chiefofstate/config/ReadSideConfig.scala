@@ -11,7 +11,8 @@ final case class ReadSideConfig(
     host: String = "",
     port: Int = -1,
     useTls: Boolean = false,
-    settings: Map[String, String] = Map.empty[String, String]) {
+    settings: Map[String, String] = Map.empty[String, String],
+    useStreaming: Boolean = false) {
 
   /**
    * Adds a setting to the config
