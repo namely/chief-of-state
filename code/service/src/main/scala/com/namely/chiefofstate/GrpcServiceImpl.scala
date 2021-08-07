@@ -40,7 +40,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSi
    * Used to process command sent by an application
    */
   override def processCommand(request: ProcessCommandRequest): Future[ProcessCommandResponse] = {
-    log.debug(ChiefOfStateServiceGrpc.METHOD_PROCESS_COMMAND.getFullMethodName())
+    log.debug(ChiefOfStateServiceGrpc.METHOD_PROCESS_COMMAND.getFullMethodName)
 
     val entityId: String = request.entityId
 
