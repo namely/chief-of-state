@@ -53,7 +53,7 @@ private[readside] class ReadSideHandlerImpl(
     // start the span
     val span: Try[Span] = Try {
       GlobalOpenTelemetry
-        .getTracer(getClass.getPackage().getName())
+        .getTracer(getClass.getPackage.getName)
         .spanBuilder(spanName)
         .setAttribute("component", this.getClass.getName)
         .startSpan()
@@ -84,22 +84,19 @@ private[readside] class ReadSideHandlerImpl(
         true
 
       // return false when remote server responds with "false"
-      case Success(value) =>
-        val errMsg: String =
-          s"read side returned failure, processor=${processorId}, id=${meta.entityId}, revisionNumber=${meta.revisionNumber}"
-        logger.warn(errMsg)
+      case Success(_) =>
+        logger.warn(
+          s"read side returned failure, processor=$processorId, id=${meta.entityId}, revisionNumber=${meta.revisionNumber}")
         false
 
       // return false when remote server fails
       case Failure(exception) =>
         logger.error(
-          s"read side processing failure, processor=${processorId}, id=${meta.entityId}, revisionNumber=${meta.revisionNumber}, cause=${exception
-            .getMessage()}")
+          s"read side processing failure, processor=$processorId, id=${meta.entityId}, revisionNumber=${meta.revisionNumber}, cause=${exception.getMessage}")
         // for debug purposes, log the stack trace as well
         logger.debug("remote handler failure", exception)
         false
     }
-    response.map(_.successful).getOrElse(false)
   }
 }
 
