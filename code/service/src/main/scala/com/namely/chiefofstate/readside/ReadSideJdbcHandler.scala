@@ -48,7 +48,7 @@ private[readside] class ReadSideJdbcHandler(eventTag: String, processorId: Strin
 
     if (!readSideSuccess) {
       val errMsg: String =
-        s"read side returned failure, processor=${processorId}, id=${meta.entityId}, revisionNumber=${meta.revisionNumber}"
+        s"read side returned failure, processor=$processorId, id=${meta.entityId}, revisionNumber=${meta.revisionNumber}"
       logger.warn(errMsg)
       throw new RuntimeException(errMsg)
     }
