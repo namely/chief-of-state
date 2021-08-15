@@ -68,7 +68,7 @@ object AggregateRoot {
             emptyState = initialState(persistenceId),
             (state, command) => handleCommand(context, state, command, commandHandler, eventHandler, protosValidator),
             (state, event) => handleEvent(state, event))
-          .withTagger(_ => Set(shardIndex.toString()))
+          .withTagger(_ => Set(shardIndex.toString))
           .withRetention(setSnapshotRetentionCriteria(cosConfig.snapshotConfig))
           .onPersistFailure(SupervisorStrategy.restartWithBackoff(200.millis, 5.seconds, 0.1))
       }
@@ -223,7 +223,7 @@ object AggregateRoot {
         // record the exception on the current span
         Span.current().recordException(e).setStatus(StatusCode.ERROR)
         // reply with the error status
-        Effect.reply(replyTo)(CommandReply().withError(toRpcStatus(e.getStatus(), e.getTrailers())))
+        Effect.reply(replyTo)(CommandReply().withError(toRpcStatus(e.getStatus, e.getTrailers)))
 
       case x =>
         // this should never happen, but here for code completeness
