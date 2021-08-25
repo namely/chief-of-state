@@ -6,27 +6,28 @@
 
 package com.namely.chiefofstate.migration.versions.v2
 
-import akka.{ actor, Done }
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.adapter.TypedActorSystemOps
 import akka.persistence.PersistentRepr
+import akka.persistence.jdbc.AkkaSerialization
 import akka.persistence.jdbc.config.{ JournalConfig, ReadJournalConfig }
 import akka.persistence.jdbc.db.SlickExtension
-import akka.persistence.jdbc.journal.dao.{ legacy, AkkaSerialization, JournalQueries }
-import akka.persistence.jdbc.journal.dao.legacy.ByteArrayJournalSerializer
 import akka.persistence.jdbc.journal.dao.JournalTables.{ JournalAkkaSerializationRow, TagRow }
+import akka.persistence.jdbc.journal.dao.legacy.ByteArrayJournalSerializer
+import akka.persistence.jdbc.journal.dao.{ legacy, JournalQueries }
 import akka.persistence.jdbc.query.dao.legacy.ReadJournalQueries
 import akka.serialization.Serialization
 import akka.stream.scaladsl.Source
+import akka.{ actor, Done }
 import org.slf4j.{ Logger, LoggerFactory }
 import slick.dbio.Effect
-import slick.jdbc.{ JdbcBackend, JdbcProfile, ResultSetConcurrency, ResultSetType }
 import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.{ JdbcBackend, JdbcProfile, ResultSetConcurrency, ResultSetType }
 import slick.sql.FixedSqlAction
 import slickProfile.api._
 
-import scala.concurrent.{ Await, ExecutionContextExecutor, Future }
 import scala.concurrent.duration.Duration
+import scala.concurrent.{ Await, ExecutionContextExecutor, Future }
 import scala.util.{ Failure, Success }
 
 /**
