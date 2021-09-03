@@ -9,7 +9,7 @@ object Dependencies {
     val AkkaVersion: String = "2.6.16"
     val SilencerVersion: String = "1.7.5"
     val LogbackVersion: String = "1.2.5"
-    val ScalapbCommonProtoVersion: String = "1.18.1-1"
+    val ScalapbCommonProtoVersion: String = "2.5.0-2"
     val ScalapbValidationVersion: String = "0.1.4"
     val ScalaTestVersion: String = "3.2.9"
     val AkkaManagementVersion: String = "1.1.1"
@@ -24,7 +24,7 @@ object Dependencies {
 
     val OpenTelemetryVersion: String = "1.5.0"
 
-    val TestContainers: String = "0.39.6"
+    val TestContainers: String = "0.39.7"
 
     val OtelToolsVersion: String = "0.1.7"
   }
