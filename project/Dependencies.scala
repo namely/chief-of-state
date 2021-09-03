@@ -24,7 +24,7 @@ object Dependencies {
 
     val OpenTelemetryVersion: String = "1.5.0"
 
-    val TestContainers: String = "0.39.6"
+    val TestContainers: String = "0.39.7"
 
     val OtelToolsVersion: String = "0.1.7"
   }
