@@ -98,7 +98,7 @@ If you see an issue that you'd like to see fixed, the best way to make it happen
 
 ```bash
 # install earthly cli
-brew install earthly
+brew install earthly/earthly/earthly (for mac users)
 
 # locally build the image
 earthly +build-image
