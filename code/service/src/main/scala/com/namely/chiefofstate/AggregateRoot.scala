@@ -188,7 +188,7 @@ object AggregateRoot {
         case None =>
           WriteHandlerHelpers.NoOp
       })
-      .flatMap({
+      .flatMap {
         case WriteHandlerHelpers.NewEvent(newEvent) =>
           val newEventMeta: MetaData = MetaData()
             .withRevisionNumber(priorState.getMeta.revisionNumber + 1)
@@ -209,7 +209,7 @@ object AggregateRoot {
 
         case x =>
           Success(x)
-      })
+      }
       .recoverWith(makeFailedStatusPf)
 
     handlerOutput match {

@@ -282,9 +282,9 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
               .result),
           Duration.Inf)
         // convert to tuple of (ID, Seq(Tags))
-        .map({ case (l, tags) =>
+        .map { case (l, tags) =>
           (l, tags.map(_.split(",").toSeq).getOrElse(Seq.empty[String]))
-        })
+        }
 
       val newTagsAndOrd: Seq[(Long, Seq[String])] = Await
         .result(
@@ -292,9 +292,9 @@ class MigrateJournalSpec extends BaseSpec with ForAllTestContainer {
             newJournalQueries.TagTable.sortBy(_.eventId.asc).map(t => (t.eventId, t.tag)).result),
           Duration.Inf)
         // group by ID
-        .groupBy({ case (id, _) => id })
+        .groupBy { case (id, _) => id }
         // reduce to map of ID -> Seq(Tags)
-        .map({ case (id, values) => (id, values.map({ case (_, tag) => tag })) })
+        .map { case (id, values) => (id, values.map { case (_, tag) => tag }) }
         .toSeq
 
       (legacyTagsAndOrd should contain).theSameElementsAs(newTagsAndOrd)

@@ -78,7 +78,7 @@ class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile], schema: String)
       // get last version
       .map(_ => Migrator.getCurrentVersionNumber(journalDbConfig))
       // use the version number to upgrade/snapshot
-      .flatMap({
+      .flatMap {
         // if no prior version, snapshot using the last one
         case None =>
           val lastVersion: Version = getVersions().last
@@ -102,7 +102,7 @@ class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile], schema: String)
             logger.info("COS schema is up to date")
             Success {}
           }
-      })
+      }
   }
 }
 

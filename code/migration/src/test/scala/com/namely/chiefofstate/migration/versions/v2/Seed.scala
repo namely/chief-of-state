@@ -64,9 +64,9 @@ object Seed {
   }
 
   def legacySnapshot(legacyDao: ByteArraySnapshotDao, numRows: Int = 4)(implicit ec: ExecutionContext): Seq[Unit] = {
-    val future = Future.sequence(snapshotRows(numRows).map({ case (metadata, account) =>
+    val future = Future.sequence(snapshotRows(numRows).map { case (metadata, account) =>
       legacyDao.save(metadata, account)
-    }))
+    })
 
     Await.result(future, Duration.Inf)
   }

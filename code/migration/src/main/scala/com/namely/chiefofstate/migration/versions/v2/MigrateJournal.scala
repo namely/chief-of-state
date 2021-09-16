@@ -85,18 +85,18 @@ case class MigrateJournal(
       .fromPublisher(journaldb.stream(query))
       // deserialize it
       .via(serializer.deserializeFlow)
-      .map({
+      .map {
         case Success((repr, tags, ordering)) => (repr, tags, ordering)
         case Failure(exception)              => throw exception // blow-up on failure
-      })
+      }
       // generate new repr and new tags as tuples of (<newRepr>, <newTags>)
-      .map({ case (repr, tags, ordering) => serialize(repr, tags, ordering) })
+      .map { case (repr, tags, ordering) => serialize(repr, tags, ordering) }
       // get pages of many records at once
       .grouped(pageSize)
       .mapAsync(1)(records => {
         val stmt: DBIO[Unit] = records
           // get all the sql statements for this record as an option
-          .map({ case (newRepr, newTags) => writeJournalRowsStatements(newRepr, newTags) })
+          .map { case (newRepr, newTags) => writeJournalRowsStatements(newRepr, newTags) }
           // reduce to 1 statement
           .foldLeft[DBIO[Unit]](DBIO.successful[Unit] {})((priorStmt, nextStmt) => {
             priorStmt.andThen(nextStmt)

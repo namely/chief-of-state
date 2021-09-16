@@ -152,9 +152,9 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
           val output = Try {
             require(request.getEventMeta.revisionNumber == priorMeta.revisionNumber + 1)
             HandleEventResponse().withResultingState(resultingState)
-          }.recoverWith({ case e: Throwable =>
+          }.recoverWith { case e: Throwable =>
             Failure(Util.makeStatusException(e))
-          })
+          }
           Future.fromTry(output)
         })
 

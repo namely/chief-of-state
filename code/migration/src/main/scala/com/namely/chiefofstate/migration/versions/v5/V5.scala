@@ -85,7 +85,7 @@ object V5 {
     val pipeline: Future[Done] = Source
       // build source from query
       .fromPublisher(dbConfig.db.stream(query))
-      .map({
+      .map {
         case (ordering, bytea) => {
           val eventWrapper: EventWrapper = EventWrapper.parseFrom(bytea)
 
@@ -100,9 +100,9 @@ object V5 {
           val newWrapper = eventWrapper.withMeta(eventWrapper.getMeta.addHeaders(newHeaders: _*))
           (ordering, newWrapper)
         }
-      })
-      .filter({ case (_, newWrapper) => newWrapper.getMeta.headers.nonEmpty })
-      .map({
+      }
+      .filter { case (_, newWrapper) => newWrapper.getMeta.headers.nonEmpty }
+      .map {
         case (ordering, eventWrapper) => {
 
           val b64 = java.util.Base64.getEncoder().encodeToString(eventWrapper.toByteArray)
@@ -114,7 +114,7 @@ object V5 {
           where ordering = $ordering
         """
         }
-      })
+      }
       .grouped(pageSize)
       .mapAsync(1)(stmts => dbConfig.db.run(DBIO.seq((stmts: _*))))
       .run()
@@ -147,7 +147,7 @@ object V5 {
     val pipeline: Future[Done] = Source
       // build source from query
       .fromPublisher(dbConfig.db.stream(query))
-      .map({
+      .map {
         case (ordering, sequenceNumber, bytea) => {
           val stateWrapper: StateWrapper = StateWrapper.parseFrom(bytea)
 
@@ -162,9 +162,9 @@ object V5 {
           val newWrapper = stateWrapper.withMeta(stateWrapper.getMeta.addHeaders(newHeaders: _*))
           (ordering, sequenceNumber, newWrapper)
         }
-      })
-      .filter({ case (_, _, wrapper) => wrapper.getMeta.headers.nonEmpty })
-      .map({
+      }
+      .filter { case (_, _, wrapper) => wrapper.getMeta.headers.nonEmpty }
+      .map {
         case (id: String, sequenceNumber: Long, stateWrapper: StateWrapper) => {
 
           val b64 = java.util.Base64.getEncoder().encodeToString(stateWrapper.toByteArray)
@@ -176,7 +176,7 @@ object V5 {
           where persistence_id = $id and sequence_number = $sequenceNumber
         """
         }
-      })
+      }
       .grouped(pageSize)
       .mapAsync(1)(stmts => dbConfig.db.run(DBIO.seq((stmts: _*))))
       .run()

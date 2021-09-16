@@ -103,26 +103,24 @@ case class MigrateSnapshot(
    * @return new snapshot in new format
    */
   private def convertSnapshot(old: OldSnapshotRow): SnapshotRow = {
-    val transformed: Try[SnapshotRow] = serializer
-      .deserialize(old)
-      .flatMap({ case (meta, snapshot) =>
-        val serializedMetadata: Option[AkkaSerialization.AkkaSerialized] =
-          meta.metadata.flatMap(m => AkkaSerialization.serialize(serialization, m).toOption)
+    val transformed: Try[SnapshotRow] = serializer.deserialize(old).flatMap { case (meta, snapshot) =>
+      val serializedMetadata: Option[AkkaSerialization.AkkaSerialized] =
+        meta.metadata.flatMap(m => AkkaSerialization.serialize(serialization, m).toOption)
 
-        AkkaSerialization
-          .serialize(serialization, payload = snapshot)
-          .map(serializedSnapshot =>
-            SnapshotRow(
-              meta.persistenceId,
-              meta.sequenceNr,
-              meta.timestamp,
-              serializedSnapshot.serId,
-              serializedSnapshot.serManifest,
-              serializedSnapshot.payload,
-              serializedMetadata.map(_.serId),
-              serializedMetadata.map(_.serManifest),
-              serializedMetadata.map(_.payload)))
-      })
+      AkkaSerialization
+        .serialize(serialization, payload = snapshot)
+        .map(serializedSnapshot =>
+          SnapshotRow(
+            meta.persistenceId,
+            meta.sequenceNr,
+            meta.timestamp,
+            serializedSnapshot.serId,
+            serializedSnapshot.serManifest,
+            serializedSnapshot.payload,
+            serializedMetadata.map(_.serId),
+            serializedMetadata.map(_.serManifest),
+            serializedMetadata.map(_.payload)))
+    }
 
     transformed match {
       case Failure(e)      => throw e
