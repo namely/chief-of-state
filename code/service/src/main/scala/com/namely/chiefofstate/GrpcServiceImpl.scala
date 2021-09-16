@@ -13,7 +13,7 @@ import com.google.protobuf.any
 import com.google.rpc.status.Status.toJavaProto
 import com.namely.chiefofstate.config.WriteSideConfig
 import com.namely.chiefofstate.serialization.MessageWithActorRef
-import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{ Headers, Header => LegacyHeader }
+import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{ Header => LegacyHeader, Headers }
 import com.namely.protobuf.chiefofstate.v1.common.Header
 import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply

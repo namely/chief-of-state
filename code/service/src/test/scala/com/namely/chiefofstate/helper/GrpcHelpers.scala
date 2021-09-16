@@ -16,9 +16,9 @@ object GrpcHelpers {
 
   def getHeaders(headers: (String, String)*): Metadata = {
     val metadata: Metadata = new Metadata()
-    headers.foreach({ case (k, v) =>
+    headers.foreach { case (k, v) =>
       metadata.put(Metadata.Key.of(k, Metadata.ASCII_STRING_MARSHALLER), v)
-    })
+    }
     metadata
   }
 
