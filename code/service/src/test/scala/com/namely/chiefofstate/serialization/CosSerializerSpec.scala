@@ -6,19 +6,19 @@
 
 package com.namely.chiefofstate.serialization
 
+import akka.actor.ExtendedActorSystem
 import akka.actor.testkit.typed.scaladsl.TestProbe
 import akka.actor.typed.scaladsl.adapter._
-import akka.actor.ExtendedActorSystem
 import com.google.protobuf.any.Any
 import com.google.protobuf.wrappers.StringValue
 import com.namely.chiefofstate.helper.BaseActorSpec
+import com.namely.protobuf.chiefofstate.v1.common.Header
 import com.namely.protobuf.chiefofstate.v1.internal.{
   GetStateCommand,
   RemoteCommand,
   SendCommand,
   WireMessageWithActorRef
 }
-import com.namely.protobuf.chiefofstate.v1.common.Header
 import com.namely.protobuf.chiefofstate.v1.tests.OpenAccount
 import scalapb.GeneratedMessage
 

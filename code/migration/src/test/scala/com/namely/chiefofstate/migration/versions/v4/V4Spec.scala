@@ -7,17 +7,16 @@
 package com.namely.chiefofstate.migration.versions.v4
 
 import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
-import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil, SchemasUtil }
+import com.namely.chiefofstate.migration.helper.DbHelper._
 import com.namely.chiefofstate.migration.helper.TestConfig
+import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil, SchemasUtil }
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import java.sql.{ Connection, DriverManager }
 import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import com.namely.chiefofstate.migration.helper.DbHelper._
 
 class V4Spec extends BaseSpec with ForAllTestContainer {
 

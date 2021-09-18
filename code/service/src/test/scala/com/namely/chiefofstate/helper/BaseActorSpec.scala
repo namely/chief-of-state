@@ -6,8 +6,8 @@
 
 package com.namely.chiefofstate.helper
 
-import akka.actor.testkit.typed.scaladsl.{ ActorTestKit, ActorTestKitBase }
 import akka.actor.testkit.typed.TestKitSettings
+import akka.actor.testkit.typed.scaladsl.{ ActorTestKit, ActorTestKitBase }
 import com.typesafe.config.{ Config, ConfigFactory }
 import org.scalatest.time.Span
 

@@ -6,25 +6,26 @@
 
 package com.namely.chiefofstate.migration.versions.v5
 
-import com.namely.chiefofstate.migration.{ SchemasUtil, Version }
-import com.namely.protobuf.chiefofstate.v1.persistence.{ EventWrapper, StateWrapper }
-import org.slf4j.{ Logger, LoggerFactory }
-import slick.basic.DatabaseConfig
-import slick.dbio.DBIO
-import slick.jdbc.{ GetResult, JdbcProfile, ResultSetConcurrency, ResultSetType }
-import slick.jdbc.PostgresProfile.api._
-import V5.log
-import scala.util.Try
-import akka.stream.scaladsl.Source
-import scala.concurrent.duration.Duration
-import scala.concurrent.{ Await, Future }
-import akka.actor.typed.ActorSystem
 import akka.Done
+import akka.actor.typed.ActorSystem
+import akka.stream.scaladsl.Source
+import com.namely.chiefofstate.migration.versions.v5.V5.log
+import com.namely.chiefofstate.migration.{ SchemasUtil, Version }
 import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{
   Header => LegacyHeader,
   Headers => LegacyHeaders
 }
 import com.namely.protobuf.chiefofstate.v1.common.Header
+import com.namely.protobuf.chiefofstate.v1.persistence.{ EventWrapper, StateWrapper }
+import org.slf4j.{ Logger, LoggerFactory }
+import slick.basic.DatabaseConfig
+import slick.dbio.DBIO
+import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.{ GetResult, JdbcProfile, ResultSetConcurrency, ResultSetType }
+
+import scala.concurrent.duration.Duration
+import scala.concurrent.{ Await, Future }
+import scala.util.Try
 
 case class V5(system: ActorSystem[_], journalJdbcConfig: DatabaseConfig[JdbcProfile]) extends Version {
   override def versionNumber: Int = 5

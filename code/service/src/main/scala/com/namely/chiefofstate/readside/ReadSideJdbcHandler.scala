@@ -7,15 +7,12 @@
 package com.namely.chiefofstate.readside
 
 import akka.projection.eventsourced.EventEnvelope
-import akka.projection.jdbc.scaladsl.JdbcHandler
 import akka.projection.jdbc.JdbcSession
+import akka.projection.jdbc.scaladsl.JdbcHandler
 import com.google.protobuf.any.{ Any => ProtoAny }
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
-import com.namely.protobuf.chiefofstate.v1.readside.HandleReadSideResponse
 import org.slf4j.{ Logger, LoggerFactory }
-
-import scala.util.{ Failure, Success, Try }
 
 /**
  * Implements the akka JdbcHandler interface and forwards events to the

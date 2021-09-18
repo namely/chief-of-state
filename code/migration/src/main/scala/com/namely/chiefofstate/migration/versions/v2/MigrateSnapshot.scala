@@ -22,7 +22,6 @@ import org.slf4j.{ Logger, LoggerFactory }
 import slick.basic.DatabasePublisher
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.{ JdbcBackend, JdbcProfile, ResultSetConcurrency, ResultSetType }
-import slickProfile.api._
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ Await, ExecutionContextExecutor, Future }

@@ -6,8 +6,8 @@
 
 package com.namely.chiefofstate
 
-import akka.actor.typed.ActorSystem
 import akka.NotUsed
+import akka.actor.typed.ActorSystem
 import com.namely.chiefofstate.config.BootConfig
 import com.typesafe.config.Config
 

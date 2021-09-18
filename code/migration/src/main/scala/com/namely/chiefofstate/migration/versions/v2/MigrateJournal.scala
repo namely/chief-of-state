@@ -24,7 +24,6 @@ import slick.dbio.Effect
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.{ JdbcBackend, JdbcProfile, ResultSetConcurrency, ResultSetType }
 import slick.sql.FixedSqlAction
-import slickProfile.api._
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ Await, ExecutionContextExecutor, Future }

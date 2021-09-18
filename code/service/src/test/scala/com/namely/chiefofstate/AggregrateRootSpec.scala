@@ -16,22 +16,22 @@ import com.namely.chiefofstate.config.CosConfig
 import com.namely.chiefofstate.helper.BaseActorSpec
 import com.namely.chiefofstate.serialization.MessageWithActorRef
 import com.namely.protobuf.chiefofstate.v1.common.{ Header, MetaData }
-import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.internal.CommandReply.Reply
+import com.namely.protobuf.chiefofstate.v1.internal._
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.tests.{ Account, AccountOpened, OpenAccount }
-import com.namely.protobuf.chiefofstate.v1.writeside._
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
+import com.namely.protobuf.chiefofstate.v1.writeside._
 import com.typesafe.config.{ Config, ConfigFactory }
-import io.grpc.{ ManagedChannel, ServerServiceDefinition, Status }
 import io.grpc.inprocess._
+import io.grpc.{ ManagedChannel, ServerServiceDefinition, Status }
 import scalapb.GeneratedMessage
 
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.global
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 import scala.util.{ Failure, Try }
 
 class AggregrateRootSpec extends BaseActorSpec(s"""

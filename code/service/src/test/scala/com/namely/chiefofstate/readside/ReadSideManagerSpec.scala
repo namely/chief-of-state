@@ -6,11 +6,11 @@
 
 package com.namely.chiefofstate.readside
 
-import com.namely.chiefofstate.helper.BaseSpec
-import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
-import org.testcontainers.utility.DockerImageName
-import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
+import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+import com.namely.chiefofstate.helper.BaseSpec
+import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
+import org.testcontainers.utility.DockerImageName
 
 class ReadSideManagerSpec extends BaseSpec with ForAllTestContainer {
 

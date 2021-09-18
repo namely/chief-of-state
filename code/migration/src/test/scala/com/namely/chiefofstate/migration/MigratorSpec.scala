@@ -8,7 +8,7 @@ package com.namely.chiefofstate.migration
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
-import com.namely.chiefofstate.migration.helper.TestConfig
+import com.namely.chiefofstate.migration.helper.{ DbHelper, TestConfig }
 import com.namely.chiefofstate.migration.helper.TestConfig.dbConfigFromUrl
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
@@ -20,7 +20,6 @@ import java.sql.DriverManager
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.Success
-import com.namely.chiefofstate.migration.helper.DbHelper
 
 class MigratorSpec extends BaseSpec with ForAllTestContainer {
 

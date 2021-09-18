@@ -6,8 +6,8 @@
 
 package com.namely.chiefofstate
 
-import akka.actor.typed.{ ActorSystem, Behavior }
 import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ ActorSystem, Behavior }
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
@@ -20,8 +20,8 @@ import com.typesafe.config.Config
 import io.grpc._
 import io.grpc.netty.NettyServerBuilder
 import io.opentelemetry.api.GlobalOpenTelemetry
-import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.instrumentation.grpc.v1_5.GrpcTracing
+import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.superflat.otel.tools._
 import org.slf4j.{ Logger, LoggerFactory }
 
