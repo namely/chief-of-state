@@ -23,10 +23,10 @@ See the following deployment-specific guides for relevant configurations:
 | COS_DB_PORT | journal, snapshot and read side offsets store port | 5432 |
 | COS_DB_NAME | journal, snapshot and read side offsets store db name | postgres |
 | COS_DB_SCHEMA | journal, snapshot and read side offsets store db schema | public |
-| COS_DB_POOL_MAX_SIZE |  controls the maximum size that the pool is allowed to reach, including both idle and in-use connections | 10 |
-| COS_DB_POOL_MIN_IDLE_CONNECTIONS | controls the minimum number of idle connections to maintain in the pool | 3 |
-| COS_DB_POOL_IDLE_TIMEOUT_MS | controls the maximum amount of time in milliseconds that a connection is allowed to sit idle in the pool | 30000 |
-| COS_DB_POOL_MAX_LIFETIME_MS | controls the maximum lifetime of a connection in the pool | 60000 |
+| COS_DB_POOL_MAX_SIZE |  controls the maximum size that the pool is allowed to reach, including both idle and in-use connections. The default value should be ok for most apps. | 10 |
+| COS_DB_POOL_MIN_IDLE_CONNECTIONS | controls the minimum number of idle connections to maintain in the pool. The default value should be ok for most apps. | 3 |
+| COS_DB_POOL_IDLE_TIMEOUT_MS | controls the maximum amount of time in milliseconds that a connection is allowed to sit idle in the pool. The default value should be ok for most apps | 30000 |
+| COS_DB_POOL_MAX_LIFETIME_MS | controls the maximum lifetime of a connection in the pool. The default value should be ok for most apps. | 60000 |
 | COS_SNAPSHOT_FREQUENCY |Save snapshots automatically every Number of Events| 100 |
 | COS_NUM_SNAPSHOTS_TO_RETAIN | Number of Aggregate Snapshot to persist to disk for swift recovery | 2 |
 | COS_READ_SIDE_ENABLED | turn on readside or not | false |
