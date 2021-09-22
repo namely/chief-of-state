@@ -6,10 +6,10 @@
 
 package com.namely.chiefofstate.migration.helper
 
+import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.namely.protobuf.chiefofstate.v1.persistence.{ EventWrapper, StateWrapper }
-import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+
 import java.sql.{ Connection, DriverManager }
-import org.checkerframework.checker.units.qual.s
 
 object DbHelper {
   val serializerId = 5001

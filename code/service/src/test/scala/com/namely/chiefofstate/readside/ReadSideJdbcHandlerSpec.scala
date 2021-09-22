@@ -6,17 +6,18 @@
 
 package com.namely.chiefofstate.readside
 
-import com.namely.chiefofstate.helper.BaseSpec
-import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
-import org.testcontainers.utility.DockerImageName
-import java.sql.{ Connection, DriverManager }
-import akka.projection.jdbc.JdbcSession
-import akka.projection.eventsourced.EventEnvelope
-import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
 import akka.persistence.query.Offset
-import com.namely.protobuf.chiefofstate.v1.common.MetaData
+import akka.projection.eventsourced.EventEnvelope
+import akka.projection.jdbc.JdbcSession
+import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
 import com.google.protobuf.any
 import com.google.protobuf.wrappers.StringValue
+import com.namely.chiefofstate.helper.BaseSpec
+import com.namely.protobuf.chiefofstate.v1.common.MetaData
+import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
+import org.testcontainers.utility.DockerImageName
+
+import java.sql.{ Connection, DriverManager }
 
 class ReadSideJdbcHandlerSpec extends BaseSpec with ForAllTestContainer {
 

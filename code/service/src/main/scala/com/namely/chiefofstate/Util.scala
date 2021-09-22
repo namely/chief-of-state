@@ -10,8 +10,8 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
 import com.google.protobuf.timestamp.Timestamp
 import com.namely.protobuf.chiefofstate.v1.common.Header
-import io.grpc.{ Metadata, Status, StatusException, StatusRuntimeException }
 import io.grpc.protobuf.StatusProto
+import io.grpc.{ Metadata, Status, StatusException, StatusRuntimeException }
 
 import java.time.{ Instant, LocalDate, ZoneId }
 import scala.collection.mutable

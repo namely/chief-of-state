@@ -6,14 +6,14 @@
 
 package com.namely.chiefofstate.migration.versions.v6
 import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
-import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil }
 import com.namely.chiefofstate.migration.helper.{ DbHelper, TestConfig }
+import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil }
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.duration.Duration
 import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 class V6Spec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"

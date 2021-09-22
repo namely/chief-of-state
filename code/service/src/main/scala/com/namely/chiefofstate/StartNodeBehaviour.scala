@@ -6,12 +6,12 @@
 
 package com.namely.chiefofstate
 
+import akka.NotUsed
 import akka.actor.typed._
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.typed.{ Cluster, ClusterSingleton, SingletonActor }
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
-import akka.NotUsed
 import com.namely.chiefofstate.serialization.{ MessageWithActorRef, ScalaMessage }
 import com.namely.protobuf.chiefofstate.v1.internal.DoMigration
 import com.typesafe.config.Config

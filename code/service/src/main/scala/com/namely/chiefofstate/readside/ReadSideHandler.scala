@@ -7,8 +7,8 @@
 package com.namely.chiefofstate.readside
 
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
-import com.namely.protobuf.chiefofstate.v1.readside.{ HandleReadSideRequest, HandleReadSideResponse }
 import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
+import com.namely.protobuf.chiefofstate.v1.readside.{ HandleReadSideRequest, HandleReadSideResponse }
 import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
 import io.opentelemetry.api.GlobalOpenTelemetry

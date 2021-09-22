@@ -7,9 +7,9 @@
 package com.namely.chiefofstate.migration
 
 import slick.basic.DatabaseConfig
-import slick.jdbc.meta.MTable
 import slick.jdbc.JdbcProfile
 import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.meta.MTable
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration

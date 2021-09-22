@@ -9,8 +9,8 @@ package com.namely.chiefofstate
 import com.google.protobuf.any
 import com.namely.chiefofstate.config.GrpcConfig
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
-import com.namely.protobuf.chiefofstate.v1.writeside.{ HandleEventRequest, HandleEventResponse }
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
+import com.namely.protobuf.chiefofstate.v1.writeside.{ HandleEventRequest, HandleEventResponse }
 import org.slf4j.{ Logger, LoggerFactory }
 
 import java.util.concurrent.TimeUnit

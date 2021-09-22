@@ -17,8 +17,9 @@ import akka.projection.jdbc.scaladsl.JdbcProjection
 import akka.projection.scaladsl.SourceProvider
 import akka.projection.{ ProjectionBehavior, ProjectionId }
 import com.namely.protobuf.chiefofstate.v1.persistence.EventWrapper
-import javax.sql.DataSource
 import org.slf4j.{ Logger, LoggerFactory }
+
+import javax.sql.DataSource
 
 /**
  * Read side processor creates a sharded daemon process for handling

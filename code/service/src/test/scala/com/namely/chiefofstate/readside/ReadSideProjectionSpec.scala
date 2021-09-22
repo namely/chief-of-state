@@ -6,11 +6,11 @@
 
 package com.namely.chiefofstate.readside
 
-import com.namely.chiefofstate.helper.BaseSpec
-import javax.sql.DataSource
-import akka.actor.typed.ActorSystem
-import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
+import com.namely.chiefofstate.helper.BaseSpec
+import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
+
+import javax.sql.DataSource
 
 class ReadSideProjectionSpec extends BaseSpec {
   lazy val config: Config = ConfigFactory

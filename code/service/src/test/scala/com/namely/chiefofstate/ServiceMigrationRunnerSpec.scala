@@ -20,8 +20,8 @@ import scalapb.GeneratedMessage
 
 import java.sql.{ Connection, DriverManager, Statement }
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.{ Duration, FiniteDuration }
 import scala.concurrent.Await
+import scala.concurrent.duration.{ Duration, FiniteDuration }
 
 class ServiceMigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"

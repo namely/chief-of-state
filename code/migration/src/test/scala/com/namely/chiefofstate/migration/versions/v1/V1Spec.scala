@@ -8,9 +8,10 @@ package com.namely.chiefofstate.migration.versions.v1
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import com.dimafeng.testcontainers.{ ForAllTestContainer, MultipleContainers, PostgreSQLContainer }
-import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil }
+import com.namely.chiefofstate.migration.helper.DbHelper._
 import com.namely.chiefofstate.migration.helper.TestConfig
 import com.namely.chiefofstate.migration.versions.v1.V1.{ createTable, insertInto, tempTable, OffsetRow }
+import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil }
 import com.typesafe.config.Config
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
@@ -19,11 +20,9 @@ import slick.jdbc.JdbcProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.sql.SqlStreamingAction
 
-import java.sql.{ Connection, DriverManager }
 import java.time.Instant
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import com.namely.chiefofstate.migration.helper.DbHelper._
 
 class V1Spec extends BaseSpec with ForAllTestContainer {
 

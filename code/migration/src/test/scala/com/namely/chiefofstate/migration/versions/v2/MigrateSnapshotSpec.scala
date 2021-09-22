@@ -18,12 +18,12 @@ import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil, JdbcConfig, Schemas
 import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
-import slick.jdbc.{ JdbcBackend, JdbcProfile }
 import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.{ JdbcBackend, JdbcProfile }
 
 import java.sql.{ Connection, DriverManager }
-import scala.concurrent.{ Await, ExecutionContextExecutor }
 import scala.concurrent.duration.Duration
+import scala.concurrent.{ Await, ExecutionContextExecutor }
 
 class MigrateSnapshotSpec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"

@@ -15,17 +15,16 @@ import akka.persistence.jdbc.snapshot.dao
 import akka.persistence.jdbc.snapshot.dao.legacy.{ ByteArraySnapshotDao, SnapshotQueries }
 import akka.serialization.{ Serialization, SerializationExtension }
 import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+import com.namely.chiefofstate.migration.helper.DbHelper._
 import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil, JdbcConfig, SchemasUtil }
 import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
-import slick.jdbc.{ JdbcBackend, JdbcProfile }
 import slick.jdbc.PostgresProfile.api._
-import com.namely.chiefofstate.migration.helper.DbHelper._
+import slick.jdbc.{ JdbcBackend, JdbcProfile }
 
-import java.sql.{ Connection, DriverManager }
-import scala.concurrent.{ Await, ExecutionContext, ExecutionContextExecutor, Future }
 import scala.concurrent.duration.Duration
+import scala.concurrent.{ Await, ExecutionContext, ExecutionContextExecutor, Future }
 
 class V2Spec extends BaseSpec with ForAllTestContainer {
 

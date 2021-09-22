@@ -12,14 +12,14 @@ import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.tests.{ Account, AccountOpened }
+import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.writeside.{
   HandleEventRequest,
   HandleEventResponse,
   WriteSideHandlerServiceGrpc
 }
-import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
-import io.grpc.{ ManagedChannel, ServerServiceDefinition, Status }
 import io.grpc.inprocess._
+import io.grpc.{ ManagedChannel, ServerServiceDefinition, Status }
 
 import scala.concurrent.ExecutionContext.global
 import scala.util.Try

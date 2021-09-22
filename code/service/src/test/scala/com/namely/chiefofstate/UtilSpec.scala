@@ -6,19 +6,19 @@
 
 package com.namely.chiefofstate
 
+import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import com.google.rpc.error_details.BadRequest
 import com.namely.chiefofstate.Util.{ Instants, Timestamps }
 import com.namely.chiefofstate.helper.BaseSpec
-import com.namely.protobuf.chiefofstate.v1.tests.AccountOpened
-import io.grpc.{ Metadata, Status, StatusException, StatusRuntimeException }
-import io.grpc.protobuf.StatusProto
 import com.namely.protobuf.chiefofstate.v1.common.Header
 import com.namely.protobuf.chiefofstate.v1.common.Header.Value.{ BytesValue, StringValue }
+import com.namely.protobuf.chiefofstate.v1.tests.AccountOpened
+import io.grpc.protobuf.StatusProto
+import io.grpc.{ Metadata, Status, StatusException, StatusRuntimeException }
 
 import java.time.{ Instant, ZoneId }
 import scala.util.Failure
-import com.google.protobuf.ByteString
 
 class UtilSpec extends BaseSpec {
   "A protobuf Timestamp date" should {

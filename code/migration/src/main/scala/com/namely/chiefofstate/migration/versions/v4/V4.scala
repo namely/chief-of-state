@@ -6,7 +6,7 @@
 
 package com.namely.chiefofstate.migration.versions.v4
 
-import com.namely.chiefofstate.migration.{ SchemasUtil, Version }
+import com.namely.chiefofstate.migration.Version
 import com.namely.protobuf.chiefofstate.v1.persistence.{ EventWrapper, StateWrapper }
 import org.slf4j.{ Logger, LoggerFactory }
 import slick.basic.DatabaseConfig

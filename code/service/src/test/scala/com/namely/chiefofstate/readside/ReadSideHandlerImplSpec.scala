@@ -8,29 +8,26 @@ package com.namely.chiefofstate.readside
 
 import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
+import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.readside.{
   HandleReadSideRequest,
   HandleReadSideResponse,
   ReadSideHandlerServiceGrpc
 }
-import com.namely.protobuf.chiefofstate.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.tests.{ Account, AccountOpened }
 import io.grpc.Status
 import io.grpc.inprocess._
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.api.{ GlobalOpenTelemetry, OpenTelemetry }
-import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
+import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.sdk.OpenTelemetrySdk
-import io.opentelemetry.sdk.trace.data.SpanData
-
-import scala.jdk.CollectionConverters.ListHasAsScala
-import scala.concurrent.ExecutionContext.global
-import scala.concurrent.Future
-import scala.util.{ Failure, Success, Try }
+import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
-import io.opentelemetry.context.propagation.ContextPropagators
-import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
-import io.grpc.StatusRuntimeException
+
+import scala.concurrent.ExecutionContext.global
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters.ListHasAsScala
 
 class ReadSideHandlerImplSpec extends BaseSpec {
 

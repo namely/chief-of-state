@@ -14,8 +14,8 @@ import slick.sql.SqlAction
 
 import java.time.Instant
 import scala.collection.mutable
-import scala.concurrent.{ Await, Future }
 import scala.concurrent.duration.Duration
+import scala.concurrent.{ Await, Future }
 import scala.util.{ Success, Try }
 
 /**

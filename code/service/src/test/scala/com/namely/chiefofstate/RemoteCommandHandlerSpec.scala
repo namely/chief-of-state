@@ -6,23 +6,23 @@
 
 package com.namely.chiefofstate
 
-import com.google.protobuf.any.Any
 import com.google.protobuf.ByteString
+import com.google.protobuf.any.Any
 import com.namely.chiefofstate.config.{ GrpcClient, GrpcConfig, GrpcServer }
 import com.namely.chiefofstate.helper.BaseSpec
-import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.common.Header
 import com.namely.protobuf.chiefofstate.v1.common.Header.Value
+import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
 import com.namely.protobuf.chiefofstate.v1.tests.{ Account, AccountOpened, OpenAccount }
+import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.namely.protobuf.chiefofstate.v1.writeside.{
   HandleCommandRequest,
   HandleCommandResponse,
   WriteSideHandlerServiceGrpc
 }
-import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
-import io.grpc.{ ManagedChannel, ServerServiceDefinition, Status }
 import io.grpc.inprocess._
+import io.grpc.{ ManagedChannel, ServerServiceDefinition, Status }
 
 import scala.concurrent.ExecutionContext.global
 import scala.util.Try

@@ -7,8 +7,8 @@
 package com.namely.chiefofstate.serialization
 
 import akka.actor.ExtendedActorSystem
-import akka.actor.typed.{ ActorRef, ActorRefResolver }
 import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.{ ActorRef, ActorRefResolver }
 import akka.serialization.SerializerWithStringManifest
 import com.google.protobuf.{ any, ByteString }
 import com.namely.protobuf.chiefofstate.v1.internal.WireMessageWithActorRef

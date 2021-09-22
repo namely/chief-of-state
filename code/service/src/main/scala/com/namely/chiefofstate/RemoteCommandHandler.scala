@@ -7,11 +7,11 @@
 package com.namely.chiefofstate
 
 import com.namely.chiefofstate.config.GrpcConfig
-import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.common.Header.Value
+import com.namely.protobuf.chiefofstate.v1.internal.RemoteCommand
 import com.namely.protobuf.chiefofstate.v1.persistence.StateWrapper
-import com.namely.protobuf.chiefofstate.v1.writeside.{ HandleCommandRequest, HandleCommandResponse }
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
+import com.namely.protobuf.chiefofstate.v1.writeside.{ HandleCommandRequest, HandleCommandResponse }
 import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
 import org.slf4j.{ Logger, LoggerFactory }

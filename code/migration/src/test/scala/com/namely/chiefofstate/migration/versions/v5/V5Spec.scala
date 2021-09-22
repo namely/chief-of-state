@@ -6,22 +6,21 @@
 
 package com.namely.chiefofstate.migration.versions.v5
 
-import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil, SchemasUtil }
+import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+import com.google.protobuf.any
 import com.namely.chiefofstate.migration.helper.{ DbHelper, TestConfig }
-import org.testcontainers.utility.DockerImageName
+import com.namely.chiefofstate.migration.{ BaseSpec, DbUtil, SchemasUtil }
+import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{ Header, Headers }
+import com.namely.protobuf.chiefofstate.v1.common.MetaData
+import com.namely.protobuf.chiefofstate.v1.persistence.{ EventWrapper, StateWrapper }
 import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
+import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
-import java.sql.{ Connection, DriverManager }
-import java.util.UUID
+
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import com.namely.protobuf.chiefofstate.v1.persistence.{ EventWrapper, StateWrapper }
-import com.namely.protobuf.chiefofstate.v1.common.MetaData
-import com.namely.protobuf.chiefofstate.plugins.persistedheaders.v1.headers.{ Header, Headers }
-import com.google.protobuf.any
 
 class V5Spec extends BaseSpec with ForAllTestContainer {
 

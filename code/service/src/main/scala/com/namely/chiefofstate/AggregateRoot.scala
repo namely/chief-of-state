@@ -6,16 +6,16 @@
 
 package com.namely.chiefofstate
 
-import akka.actor.typed.{ ActorRef, Behavior, SupervisorStrategy }
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
+import akka.actor.typed.{ ActorRef, Behavior, SupervisorStrategy }
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl._
 import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
-import com.namely.chiefofstate.config.{ CosConfig, SnapshotConfig }
 import com.namely.chiefofstate.Util.{ makeFailedStatusPf, toRpcStatus, Instants }
 import com.namely.chiefofstate.WriteHandlerHelpers.{ NewState, NoOp }
+import com.namely.chiefofstate.config.{ CosConfig, SnapshotConfig }
 import com.namely.chiefofstate.serialization.MessageWithActorRef
 import com.namely.protobuf.chiefofstate.v1.common.MetaData
 import com.namely.protobuf.chiefofstate.v1.internal.{ CommandReply, GetStateCommand, RemoteCommand, SendCommand }
