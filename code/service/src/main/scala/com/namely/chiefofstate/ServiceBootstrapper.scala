@@ -13,7 +13,7 @@ import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.namely.chiefofstate.config.CosConfig
 import com.namely.chiefofstate.readside.ReadSideManager
-import com.namely.protobuf.chiefofstate.v1.internal.MigrationDone
+import com.namely.protobuf.chiefofstate.v1.internal.{ MigrationFailed, MigrationSucceeded }
 import com.namely.protobuf.chiefofstate.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.namely.protobuf.chiefofstate.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.typesafe.config.Config
@@ -47,7 +47,8 @@ object ServiceBootstrapper {
     val cosConfig: CosConfig = CosConfig(config)
 
     Behaviors.receiveMessage[scalapb.GeneratedMessage] {
-      case _: MigrationDone =>
+      // handle successful migration proceed with the rest of startup
+      case _: MigrationSucceeded =>
         // start the telemetry tools and register global tracer
         val otelSdk: OpenTelemetrySdk = TelemetryTools(cosConfig.telemetryConfig).start()
         GlobalOpenTelemetry.set(otelSdk)
@@ -94,6 +95,12 @@ object ServiceBootstrapper {
 
         Behaviors.same
 
+      // handle failed migration
+      case msg: MigrationFailed =>
+        log.error(s"migration failed: ${msg.errorMessage}")
+        Behaviors.stopped
+
+      // handle unknown message
       case unhandled =>
         log.warn(s"unhandled message ${unhandled.companion.scalaDescriptor.fullName}")
 
