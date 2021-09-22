@@ -11,7 +11,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import com.namely.chiefofstate.migration.versions.v6.V6
 import com.namely.chiefofstate.migration.{ JdbcConfig, Migrator }
 import com.namely.chiefofstate.serialization.{ MessageWithActorRef, ScalaMessage }
-import com.namely.protobuf.chiefofstate.v1.internal.{ DoMigration, MigrationDone }
+import com.namely.protobuf.chiefofstate.v1.internal.{ MigrationFailed, MigrationSucceeded, StartMigration }
 import com.typesafe.config.Config
 import org.slf4j.{ Logger, LoggerFactory }
 import slick.basic.DatabaseConfig
@@ -22,8 +22,8 @@ import scala.util.{ Failure, Success, Try }
 /**
  * kick starts the various migrations needed to run.
  * When the migration process is successful it replies back to the [[ServiceBootstrapper]] to continue the boot process.
- * However when the migration process fails it stops and the [[StartNodeBehaviour]] get notified and halt the whole
- * boot process. This is the logic behind running the actual migration
+ * However when the migration process fails then  halt the whole boot process by shutting down the underlying actor system.
+ * This is the logic behind running the actual migration
  * <p>
  *   <ol>
  *     <li> check the existence of the cos_migrations table
@@ -40,7 +40,7 @@ object ServiceMigrationRunner {
 
   def apply(config: Config): Behavior[ScalaMessage] = Behaviors.setup[ScalaMessage] { context =>
     Behaviors.receiveMessage[ScalaMessage] {
-      case MessageWithActorRef(message, replyTo) if message.isInstanceOf[DoMigration] =>
+      case MessageWithActorRef(message, replyTo) if message.isInstanceOf[StartMigration] =>
         val result: Try[Unit] = {
           // create and run the migrator
           val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
@@ -50,13 +50,14 @@ object ServiceMigrationRunner {
           // instance of the migrator
           val migrator: Migrator =
             new Migrator(journalJdbcConfig, schema).addVersion(v6)
-
+          // run the migration
           migrator.run()
         }
 
         result match {
           case Failure(exception) =>
-            log.error("migration failed", exception)
+            // notify the bootstrapper actor that the migration has failed
+            replyTo ! MigrationFailed().withErrorMessage(exception.getMessage)
 
             // stopping the actor
             Behaviors.stopped
@@ -64,7 +65,7 @@ object ServiceMigrationRunner {
           case Success(_) =>
             log.info("ChiefOfState migration successfully done...")
 
-            replyTo ! MigrationDone.defaultInstance
+            replyTo ! MigrationSucceeded()
 
             Behaviors.same
         }

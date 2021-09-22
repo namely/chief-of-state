@@ -13,7 +13,7 @@ import com.google.protobuf.wrappers.StringValue
 import com.namely.chiefofstate.helper.BaseSpec
 import com.namely.chiefofstate.migration.{ JdbcConfig, Migrator }
 import com.namely.chiefofstate.serialization.{ MessageWithActorRef, ScalaMessage }
-import com.namely.protobuf.chiefofstate.v1.internal.{ DoMigration, MigrationDone }
+import com.namely.protobuf.chiefofstate.v1.internal.{ MigrationSucceeded, StartMigration }
 import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import org.testcontainers.utility.DockerImageName
 import scalapb.GeneratedMessage
@@ -79,11 +79,11 @@ class ServiceMigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
       val probe: TestProbe[GeneratedMessage] = testKit.createTestProbe[GeneratedMessage]()
 
       // send the migration command to the migrator
-      migrationRunnerRef ! MessageWithActorRef(DoMigration.defaultInstance, probe.ref)
+      migrationRunnerRef ! MessageWithActorRef(StartMigration.defaultInstance, probe.ref)
 
       probe.receiveMessage(replyTimeout) match {
-        case _: MigrationDone => succeed
-        case _                => fail("unexpected message type")
+        case _: MigrationSucceeded => succeed
+        case _                     => fail("unexpected message type")
       }
     }
 
@@ -93,7 +93,7 @@ class ServiceMigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
 
       // set the current version to 5
-      val stmt = Migrator.setCurrentVersionNumber(dbConfig, 5, true)
+      val stmt = Migrator.setCurrentVersionNumber(dbConfig, 5, isSnapshot = true)
 
       Await.ready(dbConfig.db.run(stmt), Duration.Inf)
 
@@ -104,11 +104,11 @@ class ServiceMigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
       val probe: TestProbe[GeneratedMessage] = testKit.createTestProbe[GeneratedMessage]()
 
       // send the migration command to the migrator
-      migrationRunnerRef ! MessageWithActorRef(DoMigration.defaultInstance, probe.ref)
+      migrationRunnerRef ! MessageWithActorRef(StartMigration.defaultInstance, probe.ref)
 
       probe.receiveMessage(replyTimeout) match {
-        case _: MigrationDone => succeed
-        case _                => fail("unexpected message type")
+        case _: MigrationSucceeded => succeed
+        case _                     => fail("unexpected message type")
       }
     }
 
@@ -124,15 +124,15 @@ class ServiceMigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
       val probe: TestProbe[GeneratedMessage] = testKit.createTestProbe[GeneratedMessage]()
 
       // send the migration command to the migrator
-      migrationRunnerRef ! MessageWithActorRef(DoMigration.defaultInstance, probe.ref)
+      migrationRunnerRef ! MessageWithActorRef(StartMigration.defaultInstance, probe.ref)
 
       probe.receiveMessage(replyTimeout) match {
-        case _: MigrationDone => succeed
-        case _                => fail("unexpected message type")
+        case _: MigrationSucceeded => succeed
+        case _                     => fail("unexpected message type")
       }
     }
 
-    "stop because of unhandled scalabp GeneratedMessage" in {
+    "stop because of unhandled scalapb GeneratedMessage" in {
       // create an instance of ServiceMigrationRunner
       val migrationRunnerRef: BehaviorTestKit[ScalaMessage] = BehaviorTestKit(ServiceMigrationRunner(config))
 

@@ -75,8 +75,14 @@ message WireMessageWithActorRef {
 }
 
 // DoMigration used by the Migration Actor to kick-start the migration
-message DoMigration{}
+message StartMigration{}
 
 // MigrationDone used as a reply message by the Migration Actor when the migration
 // is successful
-message MigrationDone{}
+message MigrationSucceeded{}
+
+// MigrationFailed is used as reply message by the Migration Actor when the migration has failed.
+message MigrationFailed{
+  // the failure error message
+  string error_message = 1;
+}

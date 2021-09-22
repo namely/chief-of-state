@@ -9,11 +9,11 @@ package com.namely.chiefofstate
 import akka.NotUsed
 import akka.actor.typed._
 import akka.actor.typed.scaladsl.Behaviors
-import akka.cluster.typed.{ Cluster, ClusterSingleton, SingletonActor }
+import akka.cluster.typed.{ Cluster, ClusterSingleton, ClusterSingletonSettings, SingletonActor }
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
 import com.namely.chiefofstate.serialization.{ MessageWithActorRef, ScalaMessage }
-import com.namely.protobuf.chiefofstate.v1.internal.DoMigration
+import com.namely.protobuf.chiefofstate.v1.internal.StartMigration
 import com.typesafe.config.Config
 import org.slf4j.{ Logger, LoggerFactory }
 
@@ -39,25 +39,25 @@ object StartNodeBehaviour {
           Behaviors.supervise(ServiceBootstrapper(config)).onFailure[Exception](SupervisorStrategy.restart),
           COS_SERVICE_BOOTSTRAPPER)
 
+      // initialise the migration cluster singleton settings
+      val singletonSettings = ClusterSingletonSettings(context.system)
+      // create the migration cluster singleton
+      val migrationSingleton = SingletonActor(
+        Behaviors.supervise(ServiceMigrationRunner(config)).onFailure[Exception](SupervisorStrategy.stop),
+        COS_MIGRATION_RUNNER).withSettings(singletonSettings)
       // initialise the migration runner in a singleton
-      val migrator: ActorRef[ScalaMessage] =
-        ClusterSingleton(context.system).init(
-          SingletonActor(
-            Behaviors.supervise(ServiceMigrationRunner(config)).onFailure[Exception](SupervisorStrategy.stop),
-            COS_MIGRATION_RUNNER))
-
+      val migrationProxy: ActorRef[ScalaMessage] = ClusterSingleton(context.system).init(migrationSingleton)
       // tell the migrator to kickstart
-      migrator ! MessageWithActorRef(DoMigration.defaultInstance, bootstrapper)
+      migrationProxy ! MessageWithActorRef(StartMigration(), bootstrapper)
 
       // let us watch both actors to handle any on them termination
-      context.watch(migrator)
       context.watch(bootstrapper)
 
       // let us handle the Terminated message received
       Behaviors.receiveSignal[NotUsed] { case (context, Terminated(ref)) =>
         val actorName = ref.path.name
-        context.log.info("Actor stopped: {}", actorName)
-        // whenever any of the key starters (ServiceBootstrapper or ServiceMigrationRunner) stop
+        log.info(s"Actor stopped: $actorName")
+        // whenever the ServiceBootstrapper stop
         // we need to panic here and halt the whole system
         throw new RuntimeException("unable to boot ChiefOfState properly....")
       }
