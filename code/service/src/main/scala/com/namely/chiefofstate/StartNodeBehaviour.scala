@@ -56,7 +56,7 @@ object StartNodeBehaviour {
       // let us handle the Terminated message received
       Behaviors.receiveSignal[NotUsed] { case (context, Terminated(ref)) =>
         val actorName = ref.path.name
-        log.info("Actor stopped: {}", actorName)
+        log.info(s"Actor stopped: $actorName")
         // whenever the ServiceBootstrapper stop
         // we need to panic here and halt the whole system
         throw new RuntimeException("unable to boot ChiefOfState properly....")
