@@ -91,6 +91,7 @@ You can join these groups and chat to discuss and ask Chief Of State related que
 
 Contributions are welcome!
 
+The project adheres to [Semantic Versioning](https://semver.org) and [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
 If you see an issue that you'd like to see fixed, the best way to make it happen is to help out by submitting a pull request implementing it. To test your implementation locally follow the steps below:
 
 
