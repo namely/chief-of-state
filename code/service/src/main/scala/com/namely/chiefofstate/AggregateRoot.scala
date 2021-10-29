@@ -258,7 +258,7 @@ object AggregateRoot {
       // journal/snapshot retention criteria
       val rc: SnapshotCountRetentionCriteria = RetentionCriteria.snapshotEvery(
         numberOfEvents = snapshotConfig.retentionFrequency, // snapshotFrequency
-        keepNSnapshots = snapshotConfig.retentionNr //snapshotRetention
+        keepNSnapshots = snapshotConfig.retentionNr // snapshotRetention
       )
       // journal/snapshot retention criteria
       if (snapshotConfig.deleteEventsOnSnapshot) rc.withDeleteEventsOnSnapshot
