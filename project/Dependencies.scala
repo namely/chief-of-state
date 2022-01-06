@@ -14,7 +14,7 @@ object Dependencies {
     val ScalaTestVersion: String = "3.2.10"
     val AkkaManagementVersion: String = "1.1.1"
     val AkkaProjectionVersion: String = "1.2.2"
-    val PostgresDriverVersion: String = "42.2.24"
+    val PostgresDriverVersion: String = "42.3.1"
     val SlickVersion: String = "3.3.3"
     val AkkaPersistenceJdbcVersion: String = "5.0.4"
     val ScalaMockVersion: String = "5.1.0"
