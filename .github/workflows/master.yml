@@ -31,8 +31,6 @@ jobs:
 
       - name: Build
         env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-          EARTHLY_SECRETS: "CODECOV_TOKEN"
           COMMIT_HASH: ${{ github.sha }}
           EARTHLY_BUILD_ARGS: "BRANCH_NAME,COMMIT_HASH"
           FORCE_COLOR: 1
