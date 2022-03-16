@@ -1,4 +1,7 @@
 # Chief of State
+ 
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/da2c479a072f41edbd2cf6d9149074a9)](https://app.codacy.com/gh/namely/chief-of-state/dashboard)
+[![Codacy Badge](https://app.codacy.com/project/badge/Coverage/da2c479a072f41edbd2cf6d9149074a9)](https://app.codacy.com/gh/namely/chief-of-state/dashboard)
 
 [![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/namely/chief-of-state/Build/master?style=flat-square)](https://github.com/namely/chief-of-state/actions?query=workflow%3ABuild)
 [![Codacy grade](https://img.shields.io/codacy/grade/47a0f8ca3b614b32b1be2ec451c3e2e4?style=flat-square)](https://app.codacy.com/gh/namely/chief-of-state?utm_source=github.com&utm_medium=referral&utm_content=namely/chief-of-state&utm_campaign=Badge_Grade_Settings)
