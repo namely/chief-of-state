@@ -1,6 +1,9 @@
 syntax = "proto3";
 
 package chief_of_state.v1;
+
+option csharp_namespace = "Namely.ChiefOfState.V1";
+option go_package = "chief_of_state/v1;chiefofstatev1";
 option java_package = "com.namely.protobuf.chiefofstate.v1";
 option java_multiple_files = true;
 option java_outer_classname = "TestsProto";
