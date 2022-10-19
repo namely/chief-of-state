@@ -11,7 +11,7 @@ object Dependencies {
     val LogbackVersion: String = "1.2.10"
     val ScalapbCommonProtoVersion: String = "2.5.0-2"
     val ScalapbValidationVersion: String = "0.1.4"
-    val ScalaTestVersion: String = "3.2.11"
+    val ScalaTestVersion: String = "3.2.14"
     val AkkaManagementVersion: String = "1.1.3"
     val AkkaProjectionVersion: String = "1.2.2"
     val PostgresDriverVersion: String = "42.3.1"
